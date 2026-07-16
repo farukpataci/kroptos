@@ -1,0 +1,37 @@
+{
+  "name": "kroptos",
+  "version": "0.1.0",
+  "description": "KroptOS - Multi-Tenant Commerce Operating System",
+  "private": true,
+  "workspaces": [
+    "packages/backend",
+    "packages/frontend",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev": "pnpm -r run dev",
+    "build": "pnpm -r run build",
+    "test": "pnpm -r run test",
+    "lint": "pnpm -r run lint",
+    "format": "prettier --write .",
+    "db:migrate": "cd packages/backend && npx prisma migrate dev",
+    "db:push": "cd packages/backend && npx prisma db push",
+    "db:seed": "cd packages/backend && npx prisma db seed",
+    "db:studio": "cd packages/backend && npx prisma studio"
+  },
+  "devDependencies": {
+    "prettier": "^3.0.0",
+    "typescript": "^5.3.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "bcrypt",
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines",
+      "@nestjs/core",
+      "msgpackr-extract",
+      "unrs-resolver"
+    ]
+  }
+}

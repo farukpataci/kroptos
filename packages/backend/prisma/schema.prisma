@@ -1,0 +1,1105 @@
+// Backend - Prisma ORM Configuration
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ==================== Core Models ====================
+
+model User {
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  passwordHash         String
+  firstName            String?
+  lastName             String?
+  avatar               String?
+  isActive             Boolean   @default(true)
+  twoFactorEnabled     Boolean   @default(false)
+  twoFactorSecret      String?
+  twoFactorBackupCodes String[]  @default([])
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+  phone                String?
+  bio                  String?
+  location             String?
+  country              String?
+  city                 String?
+  state                String?
+  postalCode           String?
+  taxId                String?
+  fullAddress          String?
+  facebookUrl          String?
+  xUrl                 String?
+  linkedinUrl          String?
+  instagramUrl         String?
+
+  userRoles     UserRole[]
+  refreshTokens RefreshToken[]
+  auditLogs     AuditLog[]
+  sessions      Session[]
+  storeUsers    StoreUser[]
+
+  @@index([email])
+  @@index([deletedAt])
+}
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+// ==================== Tenant Hierarchy ====================
+
+model Agency {
+  id          String    @id @default(cuid())
+  name        String
+  slug        String    @unique
+  description String?
+  logo        String?
+  website     String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  clients            Client[]
+  stores             Store[]
+  users              UserRole[]
+  products           Product[]
+  orders             Order[]
+  categories         Category[]
+  inventories        Inventory[]
+  auditLogs          AuditLog[]
+  integrations       Integration[]
+  wmsPrinterSettings WmsPrinterSettings[]
+  wmsShippingLabels  WmsShippingLabel[]
+  wmsPrintJobs       WmsPrintJob[]
+  wmsStockMovements  WmsStockMovement[]
+  wmsPackagingTasks  WmsPackagingTask[]
+  warehouses         Warehouse[]
+
+  @@index([deletedAt])
+}
+
+model Client {
+  id           String    @id @default(cuid())
+  agencyId     String
+  agency       Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name         String
+  legalName    String?
+  taxNumber    String?
+  taxOffice    String?
+  email        String    @default("")
+  phone        String?
+  contactEmail String
+  contactPhone String?
+  address      String?
+  city         String?
+  country      String?
+  isActive     Boolean   @default(true)
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  stores       Store[]
+  users        UserRole[]
+  orders       Order[]
+  auditLogs    AuditLog[]
+  products     Product[]
+  categories   Category[]
+  integrations Integration[]
+
+  @@index([agencyId])
+  @@index([deletedAt])
+}
+
+model Store {
+  id        String    @id @default(cuid())
+  agencyId  String
+  agency    Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId  String?
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  name      String
+  slug      String    @default("")
+  domain    String?
+  status    String    @default("active") // draft, active, suspended
+  currency  String    @default("USD")
+  locale    String    @default("en-US")
+  timezone  String    @default("UTC")
+  type      String    @default("retail") // retail, warehouse, pop
+  address   String?
+  city      String?
+  country   String?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  users        UserRole[]
+  storeUsers   StoreUser[]
+  products     Product[]
+  categories   Category[]
+  inventories  Inventory[]
+  orders       Order[]
+  auditLogs    AuditLog[]
+  integrations Integration[]
+
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([deletedAt])
+}
+
+// ==================== RBAC ====================
+
+model Role {
+  id          String       @id @default(cuid())
+  name        String       @unique
+  description String?
+  permissions Permission[]
+
+  userRoles UserRole[]
+  StoreUser StoreUser[]
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  name        String  @unique // e.g., "product:create", "order:read"
+  description String?
+  roles       Role[]
+}
+
+model UserRole {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agencyId  String
+  agency    Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId  String?
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  storeId   String?
+  store     Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  roleId    String
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  deletedAt DateTime?
+
+  @@unique([userId, agencyId, roleId])
+  @@index([userId])
+  @@index([agencyId])
+  @@index([roleId])
+  @@index([deletedAt])
+}
+
+// ==================== Commerce ====================
+
+model Category {
+  id           String     @id @default(cuid())
+  agencyId     String
+  agency       Agency     @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId     String?
+  client       Client?    @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  storeId      String?
+  store        Store?     @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  parentId     String?
+  parent       Category?  @relation("CategoryParent", fields: [parentId], references: [id])
+  children     Category[] @relation("CategoryParent")
+  name         String
+  slug         String
+  description  String?
+  icon         String?
+  status       String     @default("active")
+  isActive     Boolean    @default(true)
+  displayOrder Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
+
+  products Product[]
+
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([storeId])
+  @@index([slug])
+  @@index([parentId])
+  @@index([deletedAt])
+}
+
+model Product {
+  id            String    @id @default(cuid())
+  agencyId      String
+  agency        Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  storeId       String
+  store         Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  sku           String
+  name          String
+  description   String?
+  price         Decimal   @default(0) @db.Decimal(10, 2)
+  basePrice     Decimal   @db.Decimal(10, 2)
+  costPrice     Decimal?  @db.Decimal(10, 2)
+  barcode       String?
+  currency      String    @default("USD")
+  stockQuantity Int       @default(0)
+  status        String    @default("active")
+  weight        Decimal?  @db.Decimal(8, 3)
+  width         Decimal?  @db.Decimal(8, 2)
+  height        Decimal?  @db.Decimal(8, 2)
+  depth         Decimal?  @db.Decimal(8, 2)
+  image         String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  inventories       Inventory[]
+  orderItems        OrderItem[]
+  auditLogs         AuditLog[]
+  wmsStockMovements WmsStockMovement[]
+  stockMovements    StockMovement[]
+
+  @@unique([storeId, sku])
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([storeId])
+  @@index([categoryId])
+  @@index([deletedAt])
+}
+
+model Inventory {
+  id           String   @id @default(cuid())
+  agencyId     String
+  agency       Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  availableQty Int      @default(0)
+  reservedQty  Int      @default(0)
+  defectiveQty Int      @default(0)
+  reorderLevel Int      @default(10)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  adjustments InventoryAdjustment[]
+  auditLogs   AuditLog[]
+
+  @@unique([storeId, productId])
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([productId])
+}
+
+model InventoryAdjustment {
+  id          String    @id @default(cuid())
+  inventoryId String
+  inventory   Inventory @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
+  type        String // recount, damage, adjustment
+  quantity    Int
+  reason      String?
+  performedBy String
+  createdAt   DateTime  @default(now())
+
+  @@index([inventoryId])
+}
+
+model Order {
+  id                String    @id @default(cuid())
+  agencyId          String
+  agency            Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId          String?
+  client            Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  storeId           String
+  store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  channelId         String?
+  orderNumber       String    @unique
+  customerId        String?
+  customerName      String
+  customerEmail     String?
+  customerPhone     String?
+  shippingAddress   String?
+  status            String    @default("pending") // pending, processing, shipped, delivered, cancelled
+  paymentStatus     String    @default("pending") // pending, paid, partially_refunded, refunded, failed
+  fulfillmentStatus String    @default("unfulfilled") // unfulfilled, partially_fulfilled, fulfilled, returned
+  source            String    @default("manual") // manual, shopify, trendyol, etc.
+  totalAmount       Decimal   @db.Decimal(12, 2)
+  currency          String    @default("USD")
+  idempotencyKey    String?
+  notes             String?
+  createdBy         String
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  items             OrderItem[]
+  timeline          OrderTimeline[]
+  auditLogs         AuditLog[]
+  wmsPackagingTasks WmsPackagingTask[]
+
+  @@unique([storeId, idempotencyKey])
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model OrderItem {
+  id         String  @id @default(cuid())
+  orderId    String
+  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Restrict)
+  sku        String
+  name       String
+  quantity   Int
+  unitPrice  Decimal @db.Decimal(10, 2)
+  totalPrice Decimal @db.Decimal(12, 2)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model OrderTimeline {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  eventType String
+  oldValue  String?
+  newValue  String?
+  userId    String?
+  createdAt DateTime @default(now())
+
+  @@index([orderId])
+}
+
+// ==================== Audit & Integration ====================
+
+model AuditLog {
+  id                String   @id @default(cuid())
+  tenantId          String?  @map("agencyId") // Mapping to maintain relation with Agency table without changing DB column name if it exists, or just use agencyId as tenantId
+  agency            Agency?  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userId            String?
+  User              User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userEmail         String?
+  userName          String?
+  action            String // "auth.login", "product.update", etc.
+  module            String? // "commerce", "auth", "warehouse", etc.
+  entityType        String // "product", "order", "user", etc.
+  entityId          String
+  entityDisplayName String?
+  description       String?  @db.Text
+  oldValue          Json?
+  newValue          Json?
+  metadata          Json?
+  ipAddress         String?
+  userAgent         String?
+  requestId         String?
+  severity          String   @default("info") // info, warning, error, critical
+  createdAt         DateTime @default(now())
+
+  // Additional backwards-compatible relations for schema integrity
+  storeId     String?
+  store       Store?     @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  Client      Client?    @relation(fields: [clientId], references: [id])
+  clientId    String?
+  Product     Product?   @relation(fields: [productId], references: [id])
+  productId   String?
+  Inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  inventoryId String?
+  Order       Order?     @relation(fields: [orderId], references: [id])
+  orderId     String?
+
+  @@index([tenantId])
+  @@index([entityType])
+  @@index([entityId])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model IntegrationLog {
+  id               String    @id @default(cuid())
+  tenantId         String
+  integrationType  String // marketplace, accounting, shipping, warehouse, payment
+  provider         String // trendyol, logo, yurtici, etc.
+  operation        String // order.import, stock.sync, etc.
+  entityType       String?
+  entityId         String?
+  sourceSystem     String?
+  targetSystem     String?
+  sourceReference  String?
+  targetReference  String?
+  status           String    @default("pending") // pending, processing, success, failed, retrying, resolved, ignored
+  severity         String    @default("error") // info, warning, error, critical
+  requestPayload   Json?
+  responsePayload  Json?
+  errorCode        String?
+  errorMessage     String?   @db.Text
+  errorStack       String?   @db.Text
+  errorStep        String?
+  suggestedAction  String?   @db.Text
+  retryCount       Int       @default(0)
+  maxRetryCount    Int       @default(3)
+  nextRetryAt      DateTime?
+  resolvedAt       DateTime?
+  resolvedByUserId String?
+  resolutionNote   String?   @db.Text
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([provider])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Integration {
+  id                   String    @id @default(cuid())
+  agencyId             String
+  agency               Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId             String?
+  client               Client?   @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  storeId              String?
+  store                Store?    @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  provider             String
+  providerType         String
+  name                 String
+  credentialsEncrypted String
+  status               String    @default("active")
+  lastSyncAt           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
+
+  queue   IntegrationQueue[]
+  apiLogs ApiLog[]
+
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([storeId])
+  @@index([providerType])
+  @@index([deletedAt])
+}
+
+model IntegrationQueue {
+  id          String      @id @default(cuid())
+  agencyId    String
+  configId    String
+  config      Integration @relation(fields: [configId], references: [id], onDelete: Cascade)
+  eventType   String
+  status      String      @default("pending")
+  payload     String
+  error       String?
+  retryCount  Int         @default(0)
+  maxRetries  Int         @default(3)
+  processedAt DateTime?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([configId])
+  @@index([status])
+  @@index([eventType])
+}
+
+model ApiLog {
+  id            String       @id @default(cuid())
+  agencyId      String
+  storeId       String?
+  integrationId String?
+  integration   Integration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  endpoint      String
+  method        String
+  requestBody   String?      @db.Text
+  responseBody  String?      @db.Text
+  statusCode    Int
+  durationMs    Int
+  errorMessage  String?
+  createdAt     DateTime     @default(now())
+
+  @@index([agencyId])
+  @@index([integrationId])
+}
+
+model WebhookSubscription {
+  id        String   @id @default(cuid())
+  agencyId  String
+  eventType String // "order.created", "order.updated"
+  url       String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  webhookEvents WebhookEvent[]
+
+  @@index([agencyId])
+  @@index([eventType])
+}
+
+model WebhookEvent {
+  id             String              @id @default(cuid())
+  subscriptionId String
+  subscription   WebhookSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  payload        String // JSON string
+  status         String              @default("pending") // pending, sent, failed
+  retryCount     Int                 @default(0)
+  lastError      String?
+  sentAt         DateTime?
+  createdAt      DateTime            @default(now())
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model StoreUser {
+  id        String    @id @default(cuid())
+  storeId   String
+  store     Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roleId    String
+  role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@unique([userId, storeId])
+  @@index([userId])
+  @@index([storeId])
+  @@index([deletedAt])
+}
+
+model Session {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String   @unique
+  deviceInfo String?
+  ipAddress  String?
+  isActive   Boolean  @default(true)
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model WmsPrinterSettings {
+  id              String    @id @default(cuid())
+  agencyId        String
+  agency          Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  printerName     String
+  printerType     String
+  driverName      String?
+  driverVersion   String?
+  driverInstalled Boolean   @default(false)
+  connectionType  String    @default("USB")
+  labelFormat     String    @default("PDF")
+  labelSize       String    @default("100x150")
+  lastTestPrintAt DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([agencyId])
+}
+
+model WmsShippingLabel {
+  id             String   @id @default(cuid())
+  agencyId       String
+  agency         Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  orderId        String?
+  shipmentId     String?
+  carrierName    String
+  trackingNumber String
+  barcode        String
+  labelFormat    String   @default("PDF")
+  labelUrl       String?
+  previewUrl     String?
+  status         String   @default("pending") // pending, printing, printed, failed
+  createdAt      DateTime @default(now())
+
+  @@index([agencyId])
+}
+
+model WmsPrintJob {
+  id           String    @id @default(cuid())
+  agencyId     String
+  agency       Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  labelId      String
+  printerName  String
+  status       String    @default("pending") // pending, printing, printed, failed
+  errorMessage String?
+  printedAt    DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([agencyId])
+}
+
+model WmsStockMovement {
+  id            String   @id @default(cuid())
+  agencyId      String
+  agency        Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type          String // INBOUND, OUTBOUND, TRANSFER, ADJUSTMENT
+  quantity      Int
+  fromWarehouse String?
+  toWarehouse   String?
+  reason        String?
+  createdAt     DateTime @default(now())
+
+  @@index([agencyId])
+  @@index([productId])
+}
+
+model WmsPackagingTask {
+  id          String    @id @default(cuid())
+  agencyId    String
+  agency      Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  orderId     String
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  status      String    @default("pending") // pending, packing, packed, shipped
+  packerName  String?
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([agencyId])
+  @@index([orderId])
+}
+
+// ==================== Analytics Summary Tables ====================
+
+model AnalyticsDailySales {
+  id          String   @id @default(cuid())
+  agencyId    String
+  date        DateTime @db.Date
+  grossSales  Decimal  @default(0) @db.Decimal(12, 2)
+  netSales    Decimal  @default(0) @db.Decimal(12, 2)
+  returns     Decimal  @default(0) @db.Decimal(12, 2)
+  cancellations Decimal @default(0) @db.Decimal(12, 2)
+  grossProfit Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([agencyId, date])
+  @@index([agencyId])
+  @@index([date])
+}
+
+model AnalyticsDailyOrders {
+  id              String   @id @default(cuid())
+  agencyId        String
+  date            DateTime @db.Date
+  totalOrders     Int      @default(0)
+  shippedOrders   Int      @default(0)
+  cancelledOrders Int      @default(0)
+  returnedOrders  Int      @default(0)
+  avgOrderValue   Decimal  @default(0) @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([agencyId, date])
+  @@index([agencyId])
+  @@index([date])
+}
+
+model AnalyticsProductPerformance {
+  id              String   @id @default(cuid())
+  agencyId        String
+  date            DateTime @db.Date
+  productId       String
+  sku             String
+  quantitySold    Int      @default(0)
+  grossRevenue    Decimal  @default(0) @db.Decimal(12, 2)
+  returnsCount    Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([agencyId, date, productId])
+  @@index([agencyId])
+  @@index([date])
+  @@index([productId])
+}
+
+model AnalyticsMarketplacePerformance {
+  id               String   @id @default(cuid())
+  agencyId         String
+  date             DateTime @db.Date
+  provider         String
+  grossRevenue     Decimal  @default(0) @db.Decimal(12, 2)
+  commissionAmount Decimal  @default(0) @db.Decimal(12, 2)
+  netProfit        Decimal  @default(0) @db.Decimal(12, 2)
+  integrationErrors Int     @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([agencyId, date, provider])
+  @@index([agencyId])
+  @@index([date])
+  @@index([provider])
+}
+
+// ==================== System Settings & Administration ====================
+
+model SystemSettings {
+  id                    String   @id @default(cuid())
+  systemName            String   @default("KroptOS")
+  defaultLanguage       String   @default("en")
+  defaultCurrency       String   @default("USD")
+  defaultTimezone       String   @default("UTC")
+  dateFormat            String   @default("YYYY-MM-DD")
+  invoiceNumberFormat   String   @default("INV-{YYYY}-{00000}")
+  orderNumberFormat     String   @default("ORD-{YYYY}-{00000}")
+  logoUrl               String?
+  themePreference       String   @default("light")
+  maintenanceModeActive Boolean  @default(false)
+  updatedAt             DateTime @updatedAt
+}
+
+model TenantSettings {
+  id                    String   @id @default(cuid())
+  agencyId              String   @unique
+  companyName           String
+  taxNumber             String?
+  taxOffice             String?
+  address               String?
+  phone                 String?
+  email                 String?
+  website               String?
+  logoUrl               String?
+  defaultWarehouseId    String?
+  defaultShippingCarrier String?
+  defaultAccountingId   String?
+  defaultCurrency       String   @default("USD")
+  defaultInvoiceType    String   @default("e-archive")
+  settings              Json?
+  updatedAt             DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model IntegrationSettings {
+  id               String   @id @default(cuid())
+  agencyId         String
+  provider         String   // 'trendyol', 'logo', 'yurtici', etc.
+  status           String   @default("disconnected") // connected, disconnected, warning, failed
+  config           Json     // Token, API Key, Secret vb. şifreli/hash'li veya JSON formatında
+  isActive         Boolean  @default(false)
+  lastSyncAt       DateTime?
+  errorCount       Int      @default(0)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([agencyId, provider])
+  @@index([agencyId])
+}
+
+model NotificationSettings {
+  id            String   @id @default(cuid())
+  agencyId      String
+  userId        String?  // If null, applies to agency
+  channels      Json     // e.g. { inApp: true, email: true, sms: false, slack: false }
+  events        Json     // e.g. { newOrder: true, criticalStock: true, ... }
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([agencyId])
+  @@index([userId])
+}
+
+model SecuritySettings {
+  id                    String   @id @default(cuid())
+  agencyId              String   @unique
+  require2FA            Boolean  @default(false)
+  passwordPolicy        String   @default("standard")
+  minPasswordLength     Int      @default(8)
+  sessionTimeoutMinutes Int      @default(120)
+  ipWhitelist           String[] @default([])
+  loginAttemptLimit     Int      @default(5)
+  updatedAt             DateTime @updatedAt
+
+  @@index([agencyId])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  agencyId    String
+  userId      String
+  name        String
+  keyHash     String    // Only hash is stored
+  scopes      String[]  // ['read:orders', 'write:products', ...]
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([agencyId])
+  @@index([userId])
+}
+
+// ==================== Warehouse & Stock Allocation Settings ====================
+
+model Warehouse {
+  id                String              @id @default(cuid())
+  agencyId          String
+  agency            Agency              @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  name              String
+  code              String
+  type              String              // Main, Store, Supplier, Return, Damaged, Dropshipping, Virtual
+  address           String?
+  city              String?
+  district          String?
+  phone             String?
+  email             String?
+  responsibleUser   String?
+  isActive          Boolean             @default(true)
+  isDefault         Boolean             @default(false)
+  priority          Int                 @default(0)
+  logoWarehouseCode String?
+  erpWarehouseCode  String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  zones             WarehouseZone[]
+  locations         WarehouseLocation[]
+  stockMovements    StockMovement[]
+  stockReservations StockReservation[]
+  inventorySnapshots InventorySnapshot[]
+
+  @@unique([agencyId, code])
+  @@index([agencyId])
+}
+
+model WarehouseZone {
+  id          String              @id @default(cuid())
+  warehouseId String
+  warehouse   Warehouse           @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  name        String
+  code        String
+  type        String              // receiving, picking, packing, storage, return, damaged, outbound, quarantine
+  priority    Int                 @default(0)
+  isActive    Boolean             @default(true)
+  description String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  locations   WarehouseLocation[]
+
+  @@unique([warehouseId, code])
+  @@index([warehouseId])
+}
+
+model WarehouseLocation {
+  id            String          @id @default(cuid())
+  warehouseId   String
+  warehouse     Warehouse       @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  zoneId        String
+  zone          WarehouseZone   @relation(fields: [zoneId], references: [id], onDelete: Cascade)
+  code          String          // e.g., A-01-R03-G05
+  aisle         String?
+  shelf         String?
+  bin           String?
+  level         String?
+  barcode       String?
+  capacity      Int             @default(0)
+  isActive      Boolean         @default(true)
+  pickPriority  Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  stockMovements StockMovement[]
+
+  @@unique([warehouseId, code])
+  @@index([warehouseId])
+  @@index([zoneId])
+}
+
+model StockSourceSettings {
+  id             String    @id @default(cuid())
+  agencyId       String    @unique
+  mode           String    // manual, logo, hybrid, netsis, etc.
+  config         Json      // Connection properties, mapped fields, active state
+  status         String    @default("disconnected") // connected, disconnected, warning, failed
+  lastSyncAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([agencyId])
+}
+
+model StockAllocationRule {
+  id                 String    @id @default(cuid())
+  agencyId           String
+  name               String
+  priority           Int       @default(0)
+  isActive           Boolean   @default(true)
+  warehouseId        String?
+  provider           String?   // trendyol, amazon, etc. or 'all'
+  storeId            String?
+  category           String?
+  brand              String?
+  productSku         String?
+  minSafetyStock     Int       @default(0)
+  maxAllocatedStock  Int       @default(0)
+  percentAllocation  Int       @default(100) // percent allocation (0-100)
+  fixedAllocation    Int       @default(0)   // fixed allocation
+  reserveRatio       Int       @default(0)
+  deactivateOnCritical Boolean @default(false)
+  autoCloseIfZero    Boolean   @default(true)
+  allocationType     String    // ALL_STOCK, FIXED, PERCENT, WAREHOUSE_BASED, MARKETPLACE_SPLIT
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([agencyId])
+}
+
+model MarketplaceStockRule {
+  id                 String    @id @default(cuid())
+  agencyId           String
+  provider           String    // trendyol, amazon, hepsiburada, etc.
+  syncActive         Boolean   @default(true)
+  maxAllocatedStock  Int       @default(0)
+  minStockThreshold  Int       @default(0)
+  safetyStock        Int       @default(0)
+  syncPeriodMinutes  Int       @default(15)
+  deactivateIfZero   Boolean   @default(true)
+  retryFailed        Boolean   @default(true)
+  lastSyncAt         DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@unique([agencyId, provider])
+  @@index([agencyId])
+}
+
+model ErpStockSettings {
+  id                  String    @id @default(cuid())
+  agencyId            String    @unique
+  isActive            Boolean   @default(false)
+  connectionType      String    // REST, UnityObjects, SQL
+  companyNo           String?
+  periodNo            String?
+  erpDepotCodes       String[]  @default([])
+  erpStockCardField   String    @default("CODE")
+  erpBarcodeField     String    @default("BARCODE")
+  variantTracking     Boolean   @default(false)
+  lotTracking         Boolean   @default(false)
+  syncPeriodMinutes   Int       @default(30)
+  lastSyncAt          DateTime?
+  lastErrorMessage    String?
+  syncDirection       String    @default("READ") // READ, WRITE, BIDIRECTIONAL
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([agencyId])
+}
+
+model LogoWarehouseMapping {
+  id           String    @id @default(cuid())
+  agencyId     String
+  warehouseId  String
+  erpDepotCode String
+  erpDepotName String?
+  priority     Int       @default(0)
+  isActive     Boolean   @default(true)
+  lastSyncAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([agencyId, warehouseId, erpDepotCode])
+  @@index([agencyId])
+}
+
+model LogoProductMapping {
+  id           String   @id @default(cuid())
+  agencyId     String
+  productSku   String
+  barcode      String?
+  productName  String?
+  erpStockCode String
+  erpStockName String?
+  erpUnit      String?
+  variantCode  String?
+  status       String   @default("matched") // matched, unmatched
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([agencyId, productSku])
+  @@index([agencyId])
+}
+
+model StockMovement {
+  id            String             @id @default(cuid())
+  agencyId      String
+  productId     String
+  product       Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku           String
+  warehouseId   String
+  warehouse     Warehouse          @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  locationId    String?
+  location      WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  type          String             // INBOUND, OUTBOUND, TRANSFER, ADJUSTMENT
+  previousQty   Int
+  newQty        Int
+  difference    Int
+  source        String             // MANUEL, LOGO, ORDER, INTEGRATION
+  user          String?
+  reference     String?            // orderId, transferId, syncSessionId etc.
+  description   String?
+  createdAt     DateTime           @default(now())
+
+  @@index([agencyId])
+  @@index([productId])
+  @@index([warehouseId])
+}
+
+model StockReservation {
+  id          String    @id @default(cuid())
+  agencyId    String
+  productId   String
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity    Int
+  orderId     String?
+  expiresAt   DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([agencyId])
+  @@index([productId])
+  @@index([warehouseId])
+}
+
+model InventorySnapshot {
+  id           String    @id @default(cuid())
+  agencyId     String
+  date         DateTime  @db.Date
+  productId    String
+  warehouseId  String
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity     Int       @default(0)
+  reservedQty  Int       @default(0)
+  availableQty Int       @default(0)
+  createdAt    DateTime  @default(now())
+
+  @@unique([agencyId, date, productId, warehouseId])
+  @@index([agencyId])
+}
+
+
+

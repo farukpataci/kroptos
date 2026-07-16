@@ -1,0 +1,31 @@
+{
+  "name": "eticaret-system",
+  "version": "1.0.0",
+  "description": "E-commerce system monorepo",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "db:generate": "corepack pnpm --filter eticaret-system-database db:generate",
+    "db:migrate": "corepack pnpm --filter eticaret-system-database db:migrate",
+    "db:push": "corepack pnpm --filter eticaret-system-database db:push",
+    "db:studio": "corepack pnpm --filter eticaret-system-database db:studio",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "keywords": [
+    "ecommerce",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@9.0.0",
+  "devDependencies": {
+    "turbo": "^2.9.18",
+    "typescript": "^5.0.0"
+  }
+}

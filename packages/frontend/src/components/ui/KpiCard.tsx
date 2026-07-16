@@ -1,0 +1,81 @@
+'use client';
+
+import { ReactNode } from 'react';
+
+interface KpiCardProps {
+  title: string;
+  value: string | number;
+  trend?: string;
+  trendDirection?: 'up' | 'down' | 'neutral';
+  icon: ReactNode;
+  color?: 'accent' | 'success' | 'warning' | 'danger' | 'info';
+}
+
+const colorMap = {
+  accent: {
+    iconBg: 'bg-kp-accent-muted',
+    iconText: 'text-kp-accent',
+  },
+  success: {
+    iconBg: 'bg-kp-success-muted',
+    iconText: 'text-kp-success',
+  },
+  warning: {
+    iconBg: 'bg-kp-warning-muted',
+    iconText: 'text-kp-warning',
+  },
+  danger: {
+    iconBg: 'bg-kp-danger-muted',
+    iconText: 'text-kp-danger',
+  },
+  info: {
+    iconBg: 'bg-kp-info-muted',
+    iconText: 'text-kp-info',
+  },
+};
+
+export default function KpiCard({
+  title,
+  value,
+  trend,
+  trendDirection = 'neutral',
+  icon,
+  color = 'accent',
+}: KpiCardProps) {
+  const colors = colorMap[color];
+
+  return (
+    <div className="card card-interactive group cursor-default animate-fade-in-up">
+      <div className="flex items-start justify-between">
+        <div className="space-y-3">
+          <p className="text-[12px] font-medium uppercase tracking-wider text-kp-text-tertiary">
+            {title}
+          </p>
+          <p className="text-[28px] font-bold leading-none tracking-tight text-kp-text-primary">
+            {value}
+          </p>
+          {trend && (
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`text-[12px] font-semibold ${
+                  trendDirection === 'up'
+                    ? 'text-kp-success'
+                    : trendDirection === 'down'
+                    ? 'text-kp-danger'
+                    : 'text-kp-text-tertiary'
+                }`}
+              >
+                {trendDirection === 'up' ? '↑' : trendDirection === 'down' ? '↓' : '→'} {trend}
+              </span>
+              <span className="text-[11px] text-kp-text-tertiary">vs yesterday</span>
+            </div>
+          )}
+        </div>
+
+        <div className={`flex h-10 w-10 items-center justify-center rounded-kp-md ${colors.iconBg} transition-transform group-hover:scale-110`}>
+          <div className={`h-5 w-5 ${colors.iconText}`}>{icon}</div>
+        </div>
+      </div>
+    </div>
+  );
+}

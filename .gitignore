@@ -1,0 +1,50 @@
+# Ignore versioning
+node_modules/
+dist/
+build/
+.env.local
+.env.*.local
+
+# Dependencies
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Build outputs
+.next/
+out/
+
+# Database
+*.db
+*.sqlite
+
+# Environment
+.env
+.env.*.local
+
+# IDE
+vscode/
+.prettierignore
+.eslintignore
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary
+tmp/
+temp/
+*.tmp

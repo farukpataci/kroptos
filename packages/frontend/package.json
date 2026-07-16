@@ -1,0 +1,38 @@
+{
+  "name": "@kroptos/frontend",
+  "version": "0.1.0",
+  "description": "KroptOS Frontend - Next.js Admin Dashboard",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "jest",
+    "test:watch": "jest --watch"
+  },
+  "dependencies": {
+    "@heroicons/react": "^2.0.18",
+    "clsx": "^2.0.0",
+    "date-fns": "^3.0.0",
+    "next": "^14.1.0",
+    "next-intl": "^4.13.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "recharts": "^3.9.0",
+    "swr": "^2.2.4",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3",
+    "zustand": "^4.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.6",
+    "@types/react": "^18.2.45",
+    "@types/react-dom": "^18.2.18",
+    "autoprefixer": "^10.4.16",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.1.0",
+    "postcss": "^8.4.32",
+    "prettier": "^3.1.1"
+  }
+}
