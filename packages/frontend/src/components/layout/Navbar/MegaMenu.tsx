@@ -250,16 +250,30 @@ export function SolutionsMenu() {
               {col.title}
             </h3>
             <ul className="space-y-3">
-              {col.items.map((item, i) => (
-                <li key={i}>
-                  <Link
-                    href={`#solutions-${idx}-${i}`}
-                    className="text-sm text-kp-text-secondary hover:text-kp-accent hover:underline transition-all block py-0.5"
-                  >
-                    {item}
-                  </Link>
-                </li>
-              ))}
+              {col.items.map((item, i) => {
+                let href = `#solutions-${idx}-${i}`;
+                if (idx === 2) {
+                  const slugs = [
+                    'fashion-and-apparel',
+                    'cosmetics-and-personal-care',
+                    'electronics',
+                    'home-and-garden',
+                    'automotive-spare-parts',
+                    'food-and-fmcg'
+                  ];
+                  href = `/${locale}/industry/${slugs[i]}`;
+                }
+                return (
+                  <li key={i}>
+                    <Link
+                      href={href}
+                      className="text-sm text-kp-text-secondary hover:text-kp-accent hover:underline transition-all block py-0.5"
+                    >
+                      {item}
+                    </Link>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         ))}
