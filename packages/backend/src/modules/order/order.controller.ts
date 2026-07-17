@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body, Req, UseGuards, Headers, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Req, UseGuards, Headers, HttpCode, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -6,23 +6,28 @@ import { OrderService } from './order.service';
 import { CreateOrderDto, UpdateOrderStatusDto, OrderResponseDto } from './dto/order.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { PrismaService } from '../../common/prisma/prisma.service';
+import { TenantGuard } from '../../common/guards/tenant.guard';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
 @ApiHeader({ name: 'x-agency-id', required: true, description: 'Active Agency ID context' })
 @ApiHeader({ name: 'x-client-id', required: false, description: 'Active Client ID context' })
 @ApiHeader({ name: 'x-store-id', required: true, description: 'Active Store ID context' })
-@UseGuards(AuthGuard('jwt'), PermissionGuard)
-@Controller('/api/orders')
+@UseGuards(AuthGuard('jwt'), TenantGuard, PermissionGuard)
+@Controller()
 export class OrderController {
-  constructor(private orderService: OrderService) {}
+  constructor(
+    private orderService: OrderService,
+    private prisma: PrismaService,
+  ) {}
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
     return user?.role === 'super_admin' || user?.role === 'Super Admin';
   }
 
-  @Get()
+  @Get('/api/orders')
   @HttpCode(200)
   @RequirePermission('orders.read')
   @ApiOperation({ summary: 'List all active orders in the active tenant context' })
@@ -41,7 +46,7 @@ export class OrderController {
     );
   }
 
-  @Get(':id')
+  @Get('/api/orders/:id')
   @HttpCode(200)
   @RequirePermission('orders.read')
   @ApiOperation({ summary: 'Get active order details' })
@@ -61,7 +66,43 @@ export class OrderController {
     );
   }
 
-  @Post()
+  @Get('/api/tenants/:tenantPublicId/orders')
+  @HttpCode(200)
+  @RequirePermission('orders.read')
+  @ApiOperation({ summary: 'List all orders for a specific tenant public ID' })
+  @ApiResponse({ status: 200, type: [OrderResponseDto] })
+  async listByTenant(@Param('tenantPublicId') tenantPublicId: string, @Req() req: Request) {
+    const isSuperAdmin = this.checkSuperAdmin(req);
+    const agency = await this.prisma.agency.findUnique({
+      where: { publicId: tenantPublicId }
+    });
+    if (!agency) {
+      throw new NotFoundException('Tenant not found');
+    }
+
+    if (!isSuperAdmin) {
+      const user = (req as any).user;
+      const userRole = await this.prisma.userRole.findFirst({
+        where: {
+          userId: user.userId,
+          agencyId: agency.id,
+          deletedAt: null,
+        }
+      });
+      if (!userRole) {
+        throw new ForbiddenException('Access denied to this tenant');
+      }
+    }
+
+    return this.orderService.list(
+      agency.id,
+      undefined,
+      undefined,
+      isSuperAdmin,
+    );
+  }
+
+  @Post('/api/orders')
   @HttpCode(201)
   @RequirePermission('orders.update')
   @ApiHeader({ name: 'x-idempotency-key', required: false, description: 'Optional unique idempotency key header context' })
@@ -91,7 +132,7 @@ export class OrderController {
     );
   }
 
-  @Patch(':id/status')
+  @Patch('/api/orders/:id/status')
   @HttpCode(200)
   @RequirePermission('orders.update')
   @ApiOperation({ summary: 'Update order lifecycle workflow state values' })
@@ -120,7 +161,7 @@ export class OrderController {
     );
   }
 
-  @Post(':id/cancel')
+  @Post('/api/orders/:id/cancel')
   @HttpCode(200)
   @RequirePermission('orders.update')
   @ApiOperation({ summary: 'Cancel order processing' })
@@ -144,7 +185,7 @@ export class OrderController {
     );
   }
 
-  @Post(':id/refund')
+  @Post('/api/orders/:id/refund')
   @HttpCode(200)
   @RequirePermission('orders.update')
   @ApiOperation({ summary: 'Refund order payments' })

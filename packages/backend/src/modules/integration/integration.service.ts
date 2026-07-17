@@ -5,6 +5,7 @@ import { encrypt, decrypt } from '../../common/utils/encryption.util';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
+import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
 export class IntegrationService {
@@ -30,10 +31,10 @@ export class IntegrationService {
           action,
           entityType: 'Integration',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
@@ -82,7 +83,13 @@ export class IntegrationService {
     isSuperAdmin?: boolean,
   ) {
     const integration = await this.prisma.integration.findFirst({
-      where: { id, deletedAt: null },
+      where: {
+        OR: [
+          { id },
+          { publicId: id },
+        ],
+        deletedAt: null,
+      },
     });
 
     if (!integration) {
@@ -134,6 +141,7 @@ export class IntegrationService {
           name: dto.name,
           credentialsEncrypted,
           status: 'active',
+          publicId: generatePublicId('int', 12),
         },
       });
 
@@ -177,7 +185,7 @@ export class IntegrationService {
 
     return this.prisma.$transaction(async (tx) => {
       const updatedIntegration = await tx.integration.update({
-        where: { id },
+        where: { id: integration.id },
         data: {
           name: dto.name || undefined,
           status: dto.status || undefined,
@@ -216,7 +224,7 @@ export class IntegrationService {
     return this.prisma.$transaction(async (tx) => {
       const now = new Date();
       const deletedIntegration = await tx.integration.update({
-        where: { id },
+        where: { id: integration.id },
         data: {
           deletedAt: now,
           status: 'inactive',
@@ -327,5 +335,158 @@ export class IntegrationService {
       message: 'Senkronizasyon görevleri arka plan işleme kuyruğuna başarıyla eklendi',
       jobs: [productsJob.id, ordersJob.id],
     };
+  }
+
+  // ==================== Category & Attributes Mapping ====================
+
+  async getTrendyolCategories(
+    integrationId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+  ) {
+    const integration = await this.get(
+      integrationId,
+      activeAgencyId,
+      activeClientId,
+      activeStoreId,
+      isSuperAdmin,
+    );
+
+    const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
+    this.credentialService.validate(integration.provider, credentials);
+    const connector = this.connectorFactory.create(integration.provider, credentials);
+
+    return connector.getCategories();
+  }
+
+  async getTrendyolCategoryAttributes(
+    integrationId: string,
+    categoryId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+  ) {
+    const integration = await this.get(
+      integrationId,
+      activeAgencyId,
+      activeClientId,
+      activeStoreId,
+      isSuperAdmin,
+    );
+
+    const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
+    this.credentialService.validate(integration.provider, credentials);
+    const connector = this.connectorFactory.create(integration.provider, credentials);
+
+    return connector.getCategoryAttributes(categoryId);
+  }
+
+  async getProductMappings(
+    productId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+  ) {
+    return this.prisma.productMapping.findMany({
+      where: {
+        productId,
+      },
+      include: {
+        integration: true,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async upsertProductMapping(
+    productId: string,
+    integrationId: string,
+    marketplaceCategoryId: string,
+    marketplaceCategoryName: string,
+    attributesMapping: any,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+  ) {
+    // Validate integration access
+    await this.get(
+      integrationId,
+      activeAgencyId,
+      activeClientId,
+      activeStoreId,
+      isSuperAdmin,
+    );
+
+    // Verify local product exists
+    const product = await this.prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new NotFoundException(`Product with ID '${productId}' not found`);
+    }
+
+    return this.prisma.productMapping.upsert({
+      where: {
+        productId_integrationId: {
+          productId,
+          integrationId,
+        },
+      },
+      update: {
+        marketplaceCategoryId,
+        marketplaceCategoryName,
+        attributesMapping,
+        status: 'draft',
+      },
+      create: {
+        productId,
+        integrationId,
+        marketplaceCategoryId,
+        marketplaceCategoryName,
+        attributesMapping,
+        status: 'draft',
+      },
+      include: {
+        integration: true,
+      },
+    });
+  }
+
+  async deleteProductMapping(
+    productId: string,
+    mappingId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+  ) {
+    const mapping = await this.prisma.productMapping.findUnique({
+      where: { id: mappingId },
+    });
+
+    if (!mapping || mapping.productId !== productId) {
+      throw new NotFoundException(`Product mapping with ID '${mappingId}' not found for this product`);
+    }
+
+    // Validate integration access
+    await this.get(
+      mapping.integrationId,
+      activeAgencyId,
+      activeClientId,
+      activeStoreId,
+      isSuperAdmin,
+    );
+
+    return this.prisma.productMapping.delete({
+      where: { id: mappingId },
+    });
   }
 }

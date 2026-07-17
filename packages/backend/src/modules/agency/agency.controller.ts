@@ -10,7 +10,7 @@ import { RequirePermission } from '../../common/decorators/require-permission.de
 @ApiTags('Agencies')
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'), RbacGuard)
-@Controller('/api/agencies')
+@Controller()
 export class AgencyController {
   constructor(private agencyService: AgencyService) {}
 
@@ -19,7 +19,7 @@ export class AgencyController {
     return user?.role === 'super_admin' || user?.role === 'Super Admin';
   }
 
-  @Get()
+  @Get('/api/agencies')
   @HttpCode(200)
   @ApiOperation({ summary: 'List all active agencies accessible to current user context' })
   @ApiResponse({ status: 200, type: [AgencyResponseDto] })
@@ -29,7 +29,7 @@ export class AgencyController {
     return this.agencyService.list(user.userId, isSuperAdmin);
   }
 
-  @Get(':id')
+  @Get('/api/agencies/:id')
   @HttpCode(200)
   @ApiOperation({ summary: 'Get active agency details' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
@@ -39,7 +39,17 @@ export class AgencyController {
     return this.agencyService.get(id, user.userId, isSuperAdmin);
   }
 
-  @Post()
+  @Get('/api/tenants/:tenantPublicId')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Get active agency details by public tenant ID' })
+  @ApiResponse({ status: 200, type: AgencyResponseDto })
+  async getByTenantPublicId(@Param('tenantPublicId') tenantPublicId: string, @Req() req: Request) {
+    const user = req.user as any;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+    return this.agencyService.get(tenantPublicId, user.userId, isSuperAdmin);
+  }
+
+  @Post('/api/agencies')
   @HttpCode(201)
   @RequirePermission('agency:create')
   @ApiOperation({ summary: 'Create new agency and assign creator as Agency Owner' })
@@ -50,7 +60,7 @@ export class AgencyController {
     return this.agencyService.create(dto, user.userId, ipAddress);
   }
 
-  @Patch(':id')
+  @Patch('/api/agencies/:id')
   @HttpCode(200)
   @RequirePermission('agency:write')
   @ApiOperation({ summary: 'Update agency details' })
@@ -66,7 +76,7 @@ export class AgencyController {
     return this.agencyService.update(id, dto, user.userId, isSuperAdmin, ipAddress);
   }
 
-  @Delete(':id')
+  @Delete('/api/agencies/:id')
   @HttpCode(204)
   @RequirePermission('agency:write')
   @ApiOperation({ summary: 'Soft delete agency and its nested relations' })

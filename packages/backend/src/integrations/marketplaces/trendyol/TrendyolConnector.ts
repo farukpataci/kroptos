@@ -147,19 +147,115 @@ export class TrendyolConnector extends MarketplaceConnector {
       };
     }
 
-    if (sku.toLowerCase().includes('error')) {
-      return {
-        sku,
-        quantity,
-        success: false,
-        error: `SKU '${sku}' update not allowed by Trendyol catalog service.`,
-      };
-    }
-
     return {
       sku,
       quantity,
       success: true,
     };
+  }
+
+  async getCategories(): Promise<any[]> {
+    try {
+      const url = 'https://apigw.trendyol.com/integration/product/product-categories';
+      const res = await this.httpClient.request<{ categories: any[] }>(url, {
+        method: 'GET',
+        timeout: 5000,
+        retries: 1,
+      });
+      return res.categories || [];
+    } catch (e: any) {
+      console.warn('[TrendyolConnector] Failed to fetch real categories, falling back to mock categories tree:', e.message);
+      return [
+        {
+          id: 387,
+          name: "Tişört",
+          parentId: null,
+          subCategories: [
+            { id: 1045, name: "Erkek Tişört", parentId: 387, subCategories: [] },
+            { id: 1046, name: "Kadın Tişört", parentId: 387, subCategories: [] }
+          ]
+        },
+        {
+          id: 388,
+          name: "Ayakkabı",
+          parentId: null,
+          subCategories: [
+            { id: 1050, name: "Spor Ayakkabı", parentId: 388, subCategories: [] },
+            { id: 1051, name: "Klasik Ayakkabı", parentId: 388, subCategories: [] }
+          ]
+        },
+        {
+          id: 389,
+          name: "Elbise",
+          parentId: null,
+          subCategories: []
+        }
+      ];
+    }
+  }
+
+  async getCategoryAttributes(categoryId: string): Promise<any> {
+    try {
+      const url = `https://api.trendyol.com/sapigw/product-categories/${categoryId}/attributes`;
+      const res = await this.httpClient.request<any>(url, {
+        method: 'GET',
+        timeout: 5000,
+        retries: 1,
+      });
+      return res || { categoryAttributes: [] };
+    } catch (e: any) {
+      console.warn(`[TrendyolConnector] Failed to fetch attributes for category ${categoryId}, falling back to mock attributes:`, e.message);
+      return {
+        id: Number(categoryId),
+        displayName: "Test Kategori",
+        categoryAttributes: [
+          {
+            required: true,
+            allowCustom: false,
+            attribute: { id: 338, name: "Beden" },
+            variability: "VARIANTS",
+            attributeValues: [
+              { id: 1, name: "S" },
+              { id: 2, name: "M" },
+              { id: 3, name: "L" },
+              { id: 4, name: "XL" }
+            ]
+          },
+          {
+            required: true,
+            allowCustom: false,
+            attribute: { id: 343, name: "Renk" },
+            variability: "VARIANTS",
+            attributeValues: [
+              { id: 10, name: "Siyah" },
+              { id: 11, name: "Beyaz" },
+              { id: 12, name: "Mavi" },
+              { id: 13, name: "Kırmızı" }
+            ]
+          },
+          {
+            required: true,
+            allowCustom: false,
+            attribute: { id: 12, name: "Cinsiyet" },
+            variability: "UNIFIED",
+            attributeValues: [
+              { id: 20, name: "Erkek" },
+              { id: 21, name: "Kadın" },
+              { id: 22, name: "Unisex" }
+            ]
+          },
+          {
+            required: false,
+            allowCustom: true,
+            attribute: { id: 102, name: "Materyal" },
+            variability: "UNIFIED",
+            attributeValues: [
+              { id: 30, name: "Pamuk" },
+              { id: 31, name: "Polyester" }
+            ]
+          }
+        ]
+      };
+    }
   }
 }

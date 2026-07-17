@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, Req, UseGuards, HttpCode } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, Req, Query, UseGuards, HttpCode } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Request } from 'express';
@@ -6,13 +6,14 @@ import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, ProductResponseDto } from './dto/product.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { TenantGuard } from '../../common/guards/tenant.guard';
 
 @ApiTags('Products')
 @ApiBearerAuth()
 @ApiHeader({ name: 'x-agency-id', required: true, description: 'Active Agency ID context' })
 @ApiHeader({ name: 'x-client-id', required: true, description: 'Active Client ID context' })
 @ApiHeader({ name: 'x-store-id', required: true, description: 'Active Store ID context' })
-@UseGuards(AuthGuard('jwt'), PermissionGuard)
+@UseGuards(AuthGuard('jwt'), TenantGuard, PermissionGuard)
 @Controller('/api/products')
 export class ProductController {
   constructor(private productService: ProductService) {}
@@ -137,5 +138,21 @@ export class ProductController {
       ipAddress,
     );
     return;
+  }
+
+  @Post('parse-url')
+  @HttpCode(200)
+  @RequirePermission('products.read')
+  @ApiOperation({ summary: 'Parse e-commerce product URL and extract information' })
+  async parseUrl(@Body() body: { url: string }) {
+    return this.productService.parseUrl(body.url);
+  }
+
+  @Get('erp-search')
+  @HttpCode(200)
+  @RequirePermission('products.read')
+  @ApiOperation({ summary: 'Search mock ERP accounting items for mapping' })
+  async searchErp(@Query('q') query?: string) {
+    return this.productService.searchErpItems(query);
   }
 }

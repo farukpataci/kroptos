@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { Prisma } from '@prisma/client';
+import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
 export class OrderService {
@@ -22,10 +23,10 @@ export class OrderService {
           action,
           entityType: 'Order',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
@@ -79,7 +80,13 @@ export class OrderService {
     isSuperAdmin?: boolean,
   ) {
     const order = await this.prisma.order.findFirst({
-      where: { id, deletedAt: null },
+      where: {
+        OR: [
+          { id },
+          { publicId: id },
+        ],
+        deletedAt: null,
+      },
       include: {
         items: true,
         timeline: { orderBy: { createdAt: 'desc' } },
@@ -207,6 +214,7 @@ export class OrderService {
           idempotencyKey: idempotencyKey || null,
           notes: dto.notes || null,
           createdBy: userId,
+          publicId: generatePublicId('ord', 12),
           items: {
             create: orderItemsToCreate.map((item) => ({
               productId: item.productId,
@@ -301,7 +309,7 @@ export class OrderService {
 
     return this.prisma.$transaction(async (tx) => {
       const updatedOrder = await tx.order.update({
-        where: { id },
+        where: { id: order.id },
         data: {
           ...updates,
           timeline: {

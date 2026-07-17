@@ -164,7 +164,7 @@ describe('OrderService', () => {
           action: 'create',
           entityType: 'Order',
           entityId: 'order-123',
-          performedBy: 'user-1',
+          userId: 'user-1',
         }),
       });
     });

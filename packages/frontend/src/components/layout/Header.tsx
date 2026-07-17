@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { apiFetch } from '@/lib/api';
 import { useTranslations } from 'next-intl';
@@ -94,6 +94,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
   const { user, logout, tenantContext, switchTenant } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
+  const pathname = usePathname();
   const t = useTranslations('navigation');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
@@ -108,28 +109,40 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
     const fetchSwitchersData = async () => {
       try {
         const agencyList = await apiFetch<{ id: string; name: string }[]>('/agencies');
-        setAgencies(agencyList);
+        setAgencies(agencyList || []);
+      } catch (err: any) {
+        console.error('Failed to load agencies context switcher list:', err.message);
+      }
 
+      try {
         const clientList = await apiFetch<{ id: string; name: string }[]>('/clients');
-        setClients(clientList);
+        setClients(clientList || []);
+      } catch (err: any) {
+        console.error('Failed to load clients context switcher list:', err.message);
+      }
 
+      try {
         const storeList = await apiFetch<{ id: string; name: string }[]>('/stores');
-        setStores(storeList);
-      } catch (err) {
-        console.error('Failed to load switcher contexts:', err);
+        setStores(storeList || []);
+      } catch (err: any) {
+        console.error('Failed to load stores context switcher list:', err.message);
       }
     };
 
     if (user) {
       fetchSwitchersData();
     }
-  }, [user]);
+  }, [user, tenantContext.agencyId, tenantContext.clientId, tenantContext.storeId, pathname]);
+
+
 
   // Filters option lists based on parent relationships if possible
   const filteredClients = clients; // Backend list handles user permissions; we show all authorized.
   const filteredStores = tenantContext.clientId
     ? stores.filter((s: any) => s.clientId === tenantContext.clientId)
     : stores;
+
+
 
   const handleAgencyChange = async (agencyId: string) => {
     // Reset child context when parent changes to avoid invalid settings

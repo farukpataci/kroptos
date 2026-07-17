@@ -14,4 +14,6 @@ export abstract class MarketplaceConnector {
   abstract getOrders(): Promise<MarketplaceOrder[]>;
   abstract getProducts(): Promise<MarketplaceProduct[]>;
   abstract updateStock(sku: string, quantity: number): Promise<StockUpdateResult>;
+  abstract getCategories(): Promise<any[]>;
+  abstract getCategoryAttributes(categoryId: string): Promise<any>;
 }

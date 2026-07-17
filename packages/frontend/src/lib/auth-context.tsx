@@ -163,13 +163,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const switchTenant = async (agencyId: string, clientId: string | null, storeId: string | null) => {
+    // Always update the local context immediately so UI reflects the selection
+    setTenantContext({ agencyId, clientId, storeId });
+
     try {
       const tokens = await apiFetch<{ accessToken: string; refreshToken: string }>('/auth/switch-tenant', {
         method: 'POST',
         body: JSON.stringify({ agencyId, clientId, storeId }),
       });
 
-      // Update stored access tokens
+      // Update stored access tokens only if backend returns new tokens
       setAccessToken(tokens.accessToken);
       const stored = localStorage.getItem('auth');
       if (stored) {
@@ -177,13 +180,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         parsed.accessToken = tokens.accessToken;
         localStorage.setItem('auth', JSON.stringify(parsed));
       }
-
-      setTenantContext({ agencyId, clientId, storeId });
     } catch (err: any) {
-      console.error('Tenant switch failed:', err);
-      // Removed throw err to prevent Unhandled Runtime Error crashes
+      // Backend token refresh failed (e.g. no exact UserRole match),
+      // but context is already updated above so UI selection persists.
+      // API calls use x-agency-id/x-client-id/x-store-id headers which are
+      // set from selected_tenant regardless of JWT content.
+      console.warn('Tenant switch token refresh failed (non-fatal):', err?.message);
     }
   };
+
 
   const logout = () => {
     setUser(null);

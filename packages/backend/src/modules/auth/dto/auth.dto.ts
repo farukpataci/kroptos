@@ -80,11 +80,20 @@ export class AgencyTenantDto {
   @ApiProperty()
   id: string;
 
+  @ApiProperty({ required: false, nullable: true })
+  publicId?: string | null;
+
   @ApiProperty()
   name: string;
 
   @ApiProperty()
   role: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  clientId?: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  storeId?: string | null;
 }
 
 export class AuthResponseDto {

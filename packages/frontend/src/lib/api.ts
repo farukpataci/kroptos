@@ -64,7 +64,11 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
   });
 
   if (response.status === 401) {
-    if (typeof window !== 'undefined' && window.location.pathname !== '/auth/login') {
+    if (
+      typeof window !== 'undefined' &&
+      window.location.pathname !== '/auth/login' &&
+      window.location.pathname !== '/'
+    ) {
       localStorage.removeItem('auth');
       window.location.href = '/auth/login';
     }
@@ -78,13 +82,8 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
       errorMessage = errorData.message || errorMessage;
     } catch (_) {}
 
-    if (response.status === 403 && typeof window !== 'undefined') {
-      if (errorMessage.includes('tenant context') || errorMessage.includes('Access denied')) {
-        localStorage.removeItem('selected_tenant');
-      }
-    }
-
     throw new Error(errorMessage);
+
   }
 
   // Support 204 No Content

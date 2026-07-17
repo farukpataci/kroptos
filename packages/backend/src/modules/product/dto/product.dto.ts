@@ -86,6 +86,89 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   image?: string;
+
+  @ApiPropertyOptional({ example: '120.01.001', description: 'ERP Accounting item code mapping' })
+  @IsString()
+  @IsOptional()
+  erpCode?: string;
+
+  @ApiPropertyOptional({ example: 'erp-item-guid', description: 'ERP internal identifier mapping' })
+  @IsString()
+  @IsOptional()
+  erpId?: string;
+
+  @ApiPropertyOptional({ example: 20, description: 'VAT/KDV Rate percentage (e.g. 20, 10, 1, 0)' })
+  @IsNumber()
+  @IsOptional()
+  taxRate?: number;
+
+  @ApiPropertyOptional({ enum: ['SIMPLE', 'BUNDLE', 'VARIANT_PARENT', 'VARIANT_CHILD'], default: 'SIMPLE' })
+  @IsOptional()
+  type?: 'SIMPLE' | 'BUNDLE' | 'VARIANT_PARENT' | 'VARIANT_CHILD';
+
+  @ApiPropertyOptional({ description: 'JSON variant attributes, e.g. { Beden: "M", Renk: "Siyah" }' })
+  @IsOptional()
+  variantAttributes?: any;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  parentId?: string;
+
+  @ApiPropertyOptional({ type: () => [CreateBundleItemDto] })
+  @IsOptional()
+  bundleItems?: CreateBundleItemDto[];
+
+  @ApiPropertyOptional({ type: () => [CreateCrossSellProductDto] })
+  @IsOptional()
+  crossSellProducts?: CreateCrossSellProductDto[];
+
+  @ApiPropertyOptional({ type: () => [CreateVariantChildDto] })
+  @IsOptional()
+  variants?: CreateVariantChildDto[];
+}
+
+export class CreateVariantChildDto {
+  @ApiProperty()
+  @IsString()
+  sku: string;
+
+  @ApiProperty()
+  @IsNumber()
+  price: number;
+
+  @ApiProperty()
+  @IsNumber()
+  stockQuantity: number;
+
+  @ApiProperty()
+  variantAttributes: any;
+}
+
+export class CreateBundleItemDto {
+  @ApiProperty()
+  @IsString()
+  childProductId: string;
+
+  @ApiProperty()
+  @IsNumber()
+  quantity: number;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  discountRate?: number;
+}
+
+export class CreateCrossSellProductDto {
+  @ApiProperty()
+  @IsString()
+  targetProductId: string;
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @IsOptional()
+  displayOrder?: number;
 }
 
 export class UpdateProductDto {
@@ -181,6 +264,46 @@ export class UpdateProductDto {
   @IsBoolean()
   @IsOptional()
   isActive?: boolean;
+
+  @ApiPropertyOptional({ example: '120.01.001', description: 'ERP Accounting item code mapping' })
+  @IsString()
+  @IsOptional()
+  erpCode?: string;
+
+  @ApiPropertyOptional({ example: 'erp-item-guid', description: 'ERP internal identifier mapping' })
+  @IsString()
+  @IsOptional()
+  erpId?: string;
+
+  @ApiPropertyOptional({ example: 20, description: 'VAT/KDV Rate percentage (e.g. 20, 10, 1, 0)' })
+  @IsNumber()
+  @IsOptional()
+  taxRate?: number;
+
+  @ApiPropertyOptional({ enum: ['SIMPLE', 'BUNDLE', 'VARIANT_PARENT', 'VARIANT_CHILD'] })
+  @IsOptional()
+  type?: 'SIMPLE' | 'BUNDLE' | 'VARIANT_PARENT' | 'VARIANT_CHILD';
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  variantAttributes?: any;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  parentId?: string;
+
+  @ApiPropertyOptional({ type: () => [CreateBundleItemDto] })
+  @IsOptional()
+  bundleItems?: CreateBundleItemDto[];
+
+  @ApiPropertyOptional({ type: () => [CreateCrossSellProductDto] })
+  @IsOptional()
+  crossSellProducts?: CreateCrossSellProductDto[];
+
+  @ApiPropertyOptional({ type: () => [CreateVariantChildDto] })
+  @IsOptional()
+  variants?: CreateVariantChildDto[];
 }
 
 export class ProductResponseDto {
@@ -246,6 +369,30 @@ export class ProductResponseDto {
 
   @ApiProperty()
   isActive: boolean;
+
+  @ApiPropertyOptional()
+  erpCode?: string;
+
+  @ApiPropertyOptional()
+  erpId?: string;
+
+  @ApiPropertyOptional()
+  taxRate?: number;
+
+  @ApiProperty()
+  type: string;
+
+  @ApiPropertyOptional()
+  variantAttributes?: any;
+
+  @ApiPropertyOptional()
+  parentId?: string;
+
+  @ApiPropertyOptional()
+  bundleItems?: any[];
+
+  @ApiPropertyOptional()
+  crossSellProducts?: any[];
 
   @ApiProperty()
   createdAt: Date;

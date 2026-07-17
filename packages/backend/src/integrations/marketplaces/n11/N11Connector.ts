@@ -128,4 +128,12 @@ export class N11Connector extends MarketplaceConnector {
       success: true,
     };
   }
+
+  async getCategories(): Promise<any[]> {
+    return [];
+  }
+
+  async getCategoryAttributes(categoryId: string): Promise<any> {
+    return { categoryAttributes: [] };
+  }
 }

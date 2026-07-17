@@ -7,30 +7,52 @@ export class TenantGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
-    const { agencyId } = request.params;
-    const { userId } = request.user;
+    const user = request.user;
 
-    if (!agencyId) {
-      throw new ForbiddenException('Missing agency context');
+    if (!user) {
+      throw new ForbiddenException('User context not found');
     }
 
-    // Verify user has access to this agency
+    // Super Admin has system-wide access bypass
+    if (user.role === 'super_admin' || user.role === 'Super Admin') {
+      return true;
+    }
+
+    // Extract tenantPublicId from URL parameters, query parameters, or headers
+    const tenantPublicId =
+      request.params.tenantPublicId ||
+      request.query.tenantPublicId ||
+      request.headers['x-tenant-id'];
+
+    if (!tenantPublicId) {
+      // Default to allowed access if request context does not require isolated tenant check
+      return true;
+    }
+
+    // Resolve Agency (Tenant) database record by publicId
+    const agency = await this.prisma.agency.findUnique({
+      where: { publicId: tenantPublicId },
+    });
+
+    if (!agency) {
+      throw new ForbiddenException('Invalid tenant identifier');
+    }
+
+    // Validate if the authenticated user has an active membership role in the requested agency
     const userRole = await this.prisma.userRole.findFirst({
       where: {
-        userId,
-        agencyId,
+        userId: user.userId,
+        agencyId: agency.id,
         deletedAt: null,
       },
     });
 
     if (!userRole) {
-      throw new ForbiddenException(
-        `User does not have access to agency ${agencyId}`
-      );
+      throw new ForbiddenException('Access denied. You do not have permissions for this tenant.');
     }
 
-    request['validatedTenantId'] = agencyId;
-    request['userRole'] = userRole;
+    // Attach resolved internal tenant entity to request context
+    request.tenant = agency;
 
     return true;
   }

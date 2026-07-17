@@ -3,6 +3,8 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { Prisma } from '@prisma/client';
 import { IntegrationQueueService } from '../integration/integration-queue.service';
+import { generatePublicId } from '../../common/utils/id-generator';
+
 
 @Injectable()
 export class ProductService {
@@ -65,6 +67,23 @@ export class ProductService {
         category: {
           select: { id: true, name: true, slug: true },
         },
+        bundleItems: {
+          include: {
+            childProduct: {
+              select: { id: true, publicId: true, name: true, sku: true, price: true }
+            }
+          }
+        },
+        crossSellSources: {
+          include: {
+            targetProduct: {
+              select: { id: true, publicId: true, name: true, sku: true, price: true }
+            }
+          }
+        },
+        variants: {
+          where: { deletedAt: null }
+        }
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -78,7 +97,31 @@ export class ProductService {
     isSuperAdmin?: boolean,
   ) {
     const product = await this.prisma.product.findFirst({
-      where: { id, deletedAt: null },
+      where: {
+        OR: [
+          { id },
+          { publicId: id },
+        ],
+        deletedAt: null,
+      },
+      include: {
+        category: {
+          select: { id: true, name: true, slug: true },
+        },
+        bundleItems: {
+          include: {
+            childProduct: true
+          }
+        },
+        crossSellSources: {
+          include: {
+            targetProduct: true
+          }
+        },
+        variants: {
+          where: { deletedAt: null }
+        }
+      }
     });
 
     if (!product) {
@@ -173,9 +216,61 @@ export class ProductService {
           height: dto.height !== undefined ? new Prisma.Decimal(dto.height) : null,
           depth: dto.depth !== undefined ? new Prisma.Decimal(dto.depth) : null,
           image: dto.image || null,
+          erpCode: dto.erpCode || null,
+          erpId: dto.erpId || null,
+          taxRate: dto.taxRate !== undefined ? dto.taxRate : 20,
+          publicId: generatePublicId('prd', 12),
           isActive: true,
+          type: dto.type || 'SIMPLE',
+          variantAttributes: dto.variantAttributes || undefined,
+          parentId: dto.parentId || null,
         },
       });
+
+      if (dto.bundleItems && dto.bundleItems.length > 0) {
+        await tx.bundleItem.createMany({
+          data: dto.bundleItems.map((item) => ({
+            bundleProductId: product.id,
+            childProductId: item.childProductId,
+            quantity: item.quantity,
+            discountRate: item.discountRate !== undefined ? new Prisma.Decimal(item.discountRate) : null,
+          })),
+        });
+      }
+
+      if (dto.crossSellProducts && dto.crossSellProducts.length > 0) {
+        await tx.crossSellProduct.createMany({
+          data: dto.crossSellProducts.map((item) => ({
+            sourceProductId: product.id,
+            targetProductId: item.targetProductId,
+            displayOrder: item.displayOrder !== undefined ? item.displayOrder : 0,
+          })),
+        });
+      }
+      if (dto.variants && dto.variants.length > 0) {
+        for (const variant of dto.variants) {
+          await tx.product.create({
+            data: {
+              agencyId,
+              clientId,
+              storeId,
+              categoryId: product.categoryId,
+              sku: variant.sku,
+              name: `${product.name} - ${Object.values(variant.variantAttributes).join(' / ')}`,
+              price: new Prisma.Decimal(variant.price),
+              basePrice: new Prisma.Decimal(variant.price),
+              stockQuantity: variant.stockQuantity,
+              type: 'VARIANT_CHILD',
+              variantAttributes: variant.variantAttributes,
+              parentId: product.id,
+              publicId: generatePublicId('prd', 12),
+              isActive: true,
+              currency: product.currency,
+              taxRate: product.taxRate,
+            },
+          });
+        }
+      }
 
       // Audit Log
       await this.writeAuditLog(
@@ -228,7 +323,7 @@ export class ProductService {
           storeId: product.storeId,
           sku: dto.sku,
           deletedAt: null,
-          id: { not: id },
+          id: { not: product.id },
         },
       });
 
@@ -239,7 +334,7 @@ export class ProductService {
 
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedProduct = await tx.product.update({
-        where: { id },
+        where: { id: product.id },
         data: {
           categoryId: dto.categoryId !== undefined ? dto.categoryId : undefined,
           sku: dto.sku || undefined,
@@ -257,9 +352,69 @@ export class ProductService {
           height: dto.height !== undefined ? new Prisma.Decimal(dto.height) : undefined,
           depth: dto.depth !== undefined ? new Prisma.Decimal(dto.depth) : undefined,
           image: dto.image !== undefined ? dto.image : undefined,
+          erpCode: dto.erpCode !== undefined ? dto.erpCode : undefined,
+          erpId: dto.erpId !== undefined ? dto.erpId : undefined,
+          taxRate: dto.taxRate !== undefined ? dto.taxRate : undefined,
           isActive: dto.isActive !== undefined ? dto.isActive : undefined,
+          type: dto.type || undefined,
+          variantAttributes: dto.variantAttributes || undefined,
+          parentId: dto.parentId !== undefined ? dto.parentId : undefined,
         },
       });
+
+      if (dto.bundleItems !== undefined) {
+        await tx.bundleItem.deleteMany({ where: { bundleProductId: product.id } });
+        if (dto.bundleItems && dto.bundleItems.length > 0) {
+          await tx.bundleItem.createMany({
+            data: dto.bundleItems.map((item) => ({
+              bundleProductId: product.id,
+              childProductId: item.childProductId,
+              quantity: item.quantity,
+              discountRate: item.discountRate !== undefined ? new Prisma.Decimal(item.discountRate) : null,
+            })),
+          });
+        }
+      }
+
+      if (dto.crossSellProducts !== undefined) {
+        await tx.crossSellProduct.deleteMany({ where: { sourceProductId: product.id } });
+        if (dto.crossSellProducts && dto.crossSellProducts.length > 0) {
+          await tx.crossSellProduct.createMany({
+            data: dto.crossSellProducts.map((item) => ({
+              sourceProductId: product.id,
+              targetProductId: item.targetProductId,
+              displayOrder: item.displayOrder !== undefined ? item.displayOrder : 0,
+            })),
+          });
+        }
+      }
+      if (dto.variants !== undefined) {
+        await tx.product.deleteMany({ where: { parentId: product.id } });
+        if (dto.variants && dto.variants.length > 0) {
+          for (const variant of dto.variants) {
+            await tx.product.create({
+              data: {
+                agencyId: product.agencyId,
+                clientId: product.clientId,
+                storeId: product.storeId,
+                categoryId: product.categoryId,
+                sku: variant.sku,
+                name: `${updatedProduct.name} - ${Object.values(variant.variantAttributes).join(' / ')}`,
+                price: new Prisma.Decimal(variant.price),
+                basePrice: new Prisma.Decimal(variant.price),
+                stockQuantity: variant.stockQuantity,
+                type: 'VARIANT_CHILD',
+                variantAttributes: variant.variantAttributes,
+                parentId: product.id,
+                publicId: generatePublicId('prd', 12),
+                isActive: true,
+                currency: product.currency,
+                taxRate: product.taxRate,
+              },
+            });
+          }
+        }
+      }
 
       // Audit Log
       await this.writeAuditLog(
@@ -327,7 +482,7 @@ export class ProductService {
       const deletedSku = `${product.sku}_deleted_${Date.now()}`;
 
       await tx.product.update({
-        where: { id },
+        where: { id: product.id },
         data: {
           sku: deletedSku,
           deletedAt: now,
@@ -348,4 +503,143 @@ export class ProductService {
       );
     });
   }
+
+  async parseUrl(url: string) {
+    if (!url) {
+      throw new BadRequestException('URL gereklidir.');
+    }
+
+    try {
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36',
+          'Accept-Language': 'tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7',
+        },
+      });
+
+      if (!response.ok) {
+        throw new BadRequestException(`HTTP hatası! Durum: ${response.status}`);
+      }
+
+      const html = await response.text();
+
+      // Extract title/name
+      const ogTitle = html.match(/<meta\s+property=["']og:title["']\s+content=["'](.*?)["']/i)?.[1] ||
+                       html.match(/<meta\s+name=["']title["']\s+content=["'](.*?)["']/i)?.[1] ||
+                       html.match(/<title>(.*?)<\/title>/i)?.[1] || '';
+
+      // Extract description
+      const ogDescription = html.match(/<meta\s+property=["']og:description["']\s+content=["'](.*?)["']/i)?.[1] ||
+                             html.match(/<meta\s+name=["']description["']\s+content=["'](.*?)["']/i)?.[1] || '';
+
+      // Extract primary image
+      const ogImage = html.match(/<meta\s+property=["']og:image["']\s+content=["'](.*?)["']/i)?.[1] || '';
+
+      const images: string[] = [];
+      if (ogImage) {
+        images.push(ogImage);
+      }
+
+      // Match other og:image tags
+      const imageRegex = /<meta\s+property=["']og:image["']\s+content=["'](.*?)["']/gi;
+      let match;
+      while ((match = imageRegex.exec(html)) !== null) {
+        const imgUrl = match[1];
+        if (imgUrl && !images.includes(imgUrl)) {
+          images.push(imgUrl);
+        }
+      }
+
+      // Try matching other general product images
+      const imgTagRegex = /<img[^>]+src=["'](https:\/\/[^"']+\.(?:png|jpg|jpeg|webp)(?:\?[^"']+)?)["']/gi;
+      let imgMatch;
+      let count = 0;
+      while ((imgMatch = imgTagRegex.exec(html)) !== null && count < 8) {
+        const src = imgMatch[1];
+        if (
+          src &&
+          !images.includes(src) &&
+          !src.includes('logo') &&
+          !src.includes('icon') &&
+          !src.includes('avatar') &&
+          !src.includes('banner') &&
+          !src.includes('sprite') &&
+          !src.includes('tracker')
+        ) {
+          images.push(src);
+          count++;
+        }
+      }
+
+      // Try matching price
+      let price = 0;
+      const priceMeta = html.match(/<meta\s+property=["']product:price:amount["']\s+content=["'](.*?)["']/i)?.[1] ||
+                        html.match(/<meta\s+property=["']og:price:amount["']\s+content=["'](.*?)["']/i)?.[1] ||
+                        html.match(/["']price["']\s*:\s*["']?([\d.,]+)["']?/i)?.[1];
+      if (priceMeta) {
+        price = parseFloat(priceMeta.replace(/,/g, ''));
+      }
+
+      // Generate a clean SKU from domain and title
+      let domain = 'PRD';
+      try {
+        const parsedUrl = new URL(url);
+        domain = parsedUrl.hostname.replace('www.', '').split('.')[0].toUpperCase();
+      } catch (_) {}
+
+      const cleanTitle = ogTitle
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .trim()
+        .split(/\s+/)
+        .slice(0, 3)
+        .join('-')
+        .toUpperCase();
+
+      const randomId = Math.floor(1000 + Math.random() * 9000);
+      const sku = `${domain}-${cleanTitle || 'ITEM'}-${randomId}`;
+
+      return {
+        name: ogTitle ? decodeHtmlEntity(ogTitle) : '',
+        sku,
+        description: ogDescription ? decodeHtmlEntity(ogDescription) : '',
+        price: price || 99.90,
+        basePrice: price ? price * 1.2 : 119.90,
+        images: images.filter(Boolean),
+      };
+    } catch (e: any) {
+      throw new BadRequestException(`Ürün bilgileri URL'den çekilemedi: ${e.message}`);
+    }
+  }
+
+  async searchErpItems(query?: string) {
+    const mockErpItems = [
+      { id: 'erp-001', code: '150.01.001', name: 'Apple iPhone 13 128GB (Siyah)', stock: 42, price: 28999.00, barcode: '868000000123' },
+      { id: 'erp-002', code: '150.01.002', name: 'Samsung Galaxy S22 256GB', stock: 28, price: 24999.00, barcode: '868000000124' },
+      { id: 'erp-003', code: '150.02.015', name: 'Sony WH-1000XM4 Kablosuz Kulaklık', stock: 15, price: 8499.00, barcode: '868000000125' },
+      { id: 'erp-004', code: '150.03.004', name: 'Dell XPS 13 9310 Core i7', stock: 7, price: 45999.00, barcode: '868000000126' },
+      { id: 'erp-005', code: '150.04.088', name: 'Logitech MX Master 3S Mouse', stock: 65, price: 3299.00, barcode: '868000000127' },
+      { id: 'erp-006', code: '150.05.002', name: 'Xiaomi Mi Band 7 Akıllı Bileklik', stock: 120, price: 999.00, barcode: '868000000128' },
+    ];
+
+    if (!query) return mockErpItems;
+
+    const q = query.toLowerCase();
+    return mockErpItems.filter(
+      (item) =>
+        item.name.toLowerCase().includes(q) ||
+        item.code.toLowerCase().includes(q) ||
+        item.barcode.includes(q),
+    );
+  }
+}
+
+function decodeHtmlEntity(str: string): string {
+  return str
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&nbsp;/g, ' ');
 }

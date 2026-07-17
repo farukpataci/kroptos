@@ -41,18 +41,30 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     }
   );
 
-  // Extract the language, defaulting to Turkish/English or fallback
-  const rawLocale = settings?.defaultLanguage || fallbackLocale;
+  // Extract URL locale if present (e.g. /en-GB/home or /tr/)
+  let urlLocale = '';
+  if (pathname) {
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments.length > 0) {
+      const firstSegment = segments[0];
+      if (firstSegment.length === 2 || (firstSegment.length === 5 && firstSegment.includes('-'))) {
+        urlLocale = firstSegment;
+      }
+    }
+  }
+
+  // Extract the language, defaulting to URL path parameter, system settings or fallback
+  const rawLocale = urlLocale || settings?.defaultLanguage || fallbackLocale;
   
   // Normalize locale: if 'en-GB', 'en-US' etc., map to 'en'. If 'tr', map to 'tr'.
   const baseLocale = rawLocale.split('-')[0];
-  const locale = messagesMap[baseLocale] ? baseLocale : 'en';
+  const activeLocale = messagesMap[baseLocale] ? baseLocale : 'en';
   
   // Fallback to English messages if not found
-  const messages = messagesMap[locale] || en;
+  const messages = messagesMap[activeLocale] || en;
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages} timeZone="UTC">
+    <NextIntlClientProvider locale={rawLocale} messages={messages} timeZone="UTC">
       {children}
     </NextIntlClientProvider>
   );

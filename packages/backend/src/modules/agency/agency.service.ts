@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateAgencyDto, UpdateAgencyDto } from './dto/agency.dto';
+import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
 export class AgencyService {
@@ -30,10 +31,10 @@ export class AgencyService {
           action,
           entityType: 'Agency',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
@@ -66,7 +67,13 @@ export class AgencyService {
 
   async get(id: string, userId: string, isSuperAdmin: boolean) {
     const agency = await this.prisma.agency.findFirst({
-      where: { id, deletedAt: null },
+      where: {
+        OR: [
+          { id },
+          { publicId: id },
+        ],
+        deletedAt: null,
+      },
     });
 
     if (!agency) {
@@ -78,7 +85,7 @@ export class AgencyService {
       const userRole = await this.prisma.userRole.findFirst({
         where: {
           userId,
-          agencyId: id,
+          agencyId: agency.id,
           deletedAt: null,
         },
       });
@@ -112,6 +119,7 @@ export class AgencyService {
           description: dto.description || null,
           logo: dto.logo || null,
           website: dto.website || null,
+          publicId: generatePublicId('tn', 12),
           isActive: true,
         },
       });
@@ -169,7 +177,7 @@ export class AgencyService {
 
   async update(id: string, dto: UpdateAgencyDto, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
     // 1. Verify existence & access
-    await this.get(id, userId, isSuperAdmin);
+    const agency = await this.get(id, userId, isSuperAdmin);
 
     // 2. Validate slug uniqueness if updated
     let slug: string | undefined;
@@ -178,7 +186,7 @@ export class AgencyService {
       const existingAgency = await this.prisma.agency.findFirst({
         where: {
           slug,
-          id: { not: id },
+          id: { not: agency.id },
           deletedAt: null,
         },
       });
@@ -189,10 +197,10 @@ export class AgencyService {
     }
 
     return this.prisma.$transaction(async (tx) => {
-      const originalAgency = await tx.agency.findUnique({ where: { id } });
+      const originalAgency = await tx.agency.findUnique({ where: { id: agency.id } });
 
       const updatedAgency = await tx.agency.update({
-        where: { id },
+        where: { id: agency.id },
         data: {
           name: dto.name,
           slug,
@@ -207,9 +215,9 @@ export class AgencyService {
       await this.writeAuditLog(
         tx,
         'update',
-        id,
+        agency.id,
         userId,
-        id,
+        agency.id,
         ipAddress,
         {
           before: { name: originalAgency?.name, slug: originalAgency?.slug, isActive: originalAgency?.isActive },
@@ -231,7 +239,7 @@ export class AgencyService {
 
       // Soft delete agency itself
       await tx.agency.update({
-        where: { id },
+        where: { id: agency.id },
         data: {
           deletedAt: now,
           isActive: false,
@@ -240,19 +248,19 @@ export class AgencyService {
 
       // Cascade soft delete: clients
       await tx.client.updateMany({
-        where: { agencyId: id, deletedAt: null },
+        where: { agencyId: agency.id, deletedAt: null },
         data: { deletedAt: now, isActive: false },
       });
 
       // Cascade soft delete: stores
       await tx.store.updateMany({
-        where: { agencyId: id, deletedAt: null },
+        where: { agencyId: agency.id, deletedAt: null },
         data: { deletedAt: now, isActive: false },
       });
 
       // Cascade soft delete: user role assignments
       await tx.userRole.updateMany({
-        where: { agencyId: id, deletedAt: null },
+        where: { agencyId: agency.id, deletedAt: null },
         data: { deletedAt: now },
       });
 
@@ -260,9 +268,9 @@ export class AgencyService {
       await this.writeAuditLog(
         tx,
         'delete',
-        id,
+        agency.id,
         userId,
-        id,
+        agency.id,
         ipAddress,
         { name: agency.name, deletedAt: now },
       );

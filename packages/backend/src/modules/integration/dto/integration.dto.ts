@@ -85,3 +85,22 @@ export class IntegrationResponseDto {
   @ApiProperty()
   updatedAt: Date;
 }
+
+export class UpsertProductMappingDto {
+  @ApiProperty({ example: 'cuid-integration-id', description: 'Integration ID' })
+  @IsString()
+  integrationId: string;
+
+  @ApiProperty({ example: '387', description: 'Marketplace Category ID' })
+  @IsString()
+  marketplaceCategoryId: string;
+
+  @ApiProperty({ example: 'Tişört', description: 'Marketplace Category Name' })
+  @IsString()
+  marketplaceCategoryName: string;
+
+  @ApiProperty({ example: { "338": "M" }, description: 'Attribute Mappings JSON values' })
+  @IsObject()
+  @IsOptional()
+  attributesMapping?: Record<string, any>;
+}

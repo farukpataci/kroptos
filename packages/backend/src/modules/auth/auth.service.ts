@@ -40,10 +40,10 @@ export class AuthService {
           action,
           entityType,
           entityId,
-          performedBy,
-          agencyId: agencyId || null,
+          userId: performedBy,
+          tenantId: agencyId || null,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
@@ -232,8 +232,11 @@ export class AuthService {
       agencies: [
         {
           id: result.agency.id,
+          publicId: result.agency.publicId,
           name: result.agency.name,
           role: result.role.name,
+          clientId: null,
+          storeId: null,
         },
       ],
     };
@@ -317,8 +320,11 @@ export class AuthService {
 
     const agenciesMap = userRoles.map((ur) => ({
       id: ur.agency.id,
+      publicId: ur.agency.publicId,
       name: ur.agency.name,
       role: ur.role.name,
+      clientId: ur.clientId,
+      storeId: ur.storeId,
     }));
 
     return {
@@ -535,11 +541,12 @@ export class AuthService {
     return {
       user,
       accessibleTenants: userRoles.map((ur) => ({
-        agencyId: ur.agencyId,
-        agencyName: ur.agency.name,
+        id: ur.agency.id,
+        publicId: ur.agency.publicId,
+        name: ur.agency.name,
+        role: ur.role.name,
         clientId: ur.clientId,
         storeId: ur.storeId,
-        role: ur.role.name,
       })),
     };
   }

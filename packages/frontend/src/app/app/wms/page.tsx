@@ -77,7 +77,7 @@ export default function WmsLauncherPage() {
     {
       title: 'Back to Panel',
       description: 'Return to the main KroptOS administration panel.',
-      href: '/dashboard',
+      href: '/select-tenant',
       icon: <ArrowLeftIcon className="h-6 w-6" />,
       color: 'text-kp-text-tertiary',
     },

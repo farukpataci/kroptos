@@ -25,7 +25,6 @@ export class SettingsService {
     // Log the change
     await this.prisma.auditLog.create({
       data: {
-        tenantId: 'system',
         userId: userId,
         action: 'UPDATE_SYSTEM_SETTINGS',
         module: 'Settings',

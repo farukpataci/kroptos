@@ -76,6 +76,23 @@ describe('ProductService', () => {
           category: {
             select: { id: true, name: true, slug: true },
           },
+          bundleItems: {
+            include: {
+              childProduct: {
+                select: { id: true, publicId: true, name: true, sku: true, price: true }
+              }
+            }
+          },
+          crossSellSources: {
+            include: {
+              targetProduct: {
+                select: { id: true, publicId: true, name: true, sku: true, price: true }
+              }
+            }
+          },
+          variants: {
+            where: { deletedAt: null }
+          }
         },
         orderBy: { createdAt: 'desc' },
       });

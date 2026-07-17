@@ -14,10 +14,9 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const t = useTranslations('login');
 
-  // Automatically redirect if already logged in
   useEffect(() => {
     if (!isLoading && user) {
-      router.push('/dashboard');
+      router.push('/select-tenant');
     }
   }, [user, isLoading, router]);
 
@@ -37,7 +36,7 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem('remember_email');
       }
-      router.push('/dashboard');
+      router.push('/select-tenant');
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
       setSubmitting(false);
@@ -48,11 +47,9 @@ export default function LoginPage() {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F9FAFB]">
-        <div className="flex flex-col items-center gap-4 animate-pulse">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#171B59] text-2xl font-bold text-white shadow-lg">
-            K
-          </div>
-          <p className="text-sm font-medium text-gray-500">Loading KroptOS...</p>
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-2xl font-black tracking-wide text-[#171B59] animate-pulse">Alqora</p>
+          <p className="text-xs font-semibold text-gray-400">Loading...</p>
         </div>
       </div>
     );
@@ -67,10 +64,10 @@ export default function LoginPage() {
         {/* Back Button */}
         <div>
           <Link
-            href="/dashboard"
+            href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-gray-900 transition-colors"
           >
-            <span>←</span> {t('backToDashboard')}
+            <span>←</span> {t('backToWebsite')}
           </Link>
         </div>
 
@@ -242,11 +239,8 @@ export default function LoginPage() {
 
         {/* Middle: Brand and slogan */}
         <div className="my-auto max-w-xl z-10 space-y-6">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-white text-[#171B59] text-xl font-bold shadow-md">
-            K
-          </div>
-          <h1 className="text-5xl font-extrabold tracking-tight text-white Outfit uppercase">
-            KROPT OS
+          <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-white Outfit">
+            Alqora
           </h1>
           <p className="text-lg font-medium text-white/90">
             {t('enterpriseWms')}

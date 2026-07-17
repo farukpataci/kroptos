@@ -70,6 +70,7 @@ model Agency {
   logo        String?
   website     String?
   isActive    Boolean   @default(true)
+  publicId    String?   @unique
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   deletedAt   DateTime?
@@ -144,6 +145,7 @@ model Store {
   city      String?
   country   String?
   isActive  Boolean   @default(true)
+  publicId  String?   @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
@@ -262,16 +264,32 @@ model Product {
   height        Decimal?  @db.Decimal(8, 2)
   depth         Decimal?  @db.Decimal(8, 2)
   image         String?
+  erpCode       String?
+  erpId         String?
+  taxRate       Int       @default(20)
+  publicId      String?   @unique
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
+
+  // Variant, Bundle, and Cross-Sell Extensions
+  type              ProductType        @default(SIMPLE)
+  variantAttributes Json?
+  parentId          String?
+  parent            Product?           @relation("ProductVariants", fields: [parentId], references: [id], onDelete: Cascade)
+  variants          Product[]          @relation("ProductVariants")
+  bundleItems       BundleItem[]       @relation("BundleParent")
+  partOfBundles     BundleItem[]       @relation("BundleChild")
+  crossSellSources  CrossSellProduct[] @relation("CrossSellSource")
+  crossSellTargets  CrossSellProduct[] @relation("CrossSellTarget")
 
   inventories       Inventory[]
   orderItems        OrderItem[]
   auditLogs         AuditLog[]
   wmsStockMovements WmsStockMovement[]
   stockMovements    StockMovement[]
+  productMappings   ProductMapping[]
 
   @@unique([storeId, sku])
   @@index([agencyId])
@@ -342,6 +360,7 @@ model Order {
   idempotencyKey    String?
   notes             String?
   createdBy         String
+  publicId          String?   @unique
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -481,6 +500,7 @@ model Integration {
   name                 String
   credentialsEncrypted String
   status               String    @default("active")
+  publicId             String?   @unique
   lastSyncAt           DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
@@ -488,12 +508,36 @@ model Integration {
 
   queue   IntegrationQueue[]
   apiLogs ApiLog[]
+  productMappings ProductMapping[]
 
   @@index([agencyId])
   @@index([clientId])
   @@index([storeId])
   @@index([providerType])
   @@index([deletedAt])
+}
+
+model ProductMapping {
+  id                      String      @id @default(cuid())
+  productId               String
+  product                 Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  integrationId           String
+  integration             Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  
+  marketplaceCategoryId   String      // Örn: "387" (Tişört)
+  marketplaceCategoryName String      // Örn: "Erkek Tişört"
+  attributesMapping       Json?       // Örn: { "338": "M", "343": "Siyah" }
+  
+  status                  String      @default("draft") // draft, synced, error
+  errorMessage            String?
+  marketplaceProductId    String?
+  
+  createdAt               DateTime    @default(now())
+  updatedAt               DateTime    @updatedAt
+
+  @@unique([productId, integrationId])
+  @@index([productId])
+  @@index([integrationId])
 }
 
 model IntegrationQueue {
@@ -630,6 +674,7 @@ model WmsShippingLabel {
   labelUrl       String?
   previewUrl     String?
   status         String   @default("pending") // pending, printing, printed, failed
+  publicId       String?  @unique
   createdAt      DateTime @default(now())
 
   @@index([agencyId])
@@ -873,6 +918,7 @@ model Warehouse {
   priority          Int                 @default(0)
   logoWarehouseCode String?
   erpWarehouseCode  String?
+  publicId          String?             @unique
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -1099,6 +1145,41 @@ model InventorySnapshot {
 
   @@unique([agencyId, date, productId, warehouseId])
   @@index([agencyId])
+}
+
+enum ProductType {
+  SIMPLE
+  BUNDLE
+  VARIANT_PARENT
+  VARIANT_CHILD
+}
+
+model BundleItem {
+  id              String   @id @default(cuid())
+  bundleProductId String
+  bundleProduct   Product  @relation("BundleParent", fields: [bundleProductId], references: [id], onDelete: Cascade)
+  childProductId  String
+  childProduct    Product  @relation("BundleChild", fields: [childProductId], references: [id], onDelete: Cascade)
+  quantity        Int      @default(1)
+  discountRate    Decimal? @db.Decimal(5, 2)
+  createdAt       DateTime @default(now())
+
+  @@index([bundleProductId])
+  @@index([childProductId])
+}
+
+model CrossSellProduct {
+  id              String   @id @default(cuid())
+  sourceProductId String
+  sourceProduct   Product  @relation("CrossSellSource", fields: [sourceProductId], references: [id], onDelete: Cascade)
+  targetProductId String
+  targetProduct   Product  @relation("CrossSellTarget", fields: [targetProductId], references: [id], onDelete: Cascade)
+  displayOrder    Int      @default(0)
+  createdAt       DateTime @default(now())
+
+  @@unique([sourceProductId, targetProductId])
+  @@index([sourceProductId])
+  @@index([targetProductId])
 }
 
 

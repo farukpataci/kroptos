@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useTranslations } from 'next-intl';
@@ -23,6 +23,7 @@ import {
   ArrowRightOnRectangleIcon,
   XMarkIcon,
   ExclamationTriangleIcon,
+  LifebuoyIcon,
 } from '@heroicons/react/24/outline';
 
 interface NavItem {
@@ -47,11 +48,15 @@ interface SidebarProps {
 
 export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, onCloseMobile }: SidebarProps) {
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const params = useParams();
+  const { user, logout, tenantContext, accessibleTenants } = useAuth();
   const t = useTranslations('navigation');
 
+  const currentAgency = accessibleTenants.find((a: any) => a.id === tenantContext.agencyId);
+  const tenantPublicId = (params?.tenantPublicId as string) || currentAgency?.publicId || `tn_${tenantContext.agencyId || ''}`;
+
   const isActive = (href: string) => {
-    if (href === '/dashboard') return pathname === '/dashboard';
+    if (href === `/t/${tenantPublicId}/dashboard`) return pathname === `/t/${tenantPublicId}/dashboard`;
     return pathname.startsWith(href);
   };
 
@@ -59,41 +64,35 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
     {
       title: t('main'),
       items: [
-        { label: t('dashboard'), href: '/dashboard', icon: HomeIcon },
-        { label: t('clients'), href: '/clients', icon: UserGroupIcon },
-        { label: t('stores'), href: '/stores', icon: BuildingStorefrontIcon },
+        { label: t('dashboard'), href: `/t/${tenantPublicId}/dashboard`, icon: HomeIcon },
+        { label: t('clients'), href: `/t/${tenantPublicId}/clients`, icon: UserGroupIcon },
+        { label: t('stores'), href: `/t/${tenantPublicId}/stores`, icon: BuildingStorefrontIcon },
       ],
     },
     {
       title: t('commerce'),
       items: [
-        { label: t('orders'), href: '/orders', icon: ShoppingCartIcon, badge: '12' },
-        { label: t('products'), href: '/products', icon: TagIcon },
-        { label: t('inventory'), href: '/inventory', icon: CubeIcon },
+        { label: t('orders'), href: `/t/${tenantPublicId}/orders`, icon: ShoppingCartIcon, badge: '12' },
+        { label: t('products'), href: `/t/${tenantPublicId}/products`, icon: TagIcon },
+        { label: t('inventory'), href: `/t/${tenantPublicId}/inventory`, icon: CubeIcon },
       ],
     },
     {
-      title: t('integrations'),
+      title: 'Entegrasyon',
       items: [
-        { label: t('marketplaces'), href: '/integrations/marketplace', icon: LinkIcon, statusDot: 'active' as const },
-        { label: t('erp'), href: '/integrations/erp', icon: CpuChipIcon, statusDot: 'active' as const },
-        { label: t('shipping'), href: '/shipping', icon: TruckIcon },
-        { label: t('integration_errors'), href: '/integrations/errors', icon: ExclamationTriangleIcon, statusDot: 'error' as const },
+        { label: 'Entegrasyon', href: `/t/${tenantPublicId}/integrations`, icon: LinkIcon },
       ],
     },
     {
-      title: t('operations'),
+      title: 'Destek',
       items: [
-        { label: t('warehouses'), href: '/warehouses', icon: BuildingOffice2Icon },
-        { label: t('ai_site_builder'), href: '/ai-site-builder', icon: SparklesIcon },
+        { label: 'Destek', href: `/t/${tenantPublicId}/support`, icon: LifebuoyIcon },
       ],
     },
     {
-      title: t('insights'),
+      title: 'Sistem',
       items: [
-        { label: t('analytics_reports'), href: '/analytics', icon: ChartBarIcon },
-        { label: t('system_history'), href: '/system/audit-logs', icon: ClipboardDocumentListIcon },
-        { label: t('system_settings'), href: '/system/settings', icon: Cog6ToothIcon },
+        { label: 'Sistem', href: `/t/${tenantPublicId}/system`, icon: Cog6ToothIcon },
       ],
     },
   ];
@@ -102,7 +101,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
     <div className="flex h-full flex-col">
       {/* Logo */}
       <div className="flex h-header items-center justify-between border-b border-kp-border px-5">
-        <Link href="/dashboard" className="flex items-center gap-3">
+        <Link href={`/t/${tenantPublicId}/dashboard`} className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-kp-md bg-kp-accent shadow-kp-glow">
             <span className="text-sm font-bold text-white">K</span>
           </div>
@@ -132,14 +131,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
         {navigation.map((section) => (
           <div key={section.title}>
-            {!isCollapsed && (
-              <p className="mb-2 px-3 text-[10px] font-semibold uppercase tracking-[0.1em] text-kp-text-tertiary">
-                {section.title}
-              </p>
-            )}
             <ul className="space-y-0.5">
               {section.items.map((item) => {
                 const active = isActive(item.href);
@@ -193,27 +187,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         ))}
       </nav>
 
-      {/* Bottom section: Settings + User */}
+      {/* Bottom section: User */}
       <div className="border-t border-kp-border p-3 space-y-1">
-        {/* Settings */}
-        <Link
-          href="/settings"
-          onClick={onCloseMobile}
-          title={isCollapsed ? t('settings') : undefined}
-          className={`
-            group flex items-center gap-3 rounded-kp-md px-3 py-2.5 text-[13px] font-medium
-            transition-all duration-150
-            ${pathname.startsWith('/settings')
-              ? 'bg-kp-bg-active text-kp-accent-hover'
-              : 'text-kp-text-secondary hover:bg-kp-bg-hover hover:text-kp-text-primary'
-            }
-            ${isCollapsed ? 'justify-center' : ''}
-          `}
-        >
-          <Cog6ToothIcon className="h-[18px] w-[18px] flex-shrink-0 text-kp-text-tertiary group-hover:text-kp-text-secondary" />
-          {!isCollapsed && <span>{t('settings')}</span>}
-        </Link>
-
         {/* User Card */}
         <div className={`mt-2 flex items-center gap-3 rounded-kp-md border border-kp-border-subtle p-3 ${isCollapsed ? 'justify-center' : ''}`}>
           {/* Avatar */}

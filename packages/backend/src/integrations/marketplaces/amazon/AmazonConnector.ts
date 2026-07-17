@@ -140,4 +140,12 @@ export class AmazonConnector extends MarketplaceConnector {
       success: true,
     };
   }
+
+  async getCategories(): Promise<any[]> {
+    return [];
+  }
+
+  async getCategoryAttributes(categoryId: string): Promise<any> {
+    return { categoryAttributes: [] };
+  }
 }

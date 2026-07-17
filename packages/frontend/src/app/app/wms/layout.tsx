@@ -102,7 +102,7 @@ export default function WmsLayout({ children }: { children: React.ReactNode }) {
 
           {/* Back to Panel */}
           <Link
-            href="/dashboard"
+            href="/select-tenant"
             className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[12px] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
           >
             <ArrowLeftIcon className="h-3.5 w-3.5" />

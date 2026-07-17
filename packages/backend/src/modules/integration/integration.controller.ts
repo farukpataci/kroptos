@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Request } from 'express';
 import { IntegrationService } from './integration.service';
-import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto } from './dto/integration.dto';
+import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto, UpsertProductMappingDto } from './dto/integration.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 
@@ -181,6 +181,143 @@ export class IntegrationController {
       activeAgency?.id,
       activeClient?.id,
       activeStore?.id,
+    );
+  }
+
+  @Post(':id/connect')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: 'Connect and verify integration' })
+  @ApiResponse({ status: 200, description: 'Integration connected and verified successfully' })
+  async connect(@Param('id') id: string, @Req() req: Request) {
+    const user = req.user as any;
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.testConnection(
+      id,
+      user.userId,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+    );
+  }
+
+  // ==================== Category & Attributes Mapping Endpoints ====================
+
+  @Get(':id/categories/trendyol-tree')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: 'Get Trendyol official categories tree' })
+  async getTrendyolCategories(@Param('id') id: string, @Req() req: Request) {
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.getTrendyolCategories(
+      id,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+    );
+  }
+
+  @Get(':id/categories/trendyol-attributes/:categoryId')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: 'Get Trendyol category specific attributes' })
+  async getTrendyolCategoryAttributes(
+    @Param('id') id: string,
+    @Param('categoryId') categoryId: string,
+    @Req() req: Request,
+  ) {
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.getTrendyolCategoryAttributes(
+      id,
+      categoryId,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+    );
+  }
+
+  @Get('products/:productId/mappings')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: 'Get product mappings list' })
+  async getProductMappings(@Param('productId') productId: string, @Req() req: Request) {
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.getProductMappings(
+      productId,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+    );
+  }
+
+  @Post('products/:productId/mappings')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: 'Create or update a product mapping' })
+  async upsertProductMapping(
+    @Param('productId') productId: string,
+    @Body() dto: UpsertProductMappingDto,
+    @Req() req: Request,
+  ) {
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.upsertProductMapping(
+      productId,
+      dto.integrationId,
+      dto.marketplaceCategoryId,
+      dto.marketplaceCategoryName,
+      dto.attributesMapping,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+    );
+  }
+
+  @Delete('products/:productId/mappings/:mappingId')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: 'Delete product mapping' })
+  async deleteProductMapping(
+    @Param('productId') productId: string,
+    @Param('mappingId') mappingId: string,
+    @Req() req: Request,
+  ) {
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.deleteProductMapping(
+      productId,
+      mappingId,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
     );
   }
 }

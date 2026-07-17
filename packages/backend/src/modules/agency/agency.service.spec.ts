@@ -144,7 +144,8 @@ describe('AgencyService', () => {
   describe('update', () => {
     it('should update the agency and log it', async () => {
       mockPrismaService.agency.findFirst.mockImplementation(async (args: any) => {
-        if (args && args.where && args.where.id === 'agency-id') {
+        const idQuery = args?.where?.id || args?.where?.OR?.[0]?.id;
+        if (idQuery === 'agency-id') {
           return { id: 'agency-id', name: 'Agency A' };
         }
         return null;

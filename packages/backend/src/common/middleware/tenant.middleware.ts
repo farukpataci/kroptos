@@ -90,6 +90,16 @@ export class TenantMiddleware implements NestMiddleware {
         }
       }
 
+      // Translate public ID formats (e.g. tn_..., st_...) to internal CUIDs
+      if (agencyId && agencyId.startsWith('tn_')) {
+        const record = await this.prisma.agency.findFirst({ where: { publicId: agencyId, deletedAt: null } });
+        if (record) agencyId = record.id;
+      }
+      if (storeId && storeId.startsWith('st_')) {
+        const record = await this.prisma.store.findFirst({ where: { publicId: storeId, deletedAt: null } });
+        if (record) storeId = record.id;
+      }
+
       const isSuper = role === 'super_admin' || role === 'Super Admin';
 
       // 1. Validate Store access if storeId is requested
