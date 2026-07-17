@@ -2,46 +2,41 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
+import { useLocale } from 'next-intl';
 
 interface Language {
   code: string;       // Locale code (e.g. 'en-GB')
   flagCode: string;   // flagcdn country code (e.g. 'gb')
   name: string;       // Native name
+  descTr: string;     // Turkish description
+  descEn: string;     // English description
 }
 
 const LANGUAGES: Language[] = [
-  { code: 'tr', flagCode: 'tr', name: 'Türkçe' },
-  { code: 'pl', flagCode: 'pl', name: 'Polski' },
-  { code: 'en-US', flagCode: 'us', name: 'English (US)' },
-  { code: 'en-GB', flagCode: 'gb', name: 'English (GB)' },
-  { code: 'en-IN', flagCode: 'in', name: 'English (IN)' },
-  { code: 'cs', flagCode: 'cz', name: 'Čeština' },
-  { code: 'de', flagCode: 'de', name: 'Deutsch' },
-  { code: 'el', flagCode: 'gr', name: 'Ελληνικά' },
-  { code: 'es-AR', flagCode: 'ar', name: 'Español (AR)' },
-  { code: 'es-MX', flagCode: 'mx', name: 'Español (MX)' },
-  { code: 'fr', flagCode: 'fr', name: 'Français' },
-  { code: 'it', flagCode: 'it', name: 'Italiano' },
-  { code: 'pt-BR', flagCode: 'br', name: 'Português (BR)' },
-  { code: 'ro', flagCode: 'ro', name: 'Română' },
-  { code: 'zh', flagCode: 'cn', name: '中文' }
+  { code: 'tr', flagCode: 'tr', name: 'Türkçe', descTr: 'Türkçe', descEn: 'Turkish' },
+  { code: 'pl', flagCode: 'pl', name: 'Polski', descTr: 'Lehçe', descEn: 'Polish' },
+  { code: 'en-US', flagCode: 'us', name: 'English (US)', descTr: 'İngilizce (ABD)', descEn: 'US English' },
+  { code: 'en-GB', flagCode: 'gb', name: 'English (GB)', descTr: 'İngilizce (İngiltere)', descEn: 'UK English' },
+  { code: 'en-IN', flagCode: 'in', name: 'English (IN)', descTr: 'İngilizce (Hindistan)', descEn: 'Indian English' },
+  { code: 'cs', flagCode: 'cz', name: 'Čeština', descTr: 'Çekçe', descEn: 'Czech' },
+  { code: 'de', flagCode: 'de', name: 'Deutsch', descTr: 'Almanca', descEn: 'German' },
+  { code: 'el', flagCode: 'gr', name: 'Ελληνικά', descTr: 'Yunanca', descEn: 'Greek' },
+  { code: 'es-AR', flagCode: 'ar', name: 'Español (AR)', descTr: 'İspanyolca (Arjantin)', descEn: 'Argentine Spanish' },
+  { code: 'es-MX', flagCode: 'mx', name: 'Español (MX)', descTr: 'İspanyolca (Meksika)', descEn: 'Mexican Spanish' },
+  { code: 'fr', flagCode: 'fr', name: 'Français', descTr: 'Fransızca', descEn: 'French' },
+  { code: 'it', flagCode: 'it', name: 'Italiano', descTr: 'İtalyanca', descEn: 'Italian' },
+  { code: 'pt-BR', flagCode: 'br', name: 'Português (BR)', descTr: 'Portekizce (Brezilya)', descEn: 'Brazilian Portuguese' },
+  { code: 'ro', flagCode: 'ro', name: 'Română', descTr: 'Romence', descEn: 'Romanian' },
+  { code: 'zh', flagCode: 'cn', name: '中文', descTr: 'Çince', descEn: 'Chinese' }
 ];
-
-// Custom Language/Translation box icon matching the user's reference image
-function LanguageBoxIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="16" rx="2.5" />
-      <path d="M7 15l2.5-5.5L12 15M8 13.5h3" />
-      <path d="M14.5 9.5h3M16 9.5v5.5M14.5 15h3" />
-    </svg>
-  );
-}
 
 export default function LanguageSwitcher() {
   const [currentLangCode, setCurrentLangCode] = useState('tr');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  const activeLocale = useLocale();
+  const isTr = activeLocale === 'tr';
 
   // Sync current language with URL prefix or localStorage on mount
   useEffect(() => {
@@ -120,47 +115,66 @@ export default function LanguageSwitcher() {
   const activeLang = LANGUAGES.find(l => l.code === currentLangCode) || LANGUAGES[0];
 
   return (
-    <div className="relative inline-block text-left" ref={dropdownRef}>
+    <div className="relative inline-block text-left h-full" ref={dropdownRef}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         type="button"
-        className="inline-flex items-center gap-x-2 rounded-kp-sm border border-kp-border px-3 py-1.5 text-xs font-semibold bg-kp-bg-secondary text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover transition-all duration-200 shadow-kp-card"
+        className={`flex items-center gap-1.5 px-3 py-2 rounded-kp-sm text-sm font-semibold transition-all duration-200 ${
+          isOpen
+            ? 'text-kp-text-primary bg-kp-bg-active'
+            : 'text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover'
+        }`}
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <LanguageBoxIcon className="h-4.5 w-4.5 text-kp-text-tertiary" />
         <span className="flex items-center gap-1.5">
           <img 
             src={`https://flagcdn.com/24x18/${activeLang.flagCode}.png`} 
-            className="h-3 w-4.5 object-cover rounded-sm border border-black/10" 
+            className="h-3 w-4.5 object-cover rounded-sm border border-black/10 flex-shrink-0" 
             alt={activeLang.name} 
           />
           {activeLang.name}
         </span>
-        <ChevronDownIcon className={`h-4 w-4 text-kp-text-tertiary transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} aria-hidden="true" />
+        <ChevronDownIcon className={`h-4 w-4 text-kp-text-tertiary transition-transform duration-200 ${isOpen ? 'rotate-180 text-kp-accent' : ''}`} aria-hidden="true" />
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-72 sm:w-[480px] origin-top-right rounded-kp-md bg-kp-bg-secondary border border-kp-border p-3 shadow-kp-dropdown focus:outline-none backdrop-blur-md animate-scale-in">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1">
-            {LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                onClick={() => handleLangChange(lang)}
-                className={`flex items-center gap-3 px-3 py-2 text-xs rounded-kp-sm transition-colors w-full text-left ${
-                  currentLangCode === lang.code
-                    ? 'bg-kp-accent/15 text-kp-accent font-semibold'
-                    : 'text-kp-text-secondary hover:bg-kp-bg-hover hover:text-kp-text-primary'
-                }`}
-              >
-                <img 
-                  src={`https://flagcdn.com/24x18/${lang.flagCode}.png`} 
-                  className="h-3.5 w-5 object-cover rounded-sm border border-black/10 flex-shrink-0" 
-                  alt={lang.name} 
-                />
-                <span className="truncate">{lang.name}</span>
-              </button>
-            ))}
+        <div className="absolute right-0 z-50 mt-2 w-72 sm:w-[580px] origin-top-right rounded-kp-md bg-kp-bg-secondary border border-kp-border p-4 shadow-kp-dropdown focus:outline-none backdrop-blur-md animate-scale-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
+            {LANGUAGES.map((lang) => {
+              const desc = isTr ? lang.descTr : lang.descEn;
+              return (
+                <button
+                  key={lang.code}
+                  onClick={() => handleLangChange(lang)}
+                  className={`group flex gap-4 p-2.5 rounded-kp-md transition-all duration-200 text-left ${
+                    currentLangCode === lang.code
+                      ? 'bg-kp-accent/10'
+                      : 'hover:bg-kp-bg-hover'
+                  }`}
+                >
+                  {/* Flag container matching Resources icon style */}
+                  <div className="flex-shrink-0 h-10 w-10 flex items-center justify-center rounded-kp-sm bg-kp-bg-tertiary border border-kp-border-subtle group-hover:border-kp-border-accent group-hover:bg-kp-accent-muted transition-all">
+                    <img 
+                      src={`https://flagcdn.com/24x18/${lang.flagCode}.png`} 
+                      className="h-3.5 w-5 object-cover rounded-sm border border-black/10 flex-shrink-0" 
+                      alt={lang.name} 
+                    />
+                  </div>
+                  {/* Text details matching Resources details style */}
+                  <div className="space-y-0.5">
+                    <p className={`text-sm font-semibold transition-colors ${
+                      currentLangCode === lang.code ? 'text-kp-accent' : 'text-kp-text-primary group-hover:text-kp-accent'
+                    }`}>
+                      {lang.name}
+                    </p>
+                    <p className="text-xs text-kp-text-tertiary leading-normal line-clamp-1">
+                      {desc}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       )}
