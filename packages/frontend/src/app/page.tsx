@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar/Navbar';
+import Footer from '@/components/layout/Footer/Footer';
 import { useAuth } from '@/lib/auth-context';
 import { useLocale } from 'next-intl';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
@@ -1014,6 +1015,9 @@ export default function Home() {
           })}
         </div>
       </section>
+
+      {/* Footer */}
+      <Footer />
     </div>
   );
 }
