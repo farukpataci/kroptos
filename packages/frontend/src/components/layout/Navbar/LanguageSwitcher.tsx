@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface Language {
   code: string;       // Locale code (e.g. 'en-GB')
@@ -38,6 +39,9 @@ export default function LanguageSwitcher() {
   const activeLocale = useLocale();
   const isTr = activeLocale === 'tr';
 
+  const router = useRouter();
+  const currentPathname = usePathname();
+
   // Sync current language with URL prefix or localStorage on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -60,7 +64,7 @@ export default function LanguageSwitcher() {
                       LANGUAGES[0];
       setCurrentLangCode(matched.code);
     }
-  }, []);
+  }, [currentPathname]);
 
   // Close dropdown on click outside
   useEffect(() => {
@@ -79,7 +83,6 @@ export default function LanguageSwitcher() {
       setCurrentLangCode(lang.code);
       
       if (typeof window !== 'undefined') {
-        const currentPathname = window.location.pathname;
         const segments = currentPathname.split('/').filter(Boolean);
         
         // Determine if we are on a marketing/home route
@@ -92,21 +95,25 @@ export default function LanguageSwitcher() {
           ));
 
         if (isMarketingPage) {
+          let targetPath = '';
           if (segments.length > 0) {
             const firstSegment = segments[0];
             if (firstSegment.length === 2 || (firstSegment.length === 5 && firstSegment.includes('-'))) {
               segments[0] = lang.code;
-              window.location.href = '/' + segments.join('/') + window.location.search;
-              return;
+              targetPath = '/' + segments.join('/');
+            } else {
+              targetPath = '/' + lang.code + currentPathname;
             }
+          } else {
+            targetPath = '/' + lang.code;
           }
-          // Redirect to path-based locale
-          window.location.href = '/' + lang.code + (currentPathname === '/' ? '' : currentPathname) + window.location.search;
-          return;
+          
+          // Instant client-side SPA routing (0ms latency transition)
+          router.push(targetPath);
+        } else {
+          // For dashboard/app pages, reload to apply locale settings
+          window.location.reload();
         }
-        
-        // For dashboard/app pages, reload to apply locale settings
-        window.location.reload();
       }
     }
     setIsOpen(false);
