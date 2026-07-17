@@ -11,10 +11,30 @@ const fetcher = (url: string) => apiFetch<any>(url);
 // Import translation messages
 import tr from '../../messages/tr.json';
 import en from '../../messages/en.json';
+import pl from '../../messages/pl.json';
+import cs from '../../messages/cs.json';
+import de from '../../messages/de.json';
+import el from '../../messages/el.json';
+import es from '../../messages/es.json';
+import fr from '../../messages/fr.json';
+import it from '../../messages/it.json';
+import pt from '../../messages/pt.json';
+import ro from '../../messages/ro.json';
+import zh from '../../messages/zh.json';
 
 const messagesMap: Record<string, any> = {
   tr,
   en,
+  pl,
+  cs,
+  de,
+  el,
+  es,
+  fr,
+  it,
+  pt,
+  ro,
+  zh,
 };
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
