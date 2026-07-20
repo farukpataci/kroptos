@@ -2,6 +2,7 @@
 
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import { ProfileInfoCard } from './components/ProfileInfoCard';
 import { AddressCard } from './components/AddressCard';
 import { SecurityCard } from './components/SecurityCard';
@@ -10,6 +11,7 @@ import { DangerZoneCard } from './components/DangerZoneCard';
 const fetcher = (url: string) => apiFetch(url);
 
 export default function ProfilePage() {
+  const toast = useToast();
   const { data: profile, error, mutate } = useSWR<any>('/profile', fetcher);
 
   const handleUpdateProfile = async (formData: any) => {
@@ -20,7 +22,7 @@ export default function ProfilePage() {
       });
       mutate(updated);
     } catch (err: any) {
-      alert(err.message || 'Failed to update profile');
+      toast.error(err.message || 'Failed to update profile');
       throw err;
     }
   };
@@ -33,7 +35,7 @@ export default function ProfilePage() {
       });
       mutate(updated);
     } catch (err: any) {
-      alert(err.message || 'Failed to update address');
+      toast.error(err.message || 'Failed to update address');
       throw err;
     }
   };
@@ -44,7 +46,7 @@ export default function ProfilePage() {
         method: 'POST',
         body: JSON.stringify(formData),
       });
-      alert('Password changed successfully.');
+      toast.success('Password changed successfully.');
     } catch (err: any) {
       throw err;
     }
@@ -61,7 +63,7 @@ export default function ProfilePage() {
       });
       mutate({ ...profile, avatar: res.avatarUrl });
     } catch (err: any) {
-      alert(err.message || 'Failed to upload avatar image');
+      toast.error(err.message || 'Failed to upload avatar image');
       throw err;
     }
   };

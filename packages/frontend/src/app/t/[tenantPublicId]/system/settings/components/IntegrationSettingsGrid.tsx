@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
@@ -10,6 +11,7 @@ export function IntegrationSettingsGrid() {
   const { data: integrations, error, mutate } = useSWR<any[]>('/system/integration-settings', fetcher);
   const [editingProvider, setEditingProvider] = useState<string | null>(null);
   const [configData, setConfigData] = useState<any>({});
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
 
   const handleToggle = async (provider: string, currentStatus: string) => {
@@ -21,7 +23,7 @@ export function IntegrationSettingsGrid() {
       });
       mutate();
     } catch (err: any) {
-      alert(err.message || 'Failed to toggle integration.');
+      toast.error(err.message || 'Failed to toggle integration.');
     }
   };
 
@@ -49,9 +51,9 @@ export function IntegrationSettingsGrid() {
       });
       setEditingProvider(null);
       mutate();
-      alert('Integration connected and settings saved.');
+      toast.success('Integration connected and settings saved.');
     } catch (err: any) {
-      alert(err.message || 'Failed to save configuration.');
+      toast.error(err.message || 'Failed to save configuration.');
     } finally {
       setIsSaving(false);
     }

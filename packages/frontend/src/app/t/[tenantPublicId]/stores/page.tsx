@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import {
   BuildingStorefrontIcon,
   ExclamationTriangleIcon,
@@ -30,6 +31,7 @@ interface Store {
 }
 
 export default function StoresPage() {
+  const toast = useToast();
   const { tenantContext } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -157,7 +159,7 @@ export default function StoresPage() {
       setStores(stores.filter(s => s.id !== storeToDelete.id));
       setStoreToDelete(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete store');
+      toast.error(err.message || 'Failed to delete store');
     } finally {
       setIsDeleting(false);
     }
@@ -208,15 +210,15 @@ export default function StoresPage() {
             <BuildingStorefrontIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-kp-text-primary">Stores</h1>
-            <p className="text-[13px] text-kp-text-tertiary">Configure and manage multi-channel storefronts</p>
+            <h1 className="text-xl font-semibold text-kp-text-primary">Pazaryerleri</h1>
+            <p className="text-[13px] text-kp-text-tertiary">Çok kanallı pazaryeri mağazalarını yapılandırın ve yönetin</p>
           </div>
         </div>
         <button
           onClick={handleOpenCreate}
           className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
         >
-          <PlusIcon className="h-4 w-4" /> Add Store
+          <PlusIcon className="h-4 w-4" /> Pazaryeri Ekle
         </button>
       </div>
 
@@ -225,19 +227,19 @@ export default function StoresPage() {
           <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
             <thead>
               <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
-                <th className="py-3 px-4">Store Name</th>
-                <th className="py-3 px-4">Slug</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Domain</th>
-                <th className="py-3 px-4">Currency</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+                <th className="py-3 px-4">Pazaryeri Adı</th>
+                <th className="py-3 px-4">Kısa Ad (Slug)</th>
+                <th className="py-3 px-4">Durum</th>
+                <th className="py-3 px-4">Adres (Domain)</th>
+                <th className="py-3 px-4">Para Birimi</th>
+                <th className="py-3 px-4 text-right">İşlemler</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-kp-border">
               {filteredStores.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-xs text-kp-text-tertiary">
-                    No stores configured matching active client/agency context. Click "Add Store" to create one.
+                    Seçili ajans/müşteri için yapılandırılmış pazaryeri bulunamadı. Yeni bir pazaryeri eklemek için "Pazaryeri Ekle" butonuna tıklayın.
                   </td>
                 </tr>
               ) : (
@@ -289,7 +291,7 @@ export default function StoresPage() {
           <div className="w-full max-w-lg bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary">
-                {editingStore ? 'Edit Store Configurations' : 'Add New Channel Store'}
+                {editingStore ? 'Pazaryeri Ayarlarını Düzenle' : 'Yeni Pazaryeri Kanalı Ekle'}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -309,14 +311,14 @@ export default function StoresPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Store Name *
+                      Pazaryeri Adı *
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="e.g. Nike TR Store"
+                      placeholder="Örn: Trendyol Mağazam"
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     />
                   </div>
@@ -334,21 +336,21 @@ export default function StoresPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Status
+                      Durum
                     </label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="active">Active</option>
-                      <option value="draft">Draft</option>
-                      <option value="suspended">Suspended</option>
+                      <option value="active">Aktif (Active)</option>
+                      <option value="draft">Taslak (Draft)</option>
+                      <option value="suspended">Durduruldu (Suspended)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Currency
+                      Para Birimi
                     </label>
                     <select
                       value={formData.currency}
@@ -363,43 +365,43 @@ export default function StoresPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Locale
+                      Dil / Bölge (Locale)
                     </label>
                     <select
                       value={formData.locale}
                       onChange={(e) => setFormData({ ...formData, locale: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="tr-TR">Turkish (tr-TR)</option>
-                      <option value="en-US">English (en-US)</option>
-                      <option value="de-DE">German (de-DE)</option>
+                      <option value="tr-TR">Türkçe (tr-TR)</option>
+                      <option value="en-US">İngilizce (en-US)</option>
+                      <option value="de-DE">Almance (de-DE)</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Timezone
+                      Saat Dilimi (Timezone)
                     </label>
                     <select
                       value={formData.timezone}
                       onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="Europe/Istanbul">Europe/Istanbul</option>
+                      <option value="Europe/Istanbul">Europe/Istanbul (TSİ)</option>
                       <option value="UTC">UTC</option>
                       <option value="Europe/London">Europe/London</option>
                     </select>
                   </div>
                   <div className="col-span-2">
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Store Type
+                      Kanal Türü (Pazaryeri / Depo)
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="retail">Retail Sales Channel</option>
-                      <option value="warehouse">Warehouse Fulfillment</option>
+                      <option value="retail">Perakende Satış Kanalı (Pazaryeri)</option>
+                      <option value="warehouse">Depo Karşılama Noktası</option>
                     </select>
                   </div>
                 </div>
@@ -410,7 +412,7 @@ export default function StoresPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
                 >
-                  Cancel
+                  İptal
                 </button>
                 <button
                   type="submit"
@@ -418,7 +420,7 @@ export default function StoresPage() {
                   className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all"
                 >
                   {isSubmitting && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                  {editingStore ? 'Save Changes' : 'Create Store'}
+                  {editingStore ? 'Değişiklikleri Kaydet' : 'Pazaryeri Oluştur'}
                 </button>
               </div>
             </form>
@@ -432,7 +434,7 @@ export default function StoresPage() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Delete Store
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Pazaryeri Sil
               </h3>
               <button
                 onClick={() => setStoreToDelete(null)}
@@ -443,7 +445,7 @@ export default function StoresPage() {
             </div>
             <div className="p-6">
               <p className="text-theme-sm text-kp-text-secondary">
-                Are you sure you want to delete store <span className="font-semibold text-kp-text-primary">{storeToDelete.name}</span>? This will permanently disable connection endpoints and orders synced with this channel.
+                <span className="font-semibold text-kp-text-primary">{storeToDelete.name}</span> pazaryerini silmek istediğinize emin misiniz? Bu işlem, bu kanalla bağlantılı entegrasyon uç noktalarını ve senkronize edilmiş siparişleri kalıcı olarak devre dışı bırakacaktır.
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
@@ -452,7 +454,7 @@ export default function StoresPage() {
                 onClick={() => setStoreToDelete(null)}
                 className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
               >
-                Cancel
+                İptal
               </button>
               <button
                 type="button"
@@ -461,7 +463,7 @@ export default function StoresPage() {
                 className="flex items-center gap-2 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all"
               >
                 {isDeleting && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                Delete
+                Sil
               </button>
             </div>
           </div>

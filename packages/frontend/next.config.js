@@ -5,7 +5,14 @@ const nextConfig = {
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
   },
+  webpack: (config, { dev }) => {
+    if (dev) {
+      config.cache = false;
+    }
+    return config;
+  },
   async rewrites() {
+
     return [
       {
         source: '/:locale([a-zA-Z]{2}(?:-[a-zA-Z]{2})?)/home',

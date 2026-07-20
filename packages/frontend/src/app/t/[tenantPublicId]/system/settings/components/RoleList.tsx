@@ -9,6 +9,7 @@ import {
   FolderIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/ui/Toast';
 
 interface Permission {
   key: string;
@@ -133,6 +134,7 @@ export function RoleList() {
   const [newRoleDesc, setNewRoleDesc] = useState('');
 
   // Save feedback state
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -181,7 +183,7 @@ export function RoleList() {
 
   const handleDeleteRole = (roleId: string, roleName: string) => {
     if (roleId === 'role_1') {
-      alert('Yönetici (Administrator) rolü korumalıdır ve silinemez.');
+      toast.warning('Yönetici (Administrator) rolü korumalıdır ve silinemez.');
       return;
     }
     if (confirm(`"${roleName}" rolünü silmek istediğinize emin misiniz? Bu role sahip kullanıcılar yetkisiz kalacaktır.`)) {

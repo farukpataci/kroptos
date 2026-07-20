@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import StatusBadge from '@/components/ui/StatusBadge';
 import CategoryMappingModal from './components/CategoryMappingModal';
+import { useToast } from '@/components/ui/Toast';
 
 interface Integration {
   id: string;
@@ -31,6 +32,7 @@ interface Integration {
 }
 
 export default function MarketplacePage() {
+  const toast = useToast();
   const { tenantContext } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -209,7 +211,7 @@ export default function MarketplacePage() {
       setIntegrations(integrations.filter(item => item.id !== integrationToDelete.id));
       setIntegrationToDelete(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete integration');
+      toast.error(err.message || 'Failed to delete integration');
     } finally {
       setIsDeleting(false);
     }
@@ -222,15 +224,15 @@ export default function MarketplacePage() {
         method: 'POST',
       });
       if (res.success) {
-        alert('Connection test success! Credentials validated.');
+        toast.success('Connection test success! Credentials validated.');
         // Refresh status
         fetchIntegrations();
       } else {
-        alert(`Connection test failed: ${res.message}`);
+        toast.error(`Connection test failed: ${res.message}`);
         fetchIntegrations();
       }
     } catch (err: any) {
-      alert(err.message || 'Error testing connection');
+      toast.error(err.message || 'Error testing connection');
     } finally {
       setTestingId(null);
     }
@@ -243,13 +245,13 @@ export default function MarketplacePage() {
         method: 'POST',
       });
       if (res.success) {
-        alert('Catalog sync job successfully enqueued in background worker queue!');
+        toast.success('Catalog sync job successfully enqueued in background worker queue!');
         fetchIntegrations();
       } else {
-        alert(`Sync failed: ${res.message}`);
+        toast.error(`Sync failed: ${res.message}`);
       }
     } catch (err: any) {
-      alert(err.message || 'Error triggering sync');
+      toast.error(err.message || 'Error triggering sync');
     } finally {
       setSyncingId(null);
     }

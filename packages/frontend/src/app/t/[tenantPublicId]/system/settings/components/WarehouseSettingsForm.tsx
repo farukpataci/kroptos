@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
@@ -10,6 +11,7 @@ export function WarehouseSettingsForm() {
   const { data: tenantSettings, mutate: mutateTenant } = useSWR<any>('/system/tenant-settings', fetcher);
   const { data: warehouses } = useSWR<any[]>('/warehouses', fetcher);
   
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<any>(null);
 
@@ -52,9 +54,9 @@ export function WarehouseSettingsForm() {
         body: JSON.stringify(payload),
       });
       mutateTenant(payload);
-      alert('Warehouse settings saved.');
+      toast.success('Warehouse settings saved.');
     } catch (err: any) {
-      alert(err.message || 'Failed to save settings.');
+      toast.error(err.message || 'Failed to save settings.');
     } finally {
       setIsSaving(false);
     }

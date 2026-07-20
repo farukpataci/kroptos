@@ -11,6 +11,7 @@ import {
   BuildingOfficeIcon,
   AdjustmentsHorizontalIcon
 } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/ui/Toast';
 
 interface Warehouse {
   id: string;
@@ -69,6 +70,7 @@ const INITIAL_WAREHOUSES: Warehouse[] = [
 const WAREHOUSE_TYPES = ['Ana Depo', 'İade Deposu', 'Transit Depo', 'Bölge Deposu'];
 
 export function WarehousesTable() {
+  const toast = useToast();
   const [warehouses, setWarehouses] = useState<Warehouse[]>(INITIAL_WAREHOUSES);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('All');
@@ -123,12 +125,12 @@ export function WarehousesTable() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.code) {
-      alert('Lütfen depo adı ve kodunu doldurun.');
+      toast.warning('Lütfen depo adı ve kodunu doldurun.');
       return;
     }
 
     if (formData.usedCapacity > formData.capacity) {
-      alert('Kullanılan kapasite toplam kapasiteden büyük olamaz.');
+      toast.warning('Kullanılan kapasite toplam kapasiteden büyük olamaz.');
       return;
     }
 

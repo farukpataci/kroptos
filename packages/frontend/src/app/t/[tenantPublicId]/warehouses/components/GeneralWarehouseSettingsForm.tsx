@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch(url);
 
 export function GeneralWarehouseSettingsForm() {
+  const toast = useToast();
   const { data: settings, error, mutate } = useSWR('/system/warehouse-settings', fetcher, {
     fallbackData: {
       multiWarehouse: true,
@@ -43,9 +45,9 @@ export function GeneralWarehouseSettingsForm() {
         body: JSON.stringify(formData)
       });
       mutate(formData);
-      alert('General warehouse settings saved successfully.');
+      toast.success('General warehouse settings saved successfully.');
     } catch (err: any) {
-      alert(err.message || 'An error occurred.');
+      toast.error(err.message || 'An error occurred.');
     } finally {
       setIsSaving(false);
     }

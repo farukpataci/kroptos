@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/ui/Toast';
 
 interface PackagingOrder {
   id: string;
@@ -16,6 +17,7 @@ interface PackagingOrder {
 }
 
 export default function WmsPackagingPage() {
+  const toast = useToast();
   const [orders, setOrders] = useState<PackagingOrder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,16 +36,16 @@ export default function WmsPackagingPage() {
   useEffect(() => { fetchOrders(); }, []);
 
   const handleStartPacking = (orderNumber: string) => {
-    alert(`Packing started for order ${orderNumber}. Begin scanning items.`);
+    toast.info(`Packing started for order ${orderNumber}. Begin scanning items.`);
   };
 
   const handleGenerateLabel = async (orderId: string) => {
     try {
       await apiFetch('/wms/labels', { method: 'POST', body: JSON.stringify({ orderId }) });
-      alert('Shipping label generated! Check Settings → Label Preview for output.');
+      toast.success('Shipping label generated! Check Settings → Label Preview for output.');
       fetchOrders();
     } catch (err: any) {
-      alert(err.message || 'Failed to generate label.');
+      toast.error(err.message || 'Failed to generate label.');
     }
   };
 

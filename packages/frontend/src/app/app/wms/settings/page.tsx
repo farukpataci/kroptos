@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 interface PrinterSettings {
   printerName: string;
@@ -29,6 +30,7 @@ interface LabelPreviewData {
 }
 
 export default function WmsSettingsPage() {
+  const toast = useToast();
   const [settings, setSettings] = useState<PrinterSettings | null>(null);
   const [previewData, setPreviewData] = useState<LabelPreviewData | null>(null);
   const [driverStatusMessage, setDriverStatusMessage] = useState('');
@@ -82,9 +84,9 @@ export default function WmsSettingsPage() {
         body: JSON.stringify({ printerName, printerType, connectionType, labelFormat, labelSize }),
       });
       setSettings(updated);
-      alert('Printer settings saved successfully!');
+      toast.success('Printer settings saved successfully!');
     } catch (err: any) {
-      alert(err.message || 'Failed to save settings.');
+      toast.error(err.message || 'Failed to save settings.');
     } finally {
       setSaving(false);
     }
@@ -97,7 +99,7 @@ export default function WmsSettingsPage() {
       setDriverStatusMessage(res.message);
       if (settings) setSettings({ ...settings, driverInstalled: res.driverInstalled });
     } catch (err: any) {
-      alert(err.message || 'Driver check failed.');
+      toast.error(err.message || 'Driver check failed.');
     } finally {
       setChecking(false);
     }
@@ -107,9 +109,9 @@ export default function WmsSettingsPage() {
     try {
       setTesting(true);
       const res = await apiFetch<any>('/wms/printer/test');
-      if (res.success) alert(res.message);
+      if (res.success) toast.success(res.message);
     } catch (err: any) {
-      alert(err.message || 'Test print failed.');
+      toast.error(err.message || 'Test print failed.');
     } finally {
       setTesting(false);
     }

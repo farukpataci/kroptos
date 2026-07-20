@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import {
   CubeIcon,
   ChartBarIcon,
@@ -99,6 +100,7 @@ interface StockMovementLog {
 }
 
 export default function InventoryPage() {
+  const toast = useToast();
   const { tenantContext } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'map' | 'movements' | 'lowstock' | 'counting' | 'reservations' | 'integrations' | 'ai' | 'alerts'>('dashboard');
   
@@ -771,7 +773,7 @@ export default function InventoryPage() {
               </div>
 
               <button
-                onClick={() => alert('Generating CSV export...')}
+                onClick={() => toast.info('Generating CSV export...')}
                 className="inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-secondary px-4 py-2.5 text-xs font-bold text-kp-text-secondary hover:bg-kp-bg-hover/30 shadow-sm transition-all"
               >
                 <ArrowDownTrayIcon className="h-4 w-4" />
@@ -938,7 +940,7 @@ export default function InventoryPage() {
                               <button
                                 key={rack}
                                 onClick={() => {
-                                  alert(`Location: ${zone.name} - ${aisle} - Rack ${rack}\nOccupancy: ${mockPercent}%`);
+                                  toast.info(`Location: ${zone.name} - ${aisle} - Rack ${rack} · Occupancy: ${mockPercent}%`);
                                 }}
                                 className={`h-8 rounded-kp-sm text-[9px] font-extrabold text-white flex items-center justify-center transition-all ${
                                   mockPercent > 90 ? 'bg-kp-danger hover:bg-kp-danger/80' :
@@ -993,7 +995,7 @@ export default function InventoryPage() {
                         })
                       });
                       
-                      alert('Movement applied successfully!');
+                      toast.success('Movement applied successfully!');
                       form.reset();
                       
                       // Refresh database state
@@ -1001,7 +1003,7 @@ export default function InventoryPage() {
                       fetchMovements();
                     } catch (err) {
                       console.error('Failed to submit adjustment:', err);
-                      alert('Failed to register stock movement. Please check context or permissions.');
+                      toast.error('Failed to register stock movement. Please check context or permissions.');
                     }
                   }
                 }}
@@ -1134,7 +1136,7 @@ export default function InventoryPage() {
                       <td className="py-3.5 text-right text-kp-text-tertiary">4 Days</td>
                       <td className="py-3.5 text-center">
                         <button
-                          onClick={() => alert(`PO drafted for SKU ${p.sku}`)}
+                          onClick={() => toast.success(`PO drafted for SKU ${p.sku}`)}
                           className="px-3 py-1.5 bg-kp-accent hover:bg-kp-accent-hover text-white text-[10px] font-bold rounded-kp-md transition-all"
                         >
                           Draft PO
@@ -1175,7 +1177,7 @@ export default function InventoryPage() {
                       <div className="text-[10px] text-kp-text-tertiary">{audit.type} • {audit.items}</div>
                     </div>
                     <button
-                      onClick={() => alert(`Started: ${audit.name}`)}
+                      onClick={() => toast.info(`Started: ${audit.name}`)}
                       className="px-3 py-1.5 border border-kp-border rounded-kp-md hover:bg-kp-bg-hover text-[10px] text-kp-text-primary font-bold"
                     >
                       Start
@@ -1225,7 +1227,7 @@ export default function InventoryPage() {
                               onClick={() => {
                                 setProducts(prev => prev.map(p => p.sku === c.sku ? { ...p, available: c.countedQty } : p));
                                 setAuditCounts(prev => prev.map(item => item.id === c.id ? { ...item, status: 'Matched' } : item));
-                                alert('Discrepancy approved!');
+                                toast.success('Discrepancy approved!');
                               }}
                               className="px-2.5 py-1 bg-kp-success hover:bg-kp-success/80 text-white rounded-kp-md text-[10px] font-bold"
                             >
@@ -1298,7 +1300,7 @@ export default function InventoryPage() {
                         <button
                           onClick={() => {
                             setProducts(prev => prev.map(p => p.sku === res.sku ? { ...p, reserved: Math.max(0, p.reserved - res.qty) } : p));
-                            alert('Allocation released.');
+                            toast.success('Allocation released.');
                           }}
                           className="px-2.5 py-1.5 border border-kp-danger/30 text-kp-danger hover:bg-kp-danger-muted/10 rounded-kp-md text-[10px] font-bold transition-colors"
                         >
@@ -1351,7 +1353,7 @@ export default function InventoryPage() {
                 </div>
 
                 <button
-                  onClick={() => alert(`Sync triggered for: ${channel.name}`)}
+                  onClick={() => toast.info(`Sync triggered for: ${channel.name}`)}
                   className="w-full py-2 bg-kp-bg-primary hover:bg-kp-bg-hover border border-kp-border rounded-kp-md text-[10px] font-bold transition-all text-kp-text-secondary"
                 >
                   Force Sync
@@ -1641,7 +1643,7 @@ export default function InventoryPage() {
                     fetchInventory();
                     fetchMovements();
                   }
-                  alert(`PO Giriş Sevkiyatı ${poRef} başarıyla kaydedildi!`);
+                  toast.success(`PO Giriş Sevkiyatı ${poRef} başarıyla kaydedildi!`);
                 } catch (err) {
                   console.error('Failed to register PO inbound:', err);
                 }

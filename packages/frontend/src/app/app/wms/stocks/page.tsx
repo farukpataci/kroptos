@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
 import { ArrowPathIcon } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/ui/Toast';
 
 interface Product {
   id: string;
@@ -14,6 +15,7 @@ interface Product {
 }
 
 export default function WmsStocksPage() {
+  const toast = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -40,12 +42,12 @@ export default function WmsStocksPage() {
       setProducts(products.map(p => p.id === id ? { ...p, stockQuantity: newQty } : p));
       if (id.length > 5) {
         await apiFetch(`/products/${id}`, { method: 'PATCH', body: JSON.stringify({ stockQuantity: newQty }) });
-        alert('Stock level updated. Sync job dispatched to marketplaces.');
+        toast.success('Stock level updated. Sync job dispatched to marketplaces.');
       } else {
-        alert('Mock product stock level updated.');
+        toast.success('Mock product stock level updated.');
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to update stock.');
+      toast.error(err.message || 'Failed to update stock.');
       fetchProducts();
     }
   };

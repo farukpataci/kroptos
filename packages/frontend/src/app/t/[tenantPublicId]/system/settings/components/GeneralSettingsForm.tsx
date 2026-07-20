@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import { useTranslations } from 'next-intl';
 
 const fetcher = (url: string) => apiFetch<any>(url);
@@ -27,6 +28,7 @@ const languages = [
 
 export function GeneralSettingsForm() {
   const { data: settings, error, mutate } = useSWR('/system/settings', fetcher);
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<any>(null);
   const [isLangOpen, setIsLangOpen] = useState(false);
@@ -52,9 +54,9 @@ export function GeneralSettingsForm() {
         body: JSON.stringify(formData),
       });
       mutate(formData);
-      alert(t('successAlert'));
+      toast.success(t('successAlert'));
     } catch (err: any) {
-      alert(err.message || 'Kaydedilirken bir hata oluştu.');
+      toast.error(err.message || 'Kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }

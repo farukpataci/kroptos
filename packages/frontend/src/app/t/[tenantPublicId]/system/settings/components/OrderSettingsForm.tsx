@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch(url);
 
 export function OrderSettingsForm() {
   const { data: tenantSettings, error, mutate } = useSWR<any>('/system/tenant-settings', fetcher);
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<any>(null);
 
@@ -45,9 +47,9 @@ export function OrderSettingsForm() {
         body: JSON.stringify(payload),
       });
       mutate(payload);
-      alert('Order settings saved.');
+      toast.success('Order settings saved.');
     } catch (err: any) {
-      alert(err.message || 'Failed to save settings.');
+      toast.error(err.message || 'Failed to save settings.');
     } finally {
       setIsSaving(false);
     }

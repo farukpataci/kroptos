@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch(url);
 
 export function TenantSettingsForm() {
   const { data: tenantSettings, error, mutate } = useSWR('/system/tenant-settings', fetcher);
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<any>(null);
 
@@ -27,9 +29,9 @@ export function TenantSettingsForm() {
         body: JSON.stringify(formData),
       });
       mutate(formData);
-      alert('Firma ayarları başarıyla kaydedildi.');
+      toast.success('Firma ayarları başarıyla kaydedildi.');
     } catch (err: any) {
-      alert(err.message || 'Kaydedilirken bir hata oluştu.');
+      toast.error(err.message || 'Kaydedilirken bir hata oluştu.');
     } finally {
       setIsSaving(false);
     }

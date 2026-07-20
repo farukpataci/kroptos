@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch(url);
 
 export function LogoStockSettingsForm() {
+  const toast = useToast();
   const { data: settings, error, mutate } = useSWR('/logo-stock/settings', fetcher, {
     fallbackData: {
       isActive: true,
@@ -45,9 +47,9 @@ export function LogoStockSettingsForm() {
         body: JSON.stringify(formData)
       });
       mutate(formData);
-      alert('Logo ERP stock integration settings updated successfully.');
+      toast.success('Logo ERP stock integration settings updated successfully.');
     } catch (err: any) {
-      alert(err.message || 'Update error.');
+      toast.error(err.message || 'Update error.');
     } finally {
       setIsSaving(false);
     }

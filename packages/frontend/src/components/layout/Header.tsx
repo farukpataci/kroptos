@@ -58,7 +58,7 @@ function TenantSwitcher({ label, value, icon: Icon, options, onChange, disabled 
       >
         <Icon className="h-4 w-4 text-kp-text-tertiary" />
         <span className="text-kp-text-secondary">{label}:</span>
-        <span className="truncate max-w-[120px]">{selectedOption?.name || 'Not Selected'}</span>
+        <span className="truncate max-w-[120px]">{selectedOption?.name || 'Seçilmedi'}</span>
         <ChevronDownIcon className={`h-3 w-3 text-kp-text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
@@ -195,7 +195,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
           <div className="hidden items-center gap-2.5 sm:flex">
             {/* Agency Switcher */}
             <TenantSwitcher
-              label="Agency"
+              label="Ajans"
               value={tenantContext.agencyId || ''}
               icon={BuildingOfficeIcon}
               options={agencies}
@@ -204,7 +204,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
 
             {/* Client Switcher */}
             <TenantSwitcher
-              label="Client"
+              label="Müşteri"
               value={tenantContext.clientId || ''}
               icon={UserGroupIcon}
               options={filteredClients}
@@ -214,7 +214,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
 
             {/* Store Switcher */}
             <TenantSwitcher
-              label="Store"
+              label="Pazaryeri"
               value={tenantContext.storeId || ''}
               icon={BuildingStorefrontIcon}
               options={filteredStores}

@@ -15,6 +15,7 @@ import {
   LinkIcon
 } from '@heroicons/react/24/outline';
 import StatusBadge from '@/components/ui/StatusBadge';
+import { useToast } from '@/components/ui/Toast';
 
 interface Integration {
   id: string;
@@ -30,6 +31,7 @@ interface Integration {
 }
 
 export default function ErpPage() {
+  const toast = useToast();
   const { tenantContext } = useAuth();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -164,7 +166,7 @@ export default function ErpPage() {
       setIntegrations(integrations.filter(item => item.id !== integrationToDelete.id));
       setIntegrationToDelete(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete integration');
+      toast.error(err.message || 'Failed to delete integration');
     } finally {
       setIsDeleting(false);
     }
@@ -177,14 +179,14 @@ export default function ErpPage() {
         method: 'POST',
       });
       if (res.success) {
-        alert('Connection test success! Credentials validated.');
+        toast.success('Connection test success! Credentials validated.');
         fetchIntegrations();
       } else {
-        alert(`Connection test failed: ${res.message}`);
+        toast.error(`Connection test failed: ${res.message}`);
         fetchIntegrations();
       }
     } catch (err: any) {
-      alert(err.message || 'Error testing connection');
+      toast.error(err.message || 'Error testing connection');
     } finally {
       setTestingId(null);
     }
@@ -201,9 +203,9 @@ export default function ErpPage() {
         body: JSON.stringify({ status: 'active' }),
       });
       setIntegrations(integrations.map(item => item.id === id ? { ...updated, lastSyncAt: new Date().toISOString() } : item));
-      alert('ERP product and order synchronization completed successfully!');
+      toast.success('ERP product and order synchronization completed successfully!');
     } catch (err: any) {
-      alert(err.message || 'Error triggering sync');
+      toast.error(err.message || 'Error triggering sync');
     } finally {
       setSyncingId(null);
     }

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import {
   ArrowPathIcon,
   CloudArrowUpIcon,
@@ -52,6 +53,7 @@ interface ProductMapping {
 }
 
 export default function ProductMarketplaceSettings({ productId }: ProductMarketplaceSettingsProps) {
+  const toast = useToast();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [selectedIntegrationId, setSelectedIntegrationId] = useState('');
   const [mappings, setMappings] = useState<ProductMapping[]>([]);
@@ -210,9 +212,9 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
         return [updatedMap, ...filtered];
       });
       setActiveMapping(updatedMap);
-      alert('Kategori ve özellik eşleştirmeleri başarıyla kaydedildi. Ürün sıraya eklendi.');
+      toast.success('Kategori ve özellik eşleştirmeleri başarıyla kaydedildi. Ürün sıraya eklendi.');
     } catch (err: any) {
-      alert(err.message || 'Haritalandırma kaydedilirken hata oluştu.');
+      toast.error(err.message || 'Haritalandırma kaydedilirken hata oluştu.');
     } finally {
       setIsSyncing(false);
     }
@@ -233,7 +235,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       setAttributeMappings({});
       setCategoryAttributes([]);
     } catch (err: any) {
-      alert(err.message || 'Bağlantı kaldırılamadı.');
+      toast.error(err.message || 'Bağlantı kaldırılamadı.');
     } finally {
       setIsSyncing(false);
     }

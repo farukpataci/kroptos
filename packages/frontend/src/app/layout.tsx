@@ -1,9 +1,9 @@
 import '@/styles/globals.css';
-import 'tailwindcss/tailwind.css';
 import { Outfit, JetBrains_Mono } from 'next/font/google';
 import { AuthProvider } from '@/lib/auth-context';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { I18nProvider } from '@/context/I18nProvider';
+import { ToastProvider } from '@/components/ui/Toast';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -34,7 +34,9 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>
             <I18nProvider>
-              {children}
+              <ToastProvider>
+                {children}
+              </ToastProvider>
             </I18nProvider>
           </AuthProvider>
         </ThemeProvider>

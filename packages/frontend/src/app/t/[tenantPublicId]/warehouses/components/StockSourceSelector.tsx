@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
@@ -16,6 +17,7 @@ const sources = [
 ];
 
 export function StockSourceSelector() {
+  const toast = useToast();
   const { data: settings, mutate } = useSWR('/stock-source/settings', fetcher, {
     fallbackData: { mode: 'hybrid' }
   });
@@ -35,7 +37,7 @@ export function StockSourceSelector() {
       });
       mutate({ mode: id });
     } catch (err: any) {
-      alert(err.message || 'Update failed.');
+      toast.error(err.message || 'Update failed.');
     }
   };
 
@@ -46,9 +48,9 @@ export function StockSourceSelector() {
         method: 'POST',
         body: JSON.stringify({ provider: id })
       });
-      alert(`${id.toUpperCase()} connection test successful.`);
+      toast.success(`${id.toUpperCase()} connection test successful.`);
     } catch (err: any) {
-      alert(`${id.toUpperCase()} connection error: ` + err.message);
+      toast.error(`${id.toUpperCase()} connection error: ` + err.message);
     } finally {
       setTestingId(null);
     }

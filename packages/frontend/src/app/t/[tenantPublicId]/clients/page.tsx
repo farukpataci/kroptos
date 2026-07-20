@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import {
   UserGroupIcon,
   ExclamationTriangleIcon,
@@ -27,6 +28,7 @@ interface Client {
 }
 
 export default function ClientsPage() {
+  const toast = useToast();
   const { tenantContext } = useAuth();
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -146,7 +148,7 @@ export default function ClientsPage() {
       setClients(clients.filter(c => c.id !== clientToDelete.id));
       setClientToDelete(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete client');
+      toast.error(err.message || 'Failed to delete client');
     } finally {
       setIsDeleting(false);
     }

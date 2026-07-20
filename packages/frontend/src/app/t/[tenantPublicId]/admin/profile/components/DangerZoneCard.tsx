@@ -4,10 +4,12 @@ import { useState } from 'react';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { ArrowRightOnRectangleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 
 export function DangerZoneCard() {
+  const toast = useToast();
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deleteError, setDeleteError] = useState('');
@@ -38,7 +40,7 @@ export function DangerZoneCard() {
     } catch (err: any) {
       setDeleteError(err.message || 'Failed to delete account.');
       // Open modal again if needed or display error
-      alert(err.message || 'Failed to delete account.');
+      toast.error(err.message || 'Failed to delete account.');
     }
   };
 

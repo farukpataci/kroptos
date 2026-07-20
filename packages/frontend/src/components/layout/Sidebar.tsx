@@ -66,7 +66,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       items: [
         { label: t('dashboard'), href: `/t/${tenantPublicId}/dashboard`, icon: HomeIcon },
         { label: t('clients'), href: `/t/${tenantPublicId}/clients`, icon: UserGroupIcon },
-        { label: t('stores'), href: `/t/${tenantPublicId}/stores`, icon: BuildingStorefrontIcon },
+        { label: t('marketplaces'), href: `/t/${tenantPublicId}/stores`, icon: BuildingStorefrontIcon },
       ],
     },
     {

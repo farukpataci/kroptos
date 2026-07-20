@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import {
   XMarkIcon,
   PlusIcon,
@@ -63,6 +64,7 @@ export default function CategoryMappingModal({
   integrationId,
   integrationName,
 }: CategoryMappingModalProps) {
+  const toast = useToast();
   const [localCategories, setLocalCategories] = useState<LocalCategory[]>([]);
   const [trendyolCategories, setTrendyolCategories] = useState<TrendyolCategory[]>([]);
   const [flattenedTrendyolCategories, setFlattenedTrendyolCategories] = useState<Array<{ id: string; fullName: string }>>([]);
@@ -189,7 +191,7 @@ export default function CategoryMappingModal({
   const handleSaveMapping = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLocalCategoryId || !selectedTrendyolCategoryId) {
-      alert('Lütfen yerel ve Trendyol kategorilerini seçiniz.');
+      toast.warning('Lütfen yerel ve Trendyol kategorilerini seçiniz.');
       return;
     }
 
@@ -221,7 +223,7 @@ export default function CategoryMappingModal({
       setCategoryAttributes([]);
       setAttributeMappings({});
     } catch (err: any) {
-      alert(err.message || 'Eşleştirme kaydedilirken hata oluştu.');
+      toast.error(err.message || 'Eşleştirme kaydedilirken hata oluştu.');
     } finally {
       setIsSubmitting(false);
     }
@@ -236,7 +238,7 @@ export default function CategoryMappingModal({
       });
       setMappings((prev) => prev.filter((m) => m.id !== mappingId));
     } catch (err: any) {
-      alert(err.message || 'Eşleştirme silinemedi.');
+      toast.error(err.message || 'Eşleştirme silinemedi.');
     } finally {
       setIsDeletingId(null);
     }

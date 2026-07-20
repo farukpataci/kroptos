@@ -10,6 +10,7 @@ import {
   XCircleIcon,
   UserPlusIcon
 } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/ui/Toast';
 
 interface User {
   id: string;
@@ -58,6 +59,7 @@ const INITIAL_USERS: User[] = [
 const ROLES = ['Administrator', 'Depo Sorumlusu', 'Muhasebe', 'Satış Temsilcisi'];
 
 export function UsersTable() {
+  const toast = useToast();
   const [users, setUsers] = useState<User[]>(INITIAL_USERS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoleFilter, setSelectedRoleFilter] = useState('All');
@@ -103,7 +105,7 @@ export function UsersTable() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.email) {
-      alert('Lütfen ad soyad ve e-posta alanlarını doldurun.');
+      toast.warning('Lütfen ad soyad ve e-posta alanlarını doldurun.');
       return;
     }
 

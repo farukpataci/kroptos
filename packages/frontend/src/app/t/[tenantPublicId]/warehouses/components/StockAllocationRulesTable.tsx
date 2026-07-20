@@ -3,10 +3,12 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
 export function StockAllocationRulesTable() {
+  const toast = useToast();
   const { data: rules, mutate } = useSWR('/stock-allocation/rules', fetcher, {
     fallbackData: [
       { id: '1', name: 'Trendyol Proportional Distribution', priority: 1, percentAllocation: 40, fixedAllocation: 0, reserveRatio: 5, allocationType: 'PERCENT', provider: 'trendyol', isActive: true },
@@ -38,7 +40,7 @@ export function StockAllocationRulesTable() {
       });
       setSimResult(res);
     } catch (err: any) {
-      alert('Simulation calculation error: ' + err.message);
+      toast.error('Simulation calculation error: ' + err.message);
     } finally {
       setIsCalculating(false);
     }

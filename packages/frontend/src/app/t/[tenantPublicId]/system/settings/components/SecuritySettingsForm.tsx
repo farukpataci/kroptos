@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch(url);
 
 export function SecuritySettingsForm() {
   const { data: security, error, mutate } = useSWR<any>('/system/security-settings', fetcher);
+  const toast = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<any>(null);
 
@@ -39,9 +41,9 @@ export function SecuritySettingsForm() {
         body: JSON.stringify(formData),
       });
       mutate(formData);
-      alert('Security settings saved.');
+      toast.success('Security settings saved.');
     } catch (err: any) {
-      alert(err.message || 'Failed to save settings.');
+      toast.error(err.message || 'Failed to save settings.');
     } finally {
       setIsSaving(false);
     }
