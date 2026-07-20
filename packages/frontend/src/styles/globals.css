@@ -87,7 +87,7 @@
   /* Text */
   --text-primary: #F9FAFB;   /* gray-50 */
   --text-secondary: #98A2B3; /* gray-400 */
-  --text-tertiary: #667085;  /* gray-500 */
+  --text-tertiary: #8C97A8;  /* gray-400/500 mix with improved dark contrast */
 
   /* Accent */
   --accent: #7592FF;         /* brand-400 */
