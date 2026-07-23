@@ -722,6 +722,62 @@
         "title": "Depoyu Sil",
         "desc": "<b>{name}</b> depoyu sistemden silmek istediğinize emin misiniz? Depo ile eşleşen lokasyonlar ve envanterler etkilenebilir."
       }
+    },
+    "zones": {
+      "title": "Depo Bölge Yönetimi",
+      "subtitle": "Depolarınızın içindeki Mal Kabul, Toplama, Depolama, Paketleme ve Karantina alanlarını yapılandırın",
+      "addZone": "Yeni Bölge Ekle",
+      "searchPlaceholder": "Bölge adı, kodu veya açıklama...",
+      "warehouseFilter": "Depo:",
+      "allWarehouses": "Tüm Depolar",
+      "typeFilter": "Bölge Tipi:",
+      "allTypes": "Tüm Tipler",
+      "types": {
+        "receiving": "Mal Kabul",
+        "picking": "Sipariş Toplama",
+        "packing": "Paketleme & Ambalaj",
+        "storage": "Ana Depolama",
+        "return": "İade İşleme",
+        "quarantine": "Karantina & İnceleme",
+        "outbound": "Sevkiyat Bekleme",
+        "damaged": "Hasarlı Ürün"
+      },
+      "colNameCode": "Bölge Adı & Kodu",
+      "colWarehouse": "Bağlı Depo",
+      "colType": "Bölge Tipi",
+      "colPriority": "Öncelik",
+      "colDescription": "Açıklama",
+      "colStatus": "Durum",
+      "colActions": "İşlemler",
+      "loading": "Bölgeler yükleniyor...",
+      "loadFailed": "Veriler yüklenirken bir hata oluştu.",
+      "empty": "Eşleşen depo bölgesi bulunamadı.",
+      "fillRequired": "Lütfen bağlı depo, bölge adı ve bölge kodunu doldurun.",
+      "updateSuccess": "Bölge bilgisi başarıyla güncellendi.",
+      "createSuccess": "Yeni depo bölgesi başarıyla oluşturuldu.",
+      "saveFailed": "Bölge kaydedilemedi.",
+      "deleteSuccess": "Depo bölgesi başarıyla silindi.",
+      "deleteFailed": "Bölge silinemedi.",
+      "modal": {
+        "editTitle": "Depo Bölgesi Düzenle",
+        "createTitle": "Yeni Depo Bölgesi Ekle",
+        "warehouseLabel": "Bağlı Depo *",
+        "nameLabel": "Bölge Adı *",
+        "namePlaceholder": "Örn: Mal Kabul Bölgesi",
+        "codeLabel": "Bölge Kodu *",
+        "typeLabel": "Bölge Tipi *",
+        "priorityLabel": "Öncelik Sırası",
+        "descriptionLabel": "Açıklama",
+        "descriptionPlaceholder": "Bölgenin kullanım amacı ve detayları...",
+        "statusLabel": "Durumu",
+        "discard": "Vazgeç",
+        "saveChanges": "Değişiklikleri Kaydet",
+        "createZone": "Bölge Oluştur"
+      },
+      "deleteModal": {
+        "title": "Depo Bölgesini Sil",
+        "desc": "<b>{name}</b> bölgesini silmek istediğinize emin misiniz? Bu bölgeye bağlı raflar ve lokasyonlar etkilenebilir."
+      }
     }
   },
   "integrations": {
