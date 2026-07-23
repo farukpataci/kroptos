@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { OrderFilters } from '../hooks/useOrders';
 
 interface OrderStatusSidebarProps {
@@ -9,11 +10,11 @@ interface OrderStatusSidebarProps {
 }
 
 const STATUS_ITEMS = [
-  { value: 'pending', label: 'Beklemede', dotClass: 'bg-amber-400' },
-  { value: 'processing', label: 'İşlemde', dotClass: 'bg-blue-400' },
-  { value: 'shipped', label: 'Kargoda', dotClass: 'bg-violet-400' },
-  { value: 'delivered', label: 'Teslim', dotClass: 'bg-emerald-400' },
-  { value: 'cancelled', label: 'İptal', dotClass: 'bg-red-400' },
+  { value: 'pending', dotClass: 'bg-amber-400' },
+  { value: 'processing', dotClass: 'bg-blue-400' },
+  { value: 'shipped', dotClass: 'bg-violet-400' },
+  { value: 'delivered', dotClass: 'bg-emerald-400' },
+  { value: 'cancelled', dotClass: 'bg-red-400' },
 ];
 
 export default function OrderStatusSidebar({
@@ -21,6 +22,8 @@ export default function OrderStatusSidebar({
   statusCounts,
   onFilterChange,
 }: OrderStatusSidebarProps) {
+  const t = useTranslations('orders');
+  const tc = useTranslations('common');
   const totalCount = Object.values(statusCounts).reduce((a, b) => a + b, 0);
 
   const renderItem = (
@@ -63,17 +66,17 @@ export default function OrderStatusSidebar({
   return (
     <div className="p-4 space-y-3">
       <nav className="space-y-0.5">
-        {renderItem('all', 'Tümü', totalCount, 'bg-kp-text-tertiary')}
+        {renderItem('all', tc('all'), totalCount, 'bg-kp-text-tertiary')}
 
         <div className="pt-2">
           <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary">
-            Sipariş Durumu
+            {t('orderStatusTitle')}
           </p>
           <div className="space-y-0.5">
             {STATUS_ITEMS.map((item) =>
               renderItem(
                 item.value,
-                item.label,
+                t(`status.${item.value}`),
                 statusCounts[item.value] || 0,
                 item.dotClass,
               ),
