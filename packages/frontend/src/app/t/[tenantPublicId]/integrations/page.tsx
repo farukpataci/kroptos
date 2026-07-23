@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   LinkIcon,
   CpuChipIcon,
@@ -16,13 +17,14 @@ import { IntegrationTree } from './components/IntegrationTree';
 type IntegrationTab = 'marketplace' | 'erp' | 'shipping' | 'errors';
 
 export default function IntegrationsParentPage() {
+  const t = useTranslations('integrations');
   const [activeTab, setActiveTab] = useState<IntegrationTab>('marketplace'); // Default to marketplace
 
   const TABS = [
-    { id: 'marketplace' as IntegrationTab, label: 'Pazaryerleri', icon: LinkIcon },
-    { id: 'erp' as IntegrationTab, label: 'Stok Kaynağı', icon: CpuChipIcon },
-    { id: 'shipping' as IntegrationTab, label: 'Kargo Yönetimi', icon: TruckIcon },
-    { id: 'errors' as IntegrationTab, label: 'Entegrasyon Hataları', icon: ExclamationTriangleIcon },
+    { id: 'marketplace' as IntegrationTab, label: t('tabMarketplace'), icon: LinkIcon },
+    { id: 'erp' as IntegrationTab, label: t('tabErp'), icon: CpuChipIcon },
+    { id: 'shipping' as IntegrationTab, label: t('tabShipping'), icon: TruckIcon },
+    { id: 'errors' as IntegrationTab, label: t('tabErrors'), icon: ExclamationTriangleIcon },
   ];
 
   return (

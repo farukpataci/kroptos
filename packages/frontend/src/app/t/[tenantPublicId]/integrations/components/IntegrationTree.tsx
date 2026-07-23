@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { 
   LinkIcon,
@@ -18,6 +19,7 @@ interface Integration {
 }
 
 export function IntegrationTree() {
+  const t = useTranslations('integrations.tree');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,7 +52,7 @@ export function IntegrationTree() {
       <div className="w-full bg-white rounded-2xl p-8 border border-kp-border shadow-xs flex items-center justify-center min-h-[220px]">
         <div className="flex flex-col items-center gap-2">
           <ArrowPathIcon className="h-6 w-6 text-kp-accent animate-spin" />
-          <span className="text-xs text-kp-text-tertiary">Entegrasyon ağacı yükleniyor...</span>
+          <span className="text-xs text-kp-text-tertiary">{t('loading')}</span>
         </div>
       </div>
     );
@@ -110,8 +112,8 @@ export function IntegrationTree() {
           </div>
           <div className="h-6 w-0.5 border-l border-dashed border-slate-200 mt-1 relative z-10"></div>
           <div className="bg-kp-bg-secondary border border-kp-border rounded-xl px-6 py-4 text-center max-w-sm relative z-10">
-            <p className="text-xs font-semibold text-kp-text-secondary">Bağlı Entegrasyon Yok</p>
-            <p className="text-[10px] text-kp-text-tertiary mt-1">Sisteme bağlı aktif entegrasyon bulunmamaktadır. Eklemek için aşağıdaki sekmeleri kullanabilirsiniz.</p>
+            <p className="text-xs font-semibold text-kp-text-secondary">{t('emptyTitle')}</p>
+            <p className="text-[10px] text-kp-text-tertiary mt-1">{t('emptyDesc')}</p>
           </div>
         </div>
       </div>

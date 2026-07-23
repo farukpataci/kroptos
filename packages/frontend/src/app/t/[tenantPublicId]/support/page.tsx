@@ -17,6 +17,7 @@ import {
   TrashIcon,
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/Toast';
 
 interface Message {
@@ -193,6 +194,8 @@ const INITIAL_TICKETS: Ticket[] = [
 ];
 
 export default function SupportTicketsPage() {
+  const t = useTranslations('support');
+  const tc = useTranslations('common');
   const [tickets, setTickets] = useState<Ticket[]>(INITIAL_TICKETS);
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [selectedTicketIds, setSelectedTicketIds] = useState<string[]>([]);
@@ -285,7 +288,7 @@ export default function SupportTicketsPage() {
     setTickets((prev) =>
       prev.map((t) => (selectedTicketIds.includes(t.id) ? { ...t, status } : t))
     );
-    toast.success(`${selectedTicketIds.length} destek talebi "${status === 'Solved' ? 'Çözüldü' : 'Beklemede'}" olarak güncellendi.`);
+    toast.success(t('bulkStatusUpdated', { count: selectedTicketIds.length, status: status === 'Solved' ? t('statusSolved') : t('statusPending') }));
     setSelectedTicketIds([]);
     setIsBulkDropdownOpen(false);
   };
@@ -459,7 +462,7 @@ export default function SupportTicketsPage() {
                     className="absolute right-0 mt-2 w-56 bg-kp-bg-primary border border-kp-border rounded-kp-md shadow-lg z-20 p-3 text-left space-y-2 animate-fade-in"
                   >
                     <div className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider pb-1 border-b border-kp-border">
-                      Kategoriye Göre Filtrele
+                      {t('filterByCategory')}
                     </div>
                     <div className="space-y-1 max-h-40 overflow-y-auto">
                       {['General Support', 'Billing & Subscriptions', 'Technical Bug', 'Feature Request', 'Security Settings'].map((cat) => (
@@ -485,7 +488,7 @@ export default function SupportTicketsPage() {
                         onClick={() => setSelectedCategories([])}
                         className="w-full text-center text-[10px] text-kp-accent hover:underline font-semibold pt-1 border-t border-kp-border mt-1 block"
                       >
-                        Temizle
+                        {tc('actions.clear')}
                       </button>
                     )}
                   </div>
@@ -502,7 +505,7 @@ export default function SupportTicketsPage() {
                     }}
                     className="flex items-center gap-1.5 rounded-kp-md border border-kp-accent bg-kp-accent text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-all hover:bg-kp-accent-hover"
                   >
-                    <span>Toplu İşlemler ({selectedTicketIds.length})</span>
+                    <span>{t('bulkActions', { count: selectedTicketIds.length })}</span>
                     <ChevronDownIcon className="h-3.5 w-3.5" />
                   </button>
 
@@ -516,14 +519,14 @@ export default function SupportTicketsPage() {
                         className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-emerald-600 hover:text-emerald-700 text-xs font-semibold flex items-center gap-2 transition-colors text-left"
                       >
                         <CheckCircleIcon className="h-4 w-4" />
-                        Çözüldü Yap
+                        {t('markSolved')}
                       </button>
                       <button
                         onClick={() => handleBulkStatusChange('Pending')}
                         className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-amber-600 hover:text-amber-700 text-xs font-semibold flex items-center gap-2 transition-colors text-left"
                       >
                         <ClockIcon className="h-4 w-4" />
-                        Beklemede Yap
+                        {t('markPending')}
                       </button>
                       <div className="border-t border-kp-border my-1" />
                       <button
@@ -531,14 +534,14 @@ export default function SupportTicketsPage() {
                         className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-danger hover:text-red-700 text-xs font-semibold flex items-center gap-2 transition-colors text-left"
                       >
                         <TrashIcon className="h-4 w-4" />
-                        Toplu Sil
+                        {t('bulkDelete')}
                       </button>
                       <button
                         onClick={() => setSelectedTicketIds([])}
                         className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-text-tertiary text-xs font-medium flex items-center gap-2 transition-colors text-left"
                       >
                         <XMarkIcon className="h-4 w-4" />
-                        Seçimi Temizle
+                        {t('clearSelection')}
                       </button>
                     </div>
                   )}
@@ -625,7 +628,7 @@ export default function SupportTicketsPage() {
                             }}
                             className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-text-secondary hover:text-kp-text-primary text-[11px] font-semibold transition-colors block text-left"
                           >
-                            Detayları Gör
+                            {t('viewDetails')}
                           </button>
                           <button
                             onClick={() => {
@@ -634,7 +637,7 @@ export default function SupportTicketsPage() {
                             }}
                             className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-text-secondary hover:text-kp-text-primary text-[11px] font-semibold transition-colors block text-left"
                           >
-                            Çözüldü Yap
+                            {t('markSolved')}
                           </button>
                           <button
                             onClick={() => {
@@ -643,7 +646,7 @@ export default function SupportTicketsPage() {
                             }}
                             className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-text-secondary hover:text-kp-text-primary text-[11px] font-semibold transition-colors block text-left"
                           >
-                            Beklemede Yap
+                            {t('markPending')}
                           </button>
                           <div className="border-t border-kp-border my-1"></div>
                           <button
@@ -653,7 +656,7 @@ export default function SupportTicketsPage() {
                             }}
                             className="w-full px-3 py-1.5 hover:bg-red-50 text-red-600 text-[11px] font-semibold transition-colors block text-left"
                           >
-                            Sil
+                            {tc('actions.delete')}
                           </button>
                         </div>
                       )}
@@ -697,7 +700,7 @@ export default function SupportTicketsPage() {
                     <button
                       onClick={() => setSelectedTicketId(null)}
                       className="p-1.5 border border-kp-border hover:border-kp-border-hover rounded-kp-md text-kp-text-secondary hover:text-kp-text-primary transition-colors"
-                      title="Listeye Dön"
+                      title={t('backToList')}
                     >
                       <ArrowUturnLeftIcon className="h-4 w-4" />
                     </button>
@@ -918,7 +921,7 @@ export default function SupportTicketsPage() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Toplu Talepleri Sil
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> {t('bulkDeleteModal.title')}
               </h3>
               <button
                 onClick={() => setIsBulkDeleteModalOpen(false)}
@@ -929,7 +932,10 @@ export default function SupportTicketsPage() {
             </div>
             <div className="p-6">
               <p className="text-xs text-kp-text-secondary leading-relaxed">
-                Seçili <span className="font-bold text-kp-danger">{selectedTicketIds.length} destek talebini</span> silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+                {t.rich('bulkDeleteModal.desc', {
+                  count: selectedTicketIds.length,
+                  b: (chunks) => <span className="font-bold text-kp-danger">{chunks}</span>,
+                })}
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
@@ -938,7 +944,7 @@ export default function SupportTicketsPage() {
                 onClick={() => setIsBulkDeleteModalOpen(false)}
                 className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
               >
-                İptal
+                {tc('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -946,7 +952,7 @@ export default function SupportTicketsPage() {
                 className="flex items-center gap-1.5 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-all"
               >
                 <TrashIcon className="h-3.5 w-3.5" />
-                Seçilenleri Sil
+                {t('bulkDeleteModal.submit')}
               </button>
             </div>
           </div>

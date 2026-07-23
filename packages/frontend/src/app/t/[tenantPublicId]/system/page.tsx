@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   ClipboardDocumentListIcon,
   Cog6ToothIcon,
@@ -13,12 +14,13 @@ import WarehousesPage from '../warehouses/page';
 type SystemTab = 'audit_logs' | 'settings' | 'warehouses';
 
 export default function SystemParentPage() {
+  const t = useTranslations('system');
   const [activeTab, setActiveTab] = useState<SystemTab>('settings'); // Default to settings since it's the main system page
 
   const TABS = [
-    { id: 'settings' as SystemTab, label: 'Sistem Ayarları', icon: Cog6ToothIcon },
-    { id: 'warehouses' as SystemTab, label: 'Depo Yönetimi', icon: BuildingOffice2Icon },
-    { id: 'audit_logs' as SystemTab, label: 'Sistem Günlüğü', icon: ClipboardDocumentListIcon },
+    { id: 'settings' as SystemTab, label: t('tabSettings'), icon: Cog6ToothIcon },
+    { id: 'warehouses' as SystemTab, label: t('tabWarehouses'), icon: BuildingOffice2Icon },
+    { id: 'audit_logs' as SystemTab, label: t('tabAuditLogs'), icon: ClipboardDocumentListIcon },
   ];
 
   return (
