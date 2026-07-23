@@ -192,6 +192,23 @@
         "draft": "Taslak",
         "suspended": "Askıda"
       },
+      "salesMode": {
+        "single": "Tekli Satış Ürünleri",
+        "multi": "Çoklu & Çapraz Satışlar (Paket / Set)",
+        "addBundle": "Çapraz Satış Paketi Ekle"
+      },
+      "bundle": {
+        "colBundle": "Çapraz Satış Paketi",
+        "colComponents": "Bileşen Ürünler",
+        "colPriceDiscount": "Paket Fiyatı & İndirim",
+        "colComponentStock": "Bileşen Stok Durumu",
+        "emptyTitle": "Henüz çoklu / çapraz satış paketi eklenmedi",
+        "emptyDesc": "Üst taraftaki \"+ Çapraz Satış Paketi Ekle\" butonunu kullanarak ürün seti oluşturabilirsiniz.",
+        "badge": "Paket Set",
+        "sampleComponents": "1x Yazıcı + 5x Etiket Rulosu",
+        "sampleDiscount": "%15 Paket İndirimi",
+        "allInStock": "Tamamı Stokta ({count} Paket)"
+      },
       "lowStockFilter": "Az Stok ({count})",
       "outOfStockFilter": "Stok Tükenen ({count})",
       "searchPlaceholder": "Ürün adı, SKU veya barkod...",
@@ -385,6 +402,73 @@
         "choose": "Seç",
         "pasteUrl": "URL yapıştır...",
         "addImage": "Görsel Ekle"
+      }
+    },
+    "bundleModal": {
+      "tabs": {
+        "bundle": "Paket & Çapraz Satış",
+        "basic": "Genel Bilgiler",
+        "pricing": "Fiyat & Stok",
+        "images": "Paket Görselleri",
+        "dimensions": "Fiziksel & Desi"
+      },
+      "editTitle": "Çapraz Satış Paketini Düzenle",
+      "createTitle": "Yeni Çapraz Satış Paketi Oluştur",
+      "subtitle": "Birden fazla ürünü indirimli paket fiyatı ile tanımlayarak çapraz satılmasını sağlayın.",
+      "defaultDescription": "Çapraz Satış Paketi ({rate}% İndirimli)",
+      "saveSuccess": "Çapraz satış paketi kaydı başarıyla oluşturuldu.",
+      "saveFailed": "Paket kaydedilirken hata oluştu.",
+      "updateBundle": "Paketi Güncelle",
+      "saveBundle": "Çapraz Satış Paketini Kaydet",
+      "errors": {
+        "nameRequired": "Paket adı zorunludur.",
+        "skuRequired": "Paket SKU kodu zorunludur.",
+        "itemsRequired": "Paket içerisine en az 1 bileşen ürün eklemelisiniz."
+      },
+      "bundleTab": {
+        "title": "Paket İçeriği & Çapraz Satış Yapılandırması",
+        "desc": "Pakete dahil edilecek tekil ürünleri seçin ve paket indirim oranını belirleyin.",
+        "addComponent": "Bileşen Ürün Ekle",
+        "componentNo": "Bileşen Ürün #{no}",
+        "stock": "Stok",
+        "quantity": "Adet",
+        "componentTotal": "Bileşen Toplamı",
+        "componentsTotal": "Bileşenler Toplamı",
+        "discount": "Paket İndirimi (%)",
+        "netPrice": "Net Paket Fiyatı",
+        "producibleStock": "Üretilebilir Otomatik Paket Stoğu",
+        "producibleStockDesc": "En düşük stoklu alt bileşene göre anlık üretilebilecek paket adedi.",
+        "packageCount": "{count} Paket"
+      },
+      "basic": {
+        "nameLabel": "Paket Adı *",
+        "namePlaceholder": "örn. Barkod Yazıcı + 5 Rulo Etiket Seti",
+        "skuLabel": "Paket SKU Kodu *",
+        "barcodeLabel": "Barkod",
+        "categoryLabel": "Kategori",
+        "statusLabel": "Yayın Durumu",
+        "statusActive": "Aktif (Satışta)",
+        "statusDraft": "Taslak",
+        "statusSuspended": "Askıda",
+        "descriptionLabel": "Paket Açıklaması",
+        "descriptionPlaceholder": "Paket avantajları ve detayları..."
+      },
+      "pricing": {
+        "netPriceLabel": "Net Paket Satış Fiyatı (₺) *",
+        "netPriceHint": "Paket İçeriği sekmesinde belirlenen indirimli net fiyattır.",
+        "basePriceLabel": "Bileşenler Taban Fiyatı (₺)",
+        "currencyLabel": "Para Birimi",
+        "taxRateLabel": "KDV Oranı (%)"
+      },
+      "images": {
+        "urlLabel": "Resim URL Adresi Ekle"
+      },
+      "dimensions": {
+        "weight": "Ağırlık (kg)",
+        "width": "Genişlik (cm)",
+        "height": "Yükseklik (cm)",
+        "depth": "Derinlik (cm)",
+        "desiLabel": "Hesaplanan Kargo Desi Değeri:"
       }
     },
     "marketplace": {

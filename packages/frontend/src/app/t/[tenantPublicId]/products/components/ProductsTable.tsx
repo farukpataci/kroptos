@@ -13,6 +13,8 @@ import {
   XMarkIcon,
   ExclamationTriangleIcon,
   ArrowPathIcon,
+  SparklesIcon,
+  PlusIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { Product, Category, ProductFilters } from '../hooks/useProducts';
@@ -32,6 +34,9 @@ interface ProductsTableProps {
   totalPages: number;
   pageSize: number;
   lowStockThreshold: number;
+  salesMode?: 'single' | 'multi';
+  onSalesModeChange?: (mode: 'single' | 'multi') => void;
+  onAddBundle?: () => void;
   onFilterChange: (f: ProductFilters) => void;
   onPageChange: (p: number) => void;
   onRowClick: (product: Product) => void;
@@ -61,6 +66,9 @@ export default function ProductsTable({
   totalPages,
   pageSize,
   lowStockThreshold,
+  salesMode = 'single',
+  onSalesModeChange,
+  onAddBundle,
   onFilterChange,
   onPageChange,
   onRowClick,
@@ -141,8 +149,59 @@ export default function ProductsTable({
     }
   };
 
+  const singleCount = products.filter((p) => !p.isBundle).length;
+  const multiCount = products.filter((p) => p.isBundle).length;
+
+  const displayedProducts = products.filter((p) =>
+    salesMode === 'multi' ? p.isBundle : !p.isBundle
+  );
+
   return (
     <div className="space-y-4 relative">
+      {/* Sales Mode Switcher (Tekli Satış vs Çoklu & Çapraz Satışlar) */}
+      <div className="flex flex-col sm:flex-row items-center justify-between bg-kp-bg-secondary p-2 rounded-kp-lg border border-kp-border gap-3 shadow-xs">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+          <button
+            onClick={() => onSalesModeChange?.('single')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-kp-md text-xs font-bold transition-all ${
+              salesMode === 'single'
+                ? 'bg-kp-accent text-white shadow-xs'
+                : 'text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover'
+            }`}
+          >
+            <TagIcon className="h-4 w-4" />
+            <span>{t('salesMode.single')}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${salesMode === 'single' ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'}`}>
+              {singleCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => onSalesModeChange?.('multi')}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-kp-md text-xs font-bold transition-all ${
+              salesMode === 'multi'
+                ? 'bg-kp-accent text-white shadow-xs'
+                : 'text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover'
+            }`}
+          >
+            <SparklesIcon className="h-4 w-4" />
+            <span>{t('salesMode.multi')}</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] ${salesMode === 'multi' ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'}`}>
+              {multiCount}
+            </span>
+          </button>
+        </div>
+
+        {salesMode === 'multi' && (
+          <button
+            onClick={onAddBundle}
+            className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors"
+          >
+            <span>+ {t('salesMode.addBundle')}</span>
+          </button>
+        )}
+      </div>
+
       {/* Top Filter Tabs & Stats Bar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between border-b border-kp-border pb-4">
         <div className="flex items-center gap-1 overflow-x-auto">
@@ -248,13 +307,15 @@ export default function ProductsTable({
           </div>
         </div>
 
-        {/* Add Product Button */}
-        <button
-          onClick={onAddProduct}
-          className="flex items-center justify-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold shadow-xs transition-colors"
-        >
-          <span>+ {t('addProduct')}</span>
-        </button>
+        {/* Add Product Button (Only shown in single mode, in multi mode it is at top right) */}
+        {salesMode === 'single' && (
+          <button
+            onClick={onAddProduct}
+            className="flex items-center justify-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold shadow-xs transition-colors"
+          >
+            <span>+ {t('addProduct')}</span>
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -271,11 +332,22 @@ export default function ProductsTable({
                 />
               </th>
               <th className="py-3 px-4 w-10" />
-              <th className="py-3 px-4">{t('columns.product')}</th>
-              <th className="py-3 px-4">{t('columns.skuBarcode')}</th>
-              <th className="py-3 px-4">{t('columns.location')}</th>
-              <th className="py-3 px-4 text-right">{t('columns.price')}</th>
-              <th className="py-3 px-4 text-center">{t('columns.stock')}</th>
+              {salesMode === 'single' ? (
+                <>
+                  <th className="py-3 px-4">{t('columns.product')}</th>
+                  <th className="py-3 px-4">{t('columns.skuBarcode')}</th>
+                  <th className="py-3 px-4">{t('columns.location')}</th>
+                  <th className="py-3 px-4 text-right">{t('columns.price')}</th>
+                  <th className="py-3 px-4 text-center">{t('columns.stock')}</th>
+                </>
+              ) : (
+                <>
+                  <th className="py-3 px-4">{t('bundle.colBundle')}</th>
+                  <th className="py-3 px-4">{t('bundle.colComponents')}</th>
+                  <th className="py-3 px-4 text-right">{t('bundle.colPriceDiscount')}</th>
+                  <th className="py-3 px-4 text-center">{t('bundle.colComponentStock')}</th>
+                </>
+              )}
               <th className="py-3 px-4 text-center">{t('columns.margin')}</th>
               <th className="py-3 px-4">{t('columns.status')}</th>
               <th className="py-3 px-4 text-right">{t('columns.actions')}</th>
@@ -292,22 +364,24 @@ export default function ProductsTable({
                   ))}
                 </tr>
               ))
-            ) : products.length === 0 ? (
+            ) : displayedProducts.length === 0 ? (
               <tr>
                 <td colSpan={10} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
-                    <span className="text-3xl">🏷️</span>
-                    <p className="text-sm font-medium text-kp-text-secondary">{t('empty.title')}</p>
+                    <span className="text-3xl">{salesMode === 'multi' ? '✨' : '🏷️'}</span>
+                    <p className="text-sm font-medium text-kp-text-secondary">
+                      {salesMode === 'multi' ? t('bundle.emptyTitle') : t('empty.title')}
+                    </p>
                     <p className="text-xs text-kp-text-tertiary">
-                      {filters.search || filters.status !== 'all' || filters.categoryId !== 'all' || filters.stockLevel !== 'all'
-                        ? t('empty.filtered')
+                      {salesMode === 'multi'
+                        ? t('bundle.emptyDesc')
                         : t('empty.noProducts')}
                     </p>
                   </div>
                 </td>
               </tr>
             ) : (
-              products.map((product) => {
+              displayedProducts.map((product) => {
                 const isSelected = selectedIds.includes(product.id);
                 return (
                   <tr
@@ -338,70 +412,119 @@ export default function ProductsTable({
                       </div>
                     </td>
 
-                    {/* Product */}
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="font-semibold text-kp-text-primary text-[12px] group-hover:text-kp-accent transition-colors">
-                          {product.name}
-                        </p>
-                        {product.description && (
-                          <p className="text-[10px] text-kp-text-tertiary max-w-xs truncate">{product.description}</p>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* SKU / Barcode */}
-                    <td className="py-3 px-4">
-                      <div>
-                        <p className="font-mono text-[11px] font-medium text-kp-text-primary">{product.sku}</p>
-                        {product.barcode && (
-                          <p className="text-[10px] text-kp-text-tertiary">{product.barcode}</p>
-                        )}
-                      </div>
-                    </td>
-
-                    {/* Location / Address */}
-                    <td className="py-3 px-4">
-                      {product.locationCode ? (
-                        <div>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[10px] font-mono font-semibold bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
-                            <TagIcon className="h-3 w-3" />
-                            {product.locationCode}
-                          </span>
-                          {product.warehouseName && (
-                            <p className="text-[9px] text-kp-text-tertiary truncate max-w-[120px]" title={`${product.warehouseName}${product.zoneName ? ` - ${product.zoneName}` : ''}`}>
-                              {product.warehouseName}
+                    {salesMode === 'single' ? (
+                      <>
+                        {/* Product Name */}
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-semibold text-kp-text-primary text-[12px] group-hover:text-kp-accent transition-colors">
+                              {product.name}
                             </p>
+                            {product.description && (
+                              <p className="text-[10px] text-kp-text-tertiary max-w-xs truncate">{product.description}</p>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* SKU / Barcode */}
+                        <td className="py-3 px-4">
+                          <div>
+                            <p className="font-mono text-[11px] font-medium text-kp-text-primary">{product.sku}</p>
+                            {product.barcode && (
+                              <p className="text-[10px] text-kp-text-tertiary">{product.barcode}</p>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Location / Address */}
+                        <td className="py-3 px-4">
+                          {product.locationCode ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[10px] font-mono font-semibold bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
+                                <TagIcon className="h-3 w-3" />
+                                {product.locationCode}
+                              </span>
+                              {product.warehouseName && (
+                                <p className="text-[9px] text-kp-text-tertiary truncate max-w-[120px]" title={`${product.warehouseName}${product.zoneName ? ` - ${product.zoneName}` : ''}`}>
+                                  {product.warehouseName}
+                                </p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-[10px] text-kp-text-tertiary italic">{t('notAssigned')}</span>
                           )}
-                        </div>
-                      ) : (
-                        <span className="text-[10px] text-kp-text-tertiary italic">{t('notAssigned')}</span>
-                      )}
-                    </td>
+                        </td>
 
-                    {/* Price */}
-                    <td className="py-3 px-4 text-right">
-                      <div>
-                        <p className="font-semibold text-kp-text-primary text-[12px]">
-                          {product.currency === 'TRY' ? '₺' : product.currency === 'USD' ? '$' : '€'}
-                          {parseFloat(product.price.toString()).toLocaleString('tr-TR', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </p>
-                        {product.basePrice && product.basePrice !== product.price && (
-                          <p className="text-[10px] text-kp-text-tertiary line-through">
-                            {product.currency === 'TRY' ? '₺' : '$'}
-                            {parseFloat(product.basePrice.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
-                          </p>
-                        )}
-                      </div>
-                    </td>
+                        {/* Price */}
+                        <td className="py-3 px-4 text-right">
+                          <div>
+                            <p className="font-semibold text-kp-text-primary text-[12px]">
+                              {product.currency === 'TRY' ? '₺' : product.currency === 'USD' ? '$' : '€'}
+                              {parseFloat(product.price.toString()).toLocaleString('tr-TR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </p>
+                            {product.basePrice && product.basePrice !== product.price && (
+                              <p className="text-[10px] text-kp-text-tertiary line-through">
+                                {product.currency === 'TRY' ? '₺' : '$'}
+                                {parseFloat(product.basePrice.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                              </p>
+                            )}
+                          </div>
+                        </td>
 
-                    {/* Stock */}
-                    <td className="py-3 px-4 text-center">
-                      <StockBadge quantity={product.stockQuantity} threshold={lowStockThreshold} />
-                    </td>
+                        {/* Stock */}
+                        <td className="py-3 px-4 text-center">
+                          <StockBadge quantity={product.stockQuantity} threshold={lowStockThreshold} />
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        {/* Bundle Product Name & SKU */}
+                        <td className="py-3 px-4">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-kp-accent/10 text-kp-accent border border-kp-accent/20 uppercase">
+                                {t('bundle.badge')}
+                              </span>
+                              <p className="font-semibold text-kp-text-primary text-[12px] group-hover:text-kp-accent transition-colors">
+                                {product.name}
+                              </p>
+                            </div>
+                            <p className="font-mono text-[10px] text-kp-text-tertiary mt-0.5">{product.sku}</p>
+                          </div>
+                        </td>
+
+                        {/* Bundle Components */}
+                        <td className="py-3 px-4">
+                          <div className="flex flex-wrap gap-1 max-w-xs">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[10px] font-medium bg-kp-bg-secondary text-kp-text-secondary border border-kp-border">
+                              {t('bundle.sampleComponents')}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Bundle Price & Discount */}
+                        <td className="py-3 px-4 text-right">
+                          <div>
+                            <p className="font-bold text-emerald-600 text-[12px] font-mono">
+                              ₺{parseFloat(product.price.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
+                            </p>
+                            <span className="inline-flex px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">
+                              {t('bundle.sampleDiscount')}
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Bundle Component Stock Status */}
+                        <td className="py-3 px-4 text-center">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                            {t('bundle.allInStock', { count: product.stockQuantity })}
+                          </span>
+                        </td>
+                      </>
+                    )}
 
                     {/* Margin */}
                     <td className="py-3 px-4 text-center">
