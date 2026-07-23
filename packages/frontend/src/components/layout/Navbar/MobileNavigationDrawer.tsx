@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { XMarkIcon, ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import NavCTAButtons from './NavCTAButtons';
 
@@ -12,8 +12,7 @@ interface MobileNavigationDrawerProps {
 }
 
 export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNavigationDrawerProps) {
-  const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.mobileNav');
 
   const [activeAccordion, setActiveAccordion] = useState<string | null>(null);
 
@@ -37,78 +36,78 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
 
   const data = {
     features: {
-      title: isTr ? 'Platform Özellikleri' : 'Platform Features',
+      title: t('features.title'),
       sections: [
         {
-          group: isTr ? 'Operasyon Yönetimi' : 'Operations Management',
+          group: t('features.operations.title'),
           items: [
-            isTr ? 'Sipariş Yönetimi' : 'Order Management',
-            isTr ? 'Ürün & Katalog Yönetimi' : 'Product & Catalog Management',
-            isTr ? 'Stok Yönetimi' : 'Inventory Management',
-            isTr ? 'Fiyat Otomasyonu' : 'Price Automation'
+            t('features.operations.orders'),
+            t('features.operations.catalog'),
+            t('features.operations.stock'),
+            t('features.operations.pricing')
           ]
         },
         {
-          group: isTr ? 'Lojistik & Depo' : 'Logistics & Warehouse',
+          group: t('features.logistics.title'),
           items: [
-            isTr ? 'WMS / Depo Yönetimi' : 'WMS / Warehouse Management',
-            isTr ? 'Kargo Yönetimi' : 'Shipping Management',
-            isTr ? 'İade Yönetimi' : 'Return Management',
-            isTr ? 'Etiket & Yazıcı Merkezi' : 'Label & Printer Hub'
+            t('features.logistics.wms'),
+            t('features.logistics.shipping'),
+            t('features.logistics.returns'),
+            t('features.logistics.labels')
           ]
         },
         {
-          group: isTr ? 'Otomasyon & Zekâ' : 'Automation & Intelligence',
+          group: t('features.automation.title'),
           items: [
-            isTr ? 'İş Akışı Otomasyonu' : 'Workflow Automation',
-            isTr ? 'Yapay Zekâ Asistanı' : 'AI Assistant',
-            isTr ? 'Analitik & Raporlama' : 'Analytics & Reporting',
-            isTr ? 'B2B & Tedarikçi Ağı' : 'B2B & Supplier Network'
+            t('features.automation.workflow'),
+            t('features.automation.ai'),
+            t('features.automation.analytics'),
+            t('features.automation.b2b')
           ]
         }
       ]
     },
     solutions: {
-      title: isTr ? 'Çözümler' : 'Solutions',
+      title: t('solutions.title'),
       sections: [
         {
-          group: isTr ? 'Ölçeğe Göre' : 'By Size',
+          group: t('solutions.bySize.title'),
           items: [
-            isTr ? 'Yeni Başlayan Markalar' : 'Startup Brands',
-            isTr ? 'Büyüyen E-Ticaret' : 'Growing E-Commerce',
-            isTr ? 'Çok Kanallı Perakende' : 'Omnichannel Retail',
-            isTr ? 'Kurumsal Enterprise' : 'Enterprise'
+            t('solutions.bySize.startup'),
+            t('solutions.bySize.growing'),
+            t('solutions.bySize.omnichannel'),
+            t('solutions.bySize.enterprise')
           ]
         },
         {
-          group: isTr ? 'İş Modeline Göre' : 'By Business Model',
+          group: t('solutions.byModel.title'),
           items: [
-            isTr ? 'Pazaryeri Satıcıları' : 'Marketplace Sellers',
-            isTr ? 'Kendi E-Ticaret Sitesi' : 'Own E-Commerce Sites',
-            isTr ? 'B2B Toptan Satış' : 'B2B Wholesale',
-            isTr ? '3PL / Fulfillment' : '3PL / Fulfillment'
+            t('solutions.byModel.marketplaceSellers'),
+            t('solutions.byModel.ownSite'),
+            t('solutions.byModel.b2bWholesale'),
+            t('solutions.byModel.fulfillment')
           ]
         }
       ]
     },
     resources: {
-      title: isTr ? 'Kaynaklar' : 'Resources',
+      title: t('resources.title'),
       sections: [
         {
-          group: isTr ? 'Öğren' : 'Learn',
+          group: t('resources.learn.title'),
           items: [
-            isTr ? 'Yardım Merkezi' : 'Help Center',
-            isTr ? 'Alqora Akademi' : 'Alqora Academy',
-            isTr ? 'Blog' : 'Blog',
-            isTr ? 'API Dokümantasyonu' : 'API Docs'
+            t('resources.learn.helpCenter'),
+            t('resources.learn.academy'),
+            t('resources.learn.blog'),
+            t('resources.learn.apiDocs')
           ]
         },
         {
-          group: isTr ? 'Hizmetler' : 'Services',
+          group: t('resources.services.title'),
           items: [
-            isTr ? 'Sistem Kurulumu' : 'System Setup',
-            isTr ? 'Entegrasyon Danışmanlığı' : 'Consultancy',
-            isTr ? 'Teknik Destek' : 'Technical Support'
+            t('resources.services.setup'),
+            t('resources.services.consulting'),
+            t('resources.services.support')
           ]
         }
       ]
@@ -125,7 +124,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
 
       {/* Drawer Container */}
       <div className="fixed inset-y-0 right-0 z-50 w-full max-w-sm bg-kp-bg-secondary border-l border-kp-border flex flex-col shadow-kp-elevated p-6 overflow-y-auto">
-        
+
         {/* Drawer Header */}
         <div className="flex items-center justify-between pb-6 border-b border-kp-border">
           <div className="flex items-center gap-2">
@@ -137,7 +136,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
             onClick={onClose}
             type="button"
             className="rounded-kp-sm p-1.5 text-kp-text-tertiary hover:text-kp-text-primary hover:bg-kp-bg-hover transition-colors"
-            aria-label="Kapat"
+            aria-label={t('close')}
           >
             <XMarkIcon className="h-5.5 w-5.5" />
           </button>
@@ -145,7 +144,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
 
         {/* Navigation Accordions List */}
         <div className="flex-1 py-6 space-y-3">
-          
+
           {/* Platform Özellikleri (Accordion) */}
           <div className="border-b border-kp-border pb-3">
             <button
@@ -227,7 +226,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
               href="/integrations"
               className="flex w-full items-center justify-between py-2 text-sm font-semibold text-kp-text-primary hover:text-kp-accent"
             >
-              <span>{isTr ? 'Entegrasyonlar' : 'Integrations'}</span>
+              <span>{t('integrations')}</span>
             </Link>
           </div>
 
@@ -238,7 +237,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
               href="/pricing"
               className="flex w-full py-2 text-sm font-semibold text-kp-text-primary hover:text-kp-accent"
             >
-              {isTr ? 'Fiyatlandırma' : 'Pricing'}
+              {t('pricing')}
             </Link>
           </div>
 

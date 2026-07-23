@@ -2,42 +2,39 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface Language {
-  code: string;       // Locale code (e.g. 'en-GB')
+  code: string;       // Locale code (e.g. 'en-GB') — also the translation key under marketing.languages
   flagCode: string;   // flagcdn country code (e.g. 'gb')
-  name: string;       // Native name
-  descTr: string;     // Turkish description
-  descEn: string;     // English description
+  name: string;       // Native name (never translated)
 }
 
 const LANGUAGES: Language[] = [
-  { code: 'tr', flagCode: 'tr', name: 'Türkçe', descTr: 'Türkçe', descEn: 'Turkish' },
-  { code: 'pl', flagCode: 'pl', name: 'Polski', descTr: 'Lehçe', descEn: 'Polish' },
-  { code: 'en-US', flagCode: 'us', name: 'English (US)', descTr: 'İngilizce (ABD)', descEn: 'US English' },
-  { code: 'en-GB', flagCode: 'gb', name: 'English (GB)', descTr: 'İngilizce (İngiltere)', descEn: 'UK English' },
-  { code: 'en-IN', flagCode: 'in', name: 'English (IN)', descTr: 'İngilizce (Hindistan)', descEn: 'Indian English' },
-  { code: 'cs', flagCode: 'cz', name: 'Čeština', descTr: 'Çekçe', descEn: 'Czech' },
-  { code: 'de', flagCode: 'de', name: 'Deutsch', descTr: 'Almanca', descEn: 'German' },
-  { code: 'el', flagCode: 'gr', name: 'Ελληνικά', descTr: 'Yunanca', descEn: 'Greek' },
-  { code: 'es-AR', flagCode: 'ar', name: 'Español (AR)', descTr: 'İspanyolca (Arjantin)', descEn: 'Argentine Spanish' },
-  { code: 'es-MX', flagCode: 'mx', name: 'Español (MX)', descTr: 'İspanyolca (Meksika)', descEn: 'Mexican Spanish' },
-  { code: 'fr', flagCode: 'fr', name: 'Français', descTr: 'Fransızca', descEn: 'French' },
-  { code: 'it', flagCode: 'it', name: 'Italiano', descTr: 'İtalyanca', descEn: 'Italian' },
-  { code: 'pt-BR', flagCode: 'br', name: 'Português (BR)', descTr: 'Portekizce (Brezilya)', descEn: 'Brazilian Portuguese' },
-  { code: 'ro', flagCode: 'ro', name: 'Română', descTr: 'Romence', descEn: 'Romanian' },
-  { code: 'zh', flagCode: 'cn', name: '中文', descTr: 'Çince', descEn: 'Chinese' }
+  { code: 'tr', flagCode: 'tr', name: 'Türkçe' },
+  { code: 'pl', flagCode: 'pl', name: 'Polski' },
+  { code: 'en-US', flagCode: 'us', name: 'English (US)' },
+  { code: 'en-GB', flagCode: 'gb', name: 'English (GB)' },
+  { code: 'en-IN', flagCode: 'in', name: 'English (IN)' },
+  { code: 'cs', flagCode: 'cz', name: 'Čeština' },
+  { code: 'de', flagCode: 'de', name: 'Deutsch' },
+  { code: 'el', flagCode: 'gr', name: 'Ελληνικά' },
+  { code: 'es-AR', flagCode: 'ar', name: 'Español (AR)' },
+  { code: 'es-MX', flagCode: 'mx', name: 'Español (MX)' },
+  { code: 'fr', flagCode: 'fr', name: 'Français' },
+  { code: 'it', flagCode: 'it', name: 'Italiano' },
+  { code: 'pt-BR', flagCode: 'br', name: 'Português (BR)' },
+  { code: 'ro', flagCode: 'ro', name: 'Română' },
+  { code: 'zh', flagCode: 'cn', name: '中文' }
 ];
 
 export default function LanguageSwitcher() {
   const [currentLangCode, setCurrentLangCode] = useState('tr');
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  
-  const activeLocale = useLocale();
-  const isTr = activeLocale === 'tr';
+
+  const t = useTranslations('marketing.languages');
 
   const router = useRouter();
   const currentPathname = usePathname();
@@ -149,7 +146,7 @@ export default function LanguageSwitcher() {
         <div className="absolute right-0 z-50 mt-2 w-72 sm:w-[580px] origin-top-right rounded-kp-md bg-kp-bg-secondary border border-kp-border p-4 shadow-kp-dropdown focus:outline-none backdrop-blur-md animate-scale-in">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2">
             {LANGUAGES.map((lang) => {
-              const desc = isTr ? lang.descTr : lang.descEn;
+              const desc = t(lang.code);
               return (
                 <button
                   key={lang.code}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import NextLink from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Bars3Icon } from '@heroicons/react/24/outline';
 import { useTheme } from '@/context/ThemeContext';
 import AnnouncementBar from './AnnouncementBar';
@@ -11,6 +12,7 @@ import NavCTAButtons from './NavCTAButtons';
 import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Navbar() {
+  const t = useTranslations('marketing.nav');
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [hasAnnouncement, setHasAnnouncement] = useState(true);
@@ -68,7 +70,7 @@ export default function Navbar() {
               <button
                 onClick={toggleTheme}
                 className="rounded-kp-sm p-2 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary"
-                title="Temayı Değiştir"
+                title={t('toggleTheme')}
               >
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
@@ -80,7 +82,7 @@ export default function Navbar() {
               <button
                 onClick={toggleTheme}
                 className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary"
-                title="Temayı Değiştir"
+                title={t('toggleTheme')}
               >
                 {theme === 'dark' ? '☀️' : '🌙'}
               </button>
@@ -93,7 +95,7 @@ export default function Navbar() {
                 aria-controls="mobile-menu"
                 aria-expanded={isMobileMenuOpen}
               >
-                <span className="sr-only">Menüyü aç</span>
+                <span className="sr-only">{t('openMenu')}</span>
                 <Bars3Icon className="h-6 w-6" aria-hidden="true" />
               </button>
             </div>

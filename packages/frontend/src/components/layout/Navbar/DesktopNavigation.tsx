@@ -2,15 +2,14 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { PlatformFeaturesMenu, SolutionsMenu, ResourcesMenu } from './MegaMenu';
 
 type MenuType = 'features' | 'solutions' | 'resources' | null;
 
 export default function DesktopNavigation() {
-  const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.nav');
 
   const [activeMenu, setActiveMenu] = useState<MenuType>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -64,12 +63,12 @@ export default function DesktopNavigation() {
   };
 
   const navLabels = {
-    features: isTr ? 'Platform Özellikleri' : 'Platform Features',
-    solutions: isTr ? 'Çözümler' : 'Solutions',
-    integrations: isTr ? 'Entegrasyonlar' : 'Integrations',
-    pricing: isTr ? 'Fiyatlandırma' : 'Pricing',
-    resources: isTr ? 'Kaynaklar' : 'Resources',
-    integrationsBadge: isTr ? '200+ bağlantı' : '200+ connects'
+    features: t('features'),
+    solutions: t('solutions'),
+    integrations: t('integrations'),
+    pricing: t('pricing'),
+    resources: t('resources'),
+    integrationsBadge: t('integrationsBadge')
   };
 
   return (
