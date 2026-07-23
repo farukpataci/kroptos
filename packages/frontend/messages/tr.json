@@ -665,6 +665,118 @@
       "logStatus": "Durum"
     }
   },
+  "stores": {
+    "title": "Pazaryerleri",
+    "subtitle": "Çok kanallı pazaryeri mağazalarını yapılandırın ve yönetin",
+    "loading": "Pazaryerleri yükleniyor...",
+    "loadFailed": "Pazaryerleri yüklenemedi",
+    "submitFailed": "İşlem sırasında bir hata oluştu",
+    "deleteFailed": "Pazaryeri silinemedi",
+    "addStore": "Pazaryeri Ekle",
+    "agencyRequired": {
+      "title": "Ajans Bağlamı Gerekli",
+      "desc": "Pazaryeri listesini görüntülemek için lütfen aktif bir ajans bağlamı seçin."
+    },
+    "columns": {
+      "name": "Pazaryeri Adı",
+      "slug": "Kısa Ad (Slug)",
+      "status": "Durum",
+      "domain": "Adres (Domain)",
+      "currency": "Para Birimi",
+      "actions": "İşlemler"
+    },
+    "empty": "Seçili ajans/müşteri için yapılandırılmış pazaryeri bulunamadı. Yeni bir pazaryeri eklemek için \"Pazaryeri Ekle\" butonuna tıklayın.",
+    "modal": {
+      "editTitle": "Pazaryeri Ayarlarını Düzenle",
+      "createTitle": "Yeni Pazaryeri Kanalı Ekle",
+      "nameLabel": "Pazaryeri Adı *",
+      "namePlaceholder": "Örn: Trendyol Mağazam",
+      "domainLabel": "Web Domain / URL",
+      "statusLabel": "Durum",
+      "statusActive": "Aktif (Active)",
+      "statusDraft": "Taslak (Draft)",
+      "statusSuspended": "Durduruldu (Suspended)",
+      "currencyLabel": "Para Birimi",
+      "localeLabel": "Dil / Bölge (Locale)",
+      "localeTr": "Türkçe (tr-TR)",
+      "localeEn": "İngilizce (en-US)",
+      "localeDe": "Almanca (de-DE)",
+      "timezoneLabel": "Saat Dilimi (Timezone)",
+      "typeLabel": "Kanal Türü (Pazaryeri / Depo)",
+      "typeRetail": "Perakende Satış Kanalı (Pazaryeri)",
+      "typeWarehouse": "Depo Karşılama Noktası",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "createStore": "Pazaryeri Oluştur"
+    },
+    "deleteModal": {
+      "title": "Pazaryeri Sil",
+      "desc": "<b>{name}</b> pazaryerini silmek istediğinize emin misiniz? Bu işlem, bu kanalla bağlantılı entegrasyon uç noktalarını ve senkronize edilmiş siparişleri kalıcı olarak devre dışı bırakacaktır."
+    }
+  },
+  "inventory": {
+    "title": "Stok & Envanter Kontrolü",
+    "subtitle": "Stok seviyelerini, depo envanterini, rezervasyonları, stok ikmallerini, stok hareketlerini ve uyarıları izleyin.",
+    "quickInbound": "Hızlı Giriş (Mal Kabul)",
+    "syncChannels": "Kanalları Eşitle",
+    "tabs": {
+      "dashboard": "Özet Panel",
+      "ledger": "Stok Listesi",
+      "map": "Depo Haritası",
+      "movements": "Hareket Kayıtları",
+      "lowstock": "Stok İkmali",
+      "counting": "Sayım & Denetim",
+      "reservations": "Rezervasyonlar",
+      "integrations": "Entegrasyonlar",
+      "ai": "Yapay Zeka Analizi",
+      "alerts": "Uyarı Merkezi"
+    },
+    "ledger": {
+      "searchPlaceholder": "SKU, Barkod veya Ürün Adı Ara...",
+      "allWarehouses": "Tüm Depolar",
+      "allStatuses": "Tüm Durumlar",
+      "statusHealthy": "Sağlıklı",
+      "statusLow": "Düşük Stok",
+      "statusCritical": "Kritik Seviye",
+      "statusOut": "Stokta Yok",
+      "statusOverstock": "Aşırı Stok",
+      "columnsButton": "Sütunlar",
+      "toggleColumns": "Sütunları Göster/Gizle",
+      "exportCsv": "CSV Olarak Aktar",
+      "colProduct": "Ürün Detayları",
+      "colLocation": "Depo & Raf Konumu",
+      "colAvailable": "Kullanılabilir",
+      "colReserved": "Rezerve",
+      "colIncoming": "Gelen",
+      "colDamaged": "Hasarlı",
+      "colStatus": "Durum",
+      "colActions": "İşlemler"
+    },
+    "drawer": {
+      "tabDetails": "Detaylar",
+      "tabLocations": "Konumlar",
+      "tabReservations": "Rezervasyonlar",
+      "tabMovements": "Geçmiş",
+      "tabAi": "AI Analizi",
+      "barcode": "Barkod",
+      "brand": "Marka",
+      "stockConfig": "Stok Yapılandırması",
+      "reorderPoint": "Sipariş Sınırı",
+      "safety": "Emniyet",
+      "units": "{count} adet",
+      "shopifySyncLock": "Shopify Mağaza Senkronizasyon Kilidi",
+      "noReservations": "Aktif rezerve stok bulunmuyor.",
+      "aiScore": "AI Tahmin Skoru: %94",
+      "aiRecommendation": "Stok devir hızı YÜKSEK. Stok tükenmesini önlemek için 2026-07-05 tarihinde 250 adetlik stok ikmal siparişi (PO) verilmesi önerilir.",
+      "closePanel": "Paneli Kapat"
+    },
+    "inboundModal": {
+      "title": "Hızlı Mal Kabul Girişi Oluştur",
+      "success": "PO Giriş Sevkiyatı {poRef} başarıyla kaydedildi!",
+      "targetWarehouse": "Hedef Depo",
+      "poRef": "Referans Sipariş (PO) Numarası",
+      "submit": "Mal Kabulü Kaydet"
+    }
+  },
   "marketing": {
     "announcement": {
       "message": "🚀 <brand>Alqora</brand> ile tüm e-ticaret operasyonlarınızı tek merkezden yönetin.",

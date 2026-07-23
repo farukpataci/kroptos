@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
@@ -31,6 +32,8 @@ interface Store {
 }
 
 export default function StoresPage() {
+  const t = useTranslations('stores');
+  const tc = useTranslations('common');
   const toast = useToast();
   const { tenantContext } = useAuth();
   const [stores, setStores] = useState<Store[]>([]);
@@ -63,7 +66,7 @@ export default function StoresPage() {
       const data = await apiFetch<Store[]>('/stores');
       setStores(data || []);
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch stores');
+      setError(err.message || t('loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -114,7 +117,7 @@ export default function StoresPage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenantContext.agencyId) {
-      setFormError('Agency context is required');
+      setFormError(t('agencyRequired.title'));
       return;
     }
     setFormError(null);
@@ -143,7 +146,7 @@ export default function StoresPage() {
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      setFormError(err.message || 'An error occurred during submission');
+      setFormError(err.message || t('submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -159,7 +162,7 @@ export default function StoresPage() {
       setStores(stores.filter(s => s.id !== storeToDelete.id));
       setStoreToDelete(null);
     } catch (err: any) {
-      toast.error(err.message || 'Failed to delete store');
+      toast.error(err.message || t('deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -169,9 +172,9 @@ export default function StoresPage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <BuildingStorefrontIcon className="h-12 w-12 text-kp-text-tertiary animate-pulse" />
-        <h3 className="mt-4 text-base font-semibold text-kp-text-primary">Agency Context Required</h3>
+        <h3 className="mt-4 text-base font-semibold text-kp-text-primary">{t('agencyRequired.title')}</h3>
         <p className="mt-1 max-w-xs text-xs text-kp-text-tertiary">
-          Please select an active Agency context to view store listings.
+          {t('agencyRequired.desc')}
         </p>
       </div>
     );
@@ -181,7 +184,7 @@ export default function StoresPage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <ArrowPathIcon className="h-8 w-8 text-kp-accent animate-spin" />
-        <p className="mt-2 text-xs text-kp-text-tertiary">Loading stores...</p>
+        <p className="mt-2 text-xs text-kp-text-tertiary">{t('loading')}</p>
       </div>
     );
   }
@@ -190,13 +193,13 @@ export default function StoresPage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <ExclamationTriangleIcon className="h-10 w-10 text-kp-danger" />
-        <h3 className="mt-4 text-base font-semibold text-kp-text-primary">Failed to load stores</h3>
+        <h3 className="mt-4 text-base font-semibold text-kp-text-primary">{t('loadFailed')}</h3>
         <p className="mt-1 text-xs text-kp-text-tertiary">{error}</p>
         <button
           onClick={fetchStores}
           className="mt-4 flex items-center gap-2 rounded-kp-md bg-kp-accent px-4 py-2 text-xs font-medium text-white hover:bg-kp-accent-hover transition-colors"
         >
-          <ArrowPathIcon className="h-4 w-4" /> Retry
+          <ArrowPathIcon className="h-4 w-4" /> {tc('actions.retry')}
         </button>
       </div>
     );
@@ -210,15 +213,15 @@ export default function StoresPage() {
             <BuildingStorefrontIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-kp-text-primary">Pazaryerleri</h1>
-            <p className="text-[13px] text-kp-text-tertiary">Çok kanallı pazaryeri mağazalarını yapılandırın ve yönetin</p>
+            <h1 className="text-xl font-semibold text-kp-text-primary">{t('title')}</h1>
+            <p className="text-[13px] text-kp-text-tertiary">{t('subtitle')}</p>
           </div>
         </div>
         <button
           onClick={handleOpenCreate}
           className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
         >
-          <PlusIcon className="h-4 w-4" /> Pazaryeri Ekle
+          <PlusIcon className="h-4 w-4" /> {t('addStore')}
         </button>
       </div>
 
@@ -227,19 +230,19 @@ export default function StoresPage() {
           <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
             <thead>
               <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
-                <th className="py-3 px-4">Pazaryeri Adı</th>
-                <th className="py-3 px-4">Kısa Ad (Slug)</th>
-                <th className="py-3 px-4">Durum</th>
-                <th className="py-3 px-4">Adres (Domain)</th>
-                <th className="py-3 px-4">Para Birimi</th>
-                <th className="py-3 px-4 text-right">İşlemler</th>
+                <th className="py-3 px-4">{t('columns.name')}</th>
+                <th className="py-3 px-4">{t('columns.slug')}</th>
+                <th className="py-3 px-4">{t('columns.status')}</th>
+                <th className="py-3 px-4">{t('columns.domain')}</th>
+                <th className="py-3 px-4">{t('columns.currency')}</th>
+                <th className="py-3 px-4 text-right">{t('columns.actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-kp-border">
               {filteredStores.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-xs text-kp-text-tertiary">
-                    Seçili ajans/müşteri için yapılandırılmış pazaryeri bulunamadı. Yeni bir pazaryeri eklemek için "Pazaryeri Ekle" butonuna tıklayın.
+                    {t('empty')}
                   </td>
                 </tr>
               ) : (
@@ -264,14 +267,14 @@ export default function StoresPage() {
                         <button
                           onClick={() => handleOpenEdit(store)}
                           className="p-1.5 rounded-kp-md text-kp-text-secondary hover:text-kp-accent hover:bg-kp-bg-hover transition-colors"
-                          title="Edit"
+                          title={tc('actions.edit')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setStoreToDelete(store)}
                           className="p-1.5 rounded-kp-md text-kp-text-secondary hover:text-kp-danger hover:bg-kp-bg-hover transition-colors"
-                          title="Delete"
+                          title={tc('actions.delete')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -291,7 +294,7 @@ export default function StoresPage() {
           <div className="w-full max-w-lg bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary">
-                {editingStore ? 'Pazaryeri Ayarlarını Düzenle' : 'Yeni Pazaryeri Kanalı Ekle'}
+                {editingStore ? t('modal.editTitle') : t('modal.createTitle')}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -311,20 +314,20 @@ export default function StoresPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Pazaryeri Adı *
+                      {t('modal.nameLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      placeholder="Örn: Trendyol Mağazam"
+                      placeholder={t('modal.namePlaceholder')}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     />
                   </div>
                   <div className="col-span-2">
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Web Domain / URL
+                      {t('modal.domainLabel')}
                     </label>
                     <input
                       type="text"
@@ -336,21 +339,21 @@ export default function StoresPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Durum
+                      {t('modal.statusLabel')}
                     </label>
                     <select
                       value={formData.status}
                       onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="active">Aktif (Active)</option>
-                      <option value="draft">Taslak (Draft)</option>
-                      <option value="suspended">Durduruldu (Suspended)</option>
+                      <option value="active">{t('modal.statusActive')}</option>
+                      <option value="draft">{t('modal.statusDraft')}</option>
+                      <option value="suspended">{t('modal.statusSuspended')}</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Para Birimi
+                      {t('modal.currencyLabel')}
                     </label>
                     <select
                       value={formData.currency}
@@ -365,21 +368,21 @@ export default function StoresPage() {
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Dil / Bölge (Locale)
+                      {t('modal.localeLabel')}
                     </label>
                     <select
                       value={formData.locale}
                       onChange={(e) => setFormData({ ...formData, locale: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="tr-TR">Türkçe (tr-TR)</option>
-                      <option value="en-US">İngilizce (en-US)</option>
-                      <option value="de-DE">Almance (de-DE)</option>
+                      <option value="tr-TR">{t('modal.localeTr')}</option>
+                      <option value="en-US">{t('modal.localeEn')}</option>
+                      <option value="de-DE">{t('modal.localeDe')}</option>
                     </select>
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Saat Dilimi (Timezone)
+                      {t('modal.timezoneLabel')}
                     </label>
                     <select
                       value={formData.timezone}
@@ -393,15 +396,15 @@ export default function StoresPage() {
                   </div>
                   <div className="col-span-2">
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      Kanal Türü (Pazaryeri / Depo)
+                      {t('modal.typeLabel')}
                     </label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                     >
-                      <option value="retail">Perakende Satış Kanalı (Pazaryeri)</option>
-                      <option value="warehouse">Depo Karşılama Noktası</option>
+                      <option value="retail">{t('modal.typeRetail')}</option>
+                      <option value="warehouse">{t('modal.typeWarehouse')}</option>
                     </select>
                   </div>
                 </div>
@@ -412,7 +415,7 @@ export default function StoresPage() {
                   onClick={() => setIsModalOpen(false)}
                   className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
                 >
-                  İptal
+                  {tc('actions.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -420,7 +423,7 @@ export default function StoresPage() {
                   className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all"
                 >
                   {isSubmitting && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                  {editingStore ? 'Değişiklikleri Kaydet' : 'Pazaryeri Oluştur'}
+                  {editingStore ? t('modal.saveChanges') : t('modal.createStore')}
                 </button>
               </div>
             </form>
@@ -434,7 +437,7 @@ export default function StoresPage() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Pazaryeri Sil
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> {t('deleteModal.title')}
               </h3>
               <button
                 onClick={() => setStoreToDelete(null)}
@@ -445,7 +448,10 @@ export default function StoresPage() {
             </div>
             <div className="p-6">
               <p className="text-theme-sm text-kp-text-secondary">
-                <span className="font-semibold text-kp-text-primary">{storeToDelete.name}</span> pazaryerini silmek istediğinize emin misiniz? Bu işlem, bu kanalla bağlantılı entegrasyon uç noktalarını ve senkronize edilmiş siparişleri kalıcı olarak devre dışı bırakacaktır.
+                {t.rich('deleteModal.desc', {
+                  name: storeToDelete.name,
+                  b: (chunks) => <span className="font-semibold text-kp-text-primary">{chunks}</span>,
+                })}
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
@@ -454,7 +460,7 @@ export default function StoresPage() {
                 onClick={() => setStoreToDelete(null)}
                 className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
               >
-                İptal
+                {tc('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -463,7 +469,7 @@ export default function StoresPage() {
                 className="flex items-center gap-2 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all"
               >
                 {isDeleting && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                Sil
+                {tc('actions.delete')}
               </button>
             </div>
           </div>

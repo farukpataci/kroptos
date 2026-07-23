@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
@@ -100,6 +101,8 @@ interface StockMovementLog {
 }
 
 export default function InventoryPage() {
+  const t = useTranslations('inventory');
+  const tc = useTranslations('common');
   const toast = useToast();
   const { tenantContext } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'map' | 'movements' | 'lowstock' | 'counting' | 'reservations' | 'integrations' | 'ai' | 'alerts'>('dashboard');
@@ -496,10 +499,10 @@ export default function InventoryPage() {
         <div>
           <h1 className="text-xl font-semibold text-kp-text-primary flex items-center gap-2.5">
             <CubeIcon className="h-6 w-6 text-kp-accent" />
-            Stok & Envanter Kontrolü
+            {t('title')}
           </h1>
           <p className="mt-1 text-[13px] text-kp-text-tertiary">
-            Stok seviyelerini, depo envanterini, rezervasyonları, stok ikmallerini, stok hareketlerini ve uyarıları izleyin.
+            {t('subtitle')}
           </p>
         </div>
         
@@ -510,7 +513,7 @@ export default function InventoryPage() {
             className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
           >
             <PlusIcon className="h-4 w-4" />
-            Hızlı Giriş (Mal Kabul)
+            {t('quickInbound')}
           </button>
           <button
             onClick={() => {
@@ -523,7 +526,7 @@ export default function InventoryPage() {
             className="flex items-center gap-2 rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-secondary hover:bg-kp-bg-hover px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
           >
             <ArrowPathIcon className="h-4 w-4" />
-            Kanalları Eşitle
+            {t('syncChannels')}
           </button>
         </div>
       </div>
@@ -531,16 +534,16 @@ export default function InventoryPage() {
       {/* WMS Module Sub-navigation Tabs */}
       <div className="flex border-b border-kp-border overflow-x-auto scrollbar-hide mb-4">
         {[
-          { id: 'dashboard', label: 'Özet Panel', icon: ChartBarIcon },
-          { id: 'ledger', label: 'Stok Listesi', icon: CubeIcon },
-          { id: 'map', label: 'Depo Haritası', icon: MapIcon },
-          { id: 'movements', label: 'Hareket Kayıtları', icon: ClockIcon },
-          { id: 'lowstock', label: 'Stok İkmali', icon: ExclamationTriangleIcon },
-          { id: 'counting', label: 'Sayım & Denetim', icon: AdjustmentsHorizontalIcon },
-          { id: 'reservations', label: 'Rezervasyonlar', icon: TagIcon },
-          { id: 'integrations', label: 'Entegrasyonlar', icon: InboxArrowDownIcon },
-          { id: 'ai', label: 'Yapay Zeka Analizi', icon: CpuChipIcon },
-          { id: 'alerts', label: 'Uyarı Merkezi', icon: BellIcon }
+          { id: 'dashboard', label: t('tabs.dashboard'), icon: ChartBarIcon },
+          { id: 'ledger', label: t('tabs.ledger'), icon: CubeIcon },
+          { id: 'map', label: t('tabs.map'), icon: MapIcon },
+          { id: 'movements', label: t('tabs.movements'), icon: ClockIcon },
+          { id: 'lowstock', label: t('tabs.lowstock'), icon: ExclamationTriangleIcon },
+          { id: 'counting', label: t('tabs.counting'), icon: AdjustmentsHorizontalIcon },
+          { id: 'reservations', label: t('tabs.reservations'), icon: TagIcon },
+          { id: 'integrations', label: t('tabs.integrations'), icon: InboxArrowDownIcon },
+          { id: 'ai', label: t('tabs.ai'), icon: CpuChipIcon },
+          { id: 'alerts', label: t('tabs.alerts'), icon: BellIcon }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -718,7 +721,7 @@ export default function InventoryPage() {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="SKU, Barkod veya Ürün Adı Ara..."
+                  placeholder={t('ledger.searchPlaceholder')}
                   className="block w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary pl-10 pr-4 py-2.5 text-xs shadow-sm focus:border-kp-accent focus:outline-none focus:ring-1 focus:ring-kp-accent"
                 />
               </div>
@@ -729,7 +732,7 @@ export default function InventoryPage() {
                 onChange={(e) => setSelectedWarehouse(e.target.value)}
                 className="rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary text-xs font-semibold px-4 py-2.5 shadow-sm focus:outline-none"
               >
-                <option value="All">Tüm Depolar</option>
+                <option value="All">{t('ledger.allWarehouses')}</option>
                 <option value="Istanbul Main">İstanbul Merkez Depo</option>
                 <option value="Munich Transit">Münih Transit Depo</option>
               </select>
@@ -740,12 +743,12 @@ export default function InventoryPage() {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary text-xs font-semibold px-4 py-2.5 shadow-sm focus:outline-none"
               >
-                <option value="All">Tüm Durumlar</option>
-                <option value="Healthy">Sağlıklı</option>
-                <option value="Low Stock">Düşük Stok</option>
-                <option value="Critical">Kritik Seviye</option>
-                <option value="Out of Stock">Stokta Yok</option>
-                <option value="Overstock">Aşırı Stok</option>
+                <option value="All">{t('ledger.allStatuses')}</option>
+                <option value="Healthy">{t('ledger.statusHealthy')}</option>
+                <option value="Low Stock">{t('ledger.statusLow')}</option>
+                <option value="Critical">{t('ledger.statusCritical')}</option>
+                <option value="Out of Stock">{t('ledger.statusOut')}</option>
+                <option value="Overstock">{t('ledger.statusOverstock')}</option>
               </select>
             </div>
 
@@ -754,10 +757,10 @@ export default function InventoryPage() {
               <div className="relative group">
                 <button className="inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-secondary px-4 py-2.5 text-xs font-bold text-kp-text-secondary hover:bg-kp-bg-hover/30 transition-all">
                   <AdjustmentsHorizontalIcon className="h-4 w-4" />
-                  Sütunlar
+                  {t('ledger.columnsButton')}
                 </button>
                 <div className="absolute right-0 mt-1.5 hidden group-focus-within:block group-hover:block bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-dropdown p-3.5 z-20 w-48 text-xs space-y-2">
-                  <span className="font-bold text-kp-text-tertiary block border-b border-kp-border pb-1.5 mb-1.5">Sütunları Göster/Gizle</span>
+                  <span className="font-bold text-kp-text-tertiary block border-b border-kp-border pb-1.5 mb-1.5">{t('ledger.toggleColumns')}</span>
                   {Object.keys(visibleColumns).map(col => (
                     <label key={col} className="flex items-center gap-2 cursor-pointer capitalize font-semibold text-kp-text-secondary">
                       <input
@@ -777,7 +780,7 @@ export default function InventoryPage() {
                 className="inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-secondary px-4 py-2.5 text-xs font-bold text-kp-text-secondary hover:bg-kp-bg-hover/30 shadow-sm transition-all"
               >
                 <ArrowDownTrayIcon className="h-4 w-4" />
-                CSV Olarak Aktar
+                {t('ledger.exportCsv')}
               </button>
             </div>
           </div>
@@ -787,15 +790,15 @@ export default function InventoryPage() {
             <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
               <thead>
                 <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30 select-none">
-                  {visibleColumns.name && <th onClick={() => handleSort('name')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">Ürün Detayları</th>}
+                  {visibleColumns.name && <th onClick={() => handleSort('name')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colProduct')}</th>}
                   {visibleColumns.sku && <th onClick={() => handleSort('sku')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">SKU</th>}
-                  {visibleColumns.warehouse && <th onClick={() => handleSort('warehouse')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">Depo & Raf Konumu</th>}
-                  {visibleColumns.available && <th onClick={() => handleSort('available')} className="py-3 px-4 text-right cursor-pointer hover:bg-kp-bg-hover transition-colors">Kullanılabilir</th>}
-                  {visibleColumns.reserved && <th onClick={() => handleSort('reserved')} className="py-3 px-4 text-right cursor-pointer hover:bg-kp-bg-hover transition-colors">Rezerve</th>}
-                  {visibleColumns.incoming && <th onClick={() => handleSort('incoming')} className="py-3 px-4 text-right cursor-pointer hover:bg-kp-bg-hover transition-colors">Gelen</th>}
-                  {visibleColumns.damaged && <th className="py-3 px-4 text-right">Hasarlı</th>}
-                  {visibleColumns.status && <th onClick={() => handleSort('status')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">Durum</th>}
-                  {visibleColumns.actions && <th className="py-3 px-4 text-center">İşlemler</th>}
+                  {visibleColumns.warehouse && <th onClick={() => handleSort('warehouse')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colLocation')}</th>}
+                  {visibleColumns.available && <th onClick={() => handleSort('available')} className="py-3 px-4 text-right cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colAvailable')}</th>}
+                  {visibleColumns.reserved && <th onClick={() => handleSort('reserved')} className="py-3 px-4 text-right cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colReserved')}</th>}
+                  {visibleColumns.incoming && <th onClick={() => handleSort('incoming')} className="py-3 px-4 text-right cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colIncoming')}</th>}
+                  {visibleColumns.damaged && <th className="py-3 px-4 text-right">{t('ledger.colDamaged')}</th>}
+                  {visibleColumns.status && <th onClick={() => handleSort('status')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colStatus')}</th>}
+                  {visibleColumns.actions && <th className="py-3 px-4 text-center">{t('ledger.colActions')}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-kp-border">
@@ -1488,20 +1491,20 @@ export default function InventoryPage() {
 
             <div className="flex border-b border-kp-border text-xs font-bold tracking-wider uppercase px-4">
               {[
-                { id: 'details', label: 'Detaylar' },
-                { id: 'locations', label: 'Konumlar' },
-                { id: 'reservations', label: 'Rezervasyonlar' },
-                { id: 'movements', label: 'Geçmiş' },
-                { id: 'ai', label: 'AI Analizi' }
-              ].map(t => (
+                { id: 'details', label: t('drawer.tabDetails') },
+                { id: 'locations', label: t('drawer.tabLocations') },
+                { id: 'reservations', label: t('drawer.tabReservations') },
+                { id: 'movements', label: t('drawer.tabMovements') },
+                { id: 'ai', label: t('drawer.tabAi') }
+              ].map(tab => (
                 <button
-                  key={t.id}
-                  onClick={() => setDrawerSubTab(t.id as any)}
+                  key={tab.id}
+                  onClick={() => setDrawerSubTab(tab.id as any)}
                   className={`px-4 py-3 border-b-2 transition-colors ${
-                    drawerSubTab === t.id ? 'border-kp-accent text-kp-accent' : 'border-transparent text-kp-text-tertiary hover:text-kp-text-primary'
+                    drawerSubTab === tab.id ? 'border-kp-accent text-kp-accent' : 'border-transparent text-kp-text-tertiary hover:text-kp-text-primary'
                   }`}
                 >
-                  {t.label}
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -1512,17 +1515,17 @@ export default function InventoryPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-[10px] text-kp-text-tertiary uppercase">Barkod</span>
+                      <span className="text-[10px] text-kp-text-tertiary uppercase">{t('drawer.barcode')}</span>
                       <div className="text-kp-text-primary font-semibold mt-0.5">{selectedProduct.barcode}</div>
                     </div>
                     <div>
-                      <span className="text-[10px] text-kp-text-tertiary uppercase">Marka</span>
+                      <span className="text-[10px] text-kp-text-tertiary uppercase">{t('drawer.brand')}</span>
                       <div className="text-kp-text-primary font-semibold mt-0.5">{selectedProduct.brand}</div>
                     </div>
                   </div>
 
                   <div className="border-t border-kp-border pt-4 space-y-2">
-                    <h4 className="font-bold text-kp-text-primary uppercase tracking-wider text-[10px]">Stok Yapılandırması</h4>
+                    <h4 className="font-bold text-kp-text-primary uppercase tracking-wider text-[10px]">{t('drawer.stockConfig')}</h4>
                     <div className="grid grid-cols-4 gap-2 text-center text-xs">
                       <div className="p-2 rounded bg-kp-bg-primary/50">
                         <span className="text-[9px] text-kp-text-tertiary block uppercase">Min</span>
@@ -1533,11 +1536,11 @@ export default function InventoryPage() {
                         <span className="font-bold text-kp-text-primary">{selectedProduct.maxStock}</span>
                       </div>
                       <div className="p-2 rounded bg-kp-bg-primary/50">
-                        <span className="text-[9px] text-kp-text-tertiary block uppercase">Sipariş Sınırı</span>
+                        <span className="text-[9px] text-kp-text-tertiary block uppercase">{t('drawer.reorderPoint')}</span>
                         <span className="font-bold text-kp-text-primary">{selectedProduct.reorderPoint}</span>
                       </div>
                       <div className="p-2 rounded bg-kp-bg-primary/50">
-                        <span className="text-[9px] text-kp-text-tertiary block uppercase">Emniyet</span>
+                        <span className="text-[9px] text-kp-text-tertiary block uppercase">{t('drawer.safety')}</span>
                         <span className="font-bold text-kp-text-primary">{selectedProduct.safetyStock}</span>
                       </div>
                     </div>
@@ -1552,7 +1555,7 @@ export default function InventoryPage() {
                       <div className="font-bold text-kp-text-primary">{selectedProduct.warehouse}</div>
                       <div className="text-[10px] text-kp-text-tertiary">{selectedProduct.location}</div>
                     </div>
-                    <span className="font-bold text-kp-text-primary">{selectedProduct.available} adet</span>
+                    <span className="font-bold text-kp-text-primary">{t('drawer.units', { count: selectedProduct.available })}</span>
                   </div>
                 </div>
               )}
@@ -1561,11 +1564,11 @@ export default function InventoryPage() {
                 <div className="space-y-3">
                   {selectedProduct.reserved > 0 ? (
                     <div className="flex justify-between items-center p-3 rounded bg-kp-bg-primary/50 text-xs font-semibold text-kp-text-primary">
-                      <span>Shopify Mağaza Senkronizasyon Kilidi</span>
-                      <span className="text-kp-warning font-bold">{selectedProduct.reserved} adet</span>
+                      <span>{t('drawer.shopifySyncLock')}</span>
+                      <span className="text-kp-warning font-bold">{t('drawer.units', { count: selectedProduct.reserved })}</span>
                     </div>
                   ) : (
-                    <p className="text-xs text-kp-text-tertiary italic text-center py-4">Aktif rezerve stok bulunmuyor.</p>
+                    <p className="text-xs text-kp-text-tertiary italic text-center py-4">{t('drawer.noReservations')}</p>
                   )}
                 </div>
               )}
@@ -1591,10 +1594,10 @@ export default function InventoryPage() {
                   <div className="p-4 rounded-kp-md bg-kp-accent-muted/10 border border-kp-accent/20 text-kp-text-primary space-y-2">
                     <div className="flex items-center gap-1.5">
                       <SparklesIcon className="h-5 w-5 text-kp-accent animate-pulse" />
-                      <h4 className="font-bold text-xs">AI Tahmin Skoru: %94</h4>
+                      <h4 className="font-bold text-xs">{t('drawer.aiScore')}</h4>
                     </div>
                     <p className="text-[11px] leading-relaxed text-kp-text-secondary">
-                      Stok devir hızı YÜKSEK. Stok tükenmesini önlemek için 2026-07-05 tarihinde 250 adetlik stok ikmal siparişi (PO) verilmesi önerilir.
+                      {t('drawer.aiRecommendation')}
                     </p>
                   </div>
                 </div>
@@ -1607,7 +1610,7 @@ export default function InventoryPage() {
                 onClick={() => setIsDrawerOpen(false)}
                 className="px-4 py-2 text-xs font-bold text-kp-text-tertiary hover:text-kp-text-primary"
               >
-                Paneli Kapat
+                {t('drawer.closePanel')}
               </button>
             </div>
 
@@ -1620,7 +1623,7 @@ export default function InventoryPage() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 animate-fade-in">
           <div className="w-full max-w-md bg-kp-bg-secondary rounded-kp-lg p-6 shadow-kp-dropdown border border-kp-border space-y-4 animate-scale-in">
             <div className="flex justify-between items-center border-b border-kp-border pb-3">
-              <h3 className="font-bold text-sm text-kp-text-primary">Hızlı Mal Kabul Girişi Oluştur</h3>
+              <h3 className="font-bold text-sm text-kp-text-primary">{t('inboundModal.title')}</h3>
               <button onClick={() => setIsInboundModalOpen(false)} className="text-kp-text-tertiary hover:text-kp-text-primary font-bold">✕</button>
             </div>
             
@@ -1643,7 +1646,7 @@ export default function InventoryPage() {
                     fetchInventory();
                     fetchMovements();
                   }
-                  toast.success(`PO Giriş Sevkiyatı ${poRef} başarıyla kaydedildi!`);
+                  toast.success(t('inboundModal.success', { poRef }));
                 } catch (err) {
                   console.error('Failed to register PO inbound:', err);
                 }
@@ -1652,7 +1655,7 @@ export default function InventoryPage() {
               className="space-y-4 text-xs font-semibold text-kp-text-secondary"
             >
               <div>
-                <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">Hedef Depo</label>
+                <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">{t('inboundModal.targetWarehouse')}</label>
                 <select className="w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3 py-2 focus:outline-none">
                   <option>İstanbul Merkez Depo</option>
                   <option>Münih Transit Deposu</option>
@@ -1660,16 +1663,16 @@ export default function InventoryPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">Referans Sipariş (PO) Numarası</label>
+                <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">{t('inboundModal.poRef')}</label>
                 <input type="text" name="poRef" placeholder="PO-2026-X" required className="w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3.5 py-2 focus:outline-none" />
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
                 <button type="button" onClick={() => setIsInboundModalOpen(false)} className="px-4 py-2 border border-kp-border rounded-kp-md text-kp-text-secondary font-bold hover:bg-kp-bg-hover">
-                  İptal
+                  {tc('actions.cancel')}
                 </button>
                 <button type="submit" className="px-4 py-2 bg-kp-accent hover:bg-kp-accent-hover text-white rounded-kp-md font-bold shadow-sm">
-                  Mal Kabulü Kaydet
+                  {t('inboundModal.submit')}
                 </button>
               </div>
             </form>
