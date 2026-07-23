@@ -20,7 +20,7 @@ export default function IntegrationsParentPage() {
 
   const TABS = [
     { id: 'marketplace' as IntegrationTab, label: 'Pazaryerleri', icon: LinkIcon },
-    { id: 'erp' as IntegrationTab, label: 'ERP Ayarları', icon: CpuChipIcon },
+    { id: 'erp' as IntegrationTab, label: 'Stok Kaynağı', icon: CpuChipIcon },
     { id: 'shipping' as IntegrationTab, label: 'Kargo Yönetimi', icon: TruckIcon },
     { id: 'errors' as IntegrationTab, label: 'Entegrasyon Hataları', icon: ExclamationTriangleIcon },
   ];

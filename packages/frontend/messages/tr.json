@@ -57,6 +57,412 @@
     "resetButton": "Varsayılana Dön",
     "successAlert": "Ayarlar başarıyla kaydedildi."
   },
+  "common": {
+    "actions": {
+      "save": "Kaydet",
+      "cancel": "İptal",
+      "delete": "Sil",
+      "edit": "Düzenle",
+      "refresh": "Yenile",
+      "search": "Ara",
+      "close": "Kapat",
+      "add": "Ekle",
+      "create": "Oluştur",
+      "update": "Güncelle",
+      "confirm": "Onayla",
+      "back": "Geri",
+      "view": "Görüntüle",
+      "filter": "Filtrele",
+      "clear": "Temizle",
+      "retry": "Tekrar Dene",
+      "select": "Seçiniz..."
+    },
+    "status": {
+      "active": "Aktif",
+      "passive": "Pasif",
+      "pending": "Beklemede",
+      "error": "Hata",
+      "success": "Başarılı",
+      "completed": "Tamamlandı"
+    },
+    "loading": "Yükleniyor...",
+    "saving": "Kaydediliyor...",
+    "deleting": "Siliniyor...",
+    "noData": "Kayıt bulunamadı",
+    "notSelected": "Seçilmedi",
+    "noOptions": "Seçenek bulunamadı",
+    "dismissNotification": "Bildirimi kapat",
+    "yes": "Evet",
+    "no": "Hayır",
+    "all": "Tümü",
+    "total": "Toplam",
+    "requiredField": "Bu alan zorunludur",
+    "unknownError": "Bilinmeyen bir hata oluştu"
+  },
+  "header": {
+    "agency": "Ajans",
+    "client": "Müşteri",
+    "marketplace": "Pazaryeri",
+    "toggleTheme": "Temayı Değiştir",
+    "wms": "WMS / Depo Yönetimi"
+  },
+  "dashboard": {
+    "title": "Operasyon Paneli",
+    "subtitle": "Ticaret operasyonlarınızın gerçek zamanlı özeti",
+    "loadingMetrics": "Panel metrikleri yükleniyor...",
+    "loadFailed": "Panel yüklenemedi",
+    "syncStarted": "Kanal senkronizasyonu başlatıldı...",
+    "syncSuccess": "Tüm entegrasyon kanalları başarıyla senkronize edildi.",
+    "syncError": "Senkronizasyon sırasında hata oluştu.",
+    "exportSuccess": "Rapor başarıyla dışa aktarıldı ve indirildi.",
+    "exportError": "Rapor aktarılırken bir hata oluştu.",
+    "walkInCustomer": "Kayıtsız Müşteri",
+    "export": {
+      "customer": "Müşteri",
+      "date": "Tarih",
+      "amount": "Tutar",
+      "status": "Durum"
+    },
+    "kpi": {
+      "todaysOrders": "Bugünkü Siparişler",
+      "revenue": "Ciro",
+      "pendingShipments": "Bekleyen Sevkiyatlar",
+      "failedIntegrations": "Hatalı Entegrasyonlar",
+      "productsCatalog": "Ürün Kataloğu",
+      "activeIntegrations": "Aktif Entegrasyonlar",
+      "trendLive": "Canlı",
+      "trendTotal": "Toplam",
+      "trendUnfulfilled": "Hazırlanmadı",
+      "trendAttention": "Dikkat",
+      "trendActive": "Aktif",
+      "trendConnected": "Bağlı"
+    },
+    "integrationHealth": {
+      "title": "Entegrasyon Sağlık Merkezi",
+      "subtitle": "Bağlı sistemlerinizin gerçek zamanlı durumu",
+      "none": "Henüz yapılandırılmış entegrasyon yok.",
+      "lastSync": "Son senkron",
+      "never": "Hiç"
+    },
+    "orderFeed": {
+      "title": "Canlı Sipariş Akışı",
+      "subtitle": "Tüm mağazalardaki en son siparişler",
+      "none": "Henüz kayıtlı sipariş yok."
+    },
+    "quickActions": {
+      "title": "Hızlı İşlemler",
+      "newOrder": "Yeni Sipariş",
+      "addProduct": "Ürün Ekle",
+      "syncing": "Senkronize ediliyor...",
+      "syncChannels": "Kanalları Senkronize Et",
+      "exportReports": "Raporları Dışa Aktar",
+      "auditTrail": "Denetim Kaydı"
+    }
+  },
+  "products": {
+    "title": "Ürünler",
+    "subtitle": "Ürün kataloğunu, fiyatlandırmayı ve SKU kodlarını yönetin",
+    "loadFailed": "Ürünler yüklenemedi",
+    "deleteFailed": "Silme işlemi başarısız oldu.",
+    "storeRequired": {
+      "title": "Mağaza Seçimi Gerekli",
+      "desc": "Ürün kataloğunu yönetmek için üstteki bağlam çubuğundan aktif bir mağaza seçin."
+    },
+    "status": {
+      "active": "Aktif",
+      "draft": "Taslak",
+      "suspended": "Askıda"
+    },
+    "stock": {
+      "outOfStock": "Tükendi",
+      "lowStock": "Az stok"
+    },
+    "deleteModal": {
+      "title": "Ürünü Sil",
+      "confirmText": "<strong>{name}</strong> ürününü silmek istediğinizden emin misiniz?",
+      "barcode": "Barkod",
+      "stock": "Stok",
+      "units": "{count} adet",
+      "softDeleteNote": "Bu işlem <strong>soft-delete</strong>'dir — ürün veritabanından kaldırılmaz, sadece gizlenir. Gerekirse geri alınabilir."
+    },
+    "table": {
+      "tabs": {
+        "all": "Tümü",
+        "active": "Aktif",
+        "draft": "Taslak",
+        "suspended": "Askıda"
+      },
+      "lowStockFilter": "Az Stok ({count})",
+      "outOfStockFilter": "Stok Tükenen ({count})",
+      "searchPlaceholder": "Ürün adı, SKU veya barkod...",
+      "allCategories": "Tüm Kategoriler",
+      "stockFilter": {
+        "all": "Tüm Stoklar",
+        "inStock": "Stokta Var",
+        "low": "Kritik Stok",
+        "out": "Stok Yok"
+      },
+      "addProduct": "Ürün Ekle",
+      "columns": {
+        "product": "Ürün",
+        "skuBarcode": "SKU / Barkod",
+        "location": "Adres / Lokasyon",
+        "price": "Fiyat",
+        "stock": "Stok",
+        "margin": "Marj",
+        "status": "Durum",
+        "actions": "İşlem"
+      },
+      "empty": {
+        "title": "Ürün bulunamadı",
+        "filtered": "Filtreleri değiştirerek tekrar deneyin.",
+        "noProducts": "\"Ürün Ekle\" butonuna tıklayarak ilk ürününüzü oluşturun."
+      },
+      "notAssigned": "- Atanmadı -",
+      "pagination": "Toplam <b>{total}</b> üründen <mono>{range}</mono> arası gösteriliyor",
+      "bulk": {
+        "selected": "ürün seçildi",
+        "selectPlaceholder": "Seç...",
+        "makeActive": "Aktif Yap",
+        "makeDraft": "Taslak Yap",
+        "makeSuspended": "Askıya Al",
+        "assignLocation": "Raf / Adres Ata",
+        "bulkDelete": "Toplu Sil",
+        "clearSelection": "Seçimi Temizle",
+        "statusUpdated": "{count} ürünün durumu başarıyla güncellendi.",
+        "statusUpdateFailed": "Toplu durum güncellenemedi.",
+        "locationAssigned": "{count} ürüne raf kodu ({code}) başarıyla atandı.",
+        "locationAssignFailed": "Toplu raf atama başarısız.",
+        "deleted": "{count} ürün başarıyla silindi.",
+        "deleteFailed": "Toplu silme başarısız oldu."
+      },
+      "bulkLocationModal": {
+        "title": "Toplu Raf / Adres Atama",
+        "desc": "Seçilen <b>{count} ürün</b> için atanacak raf / lokasyon kodunu girin:",
+        "codeLabel": "Raf / Adres Kodu *",
+        "codePlaceholder": "örn. A01-R01-G01",
+        "submit": "Raf Kodu At"
+      },
+      "bulkDeleteModal": {
+        "title": "Toplu Ürün Silme",
+        "desc": "Seçili <b>{count} ürünü</b> silmek istediğinize emin misiniz? Bu işlem geri alınamaz.",
+        "submit": "Seçilenleri Sil"
+      }
+    },
+    "form": {
+      "tabs": {
+        "urlImport": "Link ile Yükle",
+        "basic": "Temel Bilgiler",
+        "pricing": "Fiyatlandırma",
+        "dimensions": "Boyut & Ağırlık",
+        "images": "Görseller",
+        "variants": "Varyasyonlar (Beden)",
+        "bundle": "Paket İçeriği (Bundle)",
+        "crossSell": "Çapraz Satış",
+        "accounting": "Muhasebe Eşleştirme",
+        "integrations": "Pazaryeri Entegrasyonu"
+      },
+      "editTitle": "Ürün Düzenle",
+      "createTitle": "Yeni Ürün Ekle",
+      "createSubtitle": "Ürün kataloğuna yeni kayıt ekle",
+      "fallbackProductName": "Ürün",
+      "scrapeFailed": "Ürün bilgileri URL'den alınamadı. Lütfen geçerli bir URL girin.",
+      "invalidImageFile": "Lütfen geçerli bir görsel dosyası seçin.",
+      "imageTooLarge": "Görsel boyutu en fazla 5MB olabilir.",
+      "selectFromCatalog": "Katalogdan ürün seçin...",
+      "priceLabel": "Fiyat",
+      "remove": "Kaldır",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "createProduct": "Ürün Oluştur",
+      "errors": {
+        "nameRequired": "Ürün adı zorunludur.",
+        "skuRequired": "SKU kodu zorunludur.",
+        "priceInvalid": "Geçerli bir satış fiyatı giriniz.",
+        "basePriceInvalid": "Geçerli bir taban fiyat giriniz.",
+        "submitFailed": "İşlem başarısız oldu."
+      },
+      "urlImport": {
+        "title": "URL ile Ürün Bilgilerini Doldur",
+        "desc": "Desteklenen e-ticaret sitelerinden veya herhangi bir ürün sayfasından bağlantı yapıştırarak tüm alanları (ürün adı, açıklaması, fiyatı ve görselleri) saniyeler içinde otomatik olarak doldurabilirsiniz.",
+        "urlLabel": "Ürün Bağlantısı (URL)",
+        "scraping": "Ürün Bilgileri Çekiliyor...",
+        "scrapeButton": "Bilgileri Çek ve Formu Doldur"
+      },
+      "accounting": {
+        "statusTitle": "Aktif Eşleştirme Durumu",
+        "linkedTo": "Bu ürün şu anda Muhasebe/ERP kartı <b>{code}</b> ile bağlıdır.",
+        "notLinked": "Bu ürün henüz herhangi bir Muhasebe/ERP kartı ile eşleştirilmemiştir.",
+        "unlink": "Eşleştirmeyi Kaldır",
+        "searchLabel": "Muhasebe / ERP'de Ürün Ara",
+        "searchPlaceholder": "Ürün adı, Stok Kodu veya Barkod ile arayın...",
+        "resultsTitle": "Bulunan Muhasebe Kartları ({count})",
+        "noResults": "Arama kriterine uygun muhasebe kartı bulunamadı.",
+        "barcode": "Barkod",
+        "currentStock": "Mevcut Stok",
+        "erpPrice": "Muhasebe Fiyatı",
+        "pullInfo": "Bilgileri Çek",
+        "pullInfoTitle": "Tüm form alanlarını bu muhasebe kartı bilgileriyle doldurur.",
+        "matched": "Eşleştirildi",
+        "match": "Eşleştir"
+      },
+      "basic": {
+        "nameLabel": "Ürün Adı",
+        "namePlaceholder": "örn. Koşu Ayakkabısı",
+        "skuLabel": "SKU Kodu",
+        "skuPlaceholder": "örn. SHOE-001",
+        "descriptionLabel": "Açıklama",
+        "descriptionPlaceholder": "Ürün detayları, özellikler...",
+        "categoryLabel": "Kategori",
+        "categoryPlaceholder": "Kategori seçin...",
+        "statusLabel": "Durum",
+        "statusActive": "Aktif",
+        "statusDraft": "Taslak",
+        "statusSuspended": "Askıda",
+        "typeLabel": "Ürün Tipi",
+        "typeSimple": "Basit Ürün (SIMPLE)",
+        "typeBundle": "Ürün Paketi (BUNDLE)",
+        "typeVariantParent": "Varyantlı Ana Ürün (VARIANT_PARENT)",
+        "typeVariantChild": "Varyant Alt Ürünü (VARIANT_CHILD)",
+        "barcodeLabel": "Barkod (EAN/UPC)",
+        "locationLabel": "Stok Raf / Adres Kodu",
+        "locationPlaceholder": "örn. A01-R01-G01",
+        "currencyLabel": "Para Birimi",
+        "taxRateLabel": "KDV Oranı (%)"
+      },
+      "variants": {
+        "title": "Ürün Varyasyonları (Beden & Renk)",
+        "desc": "Farklı beden, renk veya numara seçeneklerine sahip varyantlar ekleyin.",
+        "addVariant": "Varyant Ekle",
+        "empty": "Henüz varyasyon eklenmedi. Üstteki butondan yeni bir beden/renk varyantı ekleyin.",
+        "size": "Beden (Size)",
+        "color": "Renk (Color)",
+        "sku": "SKU Kodu",
+        "price": "Fiyat",
+        "stock": "Stok",
+        "actions": "İşlem",
+        "sizePlaceholder": "örn. M, L",
+        "colorPlaceholder": "örn. Siyah"
+      },
+      "bundle": {
+        "title": "Paket (Bundle) İçeriği",
+        "desc": "Bu paket satıldığında stoktan düşecek alt bileşen ürünleri ekleyin.",
+        "addLabel": "Pakete Ürün Ekle",
+        "empty": "Pakette henüz hiçbir ürün yok. Yukarıdaki listeden ürün ekleyin.",
+        "quantity": "Adet",
+        "discount": "İndirim (%)"
+      },
+      "crossSell": {
+        "title": "Çapraz Satış & İlişkili Ürünler",
+        "desc": "Bu ürünle birlikte satın alınabilecek tamamlayıcı veya alternatif ürünleri belirleyin.",
+        "addLabel": "İlişkili Ürün Ekle",
+        "empty": "Seçilmiş çapraz satış ürünü bulunmuyor. Yukarıdaki listeden ürün ekleyin.",
+        "displayOrder": "Görüntü Sırası"
+      },
+      "pricing": {
+        "priceLabel": "Satış Fiyatı",
+        "basePriceLabel": "Taban Fiyat (MSRP)",
+        "costPriceLabel": "Maliyet Fiyatı",
+        "initialStockLabel": "Başlangıç Stok",
+        "marginCalc": "Kar Marjı Hesabı",
+        "sale": "Satış",
+        "cost": "Maliyet",
+        "margin": "Marj"
+      },
+      "dimensions": {
+        "desc": "Kargo hesaplamaları için boyut ve ağırlık bilgilerini girin.",
+        "weightLabel": "Ağırlık (kg)",
+        "weightPlaceholder": "örn. 1.25",
+        "widthLabel": "Genişlik (cm)",
+        "heightLabel": "Yükseklik (cm)",
+        "depthLabel": "Derinlik (cm)",
+        "desiCalc": "Kargo Desi Hesabı",
+        "desiFormula": "(En × Boy × Yükseklik) / 3000"
+      },
+      "images": {
+        "desc": "Ürün görsellerini yükleyin veya harici bağlantı ekleyin. İlk görsel ana görsel olacaktır.",
+        "deleteSlot": "Görsel Slotunu Sil",
+        "mainImage": "Ana Görsel",
+        "choose": "Seç",
+        "pasteUrl": "URL yapıştır...",
+        "addImage": "Görsel Ekle"
+      }
+    },
+    "marketplace": {
+      "title": "Pazaryeri Eşleştirme & Entegrasyon",
+      "subtitle": "Ürünün Trendyol üzerindeki kategori ve varyant nitelik eşleştirmeleri",
+      "loading": "Pazaryeri entegrasyonu yükleniyor...",
+      "saveSuccess": "Kategori ve özellik eşleştirmeleri başarıyla kaydedildi. Ürün sıraya eklendi.",
+      "saveFailed": "Haritalandırma kaydedilirken hata oluştu.",
+      "removeConfirm": "Bu ürün için Trendyol bağlantısını kaldırmak istediğinize emin misiniz?",
+      "removeFailed": "Bağlantı kaldırılamadı.",
+      "noIntegration": {
+        "title": "Aktif Entegrasyon Yok",
+        "desc": "Lütfen önce Marketplace Entegrasyonları sayfasından geçerli bir Trendyol mağazası bağlayın."
+      },
+      "syncStatus": "Senkronizasyon Durumu",
+      "categoryMapping": "Trendyol Kategori Eşleştirmesi *",
+      "change": "Değiştir",
+      "categorySearchPlaceholder": "Seçmek için kategori veya ID aratın... (örn: tişört, 387)",
+      "attributesTitle": "Kategori Özellik Ayarları",
+      "loadingAttributes": "Özellikler yükleniyor...",
+      "noAttributes": "Bu kategori için ek bir özellik gerekmiyor.",
+      "columns": {
+        "attribute": "Trendyol Özelliği",
+        "type": "Tip",
+        "value": "Değer"
+      },
+      "typeStatic": "Sabit Değer",
+      "typeVariant": "Varyant Alanı",
+      "typeField": "Ürün Alanı",
+      "selectValue": "-- Seçiniz --",
+      "selectVariant": "-- Varyant Seçin --",
+      "variantSize": "Beden (Size)",
+      "variantColor": "Renk (Color)",
+      "variantLength": "Boy (Length)",
+      "selectField": "-- Ürün Bilgisi --",
+      "fieldName": "Ürün Başlığı",
+      "fieldDescription": "Ürün Açıklaması",
+      "fieldSku": "Stok Kodu (SKU)",
+      "fieldBarcode": "Barkod",
+      "removeMapping": "Eşleştirmeyi Kaldır",
+      "pushToMarketplace": "Pazaryerine Gönder (Push)"
+    },
+    "detail": {
+      "tabDetails": "Detaylar",
+      "tabIntegrations": "Entegrasyonlar",
+      "salePrice": "Satış Fiyatı",
+      "productInfo": "Ürün Bilgileri",
+      "category": "Kategori",
+      "barcode": "Barkod",
+      "erpMapping": "Muhasebe / ERP Eşleşmesi",
+      "noMapping": "Eşleşme Yok",
+      "description": "Açıklama",
+      "inventoryLogistics": "Envanter & Lojistik",
+      "stockQuantity": "Stok Adedi",
+      "units": "{count} adet",
+      "costPrice": "Maliyet Fiyatı",
+      "basePrice": "Taban Fiyat (MSRP)",
+      "currency": "Para Birimi",
+      "warehouseInfo": "Depo & Adresleme Bilgisi",
+      "locationCode": "Raf / Adres Kodu",
+      "notAssigned": "Atanmadı",
+      "warehouseName": "Depo Adı",
+      "warehouseZone": "Depo Bölgesi",
+      "locationBarcode": "Lokasyon Barkodu",
+      "dimensionsWeight": "Boyutlar & Ağırlık",
+      "weight": "Ağırlık",
+      "dimensions": "Boyutlar (G×Y×D)",
+      "desiValue": "Desi Değeri",
+      "allImages": "Tüm Görseller",
+      "syncHistory": "Senkronizasyon Geçmişi",
+      "noIntegrationLogs": "Entegrasyon kaydı yok",
+      "noIntegrationLogsDesc": "Bu ürün için henüz entegrasyon işlemi gerçekleşmemiş.",
+      "logDate": "Tarih",
+      "logProvider": "Sağlayıcı",
+      "logOperation": "İşlem",
+      "logStatus": "Durum"
+    }
+  },
   "marketing": {
     "announcement": {
       "message": "🚀 <brand>Alqora</brand> ile tüm e-ticaret operasyonlarınızı tek merkezden yönetin.",

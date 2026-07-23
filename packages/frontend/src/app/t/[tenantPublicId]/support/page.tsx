@@ -12,8 +12,12 @@ import {
   ChevronRightIcon,
   PaperClipIcon,
   ArrowUturnLeftIcon,
-  XMarkIcon
+  XMarkIcon,
+  ChevronDownIcon,
+  TrashIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
+import { useToast } from '@/components/ui/Toast';
 
 interface Message {
   senderName: string;
@@ -215,11 +219,16 @@ export default function SupportTicketsPage() {
     setAttachments((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
+  const toast = useToast();
+  const [isBulkDropdownOpen, setIsBulkDropdownOpen] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
   // Close dropdowns on click outside
   useEffect(() => {
     const handleGlobalClick = () => {
       setActiveDropdownTicketId(null);
       setIsFilterDropdownOpen(false);
+      setIsBulkDropdownOpen(false);
     };
     window.addEventListener('click', handleGlobalClick);
     return () => window.removeEventListener('click', handleGlobalClick);
@@ -269,6 +278,25 @@ export default function SupportTicketsPage() {
         return newIds;
       });
     }
+  };
+
+  const handleBulkStatusChange = (status: 'Solved' | 'Pending') => {
+    if (selectedTicketIds.length === 0) return;
+    setTickets((prev) =>
+      prev.map((t) => (selectedTicketIds.includes(t.id) ? { ...t, status } : t))
+    );
+    toast.success(`${selectedTicketIds.length} destek talebi "${status === 'Solved' ? 'Çözüldü' : 'Beklemede'}" olarak güncellendi.`);
+    setSelectedTicketIds([]);
+    setIsBulkDropdownOpen(false);
+  };
+
+  const handleBulkDeleteConfirm = () => {
+    if (selectedTicketIds.length === 0) return;
+    setTickets((prev) => prev.filter((t) => !selectedTicketIds.includes(t.id)));
+    toast.success(`${selectedTicketIds.length} destek talebi silindi.`);
+    setSelectedTicketIds([]);
+    setIsBulkDeleteModalOpen(false);
+    setIsBulkDropdownOpen(false);
   };
 
   const handleSendReply = (e: React.FormEvent) => {
@@ -463,6 +491,59 @@ export default function SupportTicketsPage() {
                   </div>
                 )}
               </div>
+
+              {/* Bulk Actions Dropdown next to Filter */}
+              {selectedTicketIds.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsBulkDropdownOpen(!isBulkDropdownOpen);
+                    }}
+                    className="flex items-center gap-1.5 rounded-kp-md border border-kp-accent bg-kp-accent text-white px-3 py-1.5 text-xs font-semibold shadow-xs transition-all hover:bg-kp-accent-hover"
+                  >
+                    <span>Toplu İşlemler ({selectedTicketIds.length})</span>
+                    <ChevronDownIcon className="h-3.5 w-3.5" />
+                  </button>
+
+                  {isBulkDropdownOpen && (
+                    <div
+                      onClick={(e) => e.stopPropagation()}
+                      className="absolute right-0 mt-2 w-48 bg-kp-bg-primary border border-kp-border rounded-kp-md shadow-lg z-30 py-1 text-left space-y-0.5 animate-fade-in"
+                    >
+                      <button
+                        onClick={() => handleBulkStatusChange('Solved')}
+                        className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-emerald-600 hover:text-emerald-700 text-xs font-semibold flex items-center gap-2 transition-colors text-left"
+                      >
+                        <CheckCircleIcon className="h-4 w-4" />
+                        Çözüldü Yap
+                      </button>
+                      <button
+                        onClick={() => handleBulkStatusChange('Pending')}
+                        className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-amber-600 hover:text-amber-700 text-xs font-semibold flex items-center gap-2 transition-colors text-left"
+                      >
+                        <ClockIcon className="h-4 w-4" />
+                        Beklemede Yap
+                      </button>
+                      <div className="border-t border-kp-border my-1" />
+                      <button
+                        onClick={() => setIsBulkDeleteModalOpen(true)}
+                        className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-danger hover:text-red-700 text-xs font-semibold flex items-center gap-2 transition-colors text-left"
+                      >
+                        <TrashIcon className="h-4 w-4" />
+                        Toplu Sil
+                      </button>
+                      <button
+                        onClick={() => setSelectedTicketIds([])}
+                        className="w-full px-3 py-1.5 hover:bg-kp-bg-secondary text-kp-text-tertiary text-xs font-medium flex items-center gap-2 transition-colors text-left"
+                      >
+                        <XMarkIcon className="h-4 w-4" />
+                        Seçimi Temizle
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -829,6 +910,47 @@ export default function SupportTicketsPage() {
             </div>
           </div>
         )
+      )}
+
+      {/* Bulk Delete Confirmation Modal */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
+              <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Toplu Talepleri Sil
+              </h3>
+              <button
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="text-kp-text-tertiary hover:text-kp-text-primary transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-kp-text-secondary leading-relaxed">
+                Seçili <span className="font-bold text-kp-danger">{selectedTicketIds.length} destek talebini</span> silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
+              <button
+                type="button"
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkDeleteConfirm}
+                className="flex items-center gap-1.5 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-xs transition-all"
+              >
+                <TrashIcon className="h-3.5 w-3.5" />
+                Seçilenleri Sil
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -9,9 +9,14 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   BuildingOfficeIcon,
-  AdjustmentsHorizontalIcon
+  AdjustmentsHorizontalIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/lib/auth-context';
+import { apiFetch } from '@/lib/api';
 
 interface Warehouse {
   id: string;
@@ -71,7 +76,12 @@ const WAREHOUSE_TYPES = ['Ana Depo', 'İade Deposu', 'Transit Depo', 'Bölge Dep
 
 export function WarehousesTable() {
   const toast = useToast();
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(INITIAL_WAREHOUSES);
+  const { tenantContext } = useAuth();
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('All');
 
@@ -87,6 +97,38 @@ export function WarehousesTable() {
     usedCapacity: 0,
     status: 'active' as 'active' | 'inactive',
   });
+  const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null);
+
+  const fetchWarehouses = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetch<any[]>('/warehouses');
+      const mapped = data.map((w: any) => ({
+        id: w.id,
+        name: w.name,
+        code: w.code,
+        type: w.type,
+        address: w.address || '',
+        capacity: w.capacity || 5000,
+        usedCapacity: w.usedCapacity || 0,
+        status: w.isActive ? 'active' as const : 'inactive' as const,
+      }));
+      setWarehouses(mapped);
+    } catch (err: any) {
+      setError(err.message || 'Depolar yüklenirken bir hata oluştu.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tenantContext.agencyId) {
+      fetchWarehouses();
+    } else {
+      setIsLoading(false);
+    }
+  }, [tenantContext.agencyId]);
 
   const handleOpenAddModal = () => {
     setEditingWarehouse(null);
@@ -116,13 +158,29 @@ export function WarehousesTable() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteWarehouse = (id: string) => {
-    if (confirm('Bu depoyu sistemden silmek istediğinize emin misiniz? Depo ile eşleşen lokasyonlar ve envanterler etkilenebilir.')) {
-      setWarehouses((prev) => prev.filter((w) => w.id !== id));
+  const handleDeleteWarehouse = (wh: Warehouse) => {
+    setWarehouseToDelete(wh);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (warehouseToDelete) {
+      setIsDeleting(true);
+      try {
+        await apiFetch(`/warehouses/${warehouseToDelete.id}`, {
+          method: 'DELETE',
+        });
+        setWarehouses((prev) => prev.filter((w) => w.id !== warehouseToDelete.id));
+        setWarehouseToDelete(null);
+        toast.success('Depo başarıyla silindi.');
+      } catch (err: any) {
+        toast.error(err.message || 'Depo silinemedi.');
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.code) {
       toast.warning('Lütfen depo adı ve kodunu doldurun.');
@@ -130,43 +188,77 @@ export function WarehousesTable() {
     }
 
     if (formData.usedCapacity > formData.capacity) {
-      toast.warning('Kullanılan kapasite toplam kapasiteden büyük olamaz.');
+      toast.warning('Kullanılan kapasite toplam kapasitetten büyük olamaz.');
       return;
     }
 
-    if (editingWarehouse) {
-      // Edit mode
-      setUsers(
-        warehouses.map((w) =>
-          w.id === editingWarehouse.id
-            ? {
-                ...w,
-                name: formData.name,
-                code: formData.code,
-                type: formData.type,
-                address: formData.address,
-                capacity: formData.capacity,
-                usedCapacity: formData.usedCapacity,
-                status: formData.status,
-              }
-            : w
-        )
-      );
-    } else {
-      // Create mode
-      const newWh: Warehouse = {
-        id: `wh_${Date.now()}`,
-        name: formData.name,
-        code: formData.code,
-        type: formData.type,
-        address: formData.address,
-        capacity: formData.capacity,
-        usedCapacity: formData.usedCapacity,
-        status: formData.status,
-      };
-      setWarehouses((prev) => [...prev, newWh]);
+    setIsSubmitting(true);
+    try {
+      if (editingWarehouse) {
+        // Edit mode
+        const updated = await apiFetch<any>(`/warehouses/${editingWarehouse.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: formData.name,
+            code: formData.code,
+            type: formData.type,
+            address: formData.address,
+            capacity: formData.capacity,
+            usedCapacity: formData.usedCapacity,
+            status: formData.status,
+          }),
+        });
+
+        const mappedUpdated: Warehouse = {
+          id: updated.id,
+          name: updated.name,
+          code: updated.code,
+          type: updated.type,
+          address: updated.address || '',
+          capacity: updated.capacity || 5000,
+          usedCapacity: updated.usedCapacity || 0,
+          status: updated.isActive ? 'active' : 'inactive',
+        };
+
+        setWarehouses((prev) =>
+          prev.map((w) => (w.id === editingWarehouse.id ? mappedUpdated : w))
+        );
+        toast.success('Depo başarıyla güncellendi.');
+      } else {
+        // Create mode
+        const created = await apiFetch<any>('/warehouses', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: formData.name,
+            code: formData.code,
+            type: formData.type,
+            address: formData.address,
+            capacity: formData.capacity,
+            usedCapacity: formData.usedCapacity,
+            status: formData.status,
+          }),
+        });
+
+        const mappedCreated: Warehouse = {
+          id: created.id,
+          name: created.name,
+          code: created.code,
+          type: created.type,
+          address: created.address || '',
+          capacity: created.capacity || 5000,
+          usedCapacity: created.usedCapacity || 0,
+          status: created.isActive ? 'active' : 'inactive',
+        };
+
+        setWarehouses((prev) => [...prev, mappedCreated]);
+        toast.success('Depo başarıyla oluşturuldu.');
+      }
+      setIsModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Depo kaydedilemedi.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsModalOpen(false);
   };
 
   // Helper alias to bypass setUsers typo
@@ -243,7 +335,22 @@ export function WarehousesTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-kp-border text-kp-text-secondary">
-            {filteredWarehouses.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-kp-text-tertiary">
+                  <div className="flex items-center justify-center gap-2">
+                    <ArrowPathIcon className="h-4 w-4 animate-spin text-kp-accent" />
+                    <span>Depolar yükleniyor...</span>
+                  </div>
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-kp-danger">
+                  Hata: {error}
+                </td>
+              </tr>
+            ) : filteredWarehouses.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-kp-text-tertiary italic">
                   Eşleşen depo bulunamadı.
@@ -320,7 +427,7 @@ export function WarehousesTable() {
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteWarehouse(wh.id)}
+                          onClick={() => handleDeleteWarehouse(wh)}
                           className="p-1 text-kp-text-tertiary hover:text-kp-danger rounded-kp-md hover:bg-kp-bg-hover transition-colors"
                           title="Sil"
                         >
@@ -447,18 +554,64 @@ export function WarehousesTable() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-kp-md border border-kp-border px-3.5 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
+                  disabled={isSubmitting}
+                  className="rounded-kp-md border border-kp-border px-3.5 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
                 >
                   Vazgeç
                 </button>
                 <button
                   type="submit"
-                  className="rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold transition-colors"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
+                  {isSubmitting && <ArrowPathIcon className="h-3 w-3 animate-spin" />}
                   {editingWarehouse ? 'Değişiklikleri Kaydet' : 'Depo Oluştur'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {warehouseToDelete && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
+              <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Depoyu Sil
+              </h3>
+              <button
+                onClick={() => setWarehouseToDelete(null)}
+                className="text-kp-text-tertiary hover:text-kp-text-primary transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-kp-text-secondary leading-relaxed">
+                <span className="font-semibold text-kp-text-primary">{warehouseToDelete.name}</span> depoyu sistemden silmek istediğinize emin misiniz? Depo ile eşleşen lokasyonlar ve envanterler etkilenebilir.
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
+              <button
+                type="button"
+                onClick={() => setWarehouseToDelete(null)}
+                disabled={isDeleting}
+                className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
+              >
+                İptal
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="flex items-center gap-1.5 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+              >
+                {isDeleting && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
+                Sil
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import useSWR from 'swr';
+import useSWR, { useSWRConfig } from 'swr';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { useTranslations } from 'next-intl';
@@ -45,6 +45,8 @@ export function GeneralSettingsForm() {
     }));
   };
 
+  const { mutate: globalMutate } = useSWRConfig();
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -54,6 +56,7 @@ export function GeneralSettingsForm() {
         body: JSON.stringify(formData),
       });
       mutate(formData);
+      globalMutate('/products');
       toast.success(t('successAlert'));
     } catch (err: any) {
       toast.error(err.message || 'Kaydedilirken bir hata oluştu.');

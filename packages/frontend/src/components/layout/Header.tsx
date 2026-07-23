@@ -36,6 +36,7 @@ interface TenantSwitcherProps {
 function TenantSwitcher({ label, value, icon: Icon, options, onChange, disabled }: TenantSwitcherProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const tc = useTranslations('common');
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -58,14 +59,14 @@ function TenantSwitcher({ label, value, icon: Icon, options, onChange, disabled 
       >
         <Icon className="h-4 w-4 text-kp-text-tertiary" />
         <span className="text-kp-text-secondary">{label}:</span>
-        <span className="truncate max-w-[120px]">{selectedOption?.name || 'Seçilmedi'}</span>
+        <span className="truncate max-w-[120px]">{selectedOption?.name || tc('notSelected')}</span>
         <ChevronDownIcon className={`h-3 w-3 text-kp-text-tertiary transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
       {isOpen && (
         <ul className="absolute left-0 top-full z-50 mt-1 max-h-60 w-56 overflow-y-auto rounded-kp-md border border-kp-border bg-kp-bg-secondary p-1 shadow-kp-dropdown">
           {options.length === 0 ? (
-            <li className="px-3 py-2 text-xs text-kp-text-tertiary">No options available</li>
+            <li className="px-3 py-2 text-xs text-kp-text-tertiary">{tc('noOptions')}</li>
           ) : (
             options.map((opt) => (
               <li key={opt.id}>
@@ -96,6 +97,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
   const t = useTranslations('navigation');
+  const th = useTranslations('header');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -195,7 +197,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
           <div className="hidden items-center gap-2.5 sm:flex">
             {/* Agency Switcher */}
             <TenantSwitcher
-              label="Ajans"
+              label={th('agency')}
               value={tenantContext.agencyId || ''}
               icon={BuildingOfficeIcon}
               options={agencies}
@@ -204,7 +206,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
 
             {/* Client Switcher */}
             <TenantSwitcher
-              label="Müşteri"
+              label={th('client')}
               value={tenantContext.clientId || ''}
               icon={UserGroupIcon}
               options={filteredClients}
@@ -214,7 +216,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
 
             {/* Store Switcher */}
             <TenantSwitcher
-              label="Pazaryeri"
+              label={th('marketplace')}
               value={tenantContext.storeId || ''}
               icon={BuildingStorefrontIcon}
               options={filteredStores}
@@ -231,7 +233,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
         <button
           onClick={toggleTheme}
           className="rounded-kp-sm p-2 text-kp-text-tertiary transition-colors hover:bg-kp-bg-tertiary hover:text-kp-text-primary"
-          title="Toggle Theme"
+          title={th('toggleTheme')}
         >
           {theme === 'dark' ? '☀️' : '🌙'}
         </button>
@@ -240,7 +242,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
         <button
           onClick={() => router.push('/app/wms')}
           className="rounded-kp-sm p-2 text-kp-text-tertiary transition-colors hover:bg-kp-bg-tertiary hover:text-kp-text-primary"
-          title="WMS / Depo Yönetimi"
+          title={th('wms')}
         >
           <Squares2X2Icon className="h-5 w-5" />
         </button>

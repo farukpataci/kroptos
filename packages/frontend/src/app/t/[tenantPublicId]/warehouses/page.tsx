@@ -5,7 +5,6 @@ import { GeneralWarehouseSettingsForm } from './components/GeneralWarehouseSetti
 import { WarehousesTable } from './components/WarehousesTable';
 import { WarehouseZonesTable } from './components/WarehouseZonesTable';
 import { WarehouseLocationsTable } from './components/WarehouseLocationsTable';
-import { StockSourceSelector } from './components/StockSourceSelector';
 import { StockAllocationRulesTable } from './components/StockAllocationRulesTable';
 import { MarketplaceStockRulesTable } from './components/MarketplaceStockRulesTable';
 import { LogoStockSettingsForm } from './components/LogoStockSettingsForm';
@@ -17,7 +16,6 @@ const tabs = [
   { id: 'warehouses', label: 'Depolar' },
   { id: 'zones', label: 'Bölgeler' },
   { id: 'locations', label: 'Raflar & Adresler' },
-  { id: 'source', label: 'Stok Kaynağı' },
   { id: 'allocation', label: 'Stok Dağıtım Kuralları' },
   { id: 'marketplace', label: 'Pazaryeri Stok Kuralları' },
   { id: 'logo', label: 'Logo / ERP Stok Entegrasyonu' },
@@ -61,7 +59,6 @@ export default function WarehousesPage() {
           {activeTab === 'warehouses' && <WarehousesTable />}
           {activeTab === 'zones' && <WarehouseZonesTable />}
           {activeTab === 'locations' && <WarehouseLocationsTable />}
-          {activeTab === 'source' && <StockSourceSelector />}
           {activeTab === 'allocation' && <StockAllocationRulesTable />}
           {activeTab === 'marketplace' && <MarketplaceStockRulesTable />}
           {activeTab === 'logo' && <LogoStockSettingsForm />}

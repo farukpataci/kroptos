@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import {
@@ -53,6 +54,7 @@ interface ProductMapping {
 }
 
 export default function ProductMarketplaceSettings({ productId }: ProductMarketplaceSettingsProps) {
+  const t = useTranslations('products.marketplace');
   const toast = useToast();
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [selectedIntegrationId, setSelectedIntegrationId] = useState('');
@@ -212,9 +214,9 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
         return [updatedMap, ...filtered];
       });
       setActiveMapping(updatedMap);
-      toast.success('Kategori ve özellik eşleştirmeleri başarıyla kaydedildi. Ürün sıraya eklendi.');
+      toast.success(t('saveSuccess'));
     } catch (err: any) {
-      toast.error(err.message || 'Haritalandırma kaydedilirken hata oluştu.');
+      toast.error(err.message || t('saveFailed'));
     } finally {
       setIsSyncing(false);
     }
@@ -222,7 +224,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
 
   const handleRemoveMapping = async () => {
     if (!activeMapping) return;
-    if (!confirm('Bu ürün için Trendyol bağlantısını kaldırmak istediğinize emin misiniz?')) return;
+    if (!confirm(t('removeConfirm'))) return;
     setIsSyncing(true);
     try {
       await apiFetch(`/integrations/products/${productId}/mappings/${activeMapping.id}`, {
@@ -235,7 +237,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       setAttributeMappings({});
       setCategoryAttributes([]);
     } catch (err: any) {
-      toast.error(err.message || 'Bağlantı kaldırılamadı.');
+      toast.error(err.message || t('removeFailed'));
     } finally {
       setIsSyncing(false);
     }
@@ -245,7 +247,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
     return (
       <div className="flex justify-center items-center py-12">
         <ArrowPathIcon className="h-6 w-6 text-kp-accent animate-spin" />
-        <span className="ml-2 text-xs text-kp-text-tertiary">Pazaryeri entegrasyonu yükleniyor...</span>
+        <span className="ml-2 text-xs text-kp-text-tertiary">{t('loading')}</span>
       </div>
     );
   }
@@ -254,9 +256,9 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
     return (
       <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/10 p-5 text-center">
         <ExclamationTriangleIcon className="h-6 w-6 text-kp-text-tertiary mx-auto mb-2" />
-        <p className="text-xs font-semibold text-kp-text-secondary">Aktif Entegrasyon Yok</p>
+        <p className="text-xs font-semibold text-kp-text-secondary">{t('noIntegration.title')}</p>
         <p className="text-[11px] text-kp-text-tertiary mt-1">
-          Lütfen önce Marketplace Entegrasyonları sayfasından geçerli bir Trendyol mağazası bağlayın.
+          {t('noIntegration.desc')}
         </p>
       </div>
     );
@@ -271,8 +273,8 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       {/* Integration Selector */}
       <div className="flex items-center justify-between border-b border-kp-border pb-4">
         <div>
-          <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">Pazaryeri Eşleştirme & Entegrasyon</h4>
-          <p className="text-[11px] text-kp-text-tertiary">Ürünün Trendyol üzerindeki kategori ve varyant nitelik eşleştirmeleri</p>
+          <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h4>
+          <p className="text-[11px] text-kp-text-tertiary">{t('subtitle')}</p>
         </div>
         <select
           value={selectedIntegrationId}
@@ -300,7 +302,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
           <div className="flex items-center gap-2">
             {activeMapping.status === 'synced' ? <CheckCircleIcon className="h-4.5 w-4.5" /> : <ArrowPathIcon className="h-4.5 w-4.5" />}
             <div>
-              <p className="font-semibold capitalize">Senkronizasyon Durumu: {activeMapping.status}</p>
+              <p className="font-semibold capitalize">{t('syncStatus')}: {activeMapping.status}</p>
               {activeMapping.errorMessage && (
                 <p className="text-[10px] text-red-300 mt-0.5">{activeMapping.errorMessage}</p>
               )}
@@ -318,7 +320,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       <div className="space-y-4">
         <div className="relative">
           <label className="block text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-            Trendyol Kategori Eşleştirmesi *
+            {t('categoryMapping')}
           </label>
           
           {selectedCategoryId ? (
@@ -331,7 +333,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
                 className="text-kp-text-tertiary hover:text-kp-danger transition-colors"
                 type="button"
               >
-                Değiştir
+                {t('change')}
               </button>
             </div>
           ) : (
@@ -341,7 +343,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
                   type="text"
                   value={categorySearchQuery}
                   onChange={(e) => setCategorySearchQuery(e.target.value)}
-                  placeholder="Seçmek için kategori veya ID aratın... (örn: tişört, 387)"
+                  placeholder={t('categorySearchPlaceholder')}
                   className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                 />
                 <FolderOpenIcon className="absolute right-3.5 top-2.5 h-4 w-4 text-kp-text-tertiary" />
@@ -368,23 +370,23 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
         {/* Dynamic Attributes Mapping */}
         {selectedCategoryId && (
           <div className="space-y-3.5 border-t border-kp-border pt-4">
-            <h5 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">Kategori Özellik Ayarları</h5>
+            <h5 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('attributesTitle')}</h5>
             
             {isLoadingAttributes ? (
               <div className="flex items-center justify-center py-6">
                 <ArrowPathIcon className="h-4.5 w-4.5 text-kp-accent animate-spin" />
-                <span className="ml-2 text-xs text-kp-text-tertiary">Özellikler yükleniyor...</span>
+                <span className="ml-2 text-xs text-kp-text-tertiary">{t('loadingAttributes')}</span>
               </div>
             ) : categoryAttributes.length === 0 ? (
-              <p className="text-xs text-kp-text-tertiary italic">Bu kategori için ek bir özellik gerekmiyor.</p>
+              <p className="text-xs text-kp-text-tertiary italic">{t('noAttributes')}</p>
             ) : (
               <div className="overflow-hidden border border-kp-border rounded-kp-md bg-kp-bg-primary/10">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
-                      <th className="py-2.5 px-3.5">Trendyol Özelliği</th>
-                      <th className="py-2.5 px-3.5">Tip</th>
-                      <th className="py-2.5 px-3.5">Değer</th>
+                      <th className="py-2.5 px-3.5">{t('columns.attribute')}</th>
+                      <th className="py-2.5 px-3.5">{t('columns.type')}</th>
+                      <th className="py-2.5 px-3.5">{t('columns.value')}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-kp-border text-kp-text-secondary">
@@ -403,9 +405,9 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
                               onChange={(e) => handleAttributeChange(idStr, 'type', e.target.value)}
                               className="bg-kp-bg-secondary border border-kp-border rounded-kp-md px-1.5 py-0.5 text-xs focus:outline-hidden"
                             >
-                              <option value="static">Sabit Değer</option>
-                              <option value="variant">Varyant Alanı</option>
-                              <option value="field">Ürün Alanı</option>
+                              <option value="static">{t('typeStatic')}</option>
+                              <option value="variant">{t('typeVariant')}</option>
+                              <option value="field">{t('typeField')}</option>
                             </select>
                           </td>
                           <td className="py-2.5 px-3.5">
@@ -416,7 +418,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
                                   onChange={(e) => handleAttributeChange(idStr, 'value', e.target.value)}
                                   className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md px-1.5 py-0.5 text-xs focus:outline-hidden"
                                 >
-                                  <option value="">-- Seçiniz --</option>
+                                  <option value="">{t('selectValue')}</option>
                                   {attr.attributeValues.map((v) => (
                                     <option key={v.id} value={v.name}>{v.name}</option>
                                   ))}
@@ -435,10 +437,10 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
                                 onChange={(e) => handleAttributeChange(idStr, 'value', e.target.value)}
                                 className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md px-1.5 py-0.5 text-xs focus:outline-hidden"
                               >
-                                <option value="">-- Varyant Seçin --</option>
-                                <option value="Beden">Beden (Size)</option>
-                                <option value="Renk">Renk (Color)</option>
-                                <option value="Boy">Boy (Length)</option>
+                                <option value="">{t('selectVariant')}</option>
+                                <option value="Beden">{t('variantSize')}</option>
+                                <option value="Renk">{t('variantColor')}</option>
+                                <option value="Boy">{t('variantLength')}</option>
                               </select>
                             ) : (
                               <select
@@ -446,11 +448,11 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
                                 onChange={(e) => handleAttributeChange(idStr, 'value', e.target.value)}
                                 className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md px-1.5 py-0.5 text-xs focus:outline-hidden"
                               >
-                                <option value="">-- Ürün Bilgisi --</option>
-                                <option value="name">Ürün Başlığı</option>
-                                <option value="description">Ürün Açıklaması</option>
-                                <option value="sku">Stok Kodu (SKU)</option>
-                                <option value="barcode">Barkod</option>
+                                <option value="">{t('selectField')}</option>
+                                <option value="name">{t('fieldName')}</option>
+                                <option value="description">{t('fieldDescription')}</option>
+                                <option value="sku">{t('fieldSku')}</option>
+                                <option value="barcode">{t('fieldBarcode')}</option>
                               </select>
                             )}
                           </td>
@@ -475,7 +477,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
               className="flex items-center gap-1.5 rounded-kp-md border border-kp-border hover:border-kp-danger/30 hover:text-kp-danger text-kp-text-tertiary px-3.5 py-2 text-xs font-semibold transition-all disabled:opacity-50"
             >
               <TrashIcon className="h-3.5 w-3.5" />
-              Eşleştirmeyi Kaldır
+              {t('removeMapping')}
             </button>
           )}
         </div>
@@ -490,7 +492,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
           ) : (
             <CloudArrowUpIcon className="h-4 w-4" />
           )}
-          Pazaryerine Gönder (Push)
+          {t('pushToMarketplace')}
         </button>
       </div>
     </div>
