@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { GeneralWarehouseSettingsForm } from './components/GeneralWarehouseSettingsForm';
 import { WarehousesTable } from './components/WarehousesTable';
 import { WarehouseZonesTable } from './components/WarehouseZonesTable';
@@ -12,25 +13,26 @@ import { CriticalStockSettingsForm } from './components/CriticalStockSettingsFor
 import { StockMovementsTable } from './components/StockMovementsTable';
 
 const tabs = [
-  { id: 'general', label: 'Genel Ayarlar' },
-  { id: 'warehouses', label: 'Depolar' },
-  { id: 'zones', label: 'Bölgeler' },
-  { id: 'locations', label: 'Raflar & Adresler' },
-  { id: 'allocation', label: 'Stok Dağıtım Kuralları' },
-  { id: 'marketplace', label: 'Pazaryeri Stok Kuralları' },
-  { id: 'logo', label: 'Logo / ERP Stok Entegrasyonu' },
-  { id: 'critical', label: 'Kritik Stok & Uyarılar' },
-  { id: 'movements', label: 'Stok Hareketleri & Günlükler' },
+  { id: 'general', labelKey: 'tabs.general' },
+  { id: 'warehouses', labelKey: 'tabs.warehouses' },
+  { id: 'zones', labelKey: 'tabs.zones' },
+  { id: 'locations', labelKey: 'tabs.locations' },
+  { id: 'allocation', labelKey: 'tabs.allocation' },
+  { id: 'marketplace', labelKey: 'tabs.marketplace' },
+  { id: 'logo', labelKey: 'tabs.logo' },
+  { id: 'critical', labelKey: 'tabs.critical' },
+  { id: 'movements', labelKey: 'tabs.movements' },
 ];
 
 export default function WarehousesPage() {
+  const t = useTranslations('warehouses');
   const [activeTab, setActiveTab] = useState('general');
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
       <div className="flex flex-col space-y-2">
-        <h2 className="text-3xl font-bold tracking-tight">Depo & Stok Dağıtım Ayarları</h2>
-        <p className="text-gray-500">Depoları, bölgeleri ve stok dağıtım kurallarını yapılandırın.</p>
+        <h2 className="text-3xl font-bold tracking-tight">{t('title')}</h2>
+        <p className="text-gray-500">{t('subtitle')}</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6 mt-6">
@@ -47,7 +49,7 @@ export default function WarehousesPage() {
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                 }`}
               >
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             ))}
           </nav>

@@ -665,6 +665,65 @@
       "logStatus": "Durum"
     }
   },
+  "warehouses": {
+    "title": "Depo & Stok Dağıtım Ayarları",
+    "subtitle": "Depoları, bölgeleri ve stok dağıtım kurallarını yapılandırın.",
+    "tabs": {
+      "general": "Genel Ayarlar",
+      "warehouses": "Depolar",
+      "zones": "Bölgeler",
+      "locations": "Raflar & Adresler",
+      "allocation": "Stok Dağıtım Kuralları",
+      "marketplace": "Pazaryeri Stok Kuralları",
+      "logo": "Logo / ERP Stok Entegrasyonu",
+      "critical": "Kritik Stok & Uyarılar",
+      "movements": "Stok Hareketleri & Günlükler"
+    },
+    "table": {
+      "title": "Depolar",
+      "subtitle": "Envanter lokasyonlarını ve stok toplama merkezlerini yönetin",
+      "addWarehouse": "Depo Ekle",
+      "searchPlaceholder": "Depo adı veya kodu ile ara...",
+      "typeFilter": "Depo Tipi Filtresi:",
+      "allWarehouses": "Tüm Depolar",
+      "colInfo": "Depo Bilgileri",
+      "colType": "Depo Tipi",
+      "colFill": "Doluluk Oranı",
+      "colStatus": "Durum",
+      "colActions": "İşlemler",
+      "loading": "Depolar yükleniyor...",
+      "loadFailed": "Depolar yüklenirken bir hata oluştu.",
+      "empty": "Eşleşen depo bulunamadı.",
+      "fillPercent": "% {percent} Dolu",
+      "deleteSuccess": "Depo başarıyla silindi.",
+      "deleteFailed": "Depo silinemedi.",
+      "updateSuccess": "Depo başarıyla güncellendi.",
+      "createSuccess": "Depo başarıyla oluşturuldu.",
+      "saveFailed": "Depo kaydedilemedi.",
+      "fillNameCode": "Lütfen depo adı ve kodunu doldurun.",
+      "capacityExceeded": "Kullanılan kapasite toplam kapasiteden büyük olamaz.",
+      "modal": {
+        "editTitle": "Depo Düzenle",
+        "createTitle": "Yeni Depo Ekle",
+        "nameLabel": "Depo Adı *",
+        "namePlaceholder": "Örn: Tuzla E-Ticaret Deposu",
+        "codeLabel": "Depo Kodu *",
+        "typeLabel": "Depo Tipi *",
+        "capacityLabel": "Toplam Kapasite (Desi) *",
+        "usedCapacityLabel": "Kullanılan Hacim (Desi)",
+        "addressLabel": "Depo Adresi",
+        "addressPlaceholder": "Adres detayları...",
+        "statusLabel": "Durumu",
+        "discard": "Vazgeç",
+        "saveChanges": "Değişiklikleri Kaydet",
+        "createWarehouse": "Depo Oluştur"
+      },
+      "deleteModal": {
+        "title": "Depoyu Sil",
+        "desc": "<b>{name}</b> depoyu sistemden silmek istediğinize emin misiniz? Depo ile eşleşen lokasyonlar ve envanterler etkilenebilir."
+      }
+    }
+  },
   "integrations": {
     "tabMarketplace": "Pazaryerleri",
     "tabErp": "Stok Kaynağı",

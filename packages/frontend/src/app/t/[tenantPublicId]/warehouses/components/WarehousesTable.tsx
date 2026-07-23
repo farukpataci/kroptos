@@ -14,6 +14,7 @@ import {
   XMarkIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
@@ -75,6 +76,8 @@ const INITIAL_WAREHOUSES: Warehouse[] = [
 const WAREHOUSE_TYPES = ['Ana Depo', 'İade Deposu', 'Transit Depo', 'Bölge Deposu'];
 
 export function WarehousesTable() {
+  const t = useTranslations('warehouses.table');
+  const tc = useTranslations('common');
   const toast = useToast();
   const { tenantContext } = useAuth();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -116,7 +119,7 @@ export function WarehousesTable() {
       }));
       setWarehouses(mapped);
     } catch (err: any) {
-      setError(err.message || 'Depolar yüklenirken bir hata oluştu.');
+      setError(err.message || t('loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -171,9 +174,9 @@ export function WarehousesTable() {
         });
         setWarehouses((prev) => prev.filter((w) => w.id !== warehouseToDelete.id));
         setWarehouseToDelete(null);
-        toast.success('Depo başarıyla silindi.');
+        toast.success(t('deleteSuccess'));
       } catch (err: any) {
-        toast.error(err.message || 'Depo silinemedi.');
+        toast.error(err.message || t('deleteFailed'));
       } finally {
         setIsDeleting(false);
       }
@@ -183,12 +186,12 @@ export function WarehousesTable() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.code) {
-      toast.warning('Lütfen depo adı ve kodunu doldurun.');
+      toast.warning(t('fillNameCode'));
       return;
     }
 
     if (formData.usedCapacity > formData.capacity) {
-      toast.warning('Kullanılan kapasite toplam kapasitetten büyük olamaz.');
+      toast.warning(t('capacityExceeded'));
       return;
     }
 
@@ -223,7 +226,7 @@ export function WarehousesTable() {
         setWarehouses((prev) =>
           prev.map((w) => (w.id === editingWarehouse.id ? mappedUpdated : w))
         );
-        toast.success('Depo başarıyla güncellendi.');
+        toast.success(t('updateSuccess'));
       } else {
         // Create mode
         const created = await apiFetch<any>('/warehouses', {
@@ -251,11 +254,11 @@ export function WarehousesTable() {
         };
 
         setWarehouses((prev) => [...prev, mappedCreated]);
-        toast.success('Depo başarıyla oluşturuldu.');
+        toast.success(t('createSuccess'));
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      toast.error(err.message || 'Depo kaydedilemedi.');
+      toast.error(err.message || t('saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -280,15 +283,15 @@ export function WarehousesTable() {
       {/* Header & Add Button */}
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
-          <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">Depolar</h3>
-          <p className="text-[11px] text-kp-text-tertiary">Envanter lokasyonlarını ve stok toplama merkezlerini yönetin</p>
+          <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
+          <p className="text-[11px] text-kp-text-tertiary">{t('subtitle')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}
           className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
         >
           <PlusIcon className="h-4 w-4" />
-          Depo Ekle
+          {t('addWarehouse')}
         </button>
       </div>
 
@@ -299,20 +302,20 @@ export function WarehousesTable() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Depo adı veya kodu ile ara..."
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md pl-9 pr-3.5 py-1.5 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-hidden focus:border-kp-accent transition-colors"
           />
           <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-3.5 w-3.5 text-kp-text-tertiary" />
         </div>
         
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <span className="text-[11px] text-kp-text-tertiary">Depo Tipi Filtresi:</span>
+          <span className="text-[11px] text-kp-text-tertiary">{t('typeFilter')}</span>
           <select
             value={selectedTypeFilter}
             onChange={(e) => setSelectedTypeFilter(e.target.value)}
             className="bg-kp-bg-secondary border border-kp-border rounded-kp-md text-xs px-2.5 py-1.5 focus:outline-hidden"
           >
-            <option value="All">Tüm Depolar</option>
+            <option value="All">{t('allWarehouses')}</option>
             {WAREHOUSE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -327,11 +330,11 @@ export function WarehousesTable() {
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
-              <th className="py-3 px-4">Depo Bilgileri</th>
-              <th className="py-3 px-4">Depo Tipi</th>
-              <th className="py-3 px-4">Doluluk Oranı</th>
-              <th className="py-3 px-4">Durum</th>
-              <th className="py-3 px-4 text-right">İşlemler</th>
+              <th className="py-3 px-4">{t('colInfo')}</th>
+              <th className="py-3 px-4">{t('colType')}</th>
+              <th className="py-3 px-4">{t('colFill')}</th>
+              <th className="py-3 px-4">{t('colStatus')}</th>
+              <th className="py-3 px-4 text-right">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-kp-border text-kp-text-secondary">
@@ -340,20 +343,20 @@ export function WarehousesTable() {
                 <td colSpan={5} className="py-8 text-center text-kp-text-tertiary">
                   <div className="flex items-center justify-center gap-2">
                     <ArrowPathIcon className="h-4 w-4 animate-spin text-kp-accent" />
-                    <span>Depolar yükleniyor...</span>
+                    <span>{t('loading')}</span>
                   </div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-kp-danger">
-                  Hata: {error}
+                  {tc('status.error')}: {error}
                 </td>
               </tr>
             ) : filteredWarehouses.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-kp-text-tertiary italic">
-                  Eşleşen depo bulunamadı.
+                  {t('empty')}
                 </td>
               </tr>
             ) : (
@@ -383,7 +386,7 @@ export function WarehousesTable() {
                     <td className="py-3 px-4 w-52">
                       <div className="space-y-1">
                         <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-medium text-kp-text-secondary">% {fillPercent} Dolu</span>
+                          <span className="font-medium text-kp-text-secondary">{t('fillPercent', { percent: fillPercent })}</span>
                           <span className="text-kp-text-tertiary">
                             {wh.usedCapacity.toLocaleString()} / {wh.capacity.toLocaleString()} Desi
                           </span>
@@ -407,12 +410,12 @@ export function WarehousesTable() {
                         {wh.status === 'active' ? (
                           <>
                             <CheckCircleIcon className="h-3 w-3" />
-                            Aktif
+                            {tc('status.active')}
                           </>
                         ) : (
                           <>
                             <XCircleIcon className="h-3 w-3" />
-                            Pasif
+                            {tc('status.passive')}
                           </>
                         )}
                       </span>
@@ -422,14 +425,14 @@ export function WarehousesTable() {
                         <button
                           onClick={() => handleOpenEditModal(wh)}
                           className="p-1 text-kp-text-tertiary hover:text-kp-accent rounded-kp-md hover:bg-kp-bg-hover transition-colors"
-                          title="Düzenle"
+                          title={tc('actions.edit')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteWarehouse(wh)}
                           className="p-1 text-kp-text-tertiary hover:text-kp-danger rounded-kp-md hover:bg-kp-bg-hover transition-colors"
-                          title="Sil"
+                          title={tc('actions.delete')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -449,7 +452,7 @@ export function WarehousesTable() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">
-                {editingWarehouse ? 'Depo Düzenle' : 'Yeni Depo Ekle'}
+                {editingWarehouse ? t('modal.editTitle') : t('modal.createTitle')}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -462,20 +465,20 @@ export function WarehousesTable() {
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Adı *</label>
+                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.nameLabel')}</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
-                    placeholder="Örn: Tuzla E-Ticaret Deposu"
+                    placeholder={t('modal.namePlaceholder')}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Kodu *</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
                     <input
                       type="text"
                       required
@@ -487,7 +490,7 @@ export function WarehousesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Tipi *</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.typeLabel')}</label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
@@ -504,7 +507,7 @@ export function WarehousesTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Toplam Kapasite (Desi) *</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
                     <input
                       type="number"
                       required
@@ -516,7 +519,7 @@ export function WarehousesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Kullanılan Hacim (Desi)</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.usedCapacityLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -528,24 +531,24 @@ export function WarehousesTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Adresi</label>
+                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.addressLabel')}</label>
                   <textarea
                     value={formData.address}
                     onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors h-16 resize-none"
-                    placeholder="Adres detayları..."
+                    placeholder={t('modal.addressPlaceholder')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Durumu</label>
+                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
                   >
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Pasif</option>
+                    <option value="active">{tc('status.active')}</option>
+                    <option value="inactive">{tc('status.passive')}</option>
                   </select>
                 </div>
               </div>
@@ -557,7 +560,7 @@ export function WarehousesTable() {
                   disabled={isSubmitting}
                   className="rounded-kp-md border border-kp-border px-3.5 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
                 >
-                  Vazgeç
+                  {t('modal.discard')}
                 </button>
                 <button
                   type="submit"
@@ -565,7 +568,7 @@ export function WarehousesTable() {
                   className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
                   {isSubmitting && <ArrowPathIcon className="h-3 w-3 animate-spin" />}
-                  {editingWarehouse ? 'Değişiklikleri Kaydet' : 'Depo Oluştur'}
+                  {editingWarehouse ? t('modal.saveChanges') : t('modal.createWarehouse')}
                 </button>
               </div>
             </form>
@@ -579,7 +582,7 @@ export function WarehousesTable() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Depoyu Sil
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> {t('deleteModal.title')}
               </h3>
               <button
                 onClick={() => setWarehouseToDelete(null)}
@@ -590,7 +593,10 @@ export function WarehousesTable() {
             </div>
             <div className="p-6">
               <p className="text-xs text-kp-text-secondary leading-relaxed">
-                <span className="font-semibold text-kp-text-primary">{warehouseToDelete.name}</span> depoyu sistemden silmek istediğinize emin misiniz? Depo ile eşleşen lokasyonlar ve envanterler etkilenebilir.
+                {t.rich('deleteModal.desc', {
+                  name: warehouseToDelete.name,
+                  b: (chunks) => <span className="font-semibold text-kp-text-primary">{chunks}</span>,
+                })}
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
@@ -600,7 +606,7 @@ export function WarehousesTable() {
                 disabled={isDeleting}
                 className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
               >
-                İptal
+                {tc('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -609,7 +615,7 @@ export function WarehousesTable() {
                 className="flex items-center gap-1.5 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
               >
                 {isDeleting && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
-                Sil
+                {tc('actions.delete')}
               </button>
             </div>
           </div>
