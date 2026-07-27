@@ -25,6 +25,6 @@ export class SettingsController {
   @ApiOperation({ summary: 'Update global system settings' })
   async updateSettings(@Body() data: any, @Req() req: Request) {
     const user = req.user as any;
-    return this.settingsService.updateSettings(data, user.id);
+    return this.settingsService.updateSettings(data, user.id, user.agencyId);
   }
 }
