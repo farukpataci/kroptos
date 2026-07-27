@@ -3,6 +3,8 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
+import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { decrypt } from '../../common/utils/encryption.util';
 import { syncEventEmitter } from './integration-queue.service';
 import { Worker, Job } from 'bullmq';
 import { Prisma } from '@prisma/client';
@@ -16,6 +18,7 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     private configService: ConfigService,
     private credentialService: MarketplaceCredentialService,
     private connectorFactory: MarketplaceConnectorFactory,
+    private erpConnectorFactory: ErpConnectorFactory,
   ) {}
 
   onModuleInit() {
@@ -119,135 +122,305 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         storeId = store.id;
       }
 
-      // 3. Decrypt credentials & build connector
-      const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
-      this.credentialService.validate(integration.provider, credentials);
-      const connector = this.connectorFactory.create(integration.provider, credentials);
-
       let logMessage = '';
 
-      if (eventType === 'sync_stock') {
-        const { sku, quantity } = payload;
-        const res = await connector.updateStock(sku, quantity);
-        if (!res.success) {
-          throw new Error(res.error || 'Stock update failed');
-        }
-        logMessage = `Successfully synced stock for SKU '${sku}' to ${quantity}`;
-      } else if (eventType === 'sync_products') {
-        const marketplaceProducts = await connector.getProducts();
+      if (integration.providerType === 'erp') {
+        const erpCredentials = JSON.parse(decrypt(integration.credentialsEncrypted));
+        const erpConnector = this.erpConnectorFactory.create(integration.provider, erpCredentials);
 
-        for (const p of marketplaceProducts) {
-          // Upsert product in database
-          await this.prisma.product.upsert({
+        if (eventType === 'sync_stock') {
+          const { sku, quantity } = payload;
+          // Look up mapped ERP code
+          const productMapping = await this.prisma.logoProductMapping.findUnique({
             where: {
-              storeId_sku: {
-                storeId,
-                sku: p.sku,
+              agencyId_productSku: {
+                agencyId: integration.agencyId,
+                productSku: sku,
               },
             },
-            create: {
-              agencyId: integration.agencyId,
-              clientId,
-              storeId,
-              sku: p.sku,
-              name: p.name,
-              description: p.description || null,
-              price: new Prisma.Decimal(p.price),
-              basePrice: new Prisma.Decimal(p.price),
-              stockQuantity: p.stockQuantity,
-              image: p.image || null,
-              barcode: p.barcode || null,
-              status: 'active',
-            },
-            update: {
-              name: p.name,
-              description: p.description || undefined,
-              price: new Prisma.Decimal(p.price),
-              stockQuantity: p.stockQuantity,
-              image: p.image || undefined,
-              barcode: p.barcode || undefined,
-            },
           });
-        }
-        logMessage = `Successfully synced ${marketplaceProducts.length} products.`;
-      } else if (eventType === 'sync_orders') {
-        const marketplaceOrders = await connector.getOrders();
+          const targetSku = productMapping ? productMapping.erpStockCode : sku;
 
-        for (const o of marketplaceOrders) {
-          // Check if order already exists
-          const existing = await this.prisma.order.findUnique({
-            where: { orderNumber: o.orderNumber },
-          });
+          const res = await erpConnector.updateStock(targetSku, quantity);
+          if (!res.success) {
+            throw new Error(res.error || 'Stock update failed in ERP');
+          }
+          logMessage = `Successfully synced stock for SKU '${sku}' (ERP Code: '${targetSku}') to ${quantity} in ERP`;
+        } else if (eventType === 'sync_products') {
+          const erpProducts = await erpConnector.getProducts();
 
-          if (!existing) {
-            // Find or create product references for OrderItems
-            const orderItemsData: any[] = [];
-            for (const item of o.items) {
-              let product = await this.prisma.product.findFirst({
-                where: {
-                  storeId,
-                  sku: item.sku,
+          for (const p of erpProducts) {
+            // Check mapping
+            let productMapping = await this.prisma.logoProductMapping.findFirst({
+              where: {
+                agencyId: integration.agencyId,
+                erpStockCode: p.sku,
+              },
+            });
+
+            // Auto-create mapping card if it doesn't exist
+            if (!productMapping) {
+              productMapping = await this.prisma.logoProductMapping.create({
+                data: {
+                  agencyId: integration.agencyId,
+                  productSku: p.sku,
+                  erpStockCode: p.sku,
+                  productName: p.name,
+                  erpStockName: p.name,
+                  barcode: p.barcode || null,
+                  status: 'matched',
                 },
-              });
-
-              // Create placeholder product if it does not exist
-              if (!product) {
-                product = await this.prisma.product.create({
-                  data: {
-                    agencyId: integration.agencyId,
-                    clientId,
-                    storeId,
-                    sku: item.sku,
-                    name: item.name,
-                    price: new Prisma.Decimal(item.unitPrice),
-                    basePrice: new Prisma.Decimal(item.unitPrice),
-                    stockQuantity: 0,
-                    status: 'active',
-                  },
-                });
-              }
-
-              orderItemsData.push({
-                productId: product.id,
-                sku: item.sku,
-                name: item.name,
-                quantity: item.quantity,
-                unitPrice: new Prisma.Decimal(item.unitPrice),
-                totalPrice: new Prisma.Decimal(item.totalPrice),
               });
             }
 
-            // Create Order
-            await this.prisma.order.create({
-              data: {
+            const targetSku = productMapping.productSku;
+
+            // Upsert product in database
+            await this.prisma.product.upsert({
+              where: {
+                storeId_sku: {
+                  storeId,
+                  sku: targetSku,
+                },
+              },
+              create: {
                 agencyId: integration.agencyId,
                 clientId,
                 storeId,
-                orderNumber: o.orderNumber,
-                customerName: o.customerName,
-                customerEmail: o.customerEmail || null,
-                customerPhone: o.customerPhone || null,
-                shippingAddress: o.shippingAddress || null,
-                status: o.status,
-                paymentStatus: o.paymentStatus,
-                source: o.source,
-                totalAmount: new Prisma.Decimal(o.totalAmount),
-                currency: o.currency,
-                createdBy: 'system',
-                items: {
-                  create: orderItemsData,
-                },
-                timeline: {
-                  create: {
-                    eventType: 'order_created',
-                    newValue: 'Order created via sync',
-                  },
-                },
+                sku: targetSku,
+                name: p.name,
+                description: p.description || null,
+                price: new Prisma.Decimal(p.price),
+                basePrice: new Prisma.Decimal(p.price),
+                stockQuantity: p.stockQuantity,
+                barcode: p.barcode || null,
+                erpCode: p.erpCode || null,
+                status: 'active',
+              },
+              update: {
+                name: p.name,
+                description: p.description || undefined,
+                price: new Prisma.Decimal(p.price),
+                stockQuantity: p.stockQuantity,
+                barcode: p.barcode || undefined,
+                erpCode: p.erpCode || undefined,
               },
             });
           }
+          logMessage = `Successfully synced ${erpProducts.length} products from ERP.`;
+        } else if (eventType === 'sync_orders') {
+          const pendingOrders = await this.prisma.order.findMany({
+            where: {
+              storeId,
+              status: 'pending',
+              deletedAt: null,
+            },
+            include: {
+              items: true,
+            },
+          });
+
+          // Resolve default warehouse mapping for this agency context if it exists
+          const warehouseMapping = await this.prisma.logoWarehouseMapping.findFirst({
+            where: {
+              agencyId: integration.agencyId,
+              isActive: true,
+            },
+          });
+          const targetWarehouseNo = warehouseMapping ? warehouseMapping.erpDepotCode : undefined;
+
+          let count = 0;
+          for (const o of pendingOrders) {
+            try {
+              // 1. Idempotency Check: Prevent duplicate syncs if already processed
+              const alreadySynced = await this.prisma.orderTimeline.findFirst({
+                where: {
+                  orderId: o.id,
+                  eventType: 'erp_synced',
+                },
+              });
+              if (alreadySynced) {
+                await this.prisma.order.update({
+                  where: { id: o.id },
+                  data: { status: 'processing' },
+                });
+                continue;
+              }
+
+              // 2. Product SKU Code Mapping
+              const mappedItems = [];
+              for (const item of o.items) {
+                const productMapping = await this.prisma.logoProductMapping.findUnique({
+                  where: {
+                    agencyId_productSku: {
+                      agencyId: integration.agencyId,
+                      productSku: item.sku,
+                    },
+                  },
+                });
+                mappedItems.push({
+                  sku: productMapping ? productMapping.erpStockCode : item.sku,
+                  quantity: item.quantity,
+                  unitPrice: Number(item.unitPrice),
+                });
+              }
+
+              const res = await erpConnector.createSalesOrder({
+                orderNumber: o.orderNumber,
+                customerName: o.customerName,
+                customerEmail: o.customerEmail || undefined,
+                customerPhone: o.customerPhone || undefined,
+                shippingAddress: o.shippingAddress || undefined,
+                totalAmount: Number(o.totalAmount),
+                currency: o.currency,
+                items: mappedItems,
+                warehouseNo: targetWarehouseNo,
+              });
+
+              if (res.success) {
+                count++;
+                await this.prisma.order.update({
+                  where: { id: o.id },
+                  data: { status: 'processing' },
+                });
+
+                await this.prisma.orderTimeline.create({
+                  data: {
+                    orderId: o.id,
+                    eventType: 'erp_synced',
+                    newValue: `Order exported to Logo ERP (LogicalRef: ${res.logicalRef || 'N/A'})`,
+                  },
+                });
+              }
+            } catch (err: any) {
+              console.error(`Failed to sync order ${o.orderNumber} to ERP:`, err.message);
+            }
+          }
+          logMessage = `Successfully synced ${count} orders to Logo ERP.`;
         }
-        logMessage = `Successfully synced ${marketplaceOrders.length} orders.`;
+      } else {
+        // Marketplace integration sync logic
+        const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
+        this.credentialService.validate(integration.provider, credentials);
+        const connector = this.connectorFactory.create(integration.provider, credentials);
+
+        if (eventType === 'sync_stock') {
+          const { sku, quantity } = payload;
+          const res = await connector.updateStock(sku, quantity);
+          if (!res.success) {
+            throw new Error(res.error || 'Stock update failed');
+          }
+          logMessage = `Successfully synced stock for SKU '${sku}' to ${quantity}`;
+        } else if (eventType === 'sync_products') {
+          const marketplaceProducts = await connector.getProducts();
+
+          for (const p of marketplaceProducts) {
+            // Upsert product in database
+            await this.prisma.product.upsert({
+              where: {
+                storeId_sku: {
+                  storeId,
+                  sku: p.sku,
+                },
+              },
+              create: {
+                agencyId: integration.agencyId,
+                clientId,
+                storeId,
+                sku: p.sku,
+                name: p.name,
+                description: p.description || null,
+                price: new Prisma.Decimal(p.price),
+                basePrice: new Prisma.Decimal(p.price),
+                stockQuantity: p.stockQuantity,
+                image: p.image || null,
+                barcode: p.barcode || null,
+                status: 'active',
+              },
+              update: {
+                name: p.name,
+                description: p.description || undefined,
+                price: new Prisma.Decimal(p.price),
+                stockQuantity: p.stockQuantity,
+                image: p.image || undefined,
+                barcode: p.barcode || undefined,
+              },
+            });
+          }
+          logMessage = `Successfully synced ${marketplaceProducts.length} products.`;
+        } else if (eventType === 'sync_orders') {
+          const marketplaceOrders = await connector.getOrders();
+
+          for (const o of marketplaceOrders) {
+            // Check if order already exists
+            const existing = await this.prisma.order.findUnique({
+              where: { orderNumber: o.orderNumber },
+            });
+
+            if (!existing) {
+              // Find or create product references for OrderItems
+              const orderItemsData: any[] = [];
+              for (const item of o.items) {
+                let product = await this.prisma.product.findFirst({
+                  where: {
+                    storeId,
+                    sku: item.sku,
+                  },
+                });
+
+                // Create placeholder product if it does not exist
+                if (!product) {
+                  product = await this.prisma.product.create({
+                    data: {
+                      agencyId: integration.agencyId,
+                      clientId,
+                      storeId,
+                      sku: item.sku,
+                      name: item.name,
+                      price: new Prisma.Decimal(item.unitPrice),
+                      basePrice: new Prisma.Decimal(item.unitPrice),
+                      stockQuantity: 0,
+                      status: 'active',
+                    },
+                  });
+                }
+
+                orderItemsData.push({
+                  productId: product.id,
+                  sku: item.sku,
+                  name: item.name,
+                  quantity: item.quantity,
+                  unitPrice: new Prisma.Decimal(item.unitPrice),
+                  totalPrice: new Prisma.Decimal(item.totalPrice),
+                });
+              }
+
+              // Create Order
+              await this.prisma.order.create({
+                data: {
+                  agencyId: integration.agencyId,
+                  clientId,
+                  storeId,
+                  orderNumber: o.orderNumber,
+                  customerName: o.customerName,
+                  customerEmail: o.customerEmail || null,
+                  customerPhone: o.customerPhone || null,
+                  shippingAddress: o.shippingAddress || null,
+                  status: 'pending',
+                  paymentStatus: o.paymentStatus || 'pending',
+                  totalAmount: new Prisma.Decimal(o.totalAmount),
+                  currency: o.currency || 'TRY',
+                  source: o.source || 'marketplace',
+                  createdBy: 'system',
+                  items: {
+                    create: orderItemsData,
+                  },
+                },
+              });
+            }
+          }
+          logMessage = `Successfully synced ${marketplaceOrders.length} orders.`;
+        }
       }
 
       // 4. Update queue status and integration sync time

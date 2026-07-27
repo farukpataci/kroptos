@@ -6,6 +6,7 @@ import { MarketplaceCredentialService } from '../../integrations/marketplaces/co
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
+import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 
 @Injectable()
 export class IntegrationService {
@@ -13,6 +14,7 @@ export class IntegrationService {
     private prisma: PrismaService,
     private credentialService: MarketplaceCredentialService,
     private connectorFactory: MarketplaceConnectorFactory,
+    private erpConnectorFactory: ErpConnectorFactory,
     private queueService: IntegrationQueueService,
   ) {}
 
@@ -176,7 +178,13 @@ export class IntegrationService {
       // Decrypt old keys, merge new keys, re-encrypt
       try {
         const oldCreds = JSON.parse(decrypt(integration.credentialsEncrypted));
-        const mergedCreds = { ...oldCreds, ...dto.credentials };
+        const incomingCreds: Record<string, any> = {};
+        for (const [key, val] of Object.entries(dto.credentials)) {
+          if (val !== undefined && val !== null) {
+            incomingCreds[key] = val;
+          }
+        }
+        const mergedCreds = { ...oldCreds, ...incomingCreds };
         credentialsEncrypted = encrypt(JSON.stringify(mergedCreds));
       } catch (err) {
         credentialsEncrypted = encrypt(JSON.stringify(dto.credentials));
@@ -271,8 +279,14 @@ export class IntegrationService {
         const testResult = await connector.testConnection();
         success = testResult.success;
         message = testResult.message;
+      } else if (integration.providerType === 'erp') {
+        const creds = JSON.parse(decrypt(integration.credentialsEncrypted));
+        const connector = this.erpConnectorFactory.create(integration.provider, creds);
+        const testResult = await connector.testConnection();
+        success = testResult.success;
+        message = testResult.message;
       } else {
-        // Fallback for non-marketplace integrations (e.g. ERP, payment, cargo)
+        // Fallback for non-marketplace integrations (e.g. payment, cargo)
         const creds = JSON.parse(decrypt(integration.credentialsEncrypted));
         const checkKeys = Object.values(creds);
         const containsInvalid = checkKeys.some((val: any) => typeof val === 'string' && val.toLowerCase().includes('invalid'));

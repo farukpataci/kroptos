@@ -6,6 +6,7 @@ import { MarketplaceHttpClient } from '../../integrations/marketplaces/core/Mark
 import { MarketplaceRateLimiter } from '../../integrations/marketplaces/core/MarketplaceRateLimiter';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
+import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
 import { IntegrationSyncWorker } from './integration-sync.worker';
 
@@ -18,6 +19,7 @@ import { IntegrationSyncWorker } from './integration-sync.worker';
     MarketplaceRateLimiter,
     MarketplaceCredentialService,
     MarketplaceConnectorFactory,
+    ErpConnectorFactory,
     IntegrationQueueService,
     IntegrationSyncWorker,
   ],
@@ -27,6 +29,7 @@ import { IntegrationSyncWorker } from './integration-sync.worker';
     MarketplaceRateLimiter,
     MarketplaceCredentialService,
     MarketplaceConnectorFactory,
+    ErpConnectorFactory,
     IntegrationQueueService,
     IntegrationSyncWorker,
   ],
