@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
+import { stripMaskedCredentials } from '@/lib/credentials';
 import {
   LinkIcon,
   ExclamationTriangleIcon,
@@ -212,8 +213,11 @@ export default function MarketplacePage() {
         if (formData.shopDomain) credentialsPayload.shopDomain = formData.shopDomain;
         if (formData.accessToken) credentialsPayload.accessToken = formData.accessToken;
 
-        if (Object.keys(credentialsPayload).length > 0) {
-          payload.credentials = credentialsPayload;
+        // Guard against a masked value ever reaching the merge on the server: an
+        // untouched secret must leave the stored credential alone.
+        const sanitizedCredentials = stripMaskedCredentials(credentialsPayload);
+        if (Object.keys(sanitizedCredentials).length > 0) {
+          payload.credentials = sanitizedCredentials;
         }
 
         const updated = await apiFetch<Integration>(`/integrations/${activeIntegration.id}`, {

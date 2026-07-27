@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateIntegrationDto, UpdateIntegrationDto } from './dto/integration.dto';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
+import { stripMaskedCredentials } from '../../common/utils/credential-mask.util';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
@@ -130,7 +131,16 @@ export class IntegrationService {
       throw new BadRequestException('Agency ID context is required');
     }
 
-    const credentialsEncrypted = encrypt(JSON.stringify(dto.credentials));
+    // A create has no stored secret to fall back on, so an echoed mask can only
+    // be a client bug — reject it rather than persisting a row of bullets.
+    const { credentials: newCredentials, masked } = stripMaskedCredentials(dto.credentials);
+    if (masked.length > 0) {
+      throw new BadRequestException(
+        `Masked placeholder values are not accepted as credentials: ${masked.join(', ')}`,
+      );
+    }
+
+    const credentialsEncrypted = encrypt(JSON.stringify(newCredentials));
 
     return this.prisma.$transaction(async (tx) => {
       const integration = await tx.integration.create({
@@ -175,19 +185,18 @@ export class IntegrationService {
 
     let credentialsEncrypted = integration.credentialsEncrypted;
     if (dto.credentials) {
+      // Values the client echoed back masked carry no new secret; dropping them
+      // here lets the merge below keep the stored value instead of overwriting
+      // the real credential with a string of bullets.
+      const { credentials: incomingCreds } = stripMaskedCredentials(dto.credentials);
+
       // Decrypt old keys, merge new keys, re-encrypt
       try {
         const oldCreds = JSON.parse(decrypt(integration.credentialsEncrypted));
-        const incomingCreds: Record<string, any> = {};
-        for (const [key, val] of Object.entries(dto.credentials)) {
-          if (val !== undefined && val !== null) {
-            incomingCreds[key] = val;
-          }
-        }
         const mergedCreds = { ...oldCreds, ...incomingCreds };
         credentialsEncrypted = encrypt(JSON.stringify(mergedCreds));
       } catch (err) {
-        credentialsEncrypted = encrypt(JSON.stringify(dto.credentials));
+        credentialsEncrypted = encrypt(JSON.stringify(incomingCreds));
       }
     }
 

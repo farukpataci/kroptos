@@ -7,6 +7,7 @@ import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto, Ups
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { decrypt } from '../../common/utils/encryption.util';
+import { maskCredentials } from '../../common/utils/credential-mask.util';
 
 @ApiTags('Integrations')
 @ApiBearerAuth()
@@ -34,15 +35,7 @@ export class IntegrationController {
           decrypted = JSON.parse(decryptedStr);
         }
         
-        const maskedCredentials: Record<string, any> = {};
-        for (const [key, value] of Object.entries(decrypted)) {
-          if (['password', 'apiSecret', 'awsSecretKey', 'token', 'apiKey', 'awsAccessKey', 'refreshToken'].includes(key)) {
-            maskedCredentials[key] = '••••••••••••';
-          } else {
-            maskedCredentials[key] = value;
-          }
-        }
-        sanitized.credentials = maskedCredentials;
+        sanitized.credentials = maskCredentials(decrypted);
       } catch (err) {
         // Fallback silently if not JSON
       }

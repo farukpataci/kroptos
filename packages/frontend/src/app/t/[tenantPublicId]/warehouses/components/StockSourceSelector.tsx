@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
+import { CREDENTIAL_MASK, stripMaskedCredentials } from '@/lib/credentials';
 import { useToast } from '@/components/ui/Toast';
 import {
   Cog6ToothIcon,
@@ -51,10 +52,13 @@ export function StockSourceSelector() {
   // Settings / Connection Configuration Modal state
   const [settingsModalSource, setSettingsModalSource] = useState<SourceItem | null>(null);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  // The API only ever returns the mask for a stored password, so the field stays
+  // empty and this flag drives the "leave blank to keep it" affordance.
+  const [hasStoredPassword, setHasStoredPassword] = useState(false);
   const [formData, setFormData] = useState({
     apiUrl: 'http://192.168.1.100:8080',
     username: 'REST_USER',
-    password: '••••••••••••',
+    password: '',
     firmNo: '001',
     periodNo: '01',
     warehouseNo: '1',
@@ -88,12 +92,14 @@ export function StockSourceSelector() {
 
   const handleOpenSettings = (src: SourceItem) => {
     setSettingsModalSource(src);
-    // Pre-fill existing config
+    setHasStoredPassword(src.status === 'connected');
+    // Pre-fill existing config. The password is deliberately left blank: a
+    // pre-filled mask would be submitted verbatim and overwrite the real secret.
     if (src.id === 'logo') {
       setFormData({
         apiUrl: 'http://192.168.1.100:8080',
         username: 'LOGO_REST_ADMIN',
-        password: '••••••••••••',
+        password: '',
         firmNo: '001',
         periodNo: '01',
         warehouseNo: '1',
@@ -104,7 +110,7 @@ export function StockSourceSelector() {
       setFormData({
         apiUrl: 'http://192.168.1.200:9090',
         username: 'NETSIS_API',
-        password: '••••••••••••',
+        password: '',
         firmNo: '010',
         periodNo: '2026',
         warehouseNo: '1',
@@ -115,7 +121,7 @@ export function StockSourceSelector() {
       setFormData({
         apiUrl: 'https://sap-b1-server:50000/b1s/v1',
         username: 'SAP_B1_ADMIN',
-        password: '••••••••••••',
+        password: '',
         firmNo: 'SBODEMOTR',
         periodNo: '2026',
         warehouseNo: '01',
@@ -126,7 +132,7 @@ export function StockSourceSelector() {
       setFormData({
         apiUrl: 'https://123456.restlets.api.netsuite.com/app/site/hosting/restlet.nl',
         username: 'NETSUITE_RESTLET_USER',
-        password: '••••••••••••',
+        password: '',
         firmNo: 'ACCOUNT_123456',
         periodNo: '2026',
         warehouseNo: 'WH-MAIN',
@@ -137,7 +143,7 @@ export function StockSourceSelector() {
       setFormData({
         apiUrl: 'http://localhost:8080/api',
         username: 'ERP_USER',
-        password: '••••••••••••',
+        password: '',
         firmNo: '001',
         periodNo: '01',
         warehouseNo: '1',
@@ -153,9 +159,11 @@ export function StockSourceSelector() {
     setIsSavingSettings(true);
 
     try {
+      // Last line of defence: never ship a blank or mask-only secret, so the
+      // server keeps whatever it already has for that field.
       await apiFetch(`/stock-source/settings/${settingsModalSource.id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData)
+        body: JSON.stringify(stripMaskedCredentials(formData))
       }).catch(() => null);
 
       toast.success(`"${settingsModalSource.name}" bağlantı ayarları başarıyla kaydedildi.`);
@@ -354,15 +362,23 @@ export function StockSourceSelector() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Şifre *</label>
+                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                          Şifre {hasStoredPassword ? '' : '*'}
+                        </label>
                         <input
                           type="password"
-                          required
+                          required={!hasStoredPassword}
+                          autoComplete="new-password"
                           value={formData.password}
                           onChange={(e) => setFormData((prev) => ({ ...prev, password: e.target.value }))}
-                          placeholder="••••••••••••"
+                          placeholder={hasStoredPassword ? CREDENTIAL_MASK : 'Şifre girin'}
                           className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
                         />
+                        {hasStoredPassword && (
+                          <p className="mt-1 text-[10px] text-kp-text-tertiary">
+                            Kayıtlı şifre korunur; değiştirmek için yeni şifreyi girin.
+                          </p>
+                        )}
                       </div>
                     </div>
 
