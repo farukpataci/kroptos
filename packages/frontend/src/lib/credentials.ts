@@ -33,7 +33,9 @@ export const PUBLIC_CREDENTIAL_KEYS = [
 
 const PUBLIC_KEY_SET: ReadonlySet<string> = new Set(PUBLIC_CREDENTIAL_KEYS);
 
-const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫*✱▪\s]+$/;
+// Asterisks are excluded on purpose: a password that genuinely is `********`
+// must not be mistaken for a placeholder and dropped from the payload.
+const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫▪\s]+$/;
 
 /** Anything not explicitly public is treated as a secret. */
 export function isSecretCredentialKey(key: string): boolean {

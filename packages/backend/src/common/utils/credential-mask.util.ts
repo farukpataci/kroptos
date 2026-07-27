@@ -37,12 +37,15 @@ export type PublicCredentialKey = (typeof PUBLIC_CREDENTIAL_KEYS)[number];
 const PUBLIC_KEY_SET: ReadonlySet<string> = new Set(PUBLIC_CREDENTIAL_KEYS);
 
 /**
- * Matches any value made up purely of masking glyphs. Deliberately wider than
- * the exact `CREDENTIAL_MASK` constant: clients render placeholders with
- * different bullet characters and lengths, and none of those are ever a real
- * secret.
+ * Matches any value made up purely of masking glyphs. Wider than the exact
+ * `CREDENTIAL_MASK` constant so clients can render the placeholder with their
+ * own bullet character or length.
+ *
+ * Asterisks are deliberately excluded: nothing in this codebase masks with
+ * them, and treating them as a placeholder would silently discard a password
+ * that genuinely is `********`.
  */
-const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫*✱▪\s]+$/;
+const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫▪\s]+$/;
 
 /** Anything not explicitly published is a secret. */
 export function isSecretCredentialKey(key: string): boolean {
