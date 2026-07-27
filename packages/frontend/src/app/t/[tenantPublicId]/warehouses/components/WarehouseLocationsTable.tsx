@@ -15,6 +15,7 @@ import {
   QrCodeIcon,
   Square3Stack3DIcon,
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
@@ -145,6 +146,8 @@ const INITIAL_LOCATIONS: WarehouseLocation[] = [
 ];
 
 export function WarehouseLocationsTable() {
+  const t = useTranslations('warehouses.locations');
+  const tc = useTranslations('common');
   const toast = useToast();
   const { tenantContext } = useAuth();
 
@@ -269,7 +272,7 @@ export function WarehouseLocationsTable() {
         setLocations(INITIAL_LOCATIONS);
       }
     } catch (err: any) {
-      setError(err.message || 'Adres verileri yüklenirken bir hata oluştu.');
+      setError(err.message || t('loadFailed'));
       setLocations(INITIAL_LOCATIONS);
     } finally {
       setIsLoading(false);
@@ -351,7 +354,7 @@ export function WarehouseLocationsTable() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.warehouseId || !formData.zoneId || !formData.code) {
-      toast.warning('Lütfen bağlı depo, bağlı bölge ve lokasyon kodunu doldurun.');
+      toast.warning(t('fillRequired'));
       return;
     }
 
@@ -401,7 +404,7 @@ export function WarehouseLocationsTable() {
         };
 
         setLocations((prev) => prev.map((l) => (l.id === editingLocation.id ? updatedLoc : l)));
-        toast.success('Adres bilgisi başarıyla güncellendi.');
+        toast.success(t('updateSuccess'));
       } else {
         // Create mode
         let newId = `loc_${Date.now()}`;
@@ -445,11 +448,11 @@ export function WarehouseLocationsTable() {
         };
 
         setLocations((prev) => [newLoc, ...prev]);
-        toast.success('Yeni raf/adres başarıyla eklendi.');
+        toast.success(t('createSuccess'));
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      toast.error(err.message || 'Adres kaydedilemedi.');
+      toast.error(err.message || t('saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -471,9 +474,9 @@ export function WarehouseLocationsTable() {
 
         setLocations((prev) => prev.filter((l) => l.id !== locationToDelete.id));
         setLocationToDelete(null);
-        toast.success('Adres lokasyonu başarıyla silindi.');
+        toast.success(t('deleteSuccess'));
       } catch (err: any) {
-        toast.error(err.message || 'Adres silinemedi.');
+        toast.error(err.message || t('deleteFailed'));
       } finally {
         setIsDeleting(false);
       }
@@ -499,9 +502,9 @@ export function WarehouseLocationsTable() {
       {/* Header & Add Button */}
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
-          <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">Raflar & Adres Yönetimi</h3>
+          <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
           <p className="text-[11px] text-kp-text-tertiary">
-            Depolarınızdaki koridor (Aisle), raf (Shelf), göz (Bin) ve lokasyon adresi katlarını tanımlayın
+            {t('subtitle')}
           </p>
         </div>
         <button
@@ -509,7 +512,7 @@ export function WarehouseLocationsTable() {
           className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
         >
           <PlusIcon className="h-4 w-4" />
-          Yeni Adres / Raf Ekle
+          {t('addLocation')}
         </button>
       </div>
 
@@ -521,7 +524,7 @@ export function WarehouseLocationsTable() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Adres kodu, koridor, raf veya barkod..."
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md pl-9 pr-3.5 py-1.5 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-hidden focus:border-kp-accent transition-colors"
           />
           <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-3.5 w-3.5 text-kp-text-tertiary" />
@@ -530,7 +533,7 @@ export function WarehouseLocationsTable() {
         {/* Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">Depo:</span>
+            <span className="text-[11px] text-kp-text-tertiary">{t('warehouseFilter')}</span>
             <select
               value={selectedWarehouseFilter}
               onChange={(e) => {
@@ -539,7 +542,7 @@ export function WarehouseLocationsTable() {
               }}
               className="bg-kp-bg-secondary border border-kp-border rounded-kp-md text-xs px-2.5 py-1.5 focus:outline-hidden text-kp-text-primary"
             >
-              <option value="All">Tüm Depolar</option>
+              <option value="All">{t('allWarehouses')}</option>
               {warehouses.map((wh) => (
                 <option key={wh.id} value={wh.id}>
                   {wh.name} ({wh.code})
@@ -549,13 +552,13 @@ export function WarehouseLocationsTable() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">Bölge:</span>
+            <span className="text-[11px] text-kp-text-tertiary">{t('zoneFilter')}</span>
             <select
               value={selectedZoneFilter}
               onChange={(e) => setSelectedZoneFilter(e.target.value)}
               className="bg-kp-bg-secondary border border-kp-border rounded-kp-md text-xs px-2.5 py-1.5 focus:outline-hidden text-kp-text-primary"
             >
-              <option value="All">Tüm Bölgeler</option>
+              <option value="All">{t('allZones')}</option>
               {availableZonesInFilter.map((zn) => (
                 <option key={zn.id} value={zn.id}>
                   {zn.name} ({zn.code})
@@ -571,13 +574,13 @@ export function WarehouseLocationsTable() {
         <table className="w-full text-left border-collapse text-xs">
           <thead>
             <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
-              <th className="py-3 px-4">Adres Kodu & Barkod</th>
-              <th className="py-3 px-4">Bağlı Depo & Bölge</th>
-              <th className="py-3 px-4">Adres Hiyerarşisi</th>
-              <th className="py-3 px-4">Kapasite (Desi)</th>
-              <th className="py-3 px-4">Toplama Önceliği</th>
-              <th className="py-3 px-4">Durum</th>
-              <th className="py-3 px-4 text-right">İşlemler</th>
+              <th className="py-3 px-4">{t('colCodeBarcode')}</th>
+              <th className="py-3 px-4">{t('colWarehouseZone')}</th>
+              <th className="py-3 px-4">{t('colHierarchy')}</th>
+              <th className="py-3 px-4">{t('colCapacity')}</th>
+              <th className="py-3 px-4">{t('colPickPriority')}</th>
+              <th className="py-3 px-4">{t('colStatus')}</th>
+              <th className="py-3 px-4 text-right">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-kp-border text-kp-text-secondary">
@@ -586,20 +589,20 @@ export function WarehouseLocationsTable() {
                 <td colSpan={7} className="py-8 text-center text-kp-text-tertiary">
                   <div className="flex items-center justify-center gap-2">
                     <ArrowPathIcon className="h-4 w-4 animate-spin text-kp-accent" />
-                    <span>Adresler yükleniyor...</span>
+                    <span>{t('loading')}</span>
                   </div>
                 </td>
               </tr>
             ) : error ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-kp-danger">
-                  Hata: {error}
+                  {tc('status.error')}: {error}
                 </td>
               </tr>
             ) : filteredLocations.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-kp-text-tertiary italic">
-                  Eşleşen adres lokasyonu bulunamadı.
+                  {t('empty')}
                 </td>
               </tr>
             ) : (
@@ -628,7 +631,7 @@ export function WarehouseLocationsTable() {
                         {loc.warehouseName}
                       </div>
                       <div className="text-[10px] text-kp-text-tertiary pl-4">
-                        Bölge: <span className="font-medium text-kp-text-secondary">{loc.zoneName || '-'}</span>
+                        {t('zonePrefix')}: <span className="font-medium text-kp-text-secondary">{loc.zoneName || '-'}</span>
                       </div>
                     </div>
                   </td>
@@ -656,7 +659,7 @@ export function WarehouseLocationsTable() {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 font-mono text-[11px]">{loc.capacity.toLocaleString()} Desi</td>
+                  <td className="py-3 px-4 font-mono text-[11px]">{loc.capacity.toLocaleString()} {t('desiUnit')}</td>
                   <td className="py-3 px-4 font-mono text-[11px]">{loc.pickPriority}</td>
                   <td className="py-3 px-4">
                     <span
@@ -669,12 +672,12 @@ export function WarehouseLocationsTable() {
                       {loc.status === 'active' ? (
                         <>
                           <CheckCircleIcon className="h-3 w-3" />
-                          Aktif
+                          {tc('status.active')}
                         </>
                       ) : (
                         <>
                           <XCircleIcon className="h-3 w-3" />
-                          Pasif
+                          {tc('status.passive')}
                         </>
                       )}
                     </span>
@@ -684,14 +687,14 @@ export function WarehouseLocationsTable() {
                       <button
                         onClick={() => handleOpenEditModal(loc)}
                         className="p-1 text-kp-text-tertiary hover:text-kp-accent rounded-kp-md hover:bg-kp-bg-hover transition-colors"
-                        title="Düzenle"
+                        title={tc('actions.edit')}
                       >
                         <PencilIcon className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDeleteLocation(loc)}
                         className="p-1 text-kp-text-tertiary hover:text-kp-danger rounded-kp-md hover:bg-kp-bg-hover transition-colors"
-                        title="Sil"
+                        title={tc('actions.delete')}
                       >
                         <TrashIcon className="h-4 w-4" />
                       </button>
@@ -710,7 +713,7 @@ export function WarehouseLocationsTable() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">
-                {editingLocation ? 'Adres / Raf Düzenle' : 'Yeni Adres / Raf Ekle'}
+                {editingLocation ? t('modal.editTitle') : t('modal.createTitle')}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -724,7 +727,7 @@ export function WarehouseLocationsTable() {
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Bağlı Depo *</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.warehouseLabel')}</label>
                     <select
                       value={formData.warehouseId}
                       onChange={(e) => {
@@ -748,7 +751,7 @@ export function WarehouseLocationsTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Bağlı Bölge *</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.zoneLabel')}</label>
                     <select
                       value={formData.zoneId}
                       onChange={(e) => setFormData((prev) => ({ ...prev, zoneId: e.target.value }))}
@@ -766,7 +769,7 @@ export function WarehouseLocationsTable() {
 
                 <div className="grid grid-cols-4 gap-2">
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">Koridor</label>
+                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.aisle')}</label>
                     <input
                       type="text"
                       value={formData.aisle}
@@ -776,7 +779,7 @@ export function WarehouseLocationsTable() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">Raf</label>
+                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.shelf')}</label>
                     <input
                       type="text"
                       value={formData.shelf}
@@ -786,7 +789,7 @@ export function WarehouseLocationsTable() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">Göz</label>
+                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.bin')}</label>
                     <input
                       type="text"
                       value={formData.bin}
@@ -796,7 +799,7 @@ export function WarehouseLocationsTable() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">Seviye/Kat</label>
+                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.level')}</label>
                     <input
                       type="text"
                       value={formData.level}
@@ -809,7 +812,7 @@ export function WarehouseLocationsTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Adres Kodu *</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
                     <input
                       type="text"
                       required
@@ -821,7 +824,7 @@ export function WarehouseLocationsTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Adres Barkodu</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.barcodeLabel')}</label>
                     <input
                       type="text"
                       value={formData.barcode}
@@ -834,7 +837,7 @@ export function WarehouseLocationsTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Lokasyon Kapasitesi (Desi)</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -845,7 +848,7 @@ export function WarehouseLocationsTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Toplama Önceliği</label>
+                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.pickPriorityLabel')}</label>
                     <input
                       type="number"
                       value={formData.pickPriority}
@@ -856,14 +859,14 @@ export function WarehouseLocationsTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Durumu</label>
+                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
                   >
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Pasif</option>
+                    <option value="active">{tc('status.active')}</option>
+                    <option value="inactive">{tc('status.passive')}</option>
                   </select>
                 </div>
               </div>
@@ -875,7 +878,7 @@ export function WarehouseLocationsTable() {
                   disabled={isSubmitting}
                   className="rounded-kp-md border border-kp-border px-3.5 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
                 >
-                  Vazgeç
+                  {t('modal.discard')}
                 </button>
                 <button
                   type="submit"
@@ -883,7 +886,7 @@ export function WarehouseLocationsTable() {
                   className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
                   {isSubmitting && <ArrowPathIcon className="h-3 w-3 animate-spin" />}
-                  {editingLocation ? 'Değişiklikleri Kaydet' : 'Adres Oluştur'}
+                  {editingLocation ? t('modal.saveChanges') : t('modal.createLocation')}
                 </button>
               </div>
             </form>
@@ -897,7 +900,7 @@ export function WarehouseLocationsTable() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Adres Lokasyonunu Sil
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> {t('deleteModal.title')}
               </h3>
               <button
                 onClick={() => setLocationToDelete(null)}
@@ -908,7 +911,10 @@ export function WarehouseLocationsTable() {
             </div>
             <div className="p-6">
               <p className="text-xs text-kp-text-secondary leading-relaxed">
-                <span className="font-semibold font-mono text-kp-text-primary">{locationToDelete.code}</span> adres lokasyonunu silmek istediğinize emin misiniz? Bu lokasyondaki stok hareketleri ve yerleşimler etkilenebilir.
+                {t.rich('deleteModal.desc', {
+                  code: locationToDelete.code,
+                  b: (chunks) => <span className="font-semibold font-mono text-kp-text-primary">{chunks}</span>,
+                })}
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
@@ -918,7 +924,7 @@ export function WarehouseLocationsTable() {
                 disabled={isDeleting}
                 className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
               >
-                İptal
+                {tc('actions.cancel')}
               </button>
               <button
                 type="button"
@@ -927,7 +933,7 @@ export function WarehouseLocationsTable() {
                 className="flex items-center gap-1.5 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
               >
                 {isDeleting && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
-                Sil
+                {tc('actions.delete')}
               </button>
             </div>
           </div>

@@ -268,6 +268,9 @@ model Product {
   erpId         String?
   taxRate       Int       @default(20)
   publicId      String?   @unique
+  locationId    String?
+  location      WarehouseLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  locationCode  String?
   isActive      Boolean   @default(true)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -921,6 +924,8 @@ model Warehouse {
   publicId          String?             @unique
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
+  capacity          Int                 @default(5000)
+  usedCapacity      Int                 @default(0)
 
   zones             WarehouseZone[]
   locations         WarehouseLocation[]
@@ -970,6 +975,7 @@ model WarehouseLocation {
   updatedAt     DateTime        @updatedAt
 
   stockMovements StockMovement[]
+  products       Product[]
 
   @@unique([warehouseId, code])
   @@index([warehouseId])

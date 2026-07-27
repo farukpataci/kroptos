@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 import { Request } from 'express';
 import { ProductService } from './product.service';
-import { CreateProductDto, UpdateProductDto, ProductResponseDto } from './dto/product.dto';
+import { CreateProductDto, UpdateProductDto, ProductResponseDto, BulkActionDto } from './dto/product.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { TenantGuard } from '../../common/guards/tenant.guard';
@@ -154,5 +154,28 @@ export class ProductController {
   @ApiOperation({ summary: 'Search mock ERP accounting items for mapping' })
   async searchErp(@Query('q') query?: string) {
     return this.productService.searchErpItems(query);
+  }
+
+  @Post('bulk-action')
+  @HttpCode(200)
+  @RequirePermission('products.create')
+  @ApiOperation({ summary: 'Perform bulk operation on selected products' })
+  async bulkAction(@Body() dto: BulkActionDto, @Req() req: Request) {
+    const user = req.user as any;
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+    const ipAddress = (req.ip || req.headers['x-forwarded-for']) as string;
+
+    return this.productService.bulkAction(
+      dto,
+      user.userId,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+      ipAddress,
+    );
   }
 }

@@ -7,12 +7,16 @@ import { useProducts, Product, ProductPayload } from './hooks/useProducts';
 import ProductsTable from './components/ProductsTable';
 import ProductFormModal from './components/ProductFormModal';
 import DeleteConfirmModal from './components/DeleteConfirmModal';
+import CrossSellBundleModal from './components/CrossSellBundleModal';
 import { useAuth } from '@/lib/auth-context';
 
 export default function ProductsPage() {
   const t = useTranslations('products');
   const tc = useTranslations('common');
   const { tenantContext } = useAuth();
+
+  const [salesMode, setSalesMode] = useState<'single' | 'multi'>('single');
+  const [isBundleModalOpen, setIsBundleModalOpen] = useState(false);
 
   const {
     products,
@@ -63,6 +67,20 @@ export default function ProductsPage() {
   const handleUpdate = async (payload: ProductPayload) => {
     if (!editingProduct?.id) return;
     await updateProduct(editingProduct.id, payload);
+  };
+
+  const handleCreateBundleSubmit = async (bundlePayload: any) => {
+    await createProduct({
+      name: bundlePayload.name,
+      sku: bundlePayload.sku,
+      barcode: bundlePayload.barcode,
+      categoryId: bundlePayload.categoryId,
+      price: bundlePayload.price,
+      stockQuantity: bundlePayload.stock,
+      status: bundlePayload.status,
+      isBundle: true,
+      description: `Çapraz Satış Paketi (${bundlePayload.discountRate}% İndirimli)`,
+    } as any);
   };
 
   const handleDeleteConfirm = async () => {
@@ -134,6 +152,9 @@ export default function ProductsPage() {
           totalPages={totalPages}
           pageSize={PAGE_SIZE}
           lowStockThreshold={LOW_STOCK_THRESHOLD}
+          salesMode={salesMode}
+          onSalesModeChange={setSalesMode}
+          onAddBundle={() => setIsBundleModalOpen(true)}
           onFilterChange={setFilters}
           onPageChange={setCurrentPage}
           onRowClick={(p) => setEditingProduct(p)}
@@ -144,13 +165,23 @@ export default function ProductsPage() {
         />
       )}
 
-      {/* Create / Edit Modal */}
+      {/* Single Product Create / Edit Modal */}
       {editingProduct !== undefined && (
         <ProductFormModal
           product={editingProduct}
           categories={categories}
           onClose={() => setEditingProduct(undefined)}
           onSubmit={editingProduct ? handleUpdate : handleCreate}
+        />
+      )}
+
+      {/* Multi & Cross-Sell Bundle Modal */}
+      {isBundleModalOpen && (
+        <CrossSellBundleModal
+          products={products}
+          categories={categories}
+          onClose={() => setIsBundleModalOpen(false)}
+          onSubmit={handleCreateBundleSubmit}
         />
       )}
 

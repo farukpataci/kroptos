@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsBoolean, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, IsEnum, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateProductDto {
@@ -26,10 +26,11 @@ export class CreateProductDto {
   @Type(() => Number)
   price: number;
 
-  @ApiProperty({ example: 800.00, description: 'Base/MSRP price of the product' })
+  @ApiPropertyOptional({ example: 800.00, description: 'Base/MSRP price of the product' })
   @IsNumber()
+  @IsOptional()
   @Type(() => Number)
-  basePrice: number;
+  basePrice?: number;
 
   @ApiPropertyOptional({ example: 600.00, description: 'Cost price of the product' })
   @IsNumber()
@@ -57,6 +58,11 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   status?: string;
+
+  @ApiPropertyOptional({ example: true, description: 'Whether this product is a bundle' })
+  @IsBoolean()
+  @IsOptional()
+  isBundle?: boolean;
 
   @ApiPropertyOptional({ example: 1.5, description: 'Weight in kg' })
   @IsNumber()
@@ -126,6 +132,16 @@ export class CreateProductDto {
   @ApiPropertyOptional({ type: () => [CreateVariantChildDto] })
   @IsOptional()
   variants?: CreateVariantChildDto[];
+
+  @ApiPropertyOptional({ example: 'loc-cuid-id', description: 'Warehouse location ID' })
+  @IsString()
+  @IsOptional()
+  locationId?: string;
+
+  @ApiPropertyOptional({ example: 'A01-R01-G01', description: 'Warehouse location code' })
+  @IsString()
+  @IsOptional()
+  locationCode?: string;
 }
 
 export class CreateVariantChildDto {
@@ -231,6 +247,11 @@ export class UpdateProductDto {
   @IsOptional()
   status?: string;
 
+  @ApiPropertyOptional({ example: true, description: 'Whether this product is a bundle' })
+  @IsBoolean()
+  @IsOptional()
+  isBundle?: boolean;
+
   @ApiPropertyOptional({ example: 1.6, description: 'Updated weight' })
   @IsNumber()
   @IsOptional()
@@ -304,6 +325,16 @@ export class UpdateProductDto {
   @ApiPropertyOptional({ type: () => [CreateVariantChildDto] })
   @IsOptional()
   variants?: CreateVariantChildDto[];
+
+  @ApiPropertyOptional({ example: 'loc-cuid-id', description: 'Warehouse location ID' })
+  @IsString()
+  @IsOptional()
+  locationId?: string;
+
+  @ApiPropertyOptional({ example: 'A01-R01-G01', description: 'Warehouse location code' })
+  @IsString()
+  @IsOptional()
+  locationCode?: string;
 }
 
 export class ProductResponseDto {
@@ -394,9 +425,38 @@ export class ProductResponseDto {
   @ApiPropertyOptional()
   crossSellProducts?: any[];
 
+  @ApiPropertyOptional()
+  locationId?: string;
+
+  @ApiPropertyOptional()
+  locationCode?: string;
+
+  @ApiPropertyOptional()
+  locationBarcode?: string;
+
+  @ApiPropertyOptional()
+  warehouseName?: string;
+
+  @ApiPropertyOptional()
+  zoneName?: string;
+
   @ApiProperty()
   createdAt: Date;
 
   @ApiProperty()
   updatedAt: Date;
+}
+
+export class BulkActionDto {
+  @ApiProperty({ example: ['cuid1', 'cuid2'], description: 'List of product IDs' })
+  @IsArray()
+  productIds: string[];
+
+  @ApiProperty({ example: 'update_status', description: 'Action: update_status, update_location, delete' })
+  @IsString()
+  action: 'update_status' | 'update_location' | 'delete';
+
+  @ApiPropertyOptional({ description: 'Extra data for action e.g. { status: "active", locationCode: "A01-R01-G01" }' })
+  @IsOptional()
+  data?: any;
 }

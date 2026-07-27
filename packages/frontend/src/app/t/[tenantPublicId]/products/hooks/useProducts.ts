@@ -40,6 +40,8 @@ export interface Product {
   locationBarcode?: string;
   warehouseName?: string;
   zoneName?: string;
+  isBundle?: boolean;
+  bundleItems?: any[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -57,6 +59,8 @@ export interface ProductPayload {
   currency: string;
   stockQuantity: number;
   status: string;
+  isBundle?: boolean;
+  bundleItems?: any[];
   weight?: number;
   width?: number;
   height?: number;
@@ -68,7 +72,6 @@ export interface ProductPayload {
   type?: string;
   variantAttributes?: any;
   parentId?: string;
-  bundleItems?: any[];
   crossSellProducts?: any[];
   variants?: any[];
   locationId?: string;

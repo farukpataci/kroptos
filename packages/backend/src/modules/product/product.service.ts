@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { CreateProductDto, UpdateProductDto, BulkActionDto } from './dto/product.dto';
 import { Prisma } from '@prisma/client';
 import { IntegrationQueueService } from '../integration/integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
@@ -61,11 +61,21 @@ export class ProductService {
       whereClause.agencyId = activeAgencyId;
     }
 
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: whereClause,
       include: {
         category: {
           select: { id: true, name: true, slug: true },
+        },
+        location: {
+          include: {
+            warehouse: {
+              select: { id: true, name: true, code: true },
+            },
+            zone: {
+              select: { id: true, name: true, code: true, type: true },
+            },
+          },
         },
         bundleItems: {
           include: {
@@ -87,6 +97,8 @@ export class ProductService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return products.map((p) => this.mapProductResponse(p));
   }
 
   async get(
@@ -107,6 +119,16 @@ export class ProductService {
       include: {
         category: {
           select: { id: true, name: true, slug: true },
+        },
+        location: {
+          include: {
+            warehouse: {
+              select: { id: true, name: true, code: true },
+            },
+            zone: {
+              select: { id: true, name: true, code: true, type: true },
+            },
+          },
         },
         bundleItems: {
           include: {
@@ -140,7 +162,7 @@ export class ProductService {
       }
     }
 
-    return product;
+    return this.mapProductResponse(product);
   }
 
   async create(
@@ -194,6 +216,14 @@ export class ProductService {
       throw new BadRequestException(`Product with SKU '${dto.sku}' already exists in this store`);
     }
 
+    let defaultCurrency = 'TRY';
+    try {
+      const sysSettings = await this.prisma.systemSettings.findFirst();
+      if (sysSettings?.defaultCurrency) {
+        defaultCurrency = sysSettings.defaultCurrency;
+      }
+    } catch (_) {}
+
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
@@ -205,10 +235,10 @@ export class ProductService {
           name: dto.name,
           description: dto.description || null,
           price: new Prisma.Decimal(dto.price),
-          basePrice: new Prisma.Decimal(dto.basePrice),
+          basePrice: new Prisma.Decimal(dto.basePrice !== undefined && dto.basePrice !== null ? dto.basePrice : dto.price),
           costPrice: dto.costPrice !== undefined ? new Prisma.Decimal(dto.costPrice) : null,
           barcode: dto.barcode || null,
-          currency: dto.currency || 'USD',
+          currency: dto.currency || defaultCurrency,
           stockQuantity: dto.stockQuantity !== undefined ? dto.stockQuantity : 0,
           status: dto.status || 'active',
           weight: dto.weight !== undefined ? new Prisma.Decimal(dto.weight) : null,
@@ -224,6 +254,8 @@ export class ProductService {
           type: dto.type || 'SIMPLE',
           variantAttributes: dto.variantAttributes || undefined,
           parentId: dto.parentId || null,
+          locationId: dto.locationId || null,
+          locationCode: dto.locationCode || null,
         },
       });
 
@@ -359,6 +391,8 @@ export class ProductService {
           type: dto.type || undefined,
           variantAttributes: dto.variantAttributes || undefined,
           parentId: dto.parentId !== undefined ? dto.parentId : undefined,
+          locationId: dto.locationId !== undefined ? dto.locationId : undefined,
+          locationCode: dto.locationCode !== undefined ? dto.locationCode : undefined,
         },
       });
 
@@ -630,6 +664,78 @@ export class ProductService {
         item.code.toLowerCase().includes(q) ||
         item.barcode.includes(q),
     );
+  }
+
+  private mapProductResponse(product: any) {
+    if (!product) return product;
+    return {
+      ...product,
+      price: product.price ? Number(product.price) : 0,
+      basePrice: product.basePrice ? Number(product.basePrice) : 0,
+      costPrice: product.costPrice ? Number(product.costPrice) : undefined,
+      weight: product.weight ? Number(product.weight) : undefined,
+      width: product.width ? Number(product.width) : undefined,
+      height: product.height ? Number(product.height) : undefined,
+      depth: product.depth ? Number(product.depth) : undefined,
+      locationId: product.locationId || product.location?.id,
+      locationCode: product.locationCode || product.location?.code,
+      locationBarcode: product.location?.barcode,
+      warehouseName: product.location?.warehouse?.name,
+      zoneName: product.location?.zone?.name,
+    };
+  }
+
+  async bulkAction(
+    dto: BulkActionDto,
+    userId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+    ipAddress?: string,
+  ) {
+    if (!dto.productIds || dto.productIds.length === 0) {
+      throw new BadRequestException('No products selected for bulk action.');
+    }
+
+    const whereClause: any = {
+      id: { in: dto.productIds },
+      deletedAt: null,
+    };
+    if (!isSuperAdmin) {
+      if (activeStoreId) whereClause.storeId = activeStoreId;
+      if (activeClientId) whereClause.clientId = activeClientId;
+      if (activeAgencyId) whereClause.agencyId = activeAgencyId;
+    }
+
+    if (dto.action === 'delete') {
+      const result = await this.prisma.product.updateMany({
+        where: whereClause,
+        data: { deletedAt: new Date() },
+      });
+      return { success: true, updatedCount: result.count };
+    }
+
+    if (dto.action === 'update_status' && dto.data?.status) {
+      const result = await this.prisma.product.updateMany({
+        where: whereClause,
+        data: { status: dto.data.status },
+      });
+      return { success: true, updatedCount: result.count };
+    }
+
+    if (dto.action === 'update_location') {
+      const result = await this.prisma.product.updateMany({
+        where: whereClause,
+        data: {
+          locationCode: dto.data?.locationCode || null,
+          locationId: dto.data?.locationId || null,
+        },
+      });
+      return { success: true, updatedCount: result.count };
+    }
+
+    throw new BadRequestException(`Unsupported bulk action '${dto.action}'`);
   }
 }
 
