@@ -4,7 +4,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
@@ -24,6 +24,27 @@ import enIN from '../../messages/en-IN.json';
 import esAR from '../../messages/es-AR.json';
 import esMX from '../../messages/es-MX.json';
 import ptBR from '../../messages/pt-BR.json';
+
+/**
+ * Only `tr` is fully populated; the other dictionaries carry a handful of
+ * sections each. next-intl is handed one dictionary and errors on anything it
+ * cannot resolve, so a locale is layered over `tr` and then `en-US` rather than
+ * used on its own. A key missing from, say, `de` resolves to the English string
+ * if one exists and to Turkish otherwise — which is what those screens already
+ * rendered before they were migrated to message keys.
+ */
+function deepMerge(base: any, override: any): any {
+  if (!override) return base;
+  const merged: Record<string, any> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const existing = merged[key];
+    const bothPlainObjects =
+      value && typeof value === 'object' && !Array.isArray(value) &&
+      existing && typeof existing === 'object' && !Array.isArray(existing);
+    merged[key] = bothPlainObjects ? deepMerge(existing, value) : value;
+  }
+  return merged;
+}
 
 const messagesMap: Record<string, any> = {
   tr,
@@ -110,7 +131,10 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   // Resolve to one of the 15 dictionaries (exact variant first, then defaults)
   const activeLocale = resolveLocale(rawLocale);
-  const messages = messagesMap[activeLocale];
+  const messages = useMemo(
+    () => deepMerge(deepMerge(tr, enUS), messagesMap[activeLocale]),
+    [activeLocale]
+  );
 
   return (
     <NextIntlClientProvider locale={activeLocale} messages={messages} timeZone="UTC">
