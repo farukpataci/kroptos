@@ -345,7 +345,7 @@ export default function SupportTicketsPage() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-6 md:p-8 pt-6 animate-fade-in bg-kp-bg-primary/20 min-h-screen">
+    <div className="flex-1 space-y-6 p-6 md:p-8 pt-6 animate-fade-in min-h-screen">
       {/* Top Breadcrumb & Title */}
       <div className="flex items-center justify-between pb-2">
         <div>
@@ -361,7 +361,7 @@ export default function SupportTicketsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Card 1: Total */}
-        <div className="bg-kp-bg-primary rounded-kp-lg border border-kp-border p-5 flex items-center gap-5 shadow-xs">
+        <div className="bg-white dark:bg-kp-bg-secondary rounded-kp-lg border border-kp-border p-5 flex items-center gap-5 shadow-xs">
           <div className="flex h-12 w-12 items-center justify-center rounded-kp-md bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600">
             <TicketIcon className="h-6 w-6" />
           </div>
@@ -372,7 +372,7 @@ export default function SupportTicketsPage() {
         </div>
 
         {/* Card 2: Pending */}
-        <div className="bg-kp-bg-primary rounded-kp-lg border border-kp-border p-5 flex items-center gap-5 shadow-xs">
+        <div className="bg-white dark:bg-kp-bg-secondary rounded-kp-lg border border-kp-border p-5 flex items-center gap-5 shadow-xs">
           <div className="flex h-12 w-12 items-center justify-center rounded-kp-md bg-amber-50 dark:bg-amber-950/30 text-amber-600">
             <ClockIcon className="h-6 w-6" />
           </div>
@@ -383,7 +383,7 @@ export default function SupportTicketsPage() {
         </div>
 
         {/* Card 3: Solved */}
-        <div className="bg-kp-bg-primary rounded-kp-lg border border-kp-border p-5 flex items-center gap-5 shadow-xs">
+        <div className="bg-white dark:bg-kp-bg-secondary rounded-kp-lg border border-kp-border p-5 flex items-center gap-5 shadow-xs">
           <div className="flex h-12 w-12 items-center justify-center rounded-kp-md bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600">
             <CheckCircleIcon className="h-6 w-6" />
           </div>
@@ -397,7 +397,7 @@ export default function SupportTicketsPage() {
       {/* Main Content Area */}
       {!selectedTicketId ? (
         /* ================= TICKET LIST VIEW ================= */
-        <div className="bg-kp-bg-primary border border-kp-border rounded-2xl shadow-sm p-6 space-y-4">
+        <div className="bg-white dark:bg-kp-bg-secondary border border-kp-border rounded-2xl shadow-sm p-6 space-y-4">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-kp-text-primary">Support Tickets</h3>
@@ -692,7 +692,7 @@ export default function SupportTicketsPage() {
             {/* Left Hand Conversation Thread */}
             <div className="lg:col-span-2 space-y-6">
               {/* Thread Container */}
-              <div className="bg-kp-bg-primary border border-kp-border rounded-2xl shadow-sm p-6 space-y-6">
+              <div className="bg-white dark:bg-kp-bg-secondary border border-kp-border rounded-2xl shadow-sm p-6 space-y-6">
                 
                 {/* Back button and title */}
                 <div className="flex items-center justify-between pb-4 border-b border-kp-border">
@@ -869,7 +869,7 @@ export default function SupportTicketsPage() {
             </div>
 
             {/* Right Hand Ticket Details Sidebar */}
-            <div className="bg-kp-bg-primary border border-kp-border rounded-2xl shadow-sm p-6 space-y-4">
+            <div className="bg-white dark:bg-kp-bg-secondary border border-kp-border rounded-2xl shadow-sm p-6 space-y-4">
               <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wide pb-2 border-b border-kp-border">
                 Ticket Details
               </h3>
