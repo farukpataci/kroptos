@@ -17,6 +17,7 @@ import {
   BuildingStorefrontIcon,
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/ui/Toast';
+import { useTranslations } from 'next-intl';
 
 interface Integration {
   id: string;
@@ -32,11 +33,14 @@ interface Integration {
   credentials?: any;
 }
 
+/**
+ * Presentation only. The name and description live under
+ * `integrations.marketplace.presets.<id>` and are read through `t` inside the
+ * component, since this array is module scope and has no translator.
+ */
 interface MarketplacePreset {
   id: string;
-  name: string;
   provider: string;
-  desc: string;
   badgeBg: string;
   badgeText: string;
 }
@@ -44,73 +48,60 @@ interface MarketplacePreset {
 const MARKETPLACE_PRESETS: MarketplacePreset[] = [
   {
     id: 'trendyol',
-    name: 'Trendyol Entegrasyonu',
     provider: 'trendyol',
-    desc: "Türkiye'nin lider pazaryeri Trendyol sipariş, ürün ve anlık stok senkronizasyonu.",
     badgeBg: 'bg-orange-500/10 border-orange-500/20 text-orange-600',
     badgeText: 'TRENDYOL',
   },
   {
     id: 'hepsiburada',
-    name: 'Hepsiburada Entegrasyonu',
     provider: 'hepsiburada',
-    desc: 'Hepsiburada Merchant API ile otomatik ürün listeleme ve çift yönlü stok aktarımı.',
     badgeBg: 'bg-amber-500/10 border-amber-500/20 text-amber-600',
     badgeText: 'HEPSİBURADA',
   },
   {
     id: 'amazon',
-    name: 'Amazon Seller Central',
     provider: 'amazon',
-    desc: 'Amazon SP-API altyapısı ile küresel ve yerel Amazon mağaza stok takibi.',
     badgeBg: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600',
     badgeText: 'AMAZON',
   },
   {
     id: 'n11',
-    name: 'N11 Pazaryeri Entegrasyonu',
     provider: 'n11',
-    desc: 'N11 REST API ile anlık kategori eşleştirme, fiyat ve stok senkronizasyonu.',
     badgeBg: 'bg-red-500/10 border-red-500/20 text-red-600',
     badgeText: 'N11',
   },
   {
     id: 'ciceksepeti',
-    name: 'Çiçeksepeti Entegrasyonu',
     provider: 'ciceksepeti',
-    desc: 'Çiçeksepeti pazaryeri mağaza bağlantısı, ürün güncellemeleri ve sipariş yönetimi.',
     badgeBg: 'bg-pink-500/10 border-pink-500/20 text-pink-600',
     badgeText: 'ÇİÇEKSEPETİ',
   },
   {
     id: 'shopify',
-    name: 'Shopify E-Ticaret Mağazası',
     provider: 'shopify',
-    desc: 'Shopify e-ticaret siteniz ile çift yönlü canlı stok ve envanter eşitlemesi.',
     badgeBg: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-600',
     badgeText: 'SHOPIFY',
   },
   {
     id: 'pazarama',
-    name: 'Pazarama Entegrasyonu',
     provider: 'pazarama',
-    desc: 'Pazarama pazaryeri mağaza stok, fiyat ve sipariş entegrasyonu.',
     badgeBg: 'bg-blue-500/10 border-blue-500/20 text-blue-600',
     badgeText: 'PAZARAMA',
   },
   {
     id: 'woocommerce',
-    name: 'WooCommerce Mağaza',
     provider: 'woocommerce',
-    desc: 'WordPress WooCommerce e-ticaret siteniz ile canlı stok ve sipariş akışı.',
     badgeBg: 'bg-purple-500/10 border-purple-500/20 text-purple-600',
     badgeText: 'WOOCOMMERCE',
   },
 ];
 
 export default function MarketplacePage() {
+  const t = useTranslations('integrations.marketplace');
   const toast = useToast();
   const { tenantContext } = useAuth();
+
+  const presetName = (preset: MarketplacePreset) => t(`presets.${preset.id}.name`);
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -157,7 +148,7 @@ export default function MarketplacePage() {
         window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
       }
     } catch (err: any) {
-      setError(err.message || 'Failed to fetch integrations');
+      setError(err.message || t('toast.fetchError'));
     } finally {
       setIsLoading(false);
     }
@@ -173,7 +164,7 @@ export default function MarketplacePage() {
     setActiveIntegration(existing || null);
 
     setFormData({
-      name: existing?.name || preset.name,
+      name: existing?.name || presetName(preset),
       provider: preset.provider,
       apiKey: '',
       apiSecret: '',
@@ -192,7 +183,7 @@ export default function MarketplacePage() {
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tenantContext.agencyId) {
-      setFormError('Agency context is required');
+      setFormError(t('toast.agencyRequired'));
       return;
     }
     setFormError(null);
@@ -225,7 +216,7 @@ export default function MarketplacePage() {
           body: JSON.stringify(payload),
         });
         setIntegrations(integrations.map((item) => (item.id === activeIntegration.id ? updated : item)));
-        toast.success(`"${formData.name}" ayarları başarıyla güncellendi.`);
+        toast.success(t('toast.updated', { name: formData.name }));
       } else {
         // Create new integration
         const credentialsPayload: any = {};
@@ -267,11 +258,11 @@ export default function MarketplacePage() {
           body: JSON.stringify(payload),
         });
         setIntegrations([created, ...integrations]);
-        toast.success(`"${formData.name}" entegrasyonu başarıyla oluşturuldu.`);
+        toast.success(t('toast.created', { name: formData.name }));
       }
       setIsModalOpen(false);
     } catch (err: any) {
-      setFormError(err.message || 'Bir hata oluştu.');
+      setFormError(err.message || t('toast.genericError'));
     } finally {
       setIsSubmitting(false);
     }
@@ -285,10 +276,10 @@ export default function MarketplacePage() {
         method: 'DELETE',
       });
       setIntegrations(integrations.filter((item) => item.id !== integrationToDelete.id));
-      toast.success('Entegrasyon bağlantısı silindi.');
+      toast.success(t('toast.deleted'));
       setIntegrationToDelete(null);
     } catch (err: any) {
-      toast.error(err.message || 'Silme işlemi başarısız.');
+      toast.error(err.message || t('toast.deleteFailed'));
     } finally {
       setIsDeleting(false);
     }
@@ -301,14 +292,14 @@ export default function MarketplacePage() {
         method: 'POST',
       });
       if (res.success) {
-        toast.success('API Bağlantı testi başarılı! Kimlik bilgileri doğrulandı.');
+        toast.success(t('toast.testSuccess'));
         fetchIntegrations();
       } else {
-        toast.error(`Bağlantı testi başarısız: ${res.message}`);
+        toast.error(t('toast.testFailed', { message: res.message }));
         fetchIntegrations();
       }
     } catch (err: any) {
-      toast.error(err.message || 'Bağlantı test edilirken hata oluştu.');
+      toast.error(err.message || t('toast.testError'));
     } finally {
       setTestingId(null);
     }
@@ -321,13 +312,13 @@ export default function MarketplacePage() {
         method: 'POST',
       });
       if (res.success) {
-        toast.success('Ürün ve stok senkronizasyonu başlatıldı!');
+        toast.success(t('toast.syncStarted'));
         fetchIntegrations();
       } else {
-        toast.error(`Senkronizasyon başarısız: ${res.message}`);
+        toast.error(t('toast.syncFailed', { message: res.message }));
       }
     } catch (err: any) {
-      toast.error(err.message || 'Senkronizasyon hatası');
+      toast.error(err.message || t('toast.syncError'));
     } finally {
       setSyncingId(null);
     }
@@ -337,9 +328,9 @@ export default function MarketplacePage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <LinkIcon className="h-12 w-12 text-kp-text-tertiary animate-pulse" />
-        <h3 className="mt-4 text-base font-semibold text-kp-text-primary">Ajans Bağlamı Gerekli</h3>
+        <h3 className="mt-4 text-base font-semibold text-kp-text-primary">{t('agencyRequired.title')}</h3>
         <p className="mt-1 max-w-xs text-xs text-kp-text-tertiary">
-          Pazaryeri entegrasyonlarını görüntülemek için lütfen aktif bir ajans seçin.
+          {t('agencyRequired.description')}
         </p>
       </div>
     );
@@ -349,7 +340,7 @@ export default function MarketplacePage() {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <ArrowPathIcon className="h-8 w-8 text-kp-accent animate-spin" />
-        <p className="mt-2 text-xs text-kp-text-tertiary">Entegrasyonlar yükleniyor...</p>
+        <p className="mt-2 text-xs text-kp-text-tertiary">{t('loading')}</p>
       </div>
     );
   }
@@ -363,9 +354,9 @@ export default function MarketplacePage() {
             <BuildingStorefrontIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-kp-text-primary">Pazaryeri Entegrasyonları (Marketplace Integrations)</h1>
+            <h1 className="text-lg font-bold text-kp-text-primary">{t('title')}</h1>
             <p className="text-xs text-kp-text-tertiary">
-              Trendyol, Hepsiburada, Amazon, N11 ve e-ticaret platformlarınızı entegre edin ve stoklarınızı otomatik yönetin.
+              {t('subtitle')}
             </p>
           </div>
         </div>
@@ -375,7 +366,7 @@ export default function MarketplacePage() {
           className="flex items-center gap-2 rounded-kp-md border border-kp-border px-3.5 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover transition-colors"
         >
           <ArrowPathIcon className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          Yenile
+          {t('refresh')}
         </button>
       </div>
 
@@ -412,16 +403,16 @@ export default function MarketplacePage() {
                         : 'bg-kp-bg-tertiary text-kp-text-tertiary border-kp-border'
                     }`}
                   >
-                    {isConnected ? 'Bağlandı (Aktif)' : 'Bağlantı Yok'}
+                    {isConnected ? t('status.connected') : t('status.disconnected')}
                   </span>
                 </div>
 
                 <h3 className="font-bold text-kp-text-primary text-base mb-1">
-                  {connectedInt ? connectedInt.name : preset.name}
+                  {connectedInt ? connectedInt.name : presetName(preset)}
                 </h3>
 
                 <p className="text-xs text-kp-text-tertiary mb-6 leading-relaxed">
-                  {preset.desc}
+                  {t(`presets.${preset.id}.desc`)}
                 </p>
               </div>
 
@@ -437,7 +428,7 @@ export default function MarketplacePage() {
                   }`}
                 >
                   <Cog6ToothIcon className="h-3.5 w-3.5" />
-                  <span>{isConnected ? 'Ayarlar' : 'Bağlantı Kur'}</span>
+                  <span>{isConnected ? t('actions.settings') : t('actions.connect')}</span>
                 </button>
 
                 {isConnected && (
@@ -447,14 +438,14 @@ export default function MarketplacePage() {
                       disabled={testingId === connectedInt.id}
                       onClick={() => handleTestConnection(connectedInt.id)}
                       className="flex items-center gap-1 text-xs font-semibold py-2 px-2.5 rounded-kp-md border border-kp-border bg-kp-bg-primary text-kp-text-secondary hover:text-kp-accent hover:border-kp-accent transition-colors disabled:opacity-50"
-                      title="API Bağlantısını Test Et"
+                      title={t('actions.testTitle')}
                     >
                       {testingId === connectedInt.id ? (
                         <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <LinkIcon className="h-3.5 w-3.5" />
                       )}
-                      <span>Test</span>
+                      <span>{t('actions.test')}</span>
                     </button>
 
                     <button
@@ -462,21 +453,21 @@ export default function MarketplacePage() {
                       disabled={syncingId === connectedInt.id}
                       onClick={() => handleTriggerSync(connectedInt.id)}
                       className="flex items-center gap-1 text-xs font-semibold py-2 px-2.5 rounded-kp-md border border-kp-border bg-kp-bg-primary text-kp-text-secondary hover:text-emerald-600 hover:border-emerald-500/40 transition-colors disabled:opacity-50"
-                      title="Stok & Ürünleri Eşitle"
+                      title={t('actions.syncTitle')}
                     >
                       {syncingId === connectedInt.id ? (
                         <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <CheckCircleIcon className="h-3.5 w-3.5" />
                       )}
-                      <span>Sync</span>
+                      <span>{t('actions.sync')}</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={() => setIntegrationToDelete(connectedInt)}
                       className="p-2 rounded-kp-md text-kp-text-tertiary hover:text-kp-danger hover:bg-kp-danger/10 transition-colors"
-                      title="Bağlantıyı Sil"
+                      title={t('actions.deleteTitle')}
                     >
                       <TrashIcon className="h-4 w-4" />
                     </button>
@@ -498,7 +489,7 @@ export default function MarketplacePage() {
                   <Cog6ToothIcon className="h-4 w-4" />
                 </div>
                 <h3 className="text-base font-bold text-kp-text-primary">
-                  {selectedPreset.name} API Ayarları
+                  {t('modal.title', { name: presetName(selectedPreset) })}
                 </h3>
               </div>
               <button
@@ -520,14 +511,14 @@ export default function MarketplacePage() {
 
                 <div>
                   <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                    Entegrasyon Adı / Etiket *
+                    {t('modal.nameLabel')}
                   </label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    placeholder="örn. Trendyol Mağazam"
+                    placeholder={t('modal.namePlaceholder')}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                   />
                 </div>
@@ -537,7 +528,7 @@ export default function MarketplacePage() {
                   <>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        Supplier ID / Satıcı ID *
+                        {t('fields.supplierId')}
                       </label>
                       <input
                         type="text"
@@ -550,7 +541,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        API Key *
+                        {t('fields.apiKey')}
                       </label>
                       <input
                         type="text"
@@ -563,7 +554,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        API Secret *
+                        {t('fields.apiSecret')}
                       </label>
                       <input
                         type="password"
@@ -582,7 +573,7 @@ export default function MarketplacePage() {
                   <>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        Merchant ID *
+                        {t('fields.merchantId')}
                       </label>
                       <input
                         type="text"
@@ -595,7 +586,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        API Key *
+                        {t('fields.apiKey')}
                       </label>
                       <input
                         type="text"
@@ -608,7 +599,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        Secret Key *
+                        {t('fields.secretKey')}
                       </label>
                       <input
                         type="password"
@@ -627,7 +618,7 @@ export default function MarketplacePage() {
                   <>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        Seller ID *
+                        {t('fields.sellerId')}
                       </label>
                       <input
                         type="text"
@@ -640,7 +631,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        AWS Access Key *
+                        {t('fields.awsAccessKey')}
                       </label>
                       <input
                         type="text"
@@ -653,7 +644,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        SP-API Refresh Token *
+                        {t('fields.refreshToken')}
                       </label>
                       <input
                         type="password"
@@ -672,7 +663,7 @@ export default function MarketplacePage() {
                   <>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        API Key / Client ID *
+                        {t('fields.apiKeyOrClientId')}
                       </label>
                       <input
                         type="text"
@@ -685,7 +676,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        API Secret / Client Secret *
+                        {t('fields.apiSecretOrClientSecret')}
                       </label>
                       <input
                         type="password"
@@ -703,7 +694,7 @@ export default function MarketplacePage() {
                 {selectedPreset.provider === 'ciceksepeti' && (
                   <div>
                     <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                      API Key (x-api-key) *
+                      {t('fields.ciceksepetiApiKey')}
                     </label>
                     <input
                       type="text"
@@ -721,7 +712,7 @@ export default function MarketplacePage() {
                   <>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        Shopify Domain URL *
+                        {t('fields.shopDomain')}
                       </label>
                       <input
                         type="text"
@@ -734,7 +725,7 @@ export default function MarketplacePage() {
                     </div>
                     <div>
                       <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
-                        Admin API Access Token *
+                        {t('fields.accessToken')}
                       </label>
                       <input
                         type="password"
@@ -755,7 +746,7 @@ export default function MarketplacePage() {
                   onClick={() => setIsModalOpen(false)}
                   className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
                 >
-                  İptal
+                  {t('modal.cancel')}
                 </button>
                 <button
                   type="submit"
@@ -763,7 +754,7 @@ export default function MarketplacePage() {
                   className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-5 py-2 text-xs font-semibold shadow-xs transition-all disabled:opacity-50"
                 >
                   {isSubmitting && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                  Kaydet & Bağlan
+                  {t('modal.submit')}
                 </button>
               </div>
             </form>
@@ -777,7 +768,7 @@ export default function MarketplacePage() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-bold text-kp-text-primary flex items-center gap-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> Bağlantıyı Sil
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> {t('deleteModal.title')}
               </h3>
               <button
                 onClick={() => setIntegrationToDelete(null)}
@@ -788,7 +779,10 @@ export default function MarketplacePage() {
             </div>
             <div className="p-6">
               <p className="text-xs text-kp-text-secondary leading-relaxed">
-                <span className="font-bold text-kp-text-primary">{integrationToDelete.name}</span> pazaryeri entegrasyon bağlantısını silmek istediğinize emin misiniz? Bu işlem kayıtlı API kimlik bilgilerini temizleyecektir.
+                {t.rich('deleteModal.body', {
+                  name: integrationToDelete.name,
+                  strong: (chunks) => <span className="font-bold text-kp-text-primary">{chunks}</span>,
+                })}
               </p>
             </div>
             <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border text-xs">
@@ -797,7 +791,7 @@ export default function MarketplacePage() {
                 onClick={() => setIntegrationToDelete(null)}
                 className="rounded-kp-md border border-kp-border px-4 py-2 font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
               >
-                İptal
+                {t('deleteModal.cancel')}
               </button>
               <button
                 type="button"
@@ -806,7 +800,7 @@ export default function MarketplacePage() {
                 className="flex items-center gap-2 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 font-semibold shadow-xs transition-all"
               >
                 {isDeleting && <ArrowPathIcon className="h-4 w-4 animate-spin" />}
-                Evet, Sil
+                {t('deleteModal.confirm')}
               </button>
             </div>
           </div>

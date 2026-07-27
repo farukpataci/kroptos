@@ -869,6 +869,82 @@
     "tabErp": "Stok Kaynağı",
     "tabShipping": "Kargo Yönetimi",
     "tabErrors": "Entegrasyon Hataları",
+    "marketplace": {
+      "title": "Pazaryeri Entegrasyonları",
+      "subtitle": "Trendyol, Hepsiburada, Amazon, N11 ve e-ticaret platformlarınızı entegre edin ve stoklarınızı otomatik yönetin.",
+      "refresh": "Yenile",
+      "loading": "Entegrasyonlar yükleniyor...",
+      "agencyRequired": {
+        "title": "Ajans Bağlamı Gerekli",
+        "description": "Pazaryeri entegrasyonlarını görüntülemek için lütfen aktif bir ajans seçin."
+      },
+      "status": {
+        "connected": "Bağlandı (Aktif)",
+        "disconnected": "Bağlantı Yok"
+      },
+      "actions": {
+        "connect": "Bağlantı Kur",
+        "settings": "Ayarlar",
+        "test": "Test",
+        "testTitle": "API Bağlantısını Test Et",
+        "sync": "Sync",
+        "syncTitle": "Stok & Ürünleri Eşitle",
+        "deleteTitle": "Bağlantıyı Sil"
+      },
+      "presets": {
+        "trendyol": { "name": "Trendyol Entegrasyonu", "desc": "Türkiye'nin lider pazaryeri Trendyol sipariş, ürün ve anlık stok senkronizasyonu." },
+        "hepsiburada": { "name": "Hepsiburada Entegrasyonu", "desc": "Hepsiburada Merchant API ile otomatik ürün listeleme ve çift yönlü stok aktarımı." },
+        "amazon": { "name": "Amazon Seller Central", "desc": "Amazon SP-API altyapısı ile küresel ve yerel Amazon mağaza stok takibi." },
+        "n11": { "name": "N11 Pazaryeri Entegrasyonu", "desc": "N11 REST API ile anlık kategori eşleştirme, fiyat ve stok senkronizasyonu." },
+        "ciceksepeti": { "name": "Çiçeksepeti Entegrasyonu", "desc": "Çiçeksepeti pazaryeri mağaza bağlantısı, ürün güncellemeleri ve sipariş yönetimi." },
+        "shopify": { "name": "Shopify E-Ticaret Mağazası", "desc": "Shopify e-ticaret siteniz ile çift yönlü canlı stok ve envanter eşitlemesi." },
+        "pazarama": { "name": "Pazarama Entegrasyonu", "desc": "Pazarama pazaryeri mağaza stok, fiyat ve sipariş entegrasyonu." },
+        "woocommerce": { "name": "WooCommerce Mağaza", "desc": "WordPress WooCommerce e-ticaret siteniz ile canlı stok ve sipariş akışı." }
+      },
+      "modal": {
+        "title": "{name} API Ayarları",
+        "nameLabel": "Entegrasyon Adı / Etiket *",
+        "namePlaceholder": "örn. Trendyol Mağazam",
+        "cancel": "İptal",
+        "submit": "Kaydet & Bağlan"
+      },
+      "fields": {
+        "supplierId": "Supplier ID / Satıcı ID *",
+        "apiKey": "API Key *",
+        "apiSecret": "API Secret *",
+        "merchantId": "Merchant ID *",
+        "secretKey": "Secret Key *",
+        "sellerId": "Seller ID *",
+        "awsAccessKey": "AWS Access Key *",
+        "refreshToken": "SP-API Refresh Token *",
+        "apiKeyOrClientId": "API Key / Client ID *",
+        "apiSecretOrClientSecret": "API Secret / Client Secret *",
+        "ciceksepetiApiKey": "API Key (x-api-key) *",
+        "shopDomain": "Shopify Domain URL *",
+        "accessToken": "Admin API Access Token *"
+      },
+      "deleteModal": {
+        "title": "Bağlantıyı Sil",
+        "body": "<strong>{name}</strong> pazaryeri entegrasyon bağlantısını silmek istediğinize emin misiniz? Bu işlem kayıtlı API kimlik bilgilerini temizleyecektir.",
+        "cancel": "İptal",
+        "confirm": "Evet, Sil"
+      },
+      "toast": {
+        "created": "\"{name}\" entegrasyonu başarıyla oluşturuldu.",
+        "updated": "\"{name}\" ayarları başarıyla güncellendi.",
+        "deleted": "Entegrasyon bağlantısı silindi.",
+        "deleteFailed": "Silme işlemi başarısız.",
+        "testSuccess": "API Bağlantı testi başarılı! Kimlik bilgileri doğrulandı.",
+        "testFailed": "Bağlantı testi başarısız: {message}",
+        "testError": "Bağlantı test edilirken hata oluştu.",
+        "syncStarted": "Ürün ve stok senkronizasyonu başlatıldı!",
+        "syncFailed": "Senkronizasyon başarısız: {message}",
+        "syncError": "Senkronizasyon hatası",
+        "genericError": "Bir hata oluştu.",
+        "fetchError": "Entegrasyonlar alınamadı",
+        "agencyRequired": "Ajans bağlamı gerekli"
+      }
+    },
     "tree": {
       "loading": "Entegrasyon ağacı yükleniyor...",
       "emptyTitle": "Bağlı Entegrasyon Yok",
