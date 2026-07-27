@@ -6,6 +6,7 @@ import { IntegrationService } from './integration.service';
 import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto, UpsertProductMappingDto } from './dto/integration.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { decrypt } from '../../common/utils/encryption.util';
 
 @ApiTags('Integrations')
 @ApiBearerAuth()
@@ -25,6 +26,27 @@ export class IntegrationController {
   private sanitizeResponse(integration: any) {
     if (!integration) return null;
     const sanitized = { ...integration };
+    if (integration.credentialsEncrypted) {
+      try {
+        const decryptedStr = decrypt(integration.credentialsEncrypted);
+        let decrypted = {};
+        if (decryptedStr.startsWith('{')) {
+          decrypted = JSON.parse(decryptedStr);
+        }
+        
+        const maskedCredentials: Record<string, any> = {};
+        for (const [key, value] of Object.entries(decrypted)) {
+          if (['password', 'apiSecret', 'awsSecretKey', 'token', 'apiKey', 'awsAccessKey', 'refreshToken'].includes(key)) {
+            maskedCredentials[key] = '••••••••••••';
+          } else {
+            maskedCredentials[key] = value;
+          }
+        }
+        sanitized.credentials = maskedCredentials;
+      } catch (err) {
+        // Fallback silently if not JSON
+      }
+    }
     delete sanitized.credentialsEncrypted;
     return sanitized;
   }
