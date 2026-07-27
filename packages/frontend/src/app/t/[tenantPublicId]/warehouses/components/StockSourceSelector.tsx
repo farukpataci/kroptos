@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
-import { CREDENTIAL_MASK, stripMaskedCredentials } from '@/lib/credentials';
+import { CREDENTIAL_MASK, stripMaskedCredentials } from '@kroptos/shared';
 import { useToast } from '@/components/ui/Toast';
 import {
   Cog6ToothIcon,
@@ -163,7 +163,7 @@ export function StockSourceSelector() {
       // server keeps whatever it already has for that field.
       await apiFetch(`/stock-source/settings/${settingsModalSource.id}`, {
         method: 'PUT',
-        body: JSON.stringify(stripMaskedCredentials(formData))
+        body: JSON.stringify(stripMaskedCredentials(formData).credentials)
       }).catch(() => null);
 
       toast.success(`"${settingsModalSource.name}" bağlantı ayarları başarıyla kaydedildi.`);

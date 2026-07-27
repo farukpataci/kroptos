@@ -1,12 +1,16 @@
 /**
- * Credential masking helpers.
+ * Credential masking, shared by the API and the UI.
  *
  * The API never returns stored secrets; it replaces them with `CREDENTIAL_MASK`
  * so the UI can show "a value exists" without leaking it. Because that mask is
- * visible to the client, it can also come *back* on the next write (a form that
- * pre-fills the masked value and submits it untouched). Writing it through would
- * silently overwrite the real secret with a string of bullets, so every write
- * path must run incoming credentials through `stripMaskedCredentials` first.
+ * visible to the client it can also come *back* on the next write — a form that
+ * pre-fills the masked value and submits it untouched. Writing it through would
+ * overwrite the real secret with a string of bullets, so every write path runs
+ * incoming credentials through `stripMaskedCredentials` first.
+ *
+ * Both sides import this module rather than keeping parallel copies: a
+ * divergence between them is exactly how `accessToken` once came back in
+ * plaintext, masked by the client but not by the server.
  */
 
 export const CREDENTIAL_MASK = '••••••••••••';
@@ -41,13 +45,13 @@ const PUBLIC_KEY_SET: ReadonlySet<string> = new Set(PUBLIC_CREDENTIAL_KEYS);
  * `CREDENTIAL_MASK` constant so clients can render the placeholder with their
  * own bullet character or length.
  *
- * Asterisks are deliberately excluded: nothing in this codebase masks with
- * them, and treating them as a placeholder would silently discard a password
- * that genuinely is `********`.
+ * Asterisks are deliberately excluded: nothing masks with them here, and
+ * treating them as a placeholder would silently discard a password that
+ * genuinely is `********`.
  */
 const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫▪\s]+$/;
 
-/** Anything not explicitly published is a secret. */
+/** Anything not explicitly public is a secret. */
 export function isSecretCredentialKey(key: string): boolean {
   return !PUBLIC_KEY_SET.has(key);
 }
@@ -60,7 +64,7 @@ export function isMaskedValue(value: unknown): boolean {
   return MASK_ONLY_PATTERN.test(trimmed);
 }
 
-/** Replaces every secret value with `CREDENTIAL_MASK`, leaving other keys intact. */
+/** Replaces every secret value with `CREDENTIAL_MASK`, leaving public keys intact. */
 export function maskCredentials(credentials: Record<string, any>): Record<string, any> {
   const masked: Record<string, any> = {};
   for (const [key, value] of Object.entries(credentials ?? {})) {
@@ -75,7 +79,8 @@ export function maskCredentials(credentials: Record<string, any>): Record<string
  *
  * A blank secret means "leave the stored one alone" — the forms send an empty
  * input for a secret the user did not retype — so writing it through would
- * clear a live credential. It is dropped here rather than trusted to the client.
+ * clear a live credential. Public keys keep their blank value, since clearing
+ * a username or URL is a legitimate edit.
  *
  * `placeholders` lists the secret keys dropped that way. On an update they fall
  * through to the stored value; on a create there is nothing to fall back to, so

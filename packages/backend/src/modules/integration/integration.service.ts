@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateIntegrationDto, UpdateIntegrationDto } from './dto/integration.dto';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
-import { stripMaskedCredentials } from '../../common/utils/credential-mask.util';
+import { stripMaskedCredentials } from '@kroptos/shared';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';

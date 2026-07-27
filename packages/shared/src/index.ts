@@ -1,5 +1,7 @@
 // Shared types used across backend and frontend
 
+export * from './credentials';
+
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;

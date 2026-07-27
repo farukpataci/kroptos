@@ -7,7 +7,7 @@ import { CreateIntegrationDto, UpdateIntegrationDto, IntegrationResponseDto, Ups
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { decrypt } from '../../common/utils/encryption.util';
-import { maskCredentials } from '../../common/utils/credential-mask.util';
+import { maskCredentials } from '@kroptos/shared';
 
 @ApiTags('Integrations')
 @ApiBearerAuth()

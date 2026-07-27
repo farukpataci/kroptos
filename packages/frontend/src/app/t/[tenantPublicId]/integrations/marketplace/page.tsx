@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
-import { stripMaskedCredentials } from '@/lib/credentials';
+import { stripMaskedCredentials } from '@kroptos/shared';
 import {
   LinkIcon,
   ExclamationTriangleIcon,
@@ -206,7 +206,7 @@ export default function MarketplacePage() {
 
         // Guard against a masked value ever reaching the merge on the server: an
         // untouched secret must leave the stored credential alone.
-        const sanitizedCredentials = stripMaskedCredentials(credentialsPayload);
+        const { credentials: sanitizedCredentials } = stripMaskedCredentials(credentialsPayload);
         if (Object.keys(sanitizedCredentials).length > 0) {
           payload.credentials = sanitizedCredentials;
         }
