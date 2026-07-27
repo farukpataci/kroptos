@@ -26,6 +26,7 @@ npm-debug.log*
 # Build outputs
 .next/
 out/
+*.tsbuildinfo
 
 # Database
 *.db
