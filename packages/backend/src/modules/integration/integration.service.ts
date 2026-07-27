@@ -131,12 +131,12 @@ export class IntegrationService {
       throw new BadRequestException('Agency ID context is required');
     }
 
-    // A create has no stored secret to fall back on, so an echoed mask can only
-    // be a client bug — reject it rather than persisting a row of bullets.
-    const { credentials: newCredentials, masked } = stripMaskedCredentials(dto.credentials);
-    if (masked.length > 0) {
+    // A create has no stored secret to fall back on, so a masked or blank secret
+    // can only be a client bug — reject it rather than persisting an empty one.
+    const { credentials: newCredentials, placeholders } = stripMaskedCredentials(dto.credentials);
+    if (placeholders.length > 0) {
       throw new BadRequestException(
-        `Masked placeholder values are not accepted as credentials: ${masked.join(', ')}`,
+        `Credentials must carry a real value, not a masked or blank placeholder: ${placeholders.join(', ')}`,
       );
     }
 

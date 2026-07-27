@@ -11,20 +11,30 @@
 
 export const CREDENTIAL_MASK = '••••••••••••';
 
-/** Credential keys whose values are secrets and must never leave the server. */
-export const SECRET_CREDENTIAL_KEYS = [
-  'password',
-  'apiSecret',
-  'awsSecretKey',
-  'token',
-  'apiKey',
-  'awsAccessKey',
-  'refreshToken',
+/**
+ * Credential keys that are safe to hand back to the client: connection targets
+ * and account identifiers, never anything that authenticates on its own.
+ *
+ * This is an allowlist by design. Enumerating secrets instead would make every
+ * new connector a chance to leak — a provider added with a `clientSecret` or
+ * `consumerSecret` field would sail through an unfamiliar key. Here an unknown
+ * key is treated as a secret, so a new connector fails closed and the worst
+ * case is a public field showing up masked.
+ */
+export const PUBLIC_CREDENTIAL_KEYS = [
+  'apiUrl',
+  'firmNo',
+  'merchantId',
+  'periodNo',
+  'sellerId',
+  'shopDomain',
+  'username',
+  'warehouseNo',
 ] as const;
 
-export type SecretCredentialKey = (typeof SECRET_CREDENTIAL_KEYS)[number];
+export type PublicCredentialKey = (typeof PUBLIC_CREDENTIAL_KEYS)[number];
 
-const SECRET_KEY_SET: ReadonlySet<string> = new Set(SECRET_CREDENTIAL_KEYS);
+const PUBLIC_KEY_SET: ReadonlySet<string> = new Set(PUBLIC_CREDENTIAL_KEYS);
 
 /**
  * Matches any value made up purely of masking glyphs. Deliberately wider than
@@ -34,8 +44,9 @@ const SECRET_KEY_SET: ReadonlySet<string> = new Set(SECRET_CREDENTIAL_KEYS);
  */
 const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫*✱▪\s]+$/;
 
+/** Anything not explicitly published is a secret. */
 export function isSecretCredentialKey(key: string): boolean {
-  return SECRET_KEY_SET.has(key);
+  return !PUBLIC_KEY_SET.has(key);
 }
 
 /** True when `value` carries no information beyond "this field is hidden". */
@@ -56,27 +67,36 @@ export function maskCredentials(credentials: Record<string, any>): Record<string
 }
 
 /**
- * Drops incoming credential entries that are empty or nothing but mask glyphs.
+ * Drops incoming credential entries that carry no secret: nulls, mask glyphs,
+ * and blank secret fields.
  *
- * `masked` lists the secret keys that were dropped because the client echoed the
- * mask back: on an update those must fall through to the stored value, and on a
- * create there is nothing to fall back to, so the caller should reject instead.
+ * A blank secret means "leave the stored one alone" — the forms send an empty
+ * input for a secret the user did not retype — so writing it through would
+ * clear a live credential. It is dropped here rather than trusted to the client.
+ *
+ * `placeholders` lists the secret keys dropped that way. On an update they fall
+ * through to the stored value; on a create there is nothing to fall back to, so
+ * the caller should reject instead of persisting an empty secret.
  */
 export function stripMaskedCredentials(credentials: Record<string, any> | undefined | null): {
   credentials: Record<string, any>;
-  masked: string[];
+  placeholders: string[];
 } {
   const sanitized: Record<string, any> = {};
-  const masked: string[] = [];
+  const placeholders: string[] = [];
 
   for (const [key, value] of Object.entries(credentials ?? {})) {
     if (value === undefined || value === null) continue;
     if (isMaskedValue(value)) {
-      masked.push(key);
+      placeholders.push(key);
+      continue;
+    }
+    if (isSecretCredentialKey(key) && typeof value === 'string' && value.trim() === '') {
+      placeholders.push(key);
       continue;
     }
     sanitized[key] = value;
   }
 
-  return { credentials: sanitized, masked };
+  return { credentials: sanitized, placeholders };
 }

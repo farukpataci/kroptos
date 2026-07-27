@@ -10,24 +10,34 @@
 
 export const CREDENTIAL_MASK = '••••••••••••';
 
-/** Form fields that hold secrets; empty means "keep the stored value". */
-export const SECRET_CREDENTIAL_KEYS = [
-  'password',
-  'apiSecret',
-  'awsSecretKey',
-  'token',
-  'apiKey',
-  'awsAccessKey',
-  'refreshToken',
-  'accessToken',
+/**
+ * Credential fields that carry no secret: connection targets and account
+ * identifiers. Mirrors PUBLIC_CREDENTIAL_KEYS in the backend's
+ * credential-mask.util.ts, which is the authority — this copy only decides what
+ * to send, never what to expose.
+ *
+ * Allowlist by design: every field outside this set is treated as a secret, so
+ * a new connector's unfamiliar key is left alone when blank instead of being
+ * shipped as an empty string that clears the stored value.
+ */
+export const PUBLIC_CREDENTIAL_KEYS = [
+  'apiUrl',
+  'firmNo',
+  'merchantId',
+  'periodNo',
+  'sellerId',
+  'shopDomain',
+  'username',
+  'warehouseNo',
 ] as const;
 
-const SECRET_KEY_SET: ReadonlySet<string> = new Set(SECRET_CREDENTIAL_KEYS);
+const PUBLIC_KEY_SET: ReadonlySet<string> = new Set(PUBLIC_CREDENTIAL_KEYS);
 
 const MASK_ONLY_PATTERN = /^[•‣∙·●○⚫*✱▪\s]+$/;
 
+/** Anything not explicitly public is treated as a secret. */
 export function isSecretCredentialKey(key: string): boolean {
-  return SECRET_KEY_SET.has(key);
+  return !PUBLIC_KEY_SET.has(key);
 }
 
 /** True when the value is only masking glyphs, i.e. carries no real secret. */
