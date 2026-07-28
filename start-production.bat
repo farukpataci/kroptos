@@ -1,5 +1,6 @@
 @echo off
-cd /d "c:\Users\Administrator\Desktop\kroptos"
+REM %~dp0 is this script's own directory, so the repo can live anywhere.
+cd /d "%~dp0"
 echo ===================================================
 echo   KroptOS Production Sunucularini Baslatma Araci
 echo ===================================================

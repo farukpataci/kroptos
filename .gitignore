@@ -48,3 +48,7 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+
+# Caddy binary: platform specific, install it per machine (see docs/PORTING.md)
+caddy.exe
+caddy
