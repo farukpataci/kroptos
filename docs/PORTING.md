@@ -97,7 +97,15 @@ Bunlar bilerek yapılmadı, çünkü nereye taşınacağına bağlılar:
   Konteynere geçilecekse bunların hepsi düzeltilmeli.
 - **Linux'a gidilecekse** `.bat` dosyaları ölü ağırlık; yerine `deploy.sh` ve
   systemd (ya da pm2) kurulumu gerekir.
-- **`eticaret-system/`** — 132 takipli dosyalık, içinde ikinci bir Turborepo
-  iskeleti (`eticaret-system/eticaret-system/`) barındıran terk edilmiş paralel
-  proje. Ana uygulamayla bağı yok. Taşımadan önce silinmesi repo'yu belirgin
-  şekilde hafifletir.
+
+## Diskte kalan artıklar
+
+`eticaret-system/` git'ten kaldırıldı, ama iki şey **git'te olmadığı için**
+silinmedi ve bu depoyu daha önce çalıştırmış makinelerde duruyor olabilir:
+
+- `eticaret-system/node_modules/`
+- `eticaret-system/.env` — canlı `eticaret` veritabanını gösteriyordu
+
+İkisini de elle silin. `.env` özellikle önemli: yanında artık şema ve script
+kalmadığı için tek başına zararsız, ama canlı veritabanının bağlantı dizesini
+taşıyor.
