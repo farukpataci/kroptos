@@ -3,7 +3,7 @@ import { AuditLogService } from './audit.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 
-@Controller('audit-logs')
+@Controller('/api/audit-logs')
 @UseGuards(AuthGuard('jwt'))
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}

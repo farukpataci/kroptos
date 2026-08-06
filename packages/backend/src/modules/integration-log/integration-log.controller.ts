@@ -3,7 +3,7 @@ import { IntegrationLogService } from './integration-log.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 
-@Controller('integration-logs')
+@Controller('/api/integration-logs')
 @UseGuards(AuthGuard('jwt'))
 export class IntegrationLogController {
   constructor(private readonly integrationLogService: IntegrationLogService) {}
