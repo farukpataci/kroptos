@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { apiFetch } from '@/lib/api';
 import { useTranslations } from 'next-intl';
@@ -48,7 +48,7 @@ function TenantSwitcher({ label, value, icon: Icon, options, onChange, disabled 
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const selectedOption = options.find((opt) => opt.id === value);
+  const selectedOption = options.find((opt: any) => opt.id === value || opt.storeId === value);
 
   return (
     <div ref={dropdownRef} className="relative">
@@ -92,77 +92,65 @@ function TenantSwitcher({ label, value, icon: Icon, options, onChange, disabled 
 
 /* ---- Main Header ---- */
 export default function Header({ onOpenMobileSidebar }: HeaderProps) {
-  const { user, logout, tenantContext, switchTenant } = useAuth();
+  const { user, logout, tenantContext, switchTenant, accessibleTenants } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
+  const params = useParams();
   const t = useTranslations('navigation');
   const th = useTranslations('header');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
-  // Live options loaded from API
-  const [agencies, setAgencies] = useState<{ id: string; name: string }[]>([]);
-  const [clients, setClients] = useState<{ id: string; name: string }[]>([]);
-  const [stores, setStores] = useState<{ id: string; name: string }[]>([]);
+  // Derived options from accessibleTenants context
+  const agencies = accessibleTenants.filter((t: any) => t.type === 'agency' || !t.type);
+  const rawStores = accessibleTenants.filter((t: any) => t.type === 'brand');
 
-  // 1. Fetch available agencies, clients, stores
-  useEffect(() => {
-    const fetchSwitchersData = async () => {
-      try {
-        const agencyList = await apiFetch<{ id: string; name: string }[]>('/agencies');
-        setAgencies(agencyList || []);
-      } catch (err: any) {
-        console.error('Failed to load agencies context switcher list:', err.message);
-      }
+  const currentAgency = agencies.find((a: any) => a.id === tenantContext.agencyId);
+  const agencyPublicId = currentAgency?.publicId || (tenantContext.agencyId ? `tn_${tenantContext.agencyId}` : '');
 
-      try {
-        const clientList = await apiFetch<{ id: string; name: string }[]>('/clients');
-        setClients(clientList || []);
-      } catch (err: any) {
-        console.error('Failed to load clients context switcher list:', err.message);
-      }
+  // Available stores for current agency context
+  const availableStores = tenantContext.agencyId
+    ? rawStores.filter((t: any) => t.agencyId === tenantContext.agencyId)
+    : rawStores;
 
-      try {
-        const storeList = await apiFetch<{ id: string; name: string }[]>('/stores');
-        setStores(storeList || []);
-      } catch (err: any) {
-        console.error('Failed to load stores context switcher list:', err.message);
-      }
-    };
-
-    if (user) {
-      fetchSwitchersData();
-    }
-  }, [user, tenantContext.agencyId, tenantContext.clientId, tenantContext.storeId, pathname]);
-
-
-
-  // Filters option lists based on parent relationships if possible
-  const filteredClients = clients; // Backend list handles user permissions; we show all authorized.
-  const filteredStores = tenantContext.clientId
-    ? stores.filter((s: any) => s.clientId === tenantContext.clientId)
-    : stores;
-
-
+  // Add "Tüm Markalar (Havuz)" option at top
+  const stores = [
+    { id: 'all', name: 'Tüm Markalar (Havuz)', publicId: agencyPublicId },
+    ...availableStores,
+  ];
 
   const handleAgencyChange = async (agencyId: string) => {
-    // Reset child context when parent changes to avoid invalid settings
+    const agency = agencies.find((a: any) => a.id === agencyId);
     await switchTenant(agencyId, null, null);
-    router.refresh();
-  };
-
-  const handleClientChange = async (clientId: string) => {
-    // Attempt to auto-select first store belonging to client
-    const matchingStore = stores.find((s: any) => s.clientId === clientId);
-    await switchTenant(tenantContext.agencyId!, clientId, matchingStore?.id || null);
-    router.refresh();
+    if (agency?.publicId) {
+      router.push(`/t/${agency.publicId}/dashboard`);
+    } else {
+      router.refresh();
+    }
   };
 
   const handleStoreChange = async (storeId: string) => {
-    const store = stores.find((s) => s.id === storeId) as any;
-    await switchTenant(tenantContext.agencyId!, store?.clientId || null, storeId);
-    router.refresh();
+    if (storeId === 'all') {
+      await switchTenant(tenantContext.agencyId!, null, null);
+      const isTenantRoute = pathname.startsWith('/t/');
+      const subPath = isTenantRoute ? pathname.replace(/^\/t\/[^\/]+/, '') : '/dashboard';
+      const targetPath = `/t/${agencyPublicId}${subPath || '/dashboard'}`;
+      router.push(targetPath);
+      return;
+    }
+
+    const store = availableStores.find((s: any) => s.id === storeId || s.storeId === storeId);
+    if (!store) return;
+
+    const targetPublicId = store.publicId || `tn_${store.id}`;
+    await switchTenant(store.agencyId || tenantContext.agencyId!, store.clientId || null, store.id || store.storeId);
+
+    // Keep current subpath (e.g. /products, /orders) when switching brand inside /t/[tenantPublicId] routes
+    const isTenantRoute = pathname.startsWith('/t/');
+    const subPath = isTenantRoute ? pathname.replace(/^\/t\/[^\/]+/, '') : '/dashboard';
+    const targetPath = `/t/${targetPublicId}${subPath || '/dashboard'}`;
+    router.push(targetPath);
   };
 
   useEffect(() => {
@@ -192,10 +180,10 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
           <Bars3Icon className="h-5 w-5" />
         </button>
 
-        {/* Tenant Context Switchers (Only when authenticated) */}
+        {/* Tenant Context Switchers (2-level hierarchy: Dağıtıcı Firma & Marka) */}
         {user && (
           <div className="hidden items-center gap-2.5 sm:flex">
-            {/* Agency Switcher */}
+            {/* 1. Dağıtıcı Firma Switcher */}
             <TenantSwitcher
               label={th('agency')}
               value={tenantContext.agencyId || ''}
@@ -204,24 +192,14 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
               onChange={handleAgencyChange}
             />
 
-            {/* Client Switcher */}
+            {/* 2. Marka Switcher */}
             <TenantSwitcher
               label={th('client')}
-              value={tenantContext.clientId || ''}
-              icon={UserGroupIcon}
-              options={filteredClients}
-              onChange={handleClientChange}
-              disabled={!tenantContext.agencyId}
-            />
-
-            {/* Store Switcher */}
-            <TenantSwitcher
-              label={th('marketplace')}
-              value={tenantContext.storeId || ''}
+              value={tenantContext.storeId || 'all'}
               icon={BuildingStorefrontIcon}
-              options={filteredStores}
+              options={stores}
               onChange={handleStoreChange}
-              disabled={!tenantContext.clientId}
+              disabled={!tenantContext.agencyId}
             />
           </div>
         )}
@@ -250,7 +228,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
         {/* Notifications */}
         <button className="relative rounded-kp-sm p-2 text-kp-text-tertiary transition-colors hover:bg-kp-bg-tertiary hover:text-kp-text-primary">
           <BellIcon className="h-5 w-5" />
-          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-kp-danger text-[9px] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-kp-danger text-[0.5625rem] font-bold text-white">
             3
           </span>
         </button>
@@ -270,25 +248,27 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
           {isUserMenuOpen && (
             <div className="absolute right-0 top-full z-50 mt-1.5 w-56 animate-scale-in rounded-kp-md border border-kp-border bg-kp-bg-secondary shadow-kp-dropdown">
               <div className="border-b border-kp-border p-3">
-                <p className="text-[13px] font-medium text-kp-text-primary">
+                <p className="text-[0.8125rem] font-medium text-kp-text-primary">
                   {user?.firstName} {user?.lastName}
                 </p>
-                <p className="text-[11px] text-kp-text-tertiary">{user?.email}</p>
+                <p className="text-[0.6875rem] text-kp-text-tertiary">{user?.email}</p>
               </div>
               <div className="p-1.5">
                 <button
                   onClick={() => {
-                    router.push('/admin/profile');
+                    const currentPublicId = (params?.tenantPublicId as string) || agencyPublicId || (tenantContext.storeId ? `tn_${tenantContext.storeId}` : '');
+                    const targetPath = currentPublicId ? `/t/${currentPublicId}/admin/profile` : '/select-tenant';
+                    router.push(targetPath);
                     setIsUserMenuOpen(false);
                   }}
-                  className="flex w-full items-center gap-2.5 rounded-kp-sm px-2.5 py-2 text-[13px] text-kp-text-secondary hover:bg-kp-bg-hover hover:text-kp-text-primary transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-kp-sm px-2.5 py-2 text-[0.8125rem] text-kp-text-secondary hover:bg-kp-bg-hover hover:text-kp-text-primary transition-colors"
                 >
                   <UserCircleIcon className="h-4 w-4" />
                   {t('profile')}
                 </button>
                 <button
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2.5 rounded-kp-sm px-2.5 py-2 text-[13px] text-kp-text-secondary hover:bg-kp-danger-muted hover:text-kp-danger transition-colors"
+                  className="flex w-full items-center gap-2.5 rounded-kp-sm px-2.5 py-2 text-[0.8125rem] text-kp-text-secondary hover:bg-kp-danger-muted hover:text-kp-danger transition-colors"
                 >
                   <ArrowRightOnRectangleIcon className="h-4 w-4" />
                   {t('logout')}

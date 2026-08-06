@@ -193,6 +193,14 @@ export class OrderService {
     return this.prisma.$transaction(async (tx) => {
       const orderNumber = this.generateOrderNumber();
 
+      const targetStore = await tx.store.findUnique({
+        where: { id: storeId },
+        select: { orderProcessingMode: true },
+      });
+      const processingMode = targetStore?.orderProcessingMode || 'LOGO_SYNC';
+      const isPool = processingMode === 'POOL_ONLY' || processingMode === 'MANUAL_APPROVAL';
+      const initialLogoSyncStatus = processingMode === 'POOL_ONLY' ? 'BYPASSED_POOL' : 'PENDING';
+
       const order = await tx.order.create({
         data: {
           agencyId,
@@ -209,6 +217,8 @@ export class OrderService {
           paymentStatus: 'pending',
           fulfillmentStatus: 'unfulfilled',
           source: dto.source || 'manual',
+          isPoolOrder: isPool,
+          logoSyncStatus: initialLogoSyncStatus,
           totalAmount: calculatedTotal,
           currency: dto.currency || 'USD',
           idempotencyKey: idempotencyKey || null,

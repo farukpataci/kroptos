@@ -6,6 +6,8 @@ import { encrypt, decrypt } from '../../common/utils/encryption.util';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
+import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 
 describe('IntegrationService', () => {
   let service: IntegrationService;
@@ -52,6 +54,17 @@ describe('IntegrationService', () => {
     addSyncJob: jest.fn().mockResolvedValue({ id: 'job-123' }),
   };
 
+  const mockErpConnectorFactory: any = {
+    create: jest.fn(),
+  };
+
+  const mockSettingsService: any = {
+    ensureForIntegration: jest.fn(),
+    softDeleteForIntegration: jest.fn(),
+    assertConfigured: jest.fn(),
+    resolveForRuntime: jest.fn().mockResolvedValue({}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,7 +72,9 @@ describe('IntegrationService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MarketplaceCredentialService, useValue: mockCredentialService },
         { provide: MarketplaceConnectorFactory, useValue: mockConnectorFactory },
+        { provide: ErpConnectorFactory, useValue: mockErpConnectorFactory },
         { provide: IntegrationQueueService, useValue: mockIntegrationQueueService },
+        { provide: IntegrationSettingsService, useValue: mockSettingsService },
       ],
     }).compile();
 
@@ -97,6 +112,11 @@ describe('IntegrationService', () => {
           ],
         },
         orderBy: { createdAt: 'desc' },
+        include: {
+          setting: {
+            select: { isConfigured: true, completedSteps: true, deletedAt: true },
+          },
+        },
       });
     });
   });
@@ -276,6 +296,52 @@ describe('IntegrationService', () => {
         where: { id: 'int-123' },
         data: { status: 'error' },
       });
+    });
+  });
+
+  describe('triggerSync', () => {
+    const marketplaceIntegration = {
+      id: 'int-123',
+      agencyId: 'agency-1',
+      clientId: 'client-1',
+      storeId: 'store-1',
+      name: 'Trendyol',
+      provider: 'trendyol',
+      providerType: 'marketplace',
+      status: 'active',
+      credentialsEncrypted: encrypt(JSON.stringify({ apiKey: 'key' })),
+    };
+
+    it('should refuse to queue jobs while the integration is not configured', async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue(marketplaceIntegration);
+      mockSettingsService.assertConfigured.mockRejectedValueOnce(
+        new BadRequestException('integration.settings.notConfigured'),
+      );
+
+      await expect(
+        service.triggerSync('int-123', 'agency-1', 'client-1', 'store-1'),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockIntegrationQueueService.addSyncJob).not.toHaveBeenCalled();
+    });
+
+    it('should queue product and order jobs once configured', async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue(marketplaceIntegration);
+      mockSettingsService.assertConfigured.mockResolvedValueOnce(undefined);
+
+      const result = await service.triggerSync('int-123', 'agency-1', 'client-1', 'store-1');
+
+      expect(result.success).toBe(true);
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledWith(
+        'int-123',
+        'sync_products',
+        {},
+      );
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledWith(
+        'int-123',
+        'sync_orders',
+        {},
+      );
     });
   });
 });

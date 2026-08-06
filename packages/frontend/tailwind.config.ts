@@ -39,6 +39,7 @@ const config: Config = {
         'kp-info-muted': 'var(--info-muted)',
       },
       fontFamily: {
+        sans: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
         outfit: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
         mono: ['var(--font-jetbrains)', 'JetBrains Mono', 'monospace'],
       },

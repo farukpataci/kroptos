@@ -66,7 +66,7 @@ export class AgencyService {
   }
 
   async get(id: string, userId: string, isSuperAdmin: boolean) {
-    const agency = await this.prisma.agency.findFirst({
+    let agency = await this.prisma.agency.findFirst({
       where: {
         OR: [
           { id },
@@ -77,7 +77,23 @@ export class AgencyService {
     });
 
     if (!agency) {
-      throw new NotFoundException('Agency not found or soft-deleted');
+      const store = await this.prisma.store.findFirst({
+        where: {
+          OR: [
+            { id },
+            { publicId: id },
+          ],
+          deletedAt: null,
+        },
+        include: { agency: true },
+      });
+      if (store && store.agency) {
+        agency = store.agency;
+      }
+    }
+
+    if (!agency) {
+      throw new NotFoundException(`Agency context '${id}' not found or soft-deleted`);
     }
 
     // Verify access

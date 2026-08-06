@@ -110,19 +110,19 @@ function FashionVariantMatrix() {
         <h4 className="text-xs font-bold text-kp-text-primary">
           {t('title')}
         </h4>
-        <span className="font-mono text-[10px] text-kp-text-tertiary">
+        <span className="font-mono text-[0.625rem] text-kp-text-tertiary">
           Parent SKU: TSHIRT-BASIC-001
         </span>
       </div>
 
-      <div className="font-mono text-[11px]">
+      <div className="font-mono text-[0.6875rem]">
         {/* Size header row */}
         <div className="grid grid-cols-5 gap-1.5 mb-1.5">
-          <span className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider self-end pb-1">
+          <span className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider self-end pb-1">
             {t('color')}
           </span>
           {VARIANT_SIZES.map((size) => (
-            <span key={size} className="text-center text-[10px] font-bold text-kp-text-tertiary pb-1">
+            <span key={size} className="text-center text-[0.625rem] font-bold text-kp-text-tertiary pb-1">
               {size}
             </span>
           ))}
@@ -150,7 +150,7 @@ function FashionVariantMatrix() {
       </div>
 
       {/* Legend + rollup */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-kp-border-subtle font-mono text-[10px]">
+      <div className="flex flex-wrap items-center justify-between gap-3 mt-4 pt-3 border-t border-kp-border-subtle font-mono text-[0.625rem]">
         <div className="flex flex-wrap items-center gap-3">
           <span className="flex items-center gap-1.5 text-kp-text-tertiary">
             <span className="w-1.5 h-1.5 rounded-full bg-kp-warning" />
@@ -190,12 +190,12 @@ function FashionWarehouseSplit() {
         <h4 className="text-xs font-bold text-kp-text-primary">
           {t('title')}
         </h4>
-        <span className="font-mono text-[10px] text-kp-text-tertiary">
+        <span className="font-mono text-[0.625rem] text-kp-text-tertiary">
           {t('zonesActive')}
         </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 font-mono text-[11px]">
+      <div className="grid grid-cols-2 gap-3 font-mono text-[0.6875rem]">
         {/* Hanging zone */}
         <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 space-y-2">
           <div className="flex items-center gap-1.5 pb-2 border-b border-kp-border-subtle">
@@ -233,7 +233,7 @@ function FashionWarehouseSplit() {
         </div>
       </div>
 
-      <div className="mt-3 bg-kp-accent-muted border border-kp-accent/20 rounded p-2.5 flex items-center justify-between font-mono text-[10px]">
+      <div className="mt-3 bg-kp-accent-muted border border-kp-accent/20 rounded p-2.5 flex items-center justify-between font-mono text-[0.625rem]">
         <span className="font-bold text-kp-accent">
           {t('optimizedRoute')}
         </span>
@@ -261,13 +261,13 @@ function FashionReturnFunnel() {
         <h4 className="text-xs font-bold text-kp-text-primary">
           {t('title')}
         </h4>
-        <span className="font-mono text-[10px] text-kp-text-tertiary">
+        <span className="font-mono text-[0.625rem] text-kp-text-tertiary">
           {t('processedToday')}{' '}
           <span className="font-bold text-kp-text-primary">312</span>
         </span>
       </div>
 
-      <div className="font-mono text-[11px] space-y-2">
+      <div className="font-mono text-[0.6875rem] space-y-2">
         {steps.map((step, i) => (
           <div key={step.label}>
             <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 flex items-center justify-between">
@@ -323,10 +323,10 @@ function FashionSeasonStrip() {
         <h4 className="text-xs font-bold text-kp-text-primary">
           {t('title')}
         </h4>
-        <span className="font-mono text-[10px] text-kp-text-tertiary">SS26</span>
+        <span className="font-mono text-[0.625rem] text-kp-text-tertiary">SS26</span>
       </div>
 
-      <div className="flex items-stretch gap-1.5 font-mono text-[10px]">
+      <div className="flex items-stretch gap-1.5 font-mono text-[0.625rem]">
         {phases.map((phase) => (
           <div key={phase.label} className="flex-1 space-y-1.5">
             <div
@@ -346,7 +346,7 @@ function FashionSeasonStrip() {
         ))}
       </div>
 
-      <div className="mt-4 pt-3 border-t border-kp-border-subtle grid grid-cols-2 gap-3 font-mono text-[10px]">
+      <div className="mt-4 pt-3 border-t border-kp-border-subtle grid grid-cols-2 gap-3 font-mono text-[0.625rem]">
         <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-2.5">
           <span className="block text-kp-text-tertiary">
             {t('preOrderAllocation')}
@@ -384,12 +384,12 @@ function FashionSizeMapping() {
         <h4 className="text-xs font-bold text-kp-text-primary">
           {t('title')}
         </h4>
-        <span className="font-mono text-[10px] text-kp-text-tertiary">
+        <span className="font-mono text-[0.625rem] text-kp-text-tertiary">
           {t('channels')}
         </span>
       </div>
 
-      <div className="font-mono text-[11px]">
+      <div className="font-mono text-[0.6875rem]">
         <div className="grid grid-cols-4 gap-2 border-b border-kp-border font-bold text-kp-text-primary pb-1.5 mb-1.5">
           <span>Alqora</span>
           <span>Trendyol</span>
@@ -410,7 +410,7 @@ function FashionSizeMapping() {
         </div>
       </div>
 
-      <div className="mt-4 pt-3 border-t border-kp-border-subtle font-mono text-[10px] flex items-center gap-1.5 text-kp-warning">
+      <div className="mt-4 pt-3 border-t border-kp-border-subtle font-mono text-[0.625rem] flex items-center gap-1.5 text-kp-warning">
         <span className="w-1.5 h-1.5 rounded-full bg-kp-warning flex-shrink-0" />
         <span>
           {t('unmappedWarning', { count: unmapped })}
@@ -648,17 +648,17 @@ export default function SolutionDetail() {
                 <span className="w-3 h-3 rounded-full bg-green-500/80" />
                 <span className="text-xs text-kp-text-tertiary ml-2 font-mono font-medium">alqora-dashboard.wms</span>
               </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">LIVE</span>
+              <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-green-500/10 text-green-500 border border-green-500/20">LIVE</span>
             </div>
 
             {/* Metrics cards grid driven by sector data */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               {activeMetrics.map((m, idx) => (
                 <div key={idx} className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 space-y-1">
-                  <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{m.label}</p>
+                  <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{m.label}</p>
                   <div className="flex items-baseline gap-1.5">
                     <p className="text-base sm:text-lg font-bold text-kp-text-primary">{m.val}</p>
-                    <span className={`text-[10px] font-bold ${
+                    <span className={`text-[0.625rem] font-bold ${
                       m.trend.startsWith('+') ? 'text-green-500' : 'text-kp-accent'
                     }`}>{m.trend}</span>
                   </div>
@@ -674,7 +674,7 @@ export default function SolutionDetail() {
                   <span>{ti('common.heroMock.variant.c2')}</span>
                   <span>{ti('common.heroMock.variant.c3')}</span>
                 </div>
-                <div className="space-y-1 text-[11px] text-kp-text-secondary">
+                <div className="space-y-1 text-[0.6875rem] text-kp-text-secondary">
                   <div className="flex justify-between">
                     <span>🔴 RED / M (T-shirt)</span>
                     <span>Zone A-42-H</span>
@@ -699,7 +699,7 @@ export default function SolutionDetail() {
                   <span>{ti('common.heroMock.lot.c2')}</span>
                   <span>{ti('common.heroMock.lot.c3')}</span>
                 </div>
-                <div className="space-y-1 text-[11px] text-kp-text-secondary">
+                <div className="space-y-1 text-[0.6875rem] text-kp-text-secondary">
                   <div className="flex justify-between">
                     <span>LOT-2026-X9</span>
                     <span>12/2028</span>
@@ -724,7 +724,7 @@ export default function SolutionDetail() {
                   <span>{ti('common.heroMock.imei.c2')}</span>
                   <span>{ti('common.heroMock.imei.c3')}</span>
                 </div>
-                <div className="space-y-1 text-[11px] text-kp-text-secondary">
+                <div className="space-y-1 text-[0.6875rem] text-kp-text-secondary">
                   <div className="flex justify-between">
                     <span>SN-98402940294</span>
                     <span>INV-2026-902</span>
@@ -746,7 +746,7 @@ export default function SolutionDetail() {
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-4 mb-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-xs font-bold text-kp-text-primary">{ti('common.weeklyTrends')}</h4>
-                  <span className="text-[10px] font-semibold text-kp-text-tertiary">10-17 July</span>
+                  <span className="text-[0.625rem] font-semibold text-kp-text-tertiary">10-17 July</span>
                 </div>
                 <svg className="w-full h-32 text-kp-accent" viewBox="0 0 300 100" fill="none">
                   <defs>
@@ -769,7 +769,7 @@ export default function SolutionDetail() {
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 {['Trendyol', 'Hepsiburada', 'Amazon', 'N11', 'ÇiçekSepeti'].map((channel) => (
-                  <span key={channel} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border-subtle text-[10px] font-bold text-kp-text-secondary">
+                  <span key={channel} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border-subtle text-[0.625rem] font-bold text-kp-text-secondary">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     {channel}
                   </span>
@@ -859,7 +859,7 @@ export default function SolutionDetail() {
                 ) : (
                   <>
                     <h4 className="text-xs font-bold text-kp-text-primary mb-3">{ti('common.validationConsole')}</h4>
-                    <div className="space-y-3 font-mono text-[10px] text-kp-text-secondary">
+                    <div className="space-y-3 font-mono text-[0.625rem] text-kp-text-secondary">
                       <div className="bg-kp-bg-primary border border-kp-border-subtle p-3 rounded space-y-1">
                         <span className="text-kp-accent font-bold">IF:</span>
                         <p>Trigger Category Match = "{slug === 'fashion-and-apparel' ? 'Apparel' : slug === 'electronics' ? 'Electronics' : 'FMCG'}"</p>
@@ -905,7 +905,7 @@ export default function SolutionDetail() {
               <div key={idx} className="bg-kp-bg-primary border border-kp-border rounded-kp-lg p-6 text-left space-y-4 shadow-kp-card hover:border-kp-accent/40 transition-colors">
                 <div className="flex items-center justify-between border-b border-kp-border-subtle pb-3">
                   <h4 className="text-sm font-bold text-kp-text-primary">{p.name}</h4>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  <span className={`px-2 py-0.5 rounded text-[0.625rem] font-bold ${
                     p.active
                       ? 'bg-green-500/10 text-green-500 border border-green-500/20'
                       : 'bg-kp-text-tertiary/10 text-kp-text-tertiary border border-kp-text-tertiary/20'
@@ -966,7 +966,7 @@ export default function SolutionDetail() {
             <p className="text-sm text-kp-text-secondary leading-relaxed">
               {tl('capabilities.workflow.desc')}
             </p>
-            <div className="space-y-1.5 font-mono text-[10px] text-kp-text-tertiary">
+            <div className="space-y-1.5 font-mono text-[0.625rem] text-kp-text-tertiary">
               <p>✔ {tl('capabilities.workflow.rule1')}</p>
               <p>✔ {ti('common.workflowRule2')}</p>
               <p>✔ {tl('capabilities.workflow.rule3')}</p>
@@ -1021,24 +1021,24 @@ export default function SolutionDetail() {
           <div className="bg-slate-900 border border-white/10 rounded-kp-lg p-6 max-w-4xl mx-auto shadow-2xl text-left space-y-6">
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">ALQORA WMS // LIVE STATISTICS</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">SYSTEM HEALTHY</span>
+              <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-green-500/10 text-green-500 border border-green-500/20">SYSTEM HEALTHY</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{tl('mockup.todaysOrders')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{tl('mockup.todaysOrders')}</p>
                 <p className="text-xl font-bold text-white mt-1">2,840</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{tl('stats.pendingPicking')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{tl('stats.pendingPicking')}</p>
                 <p className="text-xl font-bold text-yellow-500 mt-1">114</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{tl('stats.criticalSku')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{tl('stats.criticalSku')}</p>
                 <p className="text-xl font-bold text-red-500 mt-1">12</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{tl('stats.delayedShipments')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{tl('stats.delayedShipments')}</p>
                 <p className="text-xl font-bold text-white mt-1">0</p>
               </div>
             </div>
@@ -1049,7 +1049,7 @@ export default function SolutionDetail() {
                   <span className="font-bold">{tl('stats.depotEfficiency')}</span>
                   <span>July 2026</span>
                 </div>
-                <div className="space-y-3 pt-1 text-[11px]">
+                <div className="space-y-3 pt-1 text-[0.6875rem]">
                   <div>
                     <div className="flex justify-between mb-1">
                       <span>{tl('stats.pickingAccuracy')}</span>

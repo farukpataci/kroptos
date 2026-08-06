@@ -284,7 +284,7 @@ export function WarehousesTable() {
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
           <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
-          <p className="text-[11px] text-kp-text-tertiary">{t('subtitle')}</p>
+          <p className="text-[0.6875rem] text-kp-text-tertiary">{t('subtitle')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}
@@ -309,7 +309,7 @@ export function WarehousesTable() {
         </div>
         
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <span className="text-[11px] text-kp-text-tertiary">{t('typeFilter')}</span>
+          <span className="text-[0.6875rem] text-kp-text-tertiary">{t('typeFilter')}</span>
           <select
             value={selectedTypeFilter}
             onChange={(e) => setSelectedTypeFilter(e.target.value)}
@@ -327,9 +327,9 @@ export function WarehousesTable() {
 
       {/* Warehouses Table Grid */}
       <div className="border border-kp-border rounded-kp-md overflow-hidden bg-kp-bg-primary/10">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="kp-table w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
+            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase text-kp-text-tertiary">
               <th className="py-3 px-4">{t('colInfo')}</th>
               <th className="py-3 px-4">{t('colType')}</th>
               <th className="py-3 px-4">{t('colFill')}</th>
@@ -378,14 +378,14 @@ export function WarehousesTable() {
                         </div>
                         <div>
                           <div className="font-semibold text-kp-text-primary">{wh.name}</div>
-                          <div className="text-[10px] text-kp-text-tertiary font-mono">{wh.code}</div>
+                          <div className="text-[0.625rem] text-kp-text-tertiary font-mono">{wh.code}</div>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-4 font-medium text-kp-text-secondary">{wh.type}</td>
                     <td className="py-3 px-4 w-52">
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[10px]">
+                        <div className="flex items-center justify-between text-[0.625rem]">
                           <span className="font-medium text-kp-text-secondary">{t('fillPercent', { percent: fillPercent })}</span>
                           <span className="text-kp-text-tertiary">
                             {wh.usedCapacity.toLocaleString()} / {wh.capacity.toLocaleString()} Desi
@@ -401,7 +401,7 @@ export function WarehousesTable() {
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.625rem] font-bold ${
                           wh.status === 'active'
                             ? 'bg-emerald-500/10 text-emerald-400'
                             : 'bg-kp-text-tertiary/10 text-kp-text-tertiary'
@@ -465,7 +465,7 @@ export function WarehousesTable() {
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.nameLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.nameLabel')}</label>
                   <input
                     type="text"
                     required
@@ -478,7 +478,7 @@ export function WarehousesTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
                     <input
                       type="text"
                       required
@@ -490,7 +490,7 @@ export function WarehousesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.typeLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.typeLabel')}</label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
@@ -507,7 +507,7 @@ export function WarehousesTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
                     <input
                       type="number"
                       required
@@ -519,7 +519,7 @@ export function WarehousesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.usedCapacityLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.usedCapacityLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -531,7 +531,7 @@ export function WarehousesTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.addressLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.addressLabel')}</label>
                   <textarea
                     value={formData.address}
                     onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
@@ -541,7 +541,7 @@ export function WarehousesTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}

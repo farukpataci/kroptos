@@ -1,65 +1,151 @@
 'use client';
 
-import { useState } from 'react';
-import { useTranslations } from 'next-intl';
-import {
-  LinkIcon,
-  CpuChipIcon,
-  TruckIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
-import MarketplacePage from './marketplace/page';
-import ErpPage from './erp/page';
-import ShippingPage from '../shipping/page';
-import IntegrationErrorsPage from './errors/page';
+import { useEffect, useState } from 'react';
+import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
+import { PlusIcon } from '@heroicons/react/24/outline';
 import { IntegrationTree } from './components/IntegrationTree';
-
-type IntegrationTab = 'marketplace' | 'erp' | 'shipping' | 'errors';
+import { AddIntegrationModal, CatalogProvider } from './components/AddIntegrationModal';
+import { ActiveIntegrationsTable, ActiveIntegrationItem } from './components/ActiveIntegrationsTable';
+import { IntegrationSettingsDrawer } from './marketplace/components/IntegrationSettingsDrawer';
+import { IntegrationSetupWizard } from './marketplace/components/IntegrationSetupWizard';
 
 export default function IntegrationsParentPage() {
-  const t = useTranslations('integrations');
-  const [activeTab, setActiveTab] = useState<IntegrationTab>('marketplace'); // Default to marketplace
+  const toast = useToast();
+  const [integrations, setIntegrations] = useState<ActiveIntegrationItem[]>([]);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  const TABS = [
-    { id: 'marketplace' as IntegrationTab, label: t('tabMarketplace'), icon: LinkIcon },
-    { id: 'erp' as IntegrationTab, label: t('tabErp'), icon: CpuChipIcon },
-    { id: 'shipping' as IntegrationTab, label: t('tabShipping'), icon: TruckIcon },
-    { id: 'errors' as IntegrationTab, label: t('tabErrors'), icon: ExclamationTriangleIcon },
-  ];
+  // Drawer / Wizard State
+  const [activeDrawerIntegration, setActiveDrawerIntegration] = useState<any>(null);
+  const [wizardProvider, setWizardProvider] = useState<CatalogProvider | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
+
+  const fetchIntegrations = async () => {
+    try {
+      const data = await apiFetch<any[]>('/integrations');
+      setIntegrations(data || []);
+    } catch (err) {
+      console.error('Failed to fetch integrations', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchIntegrations();
+  }, []);
+
+  const handleSelectProvider = (provider: CatalogProvider) => {
+    // Check if an integration for this provider already exists
+    const existing = integrations.find((i) => i.provider.toLowerCase() === provider.id.toLowerCase());
+    if (existing) {
+      setActiveDrawerIntegration(existing);
+    } else {
+      setWizardProvider(provider);
+    }
+  };
+
+  const handleSync = async (id: string) => {
+    setSyncingId(id);
+    try {
+      const res = await apiFetch<any>(`/integrations/${id}/sync`, { method: 'POST' });
+      if (res.success) {
+        toast.success('Senkronizasyon başlatıldı');
+        fetchIntegrations();
+        window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+      } else {
+        toast.error(res.message || 'Senkronizasyon başarısız oldu');
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Senkronizasyon sırasında hata oluştu');
+    } finally {
+      setSyncingId(null);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Bu entegrasyonu kaldırmak istediğinizden emin misiniz?')) return;
+    try {
+      await apiFetch(`/integrations/${id}`, { method: 'DELETE' });
+      toast.success('Entegrasyon silindi');
+      fetchIntegrations();
+      window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+    } catch (err: any) {
+      toast.error(err.message || 'Entegrasyon silinirken hata oluştu');
+    }
+  };
+
+  const connectedProviderIds = integrations.map((i) => i.provider.toLowerCase());
 
   return (
     <div className="flex flex-col h-full animate-fade-in p-6 space-y-6">
-      {/* Integration Schema Map */}
+      {/* Visual Integration Tree Schema Map */}
       <IntegrationTree />
 
-      {/* Top Tab Menu Bar */}
-      <div className="flex border-b border-kp-border px-4 bg-kp-bg-primary/20 flex-shrink-0">
-        {TABS.map(({ id, label, icon: Icon }) => {
-          const isActive = activeTab === id;
-          return (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id)}
-              className={`flex items-center gap-2 px-6 py-4 text-[13px] font-semibold border-b-2 transition-all ${
-                isActive
-                  ? 'border-kp-accent text-kp-accent'
-                  : 'border-transparent text-kp-text-tertiary hover:text-kp-text-secondary'
-              }`}
-            >
-              <Icon className={`h-4 w-4 ${isActive ? 'text-kp-accent' : 'text-kp-text-tertiary'}`} />
-              <span>{label}</span>
-            </button>
-          );
-        })}
+      {/* Action Bar Box */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 to-indigo-950 p-5 rounded-2xl border border-slate-800 text-white shadow-lg">
+        <div className="space-y-1">
+          <h1 className="text-base font-bold">Entegrasyon Merkezi</h1>
+          <p className="text-xs text-slate-400">
+            Sisteme bağlı aktif entegrasyonlarınızı yönetin veya yeni entegrasyon ekleyin.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 whitespace-nowrap"
+        >
+          <PlusIcon className="h-4 w-4 stroke-[3]" />
+          <span>Entegrasyon Ekle</span>
+        </button>
       </div>
 
-      {/* Sub-view Area */}
-      <div className="flex-1 overflow-y-auto">
-        {activeTab === 'marketplace' && <MarketplacePage />}
-        {activeTab === 'erp' && <ErpPage />}
-        {activeTab === 'shipping' && <ShippingPage />}
-        {activeTab === 'errors' && <IntegrationErrorsPage />}
-      </div>
+      {/* Active Integrations Management Table */}
+      <ActiveIntegrationsTable
+        items={integrations}
+        onOpenSettings={(item) => setActiveDrawerIntegration(item)}
+        onSync={handleSync}
+        onDelete={handleDelete}
+        syncingId={syncingId}
+      />
+
+      {/* Add Integration Catalog Search Modal */}
+      <AddIntegrationModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        connectedProviderIds={connectedProviderIds}
+        onSelectProvider={handleSelectProvider}
+      />
+
+      {/* Settings Drawer */}
+      {activeDrawerIntegration && (
+        <IntegrationSettingsDrawer
+          integrationId={activeDrawerIntegration.id}
+          integrationName={activeDrawerIntegration.name}
+          status={activeDrawerIntegration.status}
+          onClose={() => {
+            setActiveDrawerIntegration(null);
+            fetchIntegrations();
+            window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+          }}
+        />
+      )}
+
+      {/* Setup Wizard Modal */}
+      {wizardProvider && (
+        <IntegrationSetupWizard
+          provider={wizardProvider.id}
+          presetName={wizardProvider.name}
+          onClose={() => setWizardProvider(null)}
+          onCreated={() => {
+            fetchIntegrations();
+            window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+          }}
+          onFinished={() => {
+            setWizardProvider(null);
+            fetchIntegrations();
+            window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+          }}
+        />
+      )}
     </div>
   );
 }

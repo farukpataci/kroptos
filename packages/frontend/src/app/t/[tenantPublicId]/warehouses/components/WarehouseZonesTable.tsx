@@ -368,13 +368,13 @@ export function WarehouseZonesTable() {
     const found = ZONE_TYPES.find((zt) => zt.value === typeVal);
     if (!found) {
       return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[0.625rem] font-medium bg-gray-500/10 text-gray-400 border border-gray-500/20">
           {typeVal}
         </span>
       );
     }
     return (
-      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium border ${found.color}`}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[0.625rem] font-medium border ${found.color}`}>
         {t(`types.${found.value}`)}
       </span>
     );
@@ -386,7 +386,7 @@ export function WarehouseZonesTable() {
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
           <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
-          <p className="text-[11px] text-kp-text-tertiary">
+          <p className="text-[0.6875rem] text-kp-text-tertiary">
             {t('subtitle')}
           </p>
         </div>
@@ -416,7 +416,7 @@ export function WarehouseZonesTable() {
         {/* Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">{t('warehouseFilter')}</span>
+            <span className="text-[0.6875rem] text-kp-text-tertiary">{t('warehouseFilter')}</span>
             <select
               value={selectedWarehouseFilter}
               onChange={(e) => setSelectedWarehouseFilter(e.target.value)}
@@ -432,7 +432,7 @@ export function WarehouseZonesTable() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">{t('typeFilter')}</span>
+            <span className="text-[0.6875rem] text-kp-text-tertiary">{t('typeFilter')}</span>
             <select
               value={selectedTypeFilter}
               onChange={(e) => setSelectedTypeFilter(e.target.value)}
@@ -451,9 +451,9 @@ export function WarehouseZonesTable() {
 
       {/* Zones Table Grid */}
       <div className="border border-kp-border rounded-kp-md overflow-hidden bg-kp-bg-primary/10">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="kp-table w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
+            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase text-kp-text-tertiary">
               <th className="py-3 px-4">{t('colNameCode')}</th>
               <th className="py-3 px-4">{t('colWarehouse')}</th>
               <th className="py-3 px-4">{t('colType')}</th>
@@ -495,7 +495,7 @@ export function WarehouseZonesTable() {
                       </div>
                       <div>
                         <div className="font-semibold text-kp-text-primary">{zn.name}</div>
-                        <div className="text-[10px] text-kp-text-tertiary font-mono">{zn.code}</div>
+                        <div className="text-[0.625rem] text-kp-text-tertiary font-mono">{zn.code}</div>
                       </div>
                     </div>
                   </td>
@@ -503,21 +503,21 @@ export function WarehouseZonesTable() {
                     <div className="flex items-center gap-1.5">
                       <BuildingOfficeIcon className="h-3.5 w-3.5 text-kp-text-tertiary" />
                       <div>
-                        <div className="text-kp-text-primary text-[11px] font-medium">{zn.warehouseName}</div>
+                        <div className="text-kp-text-primary text-[0.6875rem] font-medium">{zn.warehouseName}</div>
                         {zn.warehouseCode && (
-                          <div className="text-[9px] text-kp-text-tertiary font-mono">{zn.warehouseCode}</div>
+                          <div className="text-[0.5625rem] text-kp-text-tertiary font-mono">{zn.warehouseCode}</div>
                         )}
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4">{getTypeBadge(zn.type)}</td>
-                  <td className="py-3 px-4 font-mono text-[11px]">{zn.priority}</td>
-                  <td className="py-3 px-4 max-w-xs truncate text-[11px] text-kp-text-tertiary" title={zn.description}>
+                  <td className="py-3 px-4 font-mono text-[0.6875rem]">{zn.priority}</td>
+                  <td className="py-3 px-4 max-w-xs truncate text-[0.6875rem] text-kp-text-tertiary" title={zn.description}>
                     {zn.description || '-'}
                   </td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-medium ${
                         zn.status === 'active'
                           ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                           : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
@@ -580,7 +580,7 @@ export function WarehouseZonesTable() {
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.warehouseLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.warehouseLabel')}</label>
                   <select
                     value={formData.warehouseId}
                     onChange={(e) => setFormData((prev) => ({ ...prev, warehouseId: e.target.value }))}
@@ -597,7 +597,7 @@ export function WarehouseZonesTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.nameLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.nameLabel')}</label>
                     <input
                       type="text"
                       required
@@ -609,7 +609,7 @@ export function WarehouseZonesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
                     <input
                       type="text"
                       required
@@ -623,7 +623,7 @@ export function WarehouseZonesTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.typeLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.typeLabel')}</label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
@@ -638,7 +638,7 @@ export function WarehouseZonesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.priorityLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.priorityLabel')}</label>
                     <input
                       type="number"
                       value={formData.priority}
@@ -649,7 +649,7 @@ export function WarehouseZonesTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.descriptionLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.descriptionLabel')}</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData((prev) => ({ ...prev, description: e.target.value }))}
@@ -659,7 +659,7 @@ export function WarehouseZonesTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}

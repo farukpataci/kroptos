@@ -94,25 +94,25 @@ export function ProfileInfoCard({ profile, onUpdateProfile, onUploadAvatar }: Pr
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-xl border-t border-gray-100 pt-4 text-sm">
             <div>
-              <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+              <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                 First Name
               </span>
               <span className="font-medium text-gray-900">{profile.firstName || '—'}</span>
             </div>
             <div>
-              <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+              <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                 Last Name
               </span>
               <span className="font-medium text-gray-900">{profile.lastName || '—'}</span>
             </div>
             <div>
-              <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+              <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                 Email Address
               </span>
               <span className="font-medium text-gray-900">{profile.email}</span>
             </div>
             <div>
-              <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+              <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
                 Phone Number
               </span>
               <span className="font-medium text-gray-900">{profile.phone || '—'}</span>

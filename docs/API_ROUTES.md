@@ -1,5 +1,14 @@
 # API_ROUTES.md - RESTful Endpoints & OpenAPI Specification
 
+
+> ⚠️ **BU DOSYA GÜNCEL DEĞİL — koddan saptığı doğrulandı (2026-08).**
+> Endpoint yolları, response şekilleri ve auth kalıpları gerçek kodla uyuşmuyor.
+> Tek doğruluk kaynağı: `packages/` altındaki kod.
+> Düzeltme P0 görevinde yapılacak; o zamana kadar bu dosyaya dayanarak kod üretme.
+
+
+
+
 ## API Base URLs
 - **Backend API**: `http://localhost:3001/api` (development)
 - **API Documentation**: `http://localhost:3001/api/docs` (Swagger/OpenAPI)

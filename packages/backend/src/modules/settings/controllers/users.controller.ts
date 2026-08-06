@@ -1,4 +1,4 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import { Controller, Get, Patch, Param, Body, Req, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
@@ -18,5 +18,14 @@ export class UsersController {
   async findAll(@Req() req: Request) {
     const user = req.user as any;
     return this.service.findAll(user.agencyId);
+  }
+
+  @Patch(':id/stores')
+  @RequirePermission('system.settings.write')
+  async updateUserStores(
+    @Param('id') userId: string,
+    @Body('storeIds') storeIds: string[],
+  ) {
+    return this.service.updateUserStores(userId, storeIds || []);
   }
 }

@@ -14,8 +14,6 @@ import {
   AdjustmentsHorizontalIcon,
   InboxArrowDownIcon,
   TagIcon,
-  CpuChipIcon,
-  BellIcon,
   ArrowDownTrayIcon,
   EyeIcon,
   PlusIcon,
@@ -105,7 +103,7 @@ export default function InventoryPage() {
   const tc = useTranslations('common');
   const toast = useToast();
   const { tenantContext } = useAuth();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'map' | 'movements' | 'lowstock' | 'counting' | 'reservations' | 'integrations' | 'ai' | 'alerts'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'map' | 'movements' | 'lowstock' | 'counting' | 'reservations'>('dashboard');
   
   // Real backend search compatibility
   const [dbProducts, setDbProducts] = useState<any[]>([]);
@@ -350,13 +348,6 @@ export default function InventoryPage() {
     { id: 'CNT-903', sku: 'WMS-901-WHT', name: 'Industrial Pallet Wrapper Roll (Film)', systemQty: 850, countedQty: 855, diff: 5, status: 'Pending Approval', date: '2026-07-02' }
   ]);
 
-  // Alert feed
-  const [alerts, setAlerts] = useState([
-    { id: 'ALT-01', severity: 'critical', message: 'Thermal Shipping Label Printer (WMS-402-BLU) stock is critical (12 available, minimum is 20).', date: '2026-07-02 11:15' },
-    { id: 'ALT-02', severity: 'warning', message: 'Inventory mismatch of -2 units detected for SKU WMS-402-BLU during Spot Count.', date: '2026-07-02 10:45' },
-    { id: 'ALT-03', severity: 'info', message: 'Successful stock sync with Logo ERP completed. 15 SKUs updated.', date: '2026-07-02 09:00' }
-  ]);
-
   // Fetch real data on mount to complement mock data
   const fetchInventory = async () => {
     setLoadingDb(true);
@@ -497,11 +488,11 @@ export default function InventoryPage() {
       {/* Module Title / Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-kp-border pb-4">
         <div>
-          <h1 className="text-xl font-semibold text-kp-text-primary flex items-center gap-2.5">
+          <h1 className="page-title flex items-center gap-2.5">
             <CubeIcon className="h-6 w-6 text-kp-accent" />
             {t('title')}
           </h1>
-          <p className="mt-1 text-[13px] text-kp-text-tertiary">
+          <p className="page-subtitle">
             {t('subtitle')}
           </p>
         </div>
@@ -518,10 +509,6 @@ export default function InventoryPage() {
           <button
             onClick={() => {
               setProducts(prev => prev.map(p => p.sku === 'WMS-402-BLU' ? { ...p, available: 120, status: 'Healthy' } : p));
-              setAlerts(prev => [
-                { id: `ALT-${Date.now()}`, severity: 'info', message: 'Manual stock sync triggered. WMS-402-BLU replenished.', date: 'Just now' },
-                ...prev
-              ]);
             }}
             className="flex items-center gap-2 rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-secondary hover:bg-kp-bg-hover px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
           >
@@ -540,10 +527,7 @@ export default function InventoryPage() {
           { id: 'movements', label: t('tabs.movements'), icon: ClockIcon },
           { id: 'lowstock', label: t('tabs.lowstock'), icon: ExclamationTriangleIcon },
           { id: 'counting', label: t('tabs.counting'), icon: AdjustmentsHorizontalIcon },
-          { id: 'reservations', label: t('tabs.reservations'), icon: TagIcon },
-          { id: 'integrations', label: t('tabs.integrations'), icon: InboxArrowDownIcon },
-          { id: 'ai', label: t('tabs.ai'), icon: CpuChipIcon },
-          { id: 'alerts', label: t('tabs.alerts'), icon: BellIcon }
+          { id: 'reservations', label: t('tabs.reservations'), icon: TagIcon }
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -551,7 +535,7 @@ export default function InventoryPage() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 border-b-2 px-5 py-3 text-[11px] font-semibold uppercase tracking-wide whitespace-nowrap transition-all ${
+              className={`flex items-center gap-2 border-b-2 px-5 py-3 text-[0.6875rem] font-semibold uppercase tracking-wide whitespace-nowrap transition-all ${
                 isActive
                   ? 'border-kp-accent text-kp-accent'
                   : 'border-transparent text-kp-text-tertiary hover:text-kp-text-primary'
@@ -560,7 +544,7 @@ export default function InventoryPage() {
               <Icon className="h-4 w-4" />
               {tab.label}
               {tab.id === 'lowstock' && lowStockCount > 0 && (
-                <span className="ml-1 rounded-full bg-kp-warning-muted px-2 py-0.5 text-[9px] font-extrabold text-kp-warning">
+                <span className="ml-1 rounded-full bg-kp-warning-muted px-2 py-0.5 text-[0.5625rem] font-extrabold text-kp-warning">
                   {lowStockCount}
                 </span>
               )}
@@ -590,7 +574,7 @@ export default function InventoryPage() {
             ].map((kpi, idx) => (
               <div key={idx} className="card flex flex-col justify-between">
                 <div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-kp-text-tertiary block mb-1">
+                  <span className="text-[0.625rem] font-bold uppercase tracking-wider text-kp-text-tertiary block mb-1">
                     {kpi.label}
                   </span>
                   <span className="text-lg font-extrabold text-kp-text-primary">
@@ -610,7 +594,7 @@ export default function InventoryPage() {
                   </svg>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] font-bold">
+                <div className="flex items-center justify-between text-[0.625rem] font-bold">
                   <span className={kpi.trend === 'up' ? 'text-kp-success' : 'text-kp-warning'}>
                     {kpi.trend === 'up' ? '▲' : '▼'} {kpi.change}
                   </span>
@@ -629,7 +613,7 @@ export default function InventoryPage() {
                 <span className="text-xs font-semibold text-kp-text-tertiary">Units</span>
               </div>
               <div className="h-60 w-full flex items-end relative pt-4">
-                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 text-[9px] text-kp-text-tertiary pb-6">
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20 text-[0.5625rem] text-kp-text-tertiary pb-6">
                   <div className="border-b border-dashed border-kp-border">1000 u</div>
                   <div className="border-b border-dashed border-kp-border">750 u</div>
                   <div className="border-b border-dashed border-kp-border">500 u</div>
@@ -654,7 +638,7 @@ export default function InventoryPage() {
                   />
                 </svg>
               </div>
-              <div className="flex justify-between text-[10px] font-bold text-kp-text-tertiary mt-2">
+              <div className="flex justify-between text-[0.625rem] font-bold text-kp-text-tertiary mt-2">
                 <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
               </div>
             </div>
@@ -695,7 +679,7 @@ export default function InventoryPage() {
                   <circle cx="18" cy="18" r="15.91" fill="none" stroke="var(--success)" strokeWidth="4.5" strokeDasharray="10 90" strokeDashoffset="-65" />
                 </svg>
               </div>
-              <div className="flex justify-around text-[10px] font-bold text-kp-text-secondary mt-2">
+              <div className="flex justify-around text-[0.625rem] font-bold text-kp-text-secondary mt-2">
                 <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-kp-accent"></span>A (70% Val)</span>
                 <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-kp-warning"></span>B (20% Val)</span>
                 <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-kp-success"></span>C (10% Val)</span>
@@ -787,9 +771,9 @@ export default function InventoryPage() {
 
           {/* Table Container using kroptos design system */}
           <div className="overflow-x-auto rounded-kp-lg border border-kp-border bg-kp-bg-secondary shadow-kp-card">
-            <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
+            <table className="kp-table w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
               <thead>
-                <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30 select-none">
+                <tr className="border-b border-kp-border text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30 select-none">
                   {visibleColumns.name && <th onClick={() => handleSort('name')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colProduct')}</th>}
                   {visibleColumns.sku && <th onClick={() => handleSort('sku')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">SKU</th>}
                   {visibleColumns.warehouse && <th onClick={() => handleSort('warehouse')} className="py-3 px-4 cursor-pointer hover:bg-kp-bg-hover transition-colors">{t('ledger.colLocation')}</th>}
@@ -817,7 +801,7 @@ export default function InventoryPage() {
                            <img src={getProductImage(p.image)} alt={p.name} className="h-8 w-8 rounded-kp-md object-cover border border-kp-border" />
                           <div>
                             <div className="font-semibold text-kp-text-primary">{p.name}</div>
-                            <div className="text-[10px] text-kp-text-tertiary">{p.brand} • {p.category}</div>
+                            <div className="text-[0.625rem] text-kp-text-tertiary">{p.brand} • {p.category}</div>
                           </div>
                         </div>
                       </td>
@@ -826,14 +810,14 @@ export default function InventoryPage() {
                     {visibleColumns.sku && (
                       <td className="py-3.5 px-4">
                         <div className="font-semibold text-kp-text-primary">{p.sku}</div>
-                        <div className="text-[10px] text-kp-text-tertiary">{p.barcode}</div>
+                        <div className="text-[0.625rem] text-kp-text-tertiary">{p.barcode}</div>
                       </td>
                     )}
 
                     {visibleColumns.warehouse && (
                       <td className="py-3.5 px-4">
                         <div className="text-kp-text-primary">{p.warehouse}</div>
-                        <div className="text-[10px] text-kp-text-tertiary">{p.location}</div>
+                        <div className="text-[0.625rem] text-kp-text-tertiary">{p.location}</div>
                       </td>
                     )}
 
@@ -861,7 +845,7 @@ export default function InventoryPage() {
                     {/* Status Badge */}
                     {visibleColumns.status && (
                       <td className="py-3.5 px-4">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wide ${
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[0.5625rem] font-extrabold uppercase tracking-wide ${
                           p.status === 'Healthy' ? 'bg-kp-success-muted text-kp-success' :
                           p.status === 'Low Stock' ? 'bg-kp-warning-muted text-kp-warning' :
                           p.status === 'Critical' ? 'bg-kp-warning-muted text-kp-warning' :
@@ -906,12 +890,12 @@ export default function InventoryPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-kp-border pb-4">
               <div>
                 <h3 className="text-sm font-bold text-kp-text-primary">Warehouse Grid Visualization</h3>
-                <p className="text-[11px] text-kp-text-tertiary">Layout of Istanbul Main Warehouse. Click a bin location to view occupancy.</p>
+                <p className="text-[0.6875rem] text-kp-text-tertiary">Layout of Istanbul Main Warehouse. Click a bin location to view occupancy.</p>
               </div>
               <div className="mt-2 sm:mt-0 flex gap-2">
-                <span className="flex items-center gap-1 text-[10px] font-bold text-kp-text-tertiary"><span className="h-3 w-3 rounded bg-kp-success"></span>&lt;60% Fill</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-kp-text-tertiary"><span className="h-3 w-3 rounded bg-kp-warning"></span>60%-90% Fill</span>
-                <span className="flex items-center gap-1 text-[10px] font-bold text-kp-text-tertiary"><span className="h-3 w-3 rounded bg-kp-danger"></span>&gt;90% Overfill</span>
+                <span className="flex items-center gap-1 text-[0.625rem] font-bold text-kp-text-tertiary"><span className="h-3 w-3 rounded bg-kp-success"></span>&lt;60% Fill</span>
+                <span className="flex items-center gap-1 text-[0.625rem] font-bold text-kp-text-tertiary"><span className="h-3 w-3 rounded bg-kp-warning"></span>60%-90% Fill</span>
+                <span className="flex items-center gap-1 text-[0.625rem] font-bold text-kp-text-tertiary"><span className="h-3 w-3 rounded bg-kp-danger"></span>&gt;90% Overfill</span>
               </div>
             </div>
 
@@ -925,7 +909,7 @@ export default function InventoryPage() {
                 <div key={zIdx} className="rounded-kp-lg border border-kp-border p-4 bg-kp-bg-primary/30 space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="font-extrabold text-xs text-kp-text-secondary">{zone.name}</span>
-                    <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded ${
+                    <span className={`text-[0.5625rem] font-extrabold px-1.5 py-0.5 rounded ${
                       zone.fill > 90 ? 'bg-kp-danger-muted text-kp-danger' :
                       zone.fill > 60 ? 'bg-kp-warning-muted text-kp-warning' :
                       'bg-kp-success-muted text-kp-success'
@@ -935,7 +919,7 @@ export default function InventoryPage() {
                   <div className="space-y-3">
                     {zone.aisles.map((aisle, aIdx) => (
                       <div key={aIdx} className="space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-kp-text-tertiary">{aisle}</span>
+                        <span className="text-[0.625rem] font-bold uppercase tracking-wider text-kp-text-tertiary">{aisle}</span>
                         <div className="grid grid-cols-4 gap-1.5">
                           {[1, 2, 3, 4].map((rack) => {
                             const mockPercent = Math.floor(Math.random() * 60) + (zone.fill - 30);
@@ -945,7 +929,7 @@ export default function InventoryPage() {
                                 onClick={() => {
                                   toast.info(`Location: ${zone.name} - ${aisle} - Rack ${rack} · Occupancy: ${mockPercent}%`);
                                 }}
-                                className={`h-8 rounded-kp-sm text-[9px] font-extrabold text-white flex items-center justify-center transition-all ${
+                                className={`h-8 rounded-kp-sm text-[0.5625rem] font-extrabold text-white flex items-center justify-center transition-all ${
                                   mockPercent > 90 ? 'bg-kp-danger hover:bg-kp-danger/80' :
                                   mockPercent > 60 ? 'bg-kp-warning hover:bg-kp-warning/80' :
                                   'bg-kp-success hover:bg-kp-success/80'
@@ -1013,7 +997,7 @@ export default function InventoryPage() {
                 className="space-y-4 text-xs font-semibold text-kp-text-secondary"
               >
                 <div>
-                  <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">SKU</label>
+                  <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">SKU</label>
                   <select name="sku" className="block w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3 py-2 focus:outline-none">
                     {products.map(p => (
                       <option key={p.id} value={p.sku}>{p.sku} - {p.name}</option>
@@ -1022,11 +1006,11 @@ export default function InventoryPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">Qty</label>
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">Qty</label>
                     <input type="number" name="qty" required min="1" defaultValue="10" className="block w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3.5 py-2" />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">Type</label>
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">Type</label>
                     <select name="type" className="block w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3 py-2.5 focus:outline-none">
                       <option value="Inbound">Inbound</option>
                       <option value="Outbound">Outbound</option>
@@ -1044,9 +1028,9 @@ export default function InventoryPage() {
             <div className="lg:col-span-2 card space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-kp-text-primary">Recent Stock Movements Log</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-semibold text-kp-text-secondary">
+                <table className="kp-table w-full text-left text-xs font-semibold text-kp-text-secondary">
                   <thead>
-                    <tr className="border-b border-kp-border text-[10px] text-kp-text-tertiary uppercase tracking-wider">
+                    <tr className="border-b border-kp-border text-[0.625rem] text-kp-text-tertiary uppercase tracking-wider">
                       <th className="py-2.5">Date</th>
                       <th className="py-2.5">SKU & Item</th>
                       <th className="py-2.5">Type</th>
@@ -1061,14 +1045,14 @@ export default function InventoryPage() {
                       <tr key={idx} className="hover:bg-kp-bg-hover/30">
                         <td className="py-3">
                           <div className="font-bold text-kp-text-primary">{m.id}</div>
-                          <div className="text-[10px] text-kp-text-tertiary">{m.createdAt}</div>
+                          <div className="text-[0.625rem] text-kp-text-tertiary">{m.createdAt}</div>
                         </td>
                         <td className="py-3">
                           <div className="font-bold text-kp-text-primary">{m.sku}</div>
-                          <div className="text-[10px] text-kp-text-tertiary max-w-[180px] truncate">{m.name}</div>
+                          <div className="text-[0.625rem] text-kp-text-tertiary max-w-[180px] truncate">{m.name}</div>
                         </td>
                         <td className="py-3">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.5625rem] font-bold ${
                             m.type === 'Inbound' ? 'bg-kp-success-muted text-kp-success' :
                             m.type === 'Outbound' ? 'bg-kp-warning-muted text-kp-warning' :
                             m.type === 'Damage' ? 'bg-kp-danger-muted text-kp-danger' :
@@ -1080,7 +1064,7 @@ export default function InventoryPage() {
                         <td className={`py-3 text-right font-bold ${m.difference > 0 ? 'text-kp-success' : 'text-kp-danger'}`}>
                           {m.difference > 0 ? `+${m.difference}` : m.difference}
                         </td>
-                        <td className="py-3 text-kp-text-tertiary text-[10px]">{m.performedBy}</td>
+                        <td className="py-3 text-kp-text-tertiary text-[0.625rem]">{m.performedBy}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1099,7 +1083,7 @@ export default function InventoryPage() {
             <div className="flex justify-between items-center border-b border-kp-border pb-4">
               <div>
                 <h3 className="text-sm font-bold text-kp-text-primary">Replenishment Recommendations</h3>
-                <p className="text-[11px] text-kp-text-tertiary">Economic Order Quantity (EOQ) and automatic purchase triggers for low-stock items.</p>
+                <p className="text-[0.6875rem] text-kp-text-tertiary">Economic Order Quantity (EOQ) and automatic purchase triggers for low-stock items.</p>
               </div>
               <span className="rounded-full bg-kp-warning-muted px-3 py-1 text-xs font-bold text-kp-warning uppercase">
                 {lowStockCount} Low Items
@@ -1107,9 +1091,9 @@ export default function InventoryPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-semibold text-kp-text-secondary">
+              <table className="kp-table w-full text-left text-xs font-semibold text-kp-text-secondary">
                 <thead>
-                  <tr className="border-b border-kp-border text-[10px] text-kp-text-tertiary uppercase tracking-wider">
+                  <tr className="border-b border-kp-border text-[0.625rem] text-kp-text-tertiary uppercase tracking-wider">
                     <th className="py-3">SKU & Product</th>
                     <th className="py-3">Available</th>
                     <th className="py-3">Safety Stock</th>
@@ -1125,7 +1109,7 @@ export default function InventoryPage() {
                     <tr key={idx} className="hover:bg-kp-bg-hover/30">
                       <td className="py-3.5">
                         <div className="font-bold text-kp-text-primary">{p.sku}</div>
-                        <div className="text-[10px] text-kp-text-tertiary">{p.name}</div>
+                        <div className="text-[0.625rem] text-kp-text-tertiary">{p.name}</div>
                       </td>
                       <td className="py-3.5 font-bold text-kp-danger">{p.available} units</td>
                       <td className="py-3.5 text-kp-text-tertiary">{p.safetyStock}</td>
@@ -1140,7 +1124,7 @@ export default function InventoryPage() {
                       <td className="py-3.5 text-center">
                         <button
                           onClick={() => toast.success(`PO drafted for SKU ${p.sku}`)}
-                          className="px-3 py-1.5 bg-kp-accent hover:bg-kp-accent-hover text-white text-[10px] font-bold rounded-kp-md transition-all"
+                          className="px-3 py-1.5 bg-kp-accent hover:bg-kp-accent-hover text-white text-[0.625rem] font-bold rounded-kp-md transition-all"
                         >
                           Draft PO
                         </button>
@@ -1165,7 +1149,7 @@ export default function InventoryPage() {
                 <AdjustmentsHorizontalIcon className="h-5 w-5 text-kp-accent" />
                 Initiate Stock Count
               </h3>
-              <p className="text-[11px] text-kp-text-tertiary leading-relaxed">
+              <p className="text-[0.6875rem] text-kp-text-tertiary leading-relaxed">
                 Create full warehouse audits, barcode checks, or category-based cycle counts for operators.
               </p>
               
@@ -1177,11 +1161,11 @@ export default function InventoryPage() {
                   <div key={idx} className="flex justify-between items-center rounded-kp-md border border-kp-border p-3 bg-kp-bg-primary/30">
                     <div>
                       <div className="font-bold text-xs text-kp-text-primary">{audit.name}</div>
-                      <div className="text-[10px] text-kp-text-tertiary">{audit.type} • {audit.items}</div>
+                      <div className="text-[0.625rem] text-kp-text-tertiary">{audit.type} • {audit.items}</div>
                     </div>
                     <button
                       onClick={() => toast.info(`Started: ${audit.name}`)}
-                      className="px-3 py-1.5 border border-kp-border rounded-kp-md hover:bg-kp-bg-hover text-[10px] text-kp-text-primary font-bold"
+                      className="px-3 py-1.5 border border-kp-border rounded-kp-md hover:bg-kp-bg-hover text-[0.625rem] text-kp-text-primary font-bold"
                     >
                       Start
                     </button>
@@ -1194,9 +1178,9 @@ export default function InventoryPage() {
             <div className="lg:col-span-2 card space-y-4">
               <h3 className="text-xs font-bold uppercase tracking-wider text-kp-text-primary">Discrepancy Approvals Queue</h3>
               <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-semibold text-kp-text-secondary">
+                <table className="kp-table w-full text-left text-xs font-semibold text-kp-text-secondary">
                   <thead>
-                    <tr className="border-b border-kp-border text-[10px] text-kp-text-tertiary uppercase tracking-wider">
+                    <tr className="border-b border-kp-border text-[0.625rem] text-kp-text-tertiary uppercase tracking-wider">
                       <th className="py-2.5">Audit ID</th>
                       <th className="py-2.5">SKU & Item</th>
                       <th className="py-2.5 text-right">System Qty</th>
@@ -1212,7 +1196,7 @@ export default function InventoryPage() {
                         <td className="py-3 font-bold text-kp-text-primary">{c.id}</td>
                         <td className="py-3">
                           <div className="font-bold text-kp-text-primary">{c.sku}</div>
-                          <div className="text-[10px] text-kp-text-tertiary">{c.name}</div>
+                          <div className="text-[0.625rem] text-kp-text-tertiary">{c.name}</div>
                         </td>
                         <td className="py-3 text-right">{c.systemQty}</td>
                         <td className="py-3 text-right">{c.countedQty}</td>
@@ -1220,7 +1204,7 @@ export default function InventoryPage() {
                           {c.diff === 0 ? '0' : c.diff > 0 ? `+${c.diff}` : c.diff}
                         </td>
                         <td className="py-3 text-center">
-                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.5625rem] font-bold ${
                             c.status === 'Matched' ? 'bg-kp-success-muted text-kp-success' : 'bg-kp-warning-muted text-kp-warning'
                           }`}>{c.status}</span>
                         </td>
@@ -1232,12 +1216,12 @@ export default function InventoryPage() {
                                 setAuditCounts(prev => prev.map(item => item.id === c.id ? { ...item, status: 'Matched' } : item));
                                 toast.success('Discrepancy approved!');
                               }}
-                              className="px-2.5 py-1 bg-kp-success hover:bg-kp-success/80 text-white rounded-kp-md text-[10px] font-bold"
+                              className="px-2.5 py-1 bg-kp-success hover:bg-kp-success/80 text-white rounded-kp-md text-[0.625rem] font-bold"
                             >
                               Approve
                             </button>
                           ) : (
-                            <span className="text-kp-text-tertiary text-[10px]">Approved</span>
+                            <span className="text-kp-text-tertiary text-[0.625rem]">Approved</span>
                           )}
                         </td>
                       </tr>
@@ -1258,15 +1242,15 @@ export default function InventoryPage() {
             <div className="flex justify-between items-center border-b border-kp-border pb-4">
               <div>
                 <h3 className="text-sm font-bold text-kp-text-primary">Stock Reservations</h3>
-                <p className="text-[11px] text-kp-text-tertiary">Track allocations reserved by marketplace orders, integrations, or manual locking.</p>
+                <p className="text-[0.6875rem] text-kp-text-tertiary">Track allocations reserved by marketplace orders, integrations, or manual locking.</p>
               </div>
               <span className="text-xs text-kp-text-tertiary font-bold">Total Allocated: {reservedQtyVal} Units</span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs font-semibold text-kp-text-secondary">
+              <table className="kp-table w-full text-left text-xs font-semibold text-kp-text-secondary">
                 <thead>
-                  <tr className="border-b border-kp-border text-[10px] text-kp-text-tertiary uppercase tracking-wider">
+                  <tr className="border-b border-kp-border text-[0.625rem] text-kp-text-tertiary uppercase tracking-wider">
                     <th className="py-2.5">Reference</th>
                     <th className="py-2.5">SKU / Item</th>
                     <th className="py-2.5 text-center">Source</th>
@@ -1285,27 +1269,27 @@ export default function InventoryPage() {
                       <td className="py-3 font-bold text-kp-text-primary">{res.ref}</td>
                       <td className="py-3">
                         <div className="font-bold text-kp-text-primary">{res.sku}</div>
-                        <div className="text-[10px] text-kp-text-tertiary">{res.name}</div>
+                        <div className="text-[0.625rem] text-kp-text-tertiary">{res.name}</div>
                       </td>
                       <td className="py-3 text-center">
-                        <span className="rounded bg-kp-bg-primary/50 px-2 py-0.5 text-[10px] font-bold text-kp-text-secondary">
+                        <span className="rounded bg-kp-bg-primary/50 px-2 py-0.5 text-[0.625rem] font-bold text-kp-text-secondary">
                           {res.source}
                         </span>
                       </td>
                       <td className="py-3 text-right font-bold text-kp-text-primary">{res.qty}</td>
                       <td className="py-3">
-                        <span className={`text-[10px] font-extrabold ${
+                        <span className={`text-[0.625rem] font-extrabold ${
                           res.priority === 'High' ? 'text-kp-warning' : 'text-kp-accent'
                         }`}>{res.priority}</span>
                       </td>
-                      <td className="py-3 text-kp-text-tertiary text-[10px]">{res.expires}</td>
+                      <td className="py-3 text-kp-text-tertiary text-[0.625rem]">{res.expires}</td>
                       <td className="py-3 text-center">
                         <button
                           onClick={() => {
                             setProducts(prev => prev.map(p => p.sku === res.sku ? { ...p, reserved: Math.max(0, p.reserved - res.qty) } : p));
                             toast.success('Allocation released.');
                           }}
-                          className="px-2.5 py-1.5 border border-kp-danger/30 text-kp-danger hover:bg-kp-danger-muted/10 rounded-kp-md text-[10px] font-bold transition-colors"
+                          className="px-2.5 py-1.5 border border-kp-danger/30 text-kp-danger hover:bg-kp-danger-muted/10 rounded-kp-md text-[0.625rem] font-bold transition-colors"
                         >
                           Release
                         </button>
@@ -1314,153 +1298,6 @@ export default function InventoryPage() {
                   ))}
                 </tbody>
               </table>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: 8. INTEGRATIONS */}
-      {activeTab === 'integrations' && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { name: 'Logo ERP Integration', logo: 'L', sync: 'Successful', time: '10 mins ago', color: 'bg-orange-500' },
-              { name: 'Trendyol Partner API', logo: 'T', sync: 'Successful', time: '12 mins ago', color: 'bg-orange-600' },
-              { name: 'Shopify Store Connect', logo: 'S', sync: 'Successful', time: '30 mins ago', color: 'bg-green-600' },
-              { name: 'Amazon Central API', logo: 'A', sync: 'Pending', time: 'Waiting for queue', color: 'bg-yellow-600' }
-            ].map((channel, idx) => (
-              <div key={idx} className="card flex flex-col justify-between space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-9 w-9 rounded-kp-md ${channel.color} text-white flex items-center justify-center font-extrabold text-sm`}>
-                    {channel.logo}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-xs text-kp-text-primary">{channel.name}</h4>
-                    <span className="text-[10px] text-kp-text-tertiary">Sales Channel Sync</span>
-                  </div>
-                </div>
-
-                <div className="border-t border-kp-border pt-3 flex items-center justify-between text-xs font-semibold">
-                  <div>
-                    <span className="text-kp-text-tertiary block text-[9px] uppercase tracking-wider">Sync Status</span>
-                    <span className={`inline-flex items-center gap-1 text-[11px] font-extrabold ${
-                      channel.sync === 'Successful' ? 'text-kp-success' : 'text-kp-warning'
-                    }`}>
-                      ● {channel.sync}
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-kp-text-tertiary block text-[9px] uppercase tracking-wider">Last Sync</span>
-                    <span className="text-kp-text-primary text-[11px]">{channel.time}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => toast.info(`Sync triggered for: ${channel.name}`)}
-                  className="w-full py-2 bg-kp-bg-primary hover:bg-kp-bg-hover border border-kp-border rounded-kp-md text-[10px] font-bold transition-all text-kp-text-secondary"
-                >
-                  Force Sync
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: 9. AI INSIGHTS */}
-      {activeTab === 'ai' && (
-        <div className="space-y-6">
-          {/* AI Banner - Gradient matches accents, text matches text-kp-text-primary */}
-          <div className="card bg-gradient-to-r from-kp-accent/10 to-kp-accent-muted/20 text-kp-text-primary border border-kp-border p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <SparklesIcon className="h-5 w-5 text-kp-accent animate-pulse" />
-                <h3 className="text-base font-bold text-kp-text-primary">KroptOS AI Inventory Copilot</h3>
-              </div>
-              <p className="text-xs text-kp-text-secondary max-w-2xl leading-relaxed">
-                Predictive demand modeling, stockout risk assessments, and automatic safety levels optimized continuously based on historical rotation.
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* Stockout Risk Card */}
-            <div className="card space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-kp-text-primary flex items-center gap-1.5">
-                <ExclamationTriangleIcon className="h-5 w-5 text-kp-warning" />
-                Forecasted Stockout Risks
-              </h4>
-              <div className="space-y-3">
-                {[
-                  { sku: 'WMS-402-BLU', name: 'Thermal Shipping Label Printer', days: '3 Days', risk: 'Critical', action: 'PO needs placement today' },
-                  { sku: 'WMS-108-SLV', name: 'Heavy-Duty Forklift Camera System', days: '8 Days', risk: 'Medium', action: 'Monitor inbound transit' }
-                ].map((item, idx) => (
-                  <div key={idx} className="p-3.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/30 flex justify-between items-center text-xs">
-                    <div>
-                      <div className="font-bold text-kp-text-primary">{item.sku} • {item.name}</div>
-                      <div className="text-[10px] text-kp-text-tertiary">Action: {item.action}</div>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-[10px] text-kp-danger font-bold block">Stockout in {item.days}</span>
-                      <span className="text-[9px] bg-kp-danger-muted text-kp-danger px-1.5 py-0.5 rounded font-bold uppercase">{item.risk}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Recommendations Card */}
-            <div className="card space-y-4">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-kp-text-primary flex items-center gap-1.5">
-                <CpuChipIcon className="h-5 w-5 text-kp-accent" />
-                Optimization Recommendations
-              </h4>
-              <div className="space-y-4">
-                <div className="flex gap-3 text-xs">
-                  <span className="h-5 w-5 rounded-full bg-kp-success-muted text-kp-success flex items-center justify-center font-bold">✓</span>
-                  <div>
-                    <h5 className="font-bold text-kp-text-primary">Dead stock detected</h5>
-                    <p className="text-[11px] text-kp-text-tertiary mt-0.5">WMS-901-WHT (wrapper Film) has high available stock with 0 movements in 45 days. Suggest running promo or reducing safety stock threshold to 30 units.</p>
-                  </div>
-                </div>
-                <div className="flex gap-3 text-xs">
-                  <span className="h-5 w-5 rounded-full bg-kp-accent-muted text-kp-accent flex items-center justify-center font-bold">✓</span>
-                  <div>
-                    <h5 className="font-bold text-kp-text-primary">Location congestion optimization</h5>
-                    <p className="text-[11px] text-kp-text-tertiary mt-0.5">Aisle B is experiencing 94% occupancy. Relocate low-priority category items to Munich Transit to maintain pick speeds.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-      )}
-
-      {/* TAB CONTENT: 10. ALERTS */}
-      {activeTab === 'alerts' && (
-        <div className="space-y-6">
-          <div className="card space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-kp-text-primary">System Alerts</h3>
-            
-            <div className="space-y-2.5">
-              {alerts.map((alertItem) => (
-                <div
-                  key={alertItem.id}
-                  className={`flex gap-3 items-start p-4 rounded-kp-md border text-xs font-semibold ${
-                    alertItem.severity === 'critical' ? 'bg-kp-danger-muted/10 border-kp-danger/30 text-kp-danger' :
-                    alertItem.severity === 'warning' ? 'bg-kp-warning-muted/10 border-kp-warning/30 text-kp-warning' :
-                    'bg-kp-info-muted/10 border-kp-info/30 text-kp-info'
-                  }`}
-                >
-                  <ExclamationTriangleIcon className="h-5 w-5 flex-shrink-0" />
-                  <div className="flex-1 flex flex-col sm:flex-row sm:justify-between">
-                    <span>{alertItem.message}</span>
-                    <span className="text-[10px] text-kp-text-tertiary whitespace-nowrap mt-1 sm:mt-0">{alertItem.date}</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
@@ -1478,7 +1315,7 @@ export default function InventoryPage() {
                  <img src={getProductImage(selectedProduct.image)} alt={selectedProduct.name} className="h-10 w-10 rounded-kp-md object-cover border border-kp-border" />
                 <div>
                   <h3 className="font-bold text-sm text-kp-text-primary">{selectedProduct.name}</h3>
-                  <p className="text-[10px] text-kp-text-tertiary font-extrabold uppercase tracking-wider">{selectedProduct.sku}</p>
+                  <p className="text-[0.625rem] text-kp-text-tertiary font-extrabold uppercase tracking-wider">{selectedProduct.sku}</p>
                 </div>
               </div>
               <button
@@ -1515,32 +1352,32 @@ export default function InventoryPage() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <span className="text-[10px] text-kp-text-tertiary uppercase">{t('drawer.barcode')}</span>
+                      <span className="text-[0.625rem] text-kp-text-tertiary uppercase">{t('drawer.barcode')}</span>
                       <div className="text-kp-text-primary font-semibold mt-0.5">{selectedProduct.barcode}</div>
                     </div>
                     <div>
-                      <span className="text-[10px] text-kp-text-tertiary uppercase">{t('drawer.brand')}</span>
+                      <span className="text-[0.625rem] text-kp-text-tertiary uppercase">{t('drawer.brand')}</span>
                       <div className="text-kp-text-primary font-semibold mt-0.5">{selectedProduct.brand}</div>
                     </div>
                   </div>
 
                   <div className="border-t border-kp-border pt-4 space-y-2">
-                    <h4 className="font-bold text-kp-text-primary uppercase tracking-wider text-[10px]">{t('drawer.stockConfig')}</h4>
+                    <h4 className="font-bold text-kp-text-primary uppercase tracking-wider text-[0.625rem]">{t('drawer.stockConfig')}</h4>
                     <div className="grid grid-cols-4 gap-2 text-center text-xs">
                       <div className="p-2 rounded bg-kp-bg-primary/50">
-                        <span className="text-[9px] text-kp-text-tertiary block uppercase">Min</span>
+                        <span className="text-[0.5625rem] text-kp-text-tertiary block uppercase">Min</span>
                         <span className="font-bold text-kp-text-primary">{selectedProduct.minStock}</span>
                       </div>
                       <div className="p-2 rounded bg-kp-bg-primary/50">
-                        <span className="text-[9px] text-kp-text-tertiary block uppercase">Max</span>
+                        <span className="text-[0.5625rem] text-kp-text-tertiary block uppercase">Max</span>
                         <span className="font-bold text-kp-text-primary">{selectedProduct.maxStock}</span>
                       </div>
                       <div className="p-2 rounded bg-kp-bg-primary/50">
-                        <span className="text-[9px] text-kp-text-tertiary block uppercase">{t('drawer.reorderPoint')}</span>
+                        <span className="text-[0.5625rem] text-kp-text-tertiary block uppercase">{t('drawer.reorderPoint')}</span>
                         <span className="font-bold text-kp-text-primary">{selectedProduct.reorderPoint}</span>
                       </div>
                       <div className="p-2 rounded bg-kp-bg-primary/50">
-                        <span className="text-[9px] text-kp-text-tertiary block uppercase">{t('drawer.safety')}</span>
+                        <span className="text-[0.5625rem] text-kp-text-tertiary block uppercase">{t('drawer.safety')}</span>
                         <span className="font-bold text-kp-text-primary">{selectedProduct.safetyStock}</span>
                       </div>
                     </div>
@@ -1553,7 +1390,7 @@ export default function InventoryPage() {
                   <div className="p-4 rounded-kp-md border border-kp-border bg-kp-bg-primary/30 flex justify-between items-center">
                     <div>
                       <div className="font-bold text-kp-text-primary">{selectedProduct.warehouse}</div>
-                      <div className="text-[10px] text-kp-text-tertiary">{selectedProduct.location}</div>
+                      <div className="text-[0.625rem] text-kp-text-tertiary">{selectedProduct.location}</div>
                     </div>
                     <span className="font-bold text-kp-text-primary">{t('drawer.units', { count: selectedProduct.available })}</span>
                   </div>
@@ -1579,7 +1416,7 @@ export default function InventoryPage() {
                     <div key={idx} className="p-3 border border-kp-border rounded bg-kp-bg-primary/30 text-xs font-semibold flex justify-between items-center">
                       <div>
                         <div className="font-bold text-kp-text-primary">{m.type}</div>
-                        <div className="text-[10px] text-kp-text-tertiary">{m.createdAt} • {m.performedBy}</div>
+                        <div className="text-[0.625rem] text-kp-text-tertiary">{m.createdAt} • {m.performedBy}</div>
                       </div>
                       <span className={`font-bold ${m.difference > 0 ? 'text-kp-success' : 'text-kp-danger'}`}>
                         {m.difference > 0 ? `+${m.difference}` : m.difference}
@@ -1596,7 +1433,7 @@ export default function InventoryPage() {
                       <SparklesIcon className="h-5 w-5 text-kp-accent animate-pulse" />
                       <h4 className="font-bold text-xs">{t('drawer.aiScore')}</h4>
                     </div>
-                    <p className="text-[11px] leading-relaxed text-kp-text-secondary">
+                    <p className="text-[0.6875rem] leading-relaxed text-kp-text-secondary">
                       {t('drawer.aiRecommendation')}
                     </p>
                   </div>
@@ -1655,7 +1492,7 @@ export default function InventoryPage() {
               className="space-y-4 text-xs font-semibold text-kp-text-secondary"
             >
               <div>
-                <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">{t('inboundModal.targetWarehouse')}</label>
+                <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">{t('inboundModal.targetWarehouse')}</label>
                 <select className="w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3 py-2 focus:outline-none">
                   <option>İstanbul Merkez Depo</option>
                   <option>Münih Transit Deposu</option>
@@ -1663,7 +1500,7 @@ export default function InventoryPage() {
               </div>
 
               <div>
-                <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">{t('inboundModal.poRef')}</label>
+                <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1">{t('inboundModal.poRef')}</label>
                 <input type="text" name="poRef" placeholder="PO-2026-X" required className="w-full rounded-kp-md border border-kp-border bg-kp-bg-secondary text-kp-text-primary px-3.5 py-2 focus:outline-none" />
               </div>
 

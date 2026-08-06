@@ -62,7 +62,7 @@ export default function WmsLayout({ children }: { children: React.ReactNode }) {
             </div>
             <div>
               <h1 className="text-sm font-semibold text-kp-text-primary tracking-tight">KroptOS</h1>
-              <p className="text-[10px] font-medium text-kp-text-tertiary uppercase tracking-widest">WMS App</p>
+              <p className="text-[0.625rem] font-medium text-kp-text-tertiary uppercase tracking-widest">WMS App</p>
             </div>
           </Link>
 
@@ -76,7 +76,7 @@ export default function WmsLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-kp-md px-3 py-1.5 text-[12px] font-medium transition-all duration-150 ${
+                  className={`rounded-kp-md px-3 py-1.5 text-[0.75rem] font-medium transition-all duration-150 ${
                     active
                       ? 'bg-kp-bg-active text-kp-accent-hover'
                       : 'text-kp-text-tertiary hover:bg-kp-bg-hover hover:text-kp-text-primary'
@@ -95,7 +95,7 @@ export default function WmsLayout({ children }: { children: React.ReactNode }) {
             <input
               type="text"
               placeholder="Scan barcode, shelf, order…"
-              className="w-56 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 pl-8 text-[12px] text-kp-text-secondary placeholder-kp-text-tertiary transition-colors focus:border-kp-border-accent focus:outline-none"
+              className="w-56 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 pl-8 text-[0.75rem] text-kp-text-secondary placeholder-kp-text-tertiary transition-colors focus:border-kp-border-accent focus:outline-none"
             />
             <MagnifyingGlassIcon className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-kp-text-tertiary" />
           </div>
@@ -103,7 +103,7 @@ export default function WmsLayout({ children }: { children: React.ReactNode }) {
           {/* Back to Panel */}
           <Link
             href="/select-tenant"
-            className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[12px] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
+            className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[0.75rem] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
           >
             <ArrowLeftIcon className="h-3.5 w-3.5" />
             Back to Panel

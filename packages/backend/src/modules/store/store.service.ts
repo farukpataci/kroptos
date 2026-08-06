@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/store.dto';
+import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
 export class StoreService {
@@ -165,6 +166,8 @@ export class StoreService {
           locale: dto.locale || 'en-US',
           timezone: dto.timezone || 'UTC',
           type: dto.type || 'retail',
+          orderProcessingMode: dto.orderProcessingMode || 'LOGO_SYNC',
+          publicId: generatePublicId('tn', 12),
           isActive: true,
         },
       });
@@ -216,6 +219,7 @@ export class StoreService {
           locale: dto.locale,
           timezone: dto.timezone,
           type: dto.type,
+          orderProcessingMode: dto.orderProcessingMode,
           isActive: dto.isActive,
         },
       });

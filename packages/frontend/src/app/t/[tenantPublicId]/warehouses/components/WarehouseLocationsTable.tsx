@@ -503,7 +503,7 @@ export function WarehouseLocationsTable() {
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
           <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
-          <p className="text-[11px] text-kp-text-tertiary">
+          <p className="text-[0.6875rem] text-kp-text-tertiary">
             {t('subtitle')}
           </p>
         </div>
@@ -533,7 +533,7 @@ export function WarehouseLocationsTable() {
         {/* Dropdown Filters */}
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">{t('warehouseFilter')}</span>
+            <span className="text-[0.6875rem] text-kp-text-tertiary">{t('warehouseFilter')}</span>
             <select
               value={selectedWarehouseFilter}
               onChange={(e) => {
@@ -552,7 +552,7 @@ export function WarehouseLocationsTable() {
           </div>
 
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">{t('zoneFilter')}</span>
+            <span className="text-[0.6875rem] text-kp-text-tertiary">{t('zoneFilter')}</span>
             <select
               value={selectedZoneFilter}
               onChange={(e) => setSelectedZoneFilter(e.target.value)}
@@ -571,9 +571,9 @@ export function WarehouseLocationsTable() {
 
       {/* Locations Table Grid */}
       <div className="border border-kp-border rounded-kp-md overflow-hidden bg-kp-bg-primary/10">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="kp-table w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
+            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase text-kp-text-tertiary">
               <th className="py-3 px-4">{t('colCodeBarcode')}</th>
               <th className="py-3 px-4">{t('colWarehouseZone')}</th>
               <th className="py-3 px-4">{t('colHierarchy')}</th>
@@ -616,7 +616,7 @@ export function WarehouseLocationsTable() {
                       <div>
                         <div className="font-mono font-bold text-kp-text-primary">{loc.code}</div>
                         {loc.barcode && (
-                          <div className="flex items-center gap-1 text-[10px] text-kp-text-tertiary font-mono mt-0.5">
+                          <div className="flex items-center gap-1 text-[0.625rem] text-kp-text-tertiary font-mono mt-0.5">
                             <QrCodeIcon className="h-3 w-3 text-kp-text-tertiary" />
                             {loc.barcode}
                           </div>
@@ -626,44 +626,44 @@ export function WarehouseLocationsTable() {
                   </td>
                   <td className="py-3 px-4">
                     <div>
-                      <div className="flex items-center gap-1 text-kp-text-primary text-[11px] font-medium">
+                      <div className="flex items-center gap-1 text-kp-text-primary text-[0.6875rem] font-medium">
                         <BuildingOfficeIcon className="h-3.5 w-3.5 text-kp-text-tertiary" />
                         {loc.warehouseName}
                       </div>
-                      <div className="text-[10px] text-kp-text-tertiary pl-4">
+                      <div className="text-[0.625rem] text-kp-text-tertiary pl-4">
                         {t('zonePrefix')}: <span className="font-medium text-kp-text-secondary">{loc.zoneName || '-'}</span>
                       </div>
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <div className="flex items-center gap-1.5 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-[0.6875rem]">
                       {loc.aisle && (
-                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[10px] font-mono">
+                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[0.625rem] font-mono">
                           {loc.aisle}
                         </span>
                       )}
                       {loc.shelf && (
-                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[10px] font-mono">
+                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[0.625rem] font-mono">
                           {loc.shelf}
                         </span>
                       )}
                       {loc.bin && (
-                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[10px] font-mono">
+                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[0.625rem] font-mono">
                           {loc.bin}
                         </span>
                       )}
                       {loc.level && (
-                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[10px] font-mono text-kp-text-tertiary">
+                        <span className="px-1.5 py-0.5 rounded bg-kp-bg-secondary border border-kp-border text-[0.625rem] font-mono text-kp-text-tertiary">
                           {loc.level}
                         </span>
                       )}
                     </div>
                   </td>
-                  <td className="py-3 px-4 font-mono text-[11px]">{loc.capacity.toLocaleString()} {t('desiUnit')}</td>
-                  <td className="py-3 px-4 font-mono text-[11px]">{loc.pickPriority}</td>
+                  <td className="py-3 px-4 font-mono text-[0.6875rem]">{loc.capacity.toLocaleString()} {t('desiUnit')}</td>
+                  <td className="py-3 px-4 font-mono text-[0.6875rem]">{loc.pickPriority}</td>
                   <td className="py-3 px-4">
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-medium ${
                         loc.status === 'active'
                           ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
                           : 'bg-gray-500/10 text-gray-400 border border-gray-500/20'
@@ -727,7 +727,7 @@ export function WarehouseLocationsTable() {
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.warehouseLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.warehouseLabel')}</label>
                     <select
                       value={formData.warehouseId}
                       onChange={(e) => {
@@ -751,7 +751,7 @@ export function WarehouseLocationsTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.zoneLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.zoneLabel')}</label>
                     <select
                       value={formData.zoneId}
                       onChange={(e) => setFormData((prev) => ({ ...prev, zoneId: e.target.value }))}
@@ -769,7 +769,7 @@ export function WarehouseLocationsTable() {
 
                 <div className="grid grid-cols-4 gap-2">
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.aisle')}</label>
+                    <label className="block text-[0.625rem] font-medium text-kp-text-secondary mb-1">{t('modal.aisle')}</label>
                     <input
                       type="text"
                       value={formData.aisle}
@@ -779,7 +779,7 @@ export function WarehouseLocationsTable() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.shelf')}</label>
+                    <label className="block text-[0.625rem] font-medium text-kp-text-secondary mb-1">{t('modal.shelf')}</label>
                     <input
                       type="text"
                       value={formData.shelf}
@@ -789,7 +789,7 @@ export function WarehouseLocationsTable() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.bin')}</label>
+                    <label className="block text-[0.625rem] font-medium text-kp-text-secondary mb-1">{t('modal.bin')}</label>
                     <input
                       type="text"
                       value={formData.bin}
@@ -799,7 +799,7 @@ export function WarehouseLocationsTable() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-kp-text-secondary mb-1">{t('modal.level')}</label>
+                    <label className="block text-[0.625rem] font-medium text-kp-text-secondary mb-1">{t('modal.level')}</label>
                     <input
                       type="text"
                       value={formData.level}
@@ -812,7 +812,7 @@ export function WarehouseLocationsTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
                     <input
                       type="text"
                       required
@@ -824,7 +824,7 @@ export function WarehouseLocationsTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.barcodeLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.barcodeLabel')}</label>
                     <input
                       type="text"
                       value={formData.barcode}
@@ -837,7 +837,7 @@ export function WarehouseLocationsTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -848,7 +848,7 @@ export function WarehouseLocationsTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.pickPriorityLabel')}</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.pickPriorityLabel')}</label>
                     <input
                       type="number"
                       value={formData.pickPriority}
@@ -859,7 +859,7 @@ export function WarehouseLocationsTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}

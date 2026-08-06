@@ -10,17 +10,17 @@ export default function WmsReturnsPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-semibold text-kp-text-primary">Returns</h1>
-        <p className="mt-1 text-[13px] text-kp-text-tertiary">Inspect customer returns, approve or reject, and restock items.</p>
+        <p className="mt-1 text-[0.8125rem] text-kp-text-tertiary">Inspect customer returns, approve or reject, and restock items.</p>
       </div>
 
       <div className="card p-5">
         <div className="flex justify-between items-center mb-5 border-b border-kp-border pb-4">
           <input type="text" placeholder="Scan return barcode or order number…"
-            className="w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[13px] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
+            className="w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[0.8125rem] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12px]">
+          <table className="w-full text-left text-[0.75rem]">
             <thead>
               <tr className="border-b border-kp-border text-kp-text-tertiary">
                 <th className="pb-2 font-medium">Return #</th>
@@ -46,7 +46,7 @@ export default function WmsReturnsPage() {
                   </td>
                   <td className="py-3 text-kp-text-tertiary">{ret.date}</td>
                   <td className="py-3 text-right">
-                    <button className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-1.5 text-[11px] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
+                    <button className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-1.5 text-[0.6875rem] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
                       Approve
                     </button>
                   </td>

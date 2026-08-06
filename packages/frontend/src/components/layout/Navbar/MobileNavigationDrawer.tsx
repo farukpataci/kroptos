@@ -162,7 +162,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
               <div className="pl-3 mt-2 space-y-4 animate-fade-in">
                 {data.features.sections.map((sec, idx) => (
                   <div key={idx} className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-kp-text-tertiary">{sec.group}</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-kp-text-tertiary">{sec.group}</p>
                     <ul className="space-y-1">
                       {sec.items.map((item, i) => (
                         <li key={i}>
@@ -199,7 +199,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
               <div className="pl-3 mt-2 space-y-4 animate-fade-in">
                 {data.solutions.sections.map((sec, idx) => (
                   <div key={idx} className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-kp-text-tertiary">{sec.group}</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-kp-text-tertiary">{sec.group}</p>
                     <ul className="space-y-1">
                       {sec.items.map((item, i) => (
                         <li key={i}>
@@ -258,7 +258,7 @@ export default function MobileNavigationDrawer({ isOpen, onClose }: MobileNaviga
               <div className="pl-3 mt-2 space-y-4 animate-fade-in">
                 {data.resources.sections.map((sec, idx) => (
                   <div key={idx} className="space-y-1.5">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-kp-text-tertiary">{sec.group}</p>
+                    <p className="text-[0.625rem] font-bold uppercase tracking-wider text-kp-text-tertiary">{sec.group}</p>
                     <ul className="space-y-1">
                       {sec.items.map((item, i) => (
                         <li key={i}>

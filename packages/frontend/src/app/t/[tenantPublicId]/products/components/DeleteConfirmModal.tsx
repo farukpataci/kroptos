@@ -65,7 +65,7 @@ export default function DeleteConfirmModal({
 
           <div className="flex items-start gap-2 rounded-kp-md bg-amber-500/5 border border-amber-500/15 px-3 py-2.5">
             <ExclamationTriangleIcon className="h-3.5 w-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-            <p className="text-[11px] text-amber-400">
+            <p className="text-[0.6875rem] text-amber-400">
               {t.rich('softDeleteNote', { strong: (chunks) => <strong>{chunks}</strong> })}
             </p>
           </div>

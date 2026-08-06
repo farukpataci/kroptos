@@ -53,8 +53,8 @@ export default function ShippingPage() {
             <TruckIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-kp-text-primary">Shipping Center</h1>
-            <p className="text-[13px] text-kp-text-tertiary">Track shipments, carriers, and simulated cargo tracking codes</p>
+            <h1 className="page-title">Shipping Center</h1>
+            <p className="page-subtitle">Track shipments, carriers, and simulated cargo tracking codes</p>
           </div>
         </div>
       </div>
@@ -73,9 +73,9 @@ export default function ShippingPage() {
 
       <div className="card">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
+          <table className="kp-table w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
             <thead>
-              <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
+              <tr className="border-b border-kp-border text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
                 <th className="py-3 px-4">Tracking Code</th>
                 <th className="py-3 px-4">Order Number</th>
                 <th className="py-3 px-4">Carrier</th>

@@ -14,11 +14,28 @@ export default function LoginPage() {
   const [rememberMe, setRememberMe] = useState(false);
   const t = useTranslations('login');
 
+  const navigateToDashboardOrTenant = () => {
+    if (typeof window !== 'undefined') {
+      const storedTenant = localStorage.getItem('selected_tenant');
+      if (storedTenant) {
+        try {
+          const parsed = JSON.parse(storedTenant);
+          const agencyId = parsed.agencyId;
+          if (agencyId) {
+            router.replace(`/t/tn_${agencyId}/dashboard`);
+            return;
+          }
+        } catch {}
+      }
+    }
+    router.replace('/select-tenant');
+  };
+
   useEffect(() => {
     if (!isLoading && user) {
-      router.push('/select-tenant');
+      navigateToDashboardOrTenant();
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,8 +43,8 @@ export default function LoginPage() {
     setSubmitting(true);
 
     const formData = new FormData(e.currentTarget);
-    const emailVal = formData.get('email') as string || '';
-    const passwordVal = formData.get('password') as string || '';
+    const emailVal = (formData.get('email') as string) || '';
+    const passwordVal = (formData.get('password') as string) || '';
 
     try {
       await login(emailVal, passwordVal);
@@ -36,7 +53,7 @@ export default function LoginPage() {
       } else {
         localStorage.removeItem('remember_email');
       }
-      router.push('/select-tenant');
+      navigateToDashboardOrTenant();
     } catch (err: any) {
       setError(err.message || 'Invalid email or password');
       setSubmitting(false);

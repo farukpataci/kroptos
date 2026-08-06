@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@theme {
+  --font-outfit: 'Outfit', sans-serif;
+}
+
 /* ============================================
    KroptOS Commerce Operating System
    Global Design System
@@ -47,25 +51,41 @@
   --shadow-dropdown: 0px 12px 16px -4px rgba(16, 24, 40, 0.08), 0px 4px 6px -2px rgba(16, 24, 40, 0.03);
   --shadow-glow-accent: 0 0 20px rgba(70, 95, 255, 0.15);
 
-  /* Layout */
-  --sidebar-width: 260px;
-  --sidebar-collapsed: 72px;
-  --header-height: 64px;
+  /* ---- UI scale ----
+     One lever for how large the whole interface renders. 0.9 gives the same
+     result as viewing the app at 90% browser zoom: it shrinks the root font
+     size, and because every metric below (and every Tailwind spacing/font
+     utility) is expressed in rem, the entire layout scales with it.
+     Set to 1 for the unscaled size. */
+  --ui-scale: 0.9;
+
+  /* Layout — shell metrics follow the TailAdmin reference proportions.
+     rem values are stated against a 16px root, so 18.125rem === 290px at
+     scale 1 and 261px at scale 0.9. */
+  --sidebar-width: 18.125rem;
+  --sidebar-collapsed: 5.625rem;
+  --header-height: 4.375rem;
+
+  /* Surface metrics shared by cards and data tables */
+  --card-padding: 1.25rem;
+  --card-padding-lg: 1.5rem;
+  --table-cell-y: 1rem;
+  --table-cell-x: 1.25rem;
 
   /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
   --radius-full: 9999px;
 
   /* Spacing */
-  --space-xs: 4px;
-  --space-sm: 8px;
-  --space-md: 16px;
-  --space-lg: 24px;
-  --space-xl: 32px;
-  --space-2xl: 48px;
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+  --space-2xl: 3rem;
 
   /* Transitions */
   --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -123,6 +143,10 @@
 }
 
 html {
+  /* Tailwind's spacing and font utilities are rem-based, so shrinking the root
+     font size scales the whole interface — the same effect as browser zoom,
+     but baked in and identical for every visitor. */
+  font-size: calc(16px * var(--ui-scale));
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -133,7 +157,7 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   line-height: 1.5;
-  font-size: 14px;
+  font-size: 0.875rem;
   overflow-x: hidden;
 }
 
@@ -285,9 +309,15 @@ a {
   background: var(--bg-secondary);
   border: 1px solid var(--border-default);
   border-radius: var(--radius-lg);
-  padding: var(--space-lg);
+  padding: var(--card-padding);
   box-shadow: var(--shadow-card);
   transition: all var(--transition-base);
+}
+
+@media (min-width: 640px) {
+  .card {
+    padding: var(--card-padding-lg);
+  }
 }
 
 .card:hover {
@@ -300,10 +330,60 @@ a {
   border-color: var(--border-accent);
 }
 
+/* ---- Data table ----
+   Row height and cell text live here rather than on each page, so the tables
+   across the app stay one size instead of drifting per screen. */
+.kp-table {
+  width: 100%;
+  text-align: left;
+  font-size: 0.875rem;
+}
+
+.kp-table thead tr {
+  border-bottom: 1px solid var(--border-default);
+  background: color-mix(in srgb, var(--bg-primary) 30%, transparent);
+}
+
+/* Sizing only — colour and weight stay with each page so emphasis (a bold SKU,
+   a muted timestamp) is not flattened by this sweep. */
+.kp-table th {
+  padding: 0.875rem var(--table-cell-x);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.kp-table td {
+  padding: var(--table-cell-y) var(--table-cell-x);
+  font-size: 0.875rem;
+  vertical-align: middle;
+}
+
+.kp-table tbody tr {
+  border-bottom: 1px solid var(--border-default);
+}
+
+.kp-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+/* ---- Page header ---- */
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  margin-top: 0.125rem;
+  font-size: 0.875rem;
+  color: var(--text-tertiary);
+}
+
 /* ---- Status Dots ---- */
 .status-dot {
-  width: 8px;
-  height: 8px;
+  width: 0.5rem;
+  height: 0.5rem;
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
@@ -335,9 +415,9 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
+  font-size: 0.6875rem;
   font-weight: 600;
-  padding: 2px 8px;
+  padding: 0.125rem 0.5rem;
   border-radius: var(--radius-full);
   line-height: 1.3;
 }

@@ -126,7 +126,7 @@ export default function ProductDetailDrawer({
               <Icon className={`h-4 w-4 ${isActive ? 'text-kp-accent' : 'text-kp-text-tertiary'}`} />
               <span>{label}</span>
               {value === 'integrations' && integrationLogs.length > 0 && (
-                <span className="rounded-full bg-kp-bg-tertiary px-1.5 text-[9px] font-bold text-kp-text-tertiary">
+                <span className="rounded-full bg-kp-bg-tertiary px-1.5 text-[0.5625rem] font-bold text-kp-text-tertiary">
                   {integrationLogs.length}
                 </span>
               )}
@@ -147,7 +147,7 @@ export default function ProductDetailDrawer({
               )}
             </div>
             <div className="text-right">
-              <p className="text-[10px] text-kp-text-tertiary">{t('salePrice')}</p>
+              <p className="text-[0.625rem] text-kp-text-tertiary">{t('salePrice')}</p>
               <p className="text-lg font-bold text-kp-text-primary">
                 {sym}{parseFloat(product.price.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
               </p>
@@ -159,18 +159,18 @@ export default function ProductDetailDrawer({
             <>
               {/* Product info */}
               <div>
-                <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('productInfo')}</h4>
+                <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('productInfo')}</h4>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('category')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('category')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5">{category?.name || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('barcode')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('barcode')}</p>
                     <p className="font-mono text-kp-text-secondary mt-0.5">{product.barcode || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('erpMapping')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('erpMapping')}</p>
                     <p className="font-mono mt-0.5 text-xs">
                       {product.erpCode ? (
                         <span className="inline-flex items-center gap-1.5 font-bold text-kp-accent">
@@ -184,8 +184,8 @@ export default function ProductDetailDrawer({
                   </div>
                   {product.description && (
                     <div className="col-span-2">
-                      <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('description')}</p>
-                      <p className="text-kp-text-secondary mt-0.5 text-[11px] leading-relaxed">{product.description}</p>
+                      <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('description')}</p>
+                      <p className="text-kp-text-secondary mt-0.5 text-[0.6875rem] leading-relaxed">{product.description}</p>
                     </div>
                   )}
                 </div>
@@ -193,14 +193,14 @@ export default function ProductDetailDrawer({
 
               {/* Inventory & Shipping */}
               <div className="border-t border-kp-border pt-4">
-                <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('inventoryLogistics')}</h4>
+                <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('inventoryLogistics')}</h4>
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('stockQuantity')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('stockQuantity')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5">{t('units', { count: product.stockQuantity })}</p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('costPrice')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('costPrice')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5">
                       {product.costPrice
                         ? `${sym}${parseFloat(product.costPrice.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`
@@ -208,13 +208,13 @@ export default function ProductDetailDrawer({
                     </p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('basePrice')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('basePrice')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5">
                       {sym}{parseFloat(product.basePrice.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('currency')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('currency')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5 font-mono">{product.currency}</p>
                   </div>
                 </div>
@@ -222,10 +222,10 @@ export default function ProductDetailDrawer({
 
               {/* Warehouse Location & Addressing */}
               <div className="border-t border-kp-border pt-4">
-                <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('warehouseInfo')}</h4>
+                <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('warehouseInfo')}</h4>
                 <div className="grid grid-cols-2 gap-3 text-xs bg-kp-bg-primary/30 p-3.5 rounded-kp-md border border-kp-border">
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('locationCode')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('locationCode')}</p>
                     <div className="mt-0.5">
                       {product.locationCode ? (
                         <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded bg-kp-accent/10 text-kp-accent border border-kp-accent/20 font-mono font-bold text-xs">
@@ -237,15 +237,15 @@ export default function ProductDetailDrawer({
                     </div>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('warehouseName')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('warehouseName')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5">{product.warehouseName || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('warehouseZone')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('warehouseZone')}</p>
                     <p className="font-medium text-kp-text-primary mt-0.5">{product.zoneName || '—'}</p>
                   </div>
                   <div>
-                    <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('locationBarcode')}</p>
+                    <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('locationBarcode')}</p>
                     <p className="font-mono text-kp-text-secondary mt-0.5">{product.locationBarcode || '—'}</p>
                   </div>
                 </div>
@@ -254,21 +254,21 @@ export default function ProductDetailDrawer({
               {/* Physical dimensions */}
               {(product.weight || product.width || product.height || product.depth) && (
                 <div className="border-t border-kp-border pt-4">
-                  <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('dimensionsWeight')}</h4>
+                  <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('dimensionsWeight')}</h4>
                   <div className="grid grid-cols-2 gap-3 text-xs">
                     <div>
-                      <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('weight')}</p>
+                      <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('weight')}</p>
                       <p className="font-medium text-kp-text-primary mt-0.5">{product.weight ? `${product.weight} kg` : '—'}</p>
                     </div>
                     <div>
-                      <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('dimensions')}</p>
+                      <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('dimensions')}</p>
                       <p className="font-medium text-kp-text-primary mt-0.5">
                         {product.width || '—'} × {product.height || '—'} × {product.depth || '—'} cm
                       </p>
                     </div>
                     {desi && (
                       <div className="col-span-2">
-                        <p className="text-kp-text-tertiary text-[10px] uppercase tracking-wider">{t('desiValue')}</p>
+                        <p className="text-kp-text-tertiary text-[0.625rem] uppercase tracking-wider">{t('desiValue')}</p>
                         <p className="font-medium text-kp-text-primary mt-0.5">{desi} desi</p>
                       </div>
                     )}
@@ -279,7 +279,7 @@ export default function ProductDetailDrawer({
               {/* Product Images Preview */}
               {product.image && (
                 <div className="border-t border-kp-border pt-4">
-                  <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('allImages')}</h4>
+                  <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('allImages')}</h4>
                   <div className="flex flex-wrap gap-2">
                     {(() => {
                       let list: string[] = [];
@@ -325,7 +325,7 @@ export default function ProductDetailDrawer({
                 ) : (
                   <div className="border border-kp-border rounded-kp-md overflow-hidden">
                     <table className="w-full text-left text-xs">
-                      <thead className="bg-kp-bg-primary/40 text-[10px] font-semibold uppercase text-kp-text-tertiary border-b border-kp-border">
+                      <thead className="bg-kp-bg-primary/40 text-[0.625rem] font-semibold uppercase text-kp-text-tertiary border-b border-kp-border">
                         <tr>
                           <th className="py-2 px-3">{t('logDate')}</th>
                           <th className="py-2 px-3">{t('logProvider')}</th>
@@ -336,11 +336,11 @@ export default function ProductDetailDrawer({
                       <tbody className="divide-y divide-kp-border text-kp-text-secondary">
                         {integrationLogs.map((log) => (
                           <tr key={log.id}>
-                            <td className="py-2.5 px-3 text-[10px]">{new Date(log.createdAt).toLocaleString('tr-TR')}</td>
+                            <td className="py-2.5 px-3 text-[0.625rem]">{new Date(log.createdAt).toLocaleString('tr-TR')}</td>
                             <td className="py-2.5 px-3 font-medium capitalize">{log.provider}</td>
-                            <td className="py-2.5 px-3 text-[10px]">{log.operation}</td>
+                            <td className="py-2.5 px-3 text-[0.625rem]">{log.operation}</td>
                             <td className="py-2.5 px-3">
-                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-bold ${
+                              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.5625rem] font-bold ${
                                 log.status === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
                                 log.status === 'failed' ? 'bg-red-500/10 text-red-400' :
                                 'bg-blue-500/10 text-blue-400'

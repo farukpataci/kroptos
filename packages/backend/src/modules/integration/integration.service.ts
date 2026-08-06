@@ -1,4 +1,11 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateIntegrationDto, UpdateIntegrationDto } from './dto/integration.dto';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
@@ -8,6 +15,7 @@ import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/cor
 import { IntegrationQueueService } from './integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 
 @Injectable()
 export class IntegrationService {
@@ -17,6 +25,8 @@ export class IntegrationService {
     private connectorFactory: MarketplaceConnectorFactory,
     private erpConnectorFactory: ErpConnectorFactory,
     private queueService: IntegrationQueueService,
+    @Inject(forwardRef(() => IntegrationSettingsService))
+    private settingsService: IntegrationSettingsService,
   ) {}
 
   private async writeAuditLog(
@@ -75,6 +85,13 @@ export class IntegrationService {
     return this.prisma.integration.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
+      include: {
+        // The list needs each row's configuration state to show the badge and
+        // to disable sync; pulling it here avoids a settings request per row.
+        setting: {
+          select: { isConfigured: true, completedSteps: true, deletedAt: true },
+        },
+      },
     });
   }
 
@@ -142,7 +159,7 @@ export class IntegrationService {
 
     const credentialsEncrypted = encrypt(JSON.stringify(newCredentials));
 
-    return this.prisma.$transaction(async (tx) => {
+    const integration = await this.prisma.$transaction(async (tx) => {
       const integration = await tx.integration.create({
         data: {
           agencyId,
@@ -170,6 +187,13 @@ export class IntegrationService {
 
       return integration;
     });
+
+    // Opens the settings record straight away, so the integration reports
+    // "awaiting configuration" from creation instead of looking ready until
+    // someone opens the settings drawer for the first time.
+    await this.settingsService.ensureForIntegration(integration);
+
+    return integration;
   }
 
   async update(
@@ -237,6 +261,8 @@ export class IntegrationService {
     ipAddress?: string,
   ) {
     const integration = await this.get(id, activeAgencyId, activeClientId, activeStoreId);
+
+    await this.settingsService.softDeleteForIntegration(integration.id);
 
     return this.prisma.$transaction(async (tx) => {
       const now = new Date();
@@ -349,9 +375,16 @@ export class IntegrationService {
   ) {
     const integration = await this.get(id, activeAgencyId, activeClientId, activeStoreId);
 
+    // The UI disables this button for an unconfigured integration, but the UI
+    // is not the boundary: syncing without a stock source or price rule would
+    // push wrong quantities and prices to a live marketplace.
+    if (integration.providerType === 'marketplace') {
+      await this.settingsService.assertConfigured(integration.id, integration.provider);
+    }
+
     // Create sync_products and sync_orders jobs
-    const productsJob = await this.queueService.addSyncJob(id, 'sync_products', {});
-    const ordersJob = await this.queueService.addSyncJob(id, 'sync_orders', {});
+    const productsJob = await this.queueService.addSyncJob(integration.id, 'sync_products', {});
+    const ordersJob = await this.queueService.addSyncJob(integration.id, 'sync_orders', {});
 
     return {
       success: true,

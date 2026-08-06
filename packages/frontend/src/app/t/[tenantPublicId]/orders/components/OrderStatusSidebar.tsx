@@ -39,7 +39,7 @@ export default function OrderStatusSidebar({
         onClick={() => onFilterChange({ ...filters, status: value })}
         aria-current={isActive ? 'true' : undefined}
         className={`
-          group flex w-full items-center gap-2.5 rounded-kp-md px-2.5 py-2 text-left text-[12px] font-medium transition-colors
+          group flex w-full items-center gap-2.5 rounded-kp-md px-2.5 py-2 text-left text-[0.75rem] font-medium transition-colors
           ${isActive
             ? 'bg-kp-accent/10 text-kp-accent'
             : 'text-kp-text-secondary hover:bg-kp-bg-hover hover:text-kp-text-primary'
@@ -50,7 +50,7 @@ export default function OrderStatusSidebar({
         <span className="flex-1 truncate">{label}</span>
         <span
           className={`
-            rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums transition-colors
+            rounded-full px-1.5 py-0.5 text-[0.625rem] font-bold tabular-nums transition-colors
             ${isActive
               ? 'bg-kp-accent/15 text-kp-accent'
               : 'bg-kp-bg-tertiary text-kp-text-tertiary group-hover:text-kp-text-secondary'
@@ -69,7 +69,7 @@ export default function OrderStatusSidebar({
         {renderItem('all', tc('all'), totalCount, 'bg-kp-text-tertiary')}
 
         <div className="pt-2">
-          <p className="px-2.5 pb-1 text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary">
+          <p className="px-2.5 pb-1 text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary">
             {t('orderStatusTitle')}
           </p>
           <div className="space-y-0.5">

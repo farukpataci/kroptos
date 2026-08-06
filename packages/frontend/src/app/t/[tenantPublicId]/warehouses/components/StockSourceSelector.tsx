@@ -206,8 +206,8 @@ export function StockSourceSelector() {
             }`}>
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-bold text-kp-text-primary text-[14px]">{src.name}</h4>
-                  <span className={`px-2 py-0.5 text-[10px] font-bold rounded-full border ${
+                  <h4 className="font-bold text-kp-text-primary text-[0.875rem]">{src.name}</h4>
+                  <span className={`px-2 py-0.5 text-[0.625rem] font-bold rounded-full border ${
                     src.status === 'connected'
                       ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
                       : 'bg-kp-bg-tertiary text-kp-text-tertiary border-kp-border'
@@ -281,7 +281,7 @@ export function StockSourceSelector() {
               <p className="text-xs text-kp-text-secondary leading-relaxed">
                 Stok yönetim kaynağını <span className="font-bold text-kp-accent">"{sourceToConfirm.name}"</span> olarak değiştirmek istediğinize emin misiniz?
               </p>
-              <p className="text-[11px] text-kp-text-tertiary leading-relaxed bg-kp-bg-primary/50 p-3 rounded-kp-md border border-kp-border">
+              <p className="text-[0.6875rem] text-kp-text-tertiary leading-relaxed bg-kp-bg-primary/50 p-3 rounded-kp-md border border-kp-border">
                 ⚠️ Bu işlem aktif stok rezervasyon kurallarını, ambar dağıtım önceliklerini ve otomatik pazaryeri senkronizasyon mekanizmalarını etkileyebilir.
               </p>
             </div>
@@ -329,16 +329,16 @@ export function StockSourceSelector() {
                 {settingsModalSource.type === 'erp' ? (
                   <>
                     <div className="p-3 bg-kp-bg-primary border border-kp-border rounded-kp-md">
-                      <p className="text-[11px] font-semibold text-kp-text-secondary">
+                      <p className="text-[0.6875rem] font-semibold text-kp-text-secondary">
                         {settingsModalSource.name} Rest API Yapılandırma Bilgileri
                       </p>
-                      <p className="text-[10px] text-kp-text-tertiary mt-0.5">
+                      <p className="text-[0.625rem] text-kp-text-tertiary mt-0.5">
                         ERP sunucunuz ile çift yönlü stok senkronizasyonu için gerekli bağlantı bilgilerini girin.
                       </p>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Rest Servis URL (API Endpoint) *</label>
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Rest Servis URL (API Endpoint) *</label>
                       <input
                         type="text"
                         required
@@ -351,7 +351,7 @@ export function StockSourceSelector() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Kullanıcı Adı *</label>
+                        <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Kullanıcı Adı *</label>
                         <input
                           type="text"
                           required
@@ -362,7 +362,7 @@ export function StockSourceSelector() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                        <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                           Şifre {hasStoredPassword ? '' : '*'}
                         </label>
                         <input
@@ -375,7 +375,7 @@ export function StockSourceSelector() {
                           className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
                         />
                         {hasStoredPassword && (
-                          <p className="mt-1 text-[10px] text-kp-text-tertiary">
+                          <p className="mt-1 text-[0.625rem] text-kp-text-tertiary">
                             Kayıtlı şifre korunur; değiştirmek için yeni şifreyi girin.
                           </p>
                         )}
@@ -384,7 +384,7 @@ export function StockSourceSelector() {
 
                     <div className="grid grid-cols-3 gap-4">
                       <div>
-                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Firma No *</label>
+                        <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Firma No *</label>
                         <input
                           type="text"
                           required
@@ -395,7 +395,7 @@ export function StockSourceSelector() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Dönem No *</label>
+                        <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Dönem No *</label>
                         <input
                           type="text"
                           required
@@ -406,7 +406,7 @@ export function StockSourceSelector() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Ambar No *</label>
+                        <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Ambar No *</label>
                         <input
                           type="text"
                           required
@@ -421,12 +421,12 @@ export function StockSourceSelector() {
                 ) : settingsModalSource.type === 'manual' ? (
                   <>
                     <div className="p-3 bg-kp-bg-primary border border-kp-border rounded-kp-md">
-                      <p className="text-[11px] font-semibold text-kp-text-secondary">Manuel Stok Yönetimi Ayarları</p>
-                      <p className="text-[10px] text-kp-text-tertiary mt-0.5">Paneldan elle girilen stok miktarlarının rezervasyon ve zamanaşımı kurallarını yapılandırın.</p>
+                      <p className="text-[0.6875rem] font-semibold text-kp-text-secondary">Manuel Stok Yönetimi Ayarları</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary mt-0.5">Paneldan elle girilen stok miktarlarının rezervasyon ve zamanaşımı kurallarını yapılandırın.</p>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Stok Rezervasyon Zamanaşımı (Dakika)</label>
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Stok Rezervasyon Zamanaşımı (Dakika)</label>
                       <input
                         type="number"
                         value={formData.reservationTimeout}
@@ -438,12 +438,12 @@ export function StockSourceSelector() {
                 ) : (
                   <>
                     <div className="p-3 bg-kp-bg-primary border border-kp-border rounded-kp-md">
-                      <p className="text-[11px] font-semibold text-kp-text-secondary">Hibrit Mod (Hybrid Mode) Ayarları</p>
-                      <p className="text-[10px] text-kp-text-tertiary mt-0.5">ERP stok çekimi ile panel rezervasyon kurallarının senkronizasyon zamanlamasını yapılandırın.</p>
+                      <p className="text-[0.6875rem] font-semibold text-kp-text-secondary">Hibrit Mod (Hybrid Mode) Ayarları</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary mt-0.5">ERP stok çekimi ile panel rezervasyon kurallarının senkronizasyon zamanlamasını yapılandırın.</p>
                     </div>
 
                     <div>
-                      <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">Otomatik Senkronizasyon Aralığı (Dakika)</label>
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">Otomatik Senkronizasyon Aralığı (Dakika)</label>
                       <input
                         type="number"
                         value={formData.syncInterval}

@@ -199,7 +199,7 @@ export function RoleList() {
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
           <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">Roller & Yetkiler</h3>
-          <p className="text-[11px] text-kp-text-tertiary">Kullanıcı yetki seviyelerini ve yetki matrisini yönetin</p>
+          <p className="text-[0.6875rem] text-kp-text-tertiary">Kullanıcı yetki seviyelerini ve yetki matrisini yönetin</p>
         </div>
       </div>
 
@@ -213,7 +213,7 @@ export function RoleList() {
               {!isAddingRole && (
                 <button
                   onClick={() => setIsAddingRole(true)}
-                  className="text-[10px] font-semibold text-kp-accent hover:text-kp-accent-hover flex items-center gap-0.5"
+                  className="text-[0.625rem] font-semibold text-kp-accent hover:text-kp-accent-hover flex items-center gap-0.5"
                 >
                   <PlusIcon className="h-3.5 w-3.5" />
                   Yeni Rol
@@ -242,13 +242,13 @@ export function RoleList() {
                   <button
                     type="button"
                     onClick={() => setIsAddingRole(false)}
-                    className="text-[10px] font-semibold text-kp-text-tertiary hover:underline"
+                    className="text-[0.625rem] font-semibold text-kp-text-tertiary hover:underline"
                   >
                     Vazgeç
                   </button>
                   <button
                     type="submit"
-                    className="bg-kp-accent text-white px-2 py-0.5 rounded text-[10px] font-semibold hover:bg-kp-accent-hover transition-colors"
+                    className="bg-kp-accent text-white px-2 py-0.5 rounded text-[0.625rem] font-semibold hover:bg-kp-accent-hover transition-colors"
                   >
                     Rol Ekle
                   </button>
@@ -285,10 +285,10 @@ export function RoleList() {
                         </button>
                       )}
                     </div>
-                    <p className="text-[10px] text-kp-text-tertiary mt-1 line-clamp-2 leading-relaxed">
+                    <p className="text-[0.625rem] text-kp-text-tertiary mt-1 line-clamp-2 leading-relaxed">
                       {role.description}
                     </p>
-                    <div className="flex items-center gap-1.5 mt-2 text-[9px] text-kp-text-tertiary">
+                    <div className="flex items-center gap-1.5 mt-2 text-[0.5625rem] text-kp-text-tertiary">
                       <FolderIcon className="h-3 w-3" />
                       <span>{role.permissions.length} Yetki Tanımlı</span>
                     </div>
@@ -307,7 +307,7 @@ export function RoleList() {
                 <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">
                   "{activeRole.name}" Rol Yetkileri
                 </h4>
-                <p className="text-[10px] text-kp-text-tertiary mt-0.5">
+                <p className="text-[0.625rem] text-kp-text-tertiary mt-0.5">
                   Bu role sahip kullanıcıların sistemde erişebileceği modülleri seçin.
                 </p>
               </div>
@@ -332,7 +332,7 @@ export function RoleList() {
             <div className="space-y-6 max-h-[500px] overflow-y-auto pr-2 divide-y divide-kp-border/30">
               {PERMISSION_GROUPS.map((group, groupIdx) => (
                 <div key={group.category} className={`${groupIdx > 0 ? 'pt-5' : ''} space-y-3`}>
-                  <h5 className="text-[10px] font-bold text-kp-accent uppercase tracking-wider">
+                  <h5 className="text-[0.625rem] font-bold text-kp-accent uppercase tracking-wider">
                     {group.category}
                   </h5>
 
@@ -358,7 +358,7 @@ export function RoleList() {
                             <div className="font-semibold text-xs text-kp-text-primary">
                               {perm.name}
                             </div>
-                            <div className="text-[10px] text-kp-text-tertiary mt-0.5 leading-relaxed">
+                            <div className="text-[0.625rem] text-kp-text-tertiary mt-0.5 leading-relaxed">
                               {perm.description}
                             </div>
                           </div>

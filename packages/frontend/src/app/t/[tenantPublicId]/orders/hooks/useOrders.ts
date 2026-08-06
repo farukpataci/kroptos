@@ -35,6 +35,8 @@ export interface Order {
   paymentStatus: string;
   fulfillmentStatus: string;
   source: string;
+  isPoolOrder?: boolean;
+  logoSyncStatus?: string;
   totalAmount: string | number;
   currency: string;
   createdAt: string;

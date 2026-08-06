@@ -13,7 +13,7 @@
     "orders": "Siparişler",
     "products": "Ürünler",
     "inventory": "Envanter",
-    "marketplaces": "Pazaryerleri",
+    "marketplaces": "Markalar",
     "erp": "ERP Ayarları",
     "shipping": "Kargo Yönetimi",
     "integration_errors": "Entegrasyon Hataları",
@@ -100,11 +100,65 @@
     "unknownError": "Bilinmeyen bir hata oluştu"
   },
   "header": {
-    "agency": "Ajans",
-    "client": "Müşteri",
+    "agency": "Dağıtıcı Firma",
+    "client": "Marka",
     "marketplace": "Pazaryeri",
     "toggleTheme": "Temayı Değiştir",
     "wms": "WMS / Depo Yönetimi"
+  },
+  "orderModes": {
+    "title": "Sipariş İşleme Modu",
+    "logoSync": "Logo Kayıtlı (Normal Sipariş)",
+    "poolOnly": "Havuz Siparişi (Logoya Kayıtsız)",
+    "manualApproval": "Manuel Onaylı"
+  },
+  "stores": {
+    "title": "Pazaryerleri",
+    "subtitle": "Çok kanallı pazaryeri mağazalarını yapılandırın ve yönetin",
+    "loading": "Pazaryerleri yükleniyor...",
+    "loadFailed": "Pazaryerleri yüklenemedi",
+    "submitFailed": "İşlem sırasında bir hata oluştu",
+    "deleteFailed": "Pazaryeri silinemedi",
+    "addStore": "Pazaryeri Ekle",
+    "agencyRequired": {
+      "title": "Ajans Bağlamı Gerekli",
+      "desc": "Pazaryeri listesini görüntülemek için lütfen aktif bir ajans bağlamı seçin."
+    },
+    "columns": {
+      "name": "Pazaryeri Adı",
+      "slug": "Kısa Ad (Slug)",
+      "status": "Durum",
+      "domain": "Adres (Domain)",
+      "currency": "Para Birimi",
+      "actions": "İşlemler"
+    },
+    "empty": "Seçili ajans/müşteri için yapılandırılmış pazaryeri bulunamadı. Yeni bir pazaryeri eklemek için \"Pazaryeri Ekle\" butonuna tıklayın.",
+    "modal": {
+      "editTitle": "Pazaryeri Ayarlarını Düzenle",
+      "createTitle": "Yeni Pazaryeri Kanalı Ekle",
+      "nameLabel": "Pazaryeri Adı *",
+      "namePlaceholder": "Örn: Trendyol Mağazam",
+      "domainLabel": "Web Domain / URL",
+      "statusLabel": "Durum",
+      "statusActive": "Aktif (Active)",
+      "statusDraft": "Taslak (Draft)",
+      "statusSuspended": "Durduruldu (Suspended)",
+      "currencyLabel": "Para Birimi",
+      "localeLabel": "Dil / Bölge (Locale)",
+      "localeTr": "Türkçe (tr-TR)",
+      "localeEn": "İngilizce (en-US)",
+      "localeDe": "Almanca (de-DE)",
+      "timezoneLabel": "Saat Dilimi (Timezone)",
+      "typeLabel": "Kanal Türü (Pazaryeri / Depo)",
+      "typeRetail": "Perakende Satış Kanalı (Pazaryeri)",
+      "typeWarehouse": "Depo Karşılama Noktası",
+      "saveChanges": "Değişiklikleri Kaydet",
+      "createStore": "Pazaryeri Oluştur"
+    },
+    "deleteModal": {
+      "title": "Pazaryeri Sil",
+      "desc": "<b>{name}</b> pazaryerini silmek istediğinize emin misiniz? Bu işlem, bu kanalla bağlantılı entegrasyon uç noktalarını ve senkronize edilmiş siparişleri kalıcı olarak devre dışı bırakacaktır."
+    }
   },
   "dashboard": {
     "title": "Operasyon Paneli",
@@ -866,7 +920,7 @@
   },
   "integrations": {
     "tabMarketplace": "Pazaryerleri",
-    "tabErp": "Stok Kaynağı",
+    "tabErp": "ERP / Stok Kaynağı",
     "tabShipping": "Kargo Yönetimi",
     "tabErrors": "Entegrasyon Hataları",
     "marketplace": {
@@ -892,14 +946,38 @@
         "deleteTitle": "Bağlantıyı Sil"
       },
       "presets": {
-        "trendyol": { "name": "Trendyol Entegrasyonu", "desc": "Türkiye'nin lider pazaryeri Trendyol sipariş, ürün ve anlık stok senkronizasyonu." },
-        "hepsiburada": { "name": "Hepsiburada Entegrasyonu", "desc": "Hepsiburada Merchant API ile otomatik ürün listeleme ve çift yönlü stok aktarımı." },
-        "amazon": { "name": "Amazon Seller Central", "desc": "Amazon SP-API altyapısı ile küresel ve yerel Amazon mağaza stok takibi." },
-        "n11": { "name": "N11 Pazaryeri Entegrasyonu", "desc": "N11 REST API ile anlık kategori eşleştirme, fiyat ve stok senkronizasyonu." },
-        "ciceksepeti": { "name": "Çiçeksepeti Entegrasyonu", "desc": "Çiçeksepeti pazaryeri mağaza bağlantısı, ürün güncellemeleri ve sipariş yönetimi." },
-        "shopify": { "name": "Shopify E-Ticaret Mağazası", "desc": "Shopify e-ticaret siteniz ile çift yönlü canlı stok ve envanter eşitlemesi." },
-        "pazarama": { "name": "Pazarama Entegrasyonu", "desc": "Pazarama pazaryeri mağaza stok, fiyat ve sipariş entegrasyonu." },
-        "woocommerce": { "name": "WooCommerce Mağaza", "desc": "WordPress WooCommerce e-ticaret siteniz ile canlı stok ve sipariş akışı." }
+        "trendyol": {
+          "name": "Trendyol Entegrasyonu",
+          "desc": "Türkiye'nin lider pazaryeri Trendyol sipariş, ürün ve anlık stok senkronizasyonu."
+        },
+        "hepsiburada": {
+          "name": "Hepsiburada Entegrasyonu",
+          "desc": "Hepsiburada Merchant API ile otomatik ürün listeleme ve çift yönlü stok aktarımı."
+        },
+        "amazon": {
+          "name": "Amazon Seller Central",
+          "desc": "Amazon SP-API altyapısı ile küresel ve yerel Amazon mağaza stok takibi."
+        },
+        "n11": {
+          "name": "N11 Pazaryeri Entegrasyonu",
+          "desc": "N11 REST API ile anlık kategori eşleştirme, fiyat ve stok senkronizasyonu."
+        },
+        "ciceksepeti": {
+          "name": "Çiçeksepeti Entegrasyonu",
+          "desc": "Çiçeksepeti pazaryeri mağaza bağlantısı, ürün güncellemeleri ve sipariş yönetimi."
+        },
+        "shopify": {
+          "name": "Shopify E-Ticaret Mağazası",
+          "desc": "Shopify e-ticaret siteniz ile çift yönlü canlı stok ve envanter eşitlemesi."
+        },
+        "pazarama": {
+          "name": "Pazarama Entegrasyonu",
+          "desc": "Pazarama pazaryeri mağaza stok, fiyat ve sipariş entegrasyonu."
+        },
+        "woocommerce": {
+          "name": "WooCommerce Mağaza",
+          "desc": "WordPress WooCommerce e-ticaret siteniz ile canlı stok ve sipariş akışı."
+        }
       },
       "modal": {
         "title": "{name} API Ayarları",
@@ -999,6 +1077,1058 @@
       "unknown": "Bilinmeyen",
       "none": "Yok",
       "deleteMapping": "Eşleştirmeyi Sil"
+    },
+    "settings": {
+      "tabs": {
+        "general": {
+          "title": "Genel"
+        },
+        "orders": {
+          "title": "Siparişler"
+        },
+        "catalog": {
+          "title": "Ürün & Katalog"
+        },
+        "stock": {
+          "title": "Stok"
+        },
+        "pricing": {
+          "title": "Fiyatlandırma"
+        },
+        "fulfillment": {
+          "title": "Kargo & Teslimat"
+        },
+        "returns": {
+          "title": "İade & İptal"
+        },
+        "invoicing": {
+          "title": "Fatura & Muhasebe"
+        },
+        "notifications": {
+          "title": "Bildirim & Hata"
+        },
+        "advanced": {
+          "title": "Gelişmiş"
+        }
+      },
+      "sections": {
+        "credentials": {
+          "title": "API Bilgileri",
+          "description": "Pazaryeri satıcı panelinizden aldığınız erişim bilgilerini girin."
+        },
+        "general": {
+          "connection": {
+            "title": "Bağlantı",
+            "description": "Entegrasyonun panelde nasıl görüneceği ve hangi mağaza kapsamında çalışacağı."
+          },
+          "health": {
+            "title": "Sağlık Kontrolü",
+            "description": "Ardışık hatalarda entegrasyonun otomatik olarak pasife alınma davranışı."
+          }
+        },
+        "orders": {
+          "import": {
+            "title": "Sipariş Çekme",
+            "description": "Pazaryerinden hangi siparişlerin, hangi sıklıkla çekileceği."
+          },
+          "statusMapping": {
+            "title": "Durum Eşleştirme",
+            "description": "Pazaryeri sipariş durumlarının KroptOS karşılıkları."
+          },
+          "automation": {
+            "title": "Otomasyon"
+          },
+          "customer": {
+            "title": "Müşteri Kaydı"
+          }
+        },
+        "catalog": {
+          "push": {
+            "title": "Ürün Gönderimi",
+            "description": "Ürünlerin pazaryerine gönderilme kuralları."
+          },
+          "content": {
+            "title": "İçerik Kuralları"
+          },
+          "defaults": {
+            "title": "Varsayılanlar",
+            "description": "Eşleşmeyen marka, kategori ve nitelikler için geri dönüş değerleri."
+          }
+        },
+        "stock": {
+          "source": {
+            "title": "Stok Kaynağı",
+            "description": "Pazaryerine gönderilecek stok miktarının hangi depolardan hesaplanacağı."
+          },
+          "policy": {
+            "title": "Stok Politikası",
+            "description": "Güvenlik payı, üst sınır ve aşırı satış koruması."
+          },
+          "timing": {
+            "title": "Gönderim Zamanlaması"
+          },
+          "zero": {
+            "title": "Stok Bittiğinde",
+            "description": "Kullanılabilir stok sıfıra düştüğünde ne yapılacağı."
+          }
+        },
+        "pricing": {
+          "source": {
+            "title": "Fiyat Kaynağı",
+            "description": "Pazaryerine gönderilecek fiyatın hangi alandan okunacağı."
+          },
+          "markup": {
+            "title": "Kâr Marjı ve Yuvarlama",
+            "description": "Baz fiyatın üzerine uygulanacak artış ve yuvarlama kuralı."
+          },
+          "margin": {
+            "title": "Marj Koruması"
+          },
+          "timing": {
+            "title": "Gönderim Zamanlaması"
+          }
+        },
+        "fulfillment": {
+          "model": {
+            "title": "Teslimat Modeli",
+            "description": "Siparişleri siz mi yoksa pazaryeri mi (FBA, TYD) gönderiyor."
+          },
+          "carrier": {
+            "title": "Kargo Eşleştirme"
+          },
+          "timing": {
+            "title": "Hazırlama Süresi"
+          },
+          "label": {
+            "title": "Etiket"
+          }
+        },
+        "returns": {
+          "import": {
+            "title": "İade Çekme",
+            "description": "İade taleplerinin çekilmesi, onayı ve stoğa geri alınması."
+          }
+        },
+        "invoicing": {
+          "general": {
+            "title": "Faturalandırma",
+            "description": "Sipariş faturalarının hangi tetikleyiciyle ve hangi ERP üzerinden kesileceği."
+          }
+        },
+        "notifications": {
+          "channels": {
+            "title": "Bildirim Kanalları",
+            "description": "Entegrasyon uyarılarının nereye iletileceği."
+          },
+          "events": {
+            "title": "Bildirilecek Olaylar"
+          },
+          "retry": {
+            "title": "Yeniden Deneme"
+          }
+        },
+        "advanced": {
+          "runtime": {
+            "title": "Çalışma Zamanı",
+            "description": "Hız limiti, eşzamanlılık ve günlük kayıt ayarları. Değiştirmeden önce emin olun."
+          }
+        },
+        "trendyol": {
+          "shipment": {
+            "title": "Trendyol Gönderi Ayarları",
+            "description": "Trendyol satıcı panelinizde tanımlı adres ve gönderim seçenekleri."
+          }
+        },
+        "hb": {
+          "listing": {
+            "title": "Hepsiburada Listeleme",
+            "description": "Ürünlerin listing mi yoksa ürün kaydı olarak mı gönderileceği."
+          },
+          "delivery": {
+            "title": "Hepsiburada Teslimat"
+          }
+        },
+        "n11": {
+          "shipment": {
+            "title": "n11 Gönderi Ayarları",
+            "description": "n11 kargo şablonu ve hazırlama süresi."
+          },
+          "catalog": {
+            "title": "n11 Katalog"
+          }
+        },
+        "amazon": {
+          "region": {
+            "title": "Amazon Bölgesi",
+            "description": "SP-API bölgesi ve satış yapılacak pazaryerleri."
+          },
+          "fulfillment": {
+            "title": "Amazon Teslimat"
+          },
+          "feed": {
+            "title": "Amazon Feed"
+          }
+        },
+        "cs": {
+          "delivery": {
+            "title": "ÇiçekSepeti Teslimat",
+            "description": "Aynı gün teslimat kapsamı ve hazırlama süresi."
+          },
+          "gifting": {
+            "title": "Hediye Seçenekleri"
+          }
+        }
+      },
+      "fields": {
+        "general": {
+          "displayName": {
+            "label": "Görünen Ad",
+            "help": "Panelde ve raporlarda bu entegrasyonu tanımlayan ad.",
+            "placeholder": "Trendyol – Ana Mağaza"
+          },
+          "isActive": {
+            "label": "Entegrasyon Aktif",
+            "help": "Kapalıyken bu entegrasyon için hiçbir senkronizasyon çalışmaz."
+          },
+          "environment": {
+            "label": "Ortam"
+          },
+          "storeScope": {
+            "label": "Bağlı Mağaza",
+            "help": "Çekilen siparişlerin ve gönderilen stoğun ait olacağı mağaza."
+          },
+          "currency": {
+            "label": "Para Birimi"
+          },
+          "timezone": {
+            "label": "Saat Dilimi",
+            "help": "Kesim saati ve zamanlanmış görevler bu saat dilimine göre hesaplanır."
+          },
+          "autoDisableOnErrorCount": {
+            "label": "Otomatik Pasife Alma",
+            "help": "Bu kadar ardışık hatadan sonra entegrasyon durdurulur. 0 = kapalı."
+          },
+          "healthCheckIntervalMinutes": {
+            "label": "Sağlık Kontrol Aralığı"
+          }
+        },
+        "orders": {
+          "autoImport": {
+            "label": "Siparişleri Otomatik Çek",
+            "help": "Kapalıyken siparişler yalnızca elle senkronizasyonla gelir."
+          },
+          "intervalMinutes": {
+            "label": "Çekme Aralığı",
+            "help": "Yeni siparişlerin ne sıklıkla sorgulanacağı."
+          },
+          "backfillDays": {
+            "label": "Geriye Dönük Çekim",
+            "help": "İlk kurulumda kaç günlük geçmiş siparişin çekileceği."
+          },
+          "importStatuses": {
+            "label": "Çekilecek Sipariş Durumları",
+            "help": "Yalnızca seçili durumdaki siparişler KroptOS'a aktarılır."
+          },
+          "numberPrefix": {
+            "label": "Sipariş No Ön Eki",
+            "help": "Dahili sipariş numarasının başına eklenir."
+          },
+          "skipTestOrders": {
+            "label": "Test Siparişlerini Atla"
+          },
+          "statusMap": {
+            "label": "Durum Eşleştirmesi"
+          },
+          "autoAccept": {
+            "label": "Siparişleri Otomatik Onayla",
+            "help": "Sipariş çekilir çekilmez pazaryerinde onaylanır."
+          },
+          "autoCreateShipment": {
+            "label": "Otomatik Sevkiyat Oluştur"
+          },
+          "splitByWarehouse": {
+            "label": "Depoya Göre Böl",
+            "help": "Farklı depolardan karşılanan kalemler ayrı sevkiyatlara ayrılır."
+          },
+          "onCancelAction": {
+            "label": "İptal Edildiğinde"
+          },
+          "createCustomerRecord": {
+            "label": "Müşteri Kaydı Oluştur"
+          },
+          "maskPII": {
+            "label": "Kişisel Verileri Maskele",
+            "help": "KVKK: müşteri adresi ve telefonu günlüklerde ve dışa aktarımlarda maskelenir."
+          }
+        },
+        "catalog": {
+          "autoPushNew": {
+            "label": "Yeni Ürünleri Otomatik Gönder",
+            "help": "Katalogda açılan her yeni ürün pazaryerine gönderilir."
+          },
+          "updateMode": {
+            "label": "Güncelleme Biçimi",
+            "help": "Kısmi güncelleme yalnızca değişen alanları gönderir."
+          },
+          "requireApproval": {
+            "label": "Gönderim Öncesi Onay İste"
+          },
+          "titleTemplate": {
+            "label": "Başlık Şablonu",
+            "help": "Kullanılabilir değişkenler: {brand}, {name}, {sku}, {category}."
+          },
+          "descriptionSource": {
+            "label": "Açıklama Kaynağı"
+          },
+          "stripHtml": {
+            "label": "HTML Etiketlerini Temizle"
+          },
+          "barcodeSource": {
+            "label": "Barkod Kaynağı"
+          },
+          "imageOrder": {
+            "label": "Görsel Sıralaması"
+          },
+          "maxImages": {
+            "label": "En Fazla Görsel"
+          },
+          "defaultBrandId": {
+            "label": "Varsayılan Marka",
+            "help": "Markası tanımlı olmayan ürünler bu markayla gönderilir."
+          },
+          "defaultCategoryId": {
+            "label": "Varsayılan Kategori",
+            "help": "Kategori eşleşmesi bulunamadığında kullanılır."
+          },
+          "missingAttributePolicy": {
+            "label": "Eksik Nitelik Politikası"
+          }
+        },
+        "stock": {
+          "source": {
+            "label": "Stok Kaynağı"
+          },
+          "warehouseIds": {
+            "label": "Depolar",
+            "help": "Yalnızca seçili depolardaki kullanılabilir stok toplanır."
+          },
+          "allocationRuleId": {
+            "label": "Stok Dağıtım Kuralı",
+            "help": "Depo ayırma kuralı stoğun nasıl paylaştırılacağını belirler."
+          },
+          "bufferQuantity": {
+            "label": "Güvenlik Payı",
+            "help": "Kullanılabilir stoktan düşülüp pazaryerine gönderilmeyen miktar."
+          },
+          "bufferPercent": {
+            "label": "Yüzdesel Güvenlik Payı",
+            "help": "Adet bazlı payın üzerine ayrıca uygulanır."
+          },
+          "maxCap": {
+            "label": "Üst Sınır",
+            "help": "Gerçek stok ne olursa olsun bu değerin üzerinde miktar gönderilmez."
+          },
+          "minThreshold": {
+            "label": "Alt Eşik",
+            "help": "Kullanılabilir stok bu değerin altına düşerse 0 gönderilir."
+          },
+          "oversellProtection": {
+            "label": "Aşırı Satış Koruması",
+            "help": "Rezerve edilmiş stok pazaryerine gönderilen miktardan düşülür."
+          },
+          "pushIntervalMinutes": {
+            "label": "Stok Gönderim Aralığı",
+            "help": "Toplu stok güncellemesinin çalışma sıklığı."
+          },
+          "realtimeOnOrder": {
+            "label": "Sipariş Sonrası Anlık Güncelle",
+            "help": "Sipariş geldiğinde beklemeden stok gönderilir."
+          },
+          "batchSize": {
+            "label": "Toplu Gönderim Boyutu",
+            "help": "Tek istekte gönderilecek en fazla ürün sayısı."
+          },
+          "onZeroAction": {
+            "label": "Stok Sıfırlandığında"
+          }
+        },
+        "pricing": {
+          "priceListId": {
+            "label": "Fiyat Listesi",
+            "help": "Boş bırakılırsa ürünün kendi fiyatı kullanılır."
+          },
+          "basePriceField": {
+            "label": "Baz Fiyat Alanı"
+          },
+          "vatIncluded": {
+            "label": "Fiyatlar KDV Dahil"
+          },
+          "markupType": {
+            "label": "Artış Türü"
+          },
+          "markupValue": {
+            "label": "Artış Değeri"
+          },
+          "rounding": {
+            "label": "Yuvarlama",
+            "help": "Hesaplanan fiyat bu kurala göre son haline getirilir."
+          },
+          "floorPrice": {
+            "label": "Taban Fiyat",
+            "help": "Bu değerin altında fiyat gönderilmez."
+          },
+          "ceilPrice": {
+            "label": "Tavan Fiyat",
+            "help": "Bu değerin üzerinde fiyat gönderilmez."
+          },
+          "commissionRate": {
+            "label": "Komisyon Oranı",
+            "help": "Pazaryerinden okunur; yalnızca marj hesabında bilgi amaçlı kullanılır."
+          },
+          "minMarginPercent": {
+            "label": "En Düşük Marj"
+          },
+          "blockBelowMargin": {
+            "label": "Marj Altını Engelle",
+            "help": "Hesaplanan fiyat en düşük marjın altına düşerse gönderim yapılmaz."
+          },
+          "pushIntervalMinutes": {
+            "label": "Fiyat Gönderim Aralığı",
+            "help": "Toplu fiyat güncellemesinin çalışma sıklığı."
+          },
+          "requireApprovalOnDrop": {
+            "label": "Ani Düşüşte Onay İste",
+            "help": "Belirlenen orandan fazla fiyat düşüşü elle onaylanana kadar bekletilir."
+          },
+          "approvalDropPercent": {
+            "label": "Onay Gerektiren Düşüş Oranı"
+          }
+        },
+        "fulfillment": {
+          "model": {
+            "label": "Teslimat Modeli"
+          },
+          "carrierMap": {
+            "label": "Kargo Eşleştirmesi"
+          },
+          "defaultCarrierId": {
+            "label": "Varsayılan Kargo",
+            "help": "Eşleşme bulunamayan gönderilerde kullanılır."
+          },
+          "handlingDays": {
+            "label": "Hazırlama Süresi",
+            "help": "Siparişin kargoya verilmesine kadar geçecek iş günü sayısı."
+          },
+          "cutoffTime": {
+            "label": "Kesim Saati",
+            "help": "Bu saatten sonraki siparişler ertesi iş gününde hazırlanır."
+          },
+          "workingDays": {
+            "label": "Çalışma Günleri"
+          },
+          "labelSource": {
+            "label": "Etiket Kaynağı"
+          },
+          "autoPrintLabel": {
+            "label": "Etiketi Otomatik Yazdır"
+          },
+          "packageWeightSource": {
+            "label": "Paket Ağırlığı Kaynağı"
+          }
+        },
+        "returns": {
+          "autoImport": {
+            "label": "İadeleri Otomatik Çek"
+          },
+          "intervalMinutes": {
+            "label": "İade Çekme Aralığı",
+            "help": "İade taleplerinin sorgulanma sıklığı."
+          },
+          "autoApproveUnderAmount": {
+            "label": "Otomatik Onay Tutarı",
+            "help": "Bu tutarın altındaki iadeler elle onay beklemeden kabul edilir. 0 = kapalı."
+          },
+          "restockOnApproval": {
+            "label": "Onayda Stoğa Geri Al"
+          },
+          "restockWarehouseId": {
+            "label": "İade Deposu"
+          },
+          "refundMode": {
+            "label": "İade Ödemesi"
+          }
+        },
+        "invoicing": {
+          "autoInvoice": {
+            "label": "Otomatik Fatura Kes",
+            "help": "Siparişler seçilen tetikleyicide otomatik faturalandırılır."
+          },
+          "erpIntegrationId": {
+            "label": "ERP Entegrasyonu",
+            "help": "Faturanın kesileceği ERP bağlantısı."
+          },
+          "invoiceType": {
+            "label": "Fatura Tipi"
+          },
+          "trigger": {
+            "label": "Fatura Tetikleyicisi"
+          },
+          "uploadToMarketplace": {
+            "label": "Faturayı Pazaryerine Yükle"
+          },
+          "seriesPrefix": {
+            "label": "Seri Ön Eki",
+            "help": "Fatura numarasının başına eklenir."
+          }
+        },
+        "notifications": {
+          "channels": {
+            "label": "Kanallar"
+          },
+          "emails": {
+            "label": "E-posta Adresleri",
+            "help": "Enter ile ekleyin. Bildirimler bu adreslere gönderilir."
+          },
+          "webhookUrl": {
+            "label": "Webhook Adresi",
+            "placeholder": "https://ornek.com/webhook"
+          },
+          "webhookSecret": {
+            "label": "Webhook Gizli Anahtarı",
+            "help": "İstek imzasını doğrulamak için kullanılır. Kaydedildikten sonra bir daha görüntülenemez."
+          },
+          "events": {
+            "label": "Olaylar"
+          },
+          "maxRetry": {
+            "label": "En Fazla Deneme"
+          },
+          "backoffStrategy": {
+            "label": "Bekleme Stratejisi"
+          },
+          "pauseOnCritical": {
+            "label": "Kritik Hatada Durdur",
+            "help": "Kritik bir hata alındığında kuyruk elle devam ettirilene kadar bekletilir."
+          }
+        },
+        "advanced": {
+          "dryRun": {
+            "label": "Prova Modu",
+            "help": "Yazma işlemleri pazaryerine gönderilmez, yalnızca günlüğe yazılır."
+          },
+          "rateLimitPerMinute": {
+            "label": "Dakikalık İstek Limiti",
+            "help": "Pazaryerinin izin verdiği kotanın üzerine çıkmayın."
+          },
+          "requestTimeoutMs": {
+            "label": "İstek Zaman Aşımı (ms)"
+          },
+          "concurrency": {
+            "label": "Eşzamanlılık",
+            "help": "Aynı anda çalışacak arka plan görevi sayısı."
+          },
+          "logLevel": {
+            "label": "Günlük Seviyesi"
+          },
+          "logRetentionDays": {
+            "label": "Günlük Saklama Süresi"
+          },
+          "customHeaders": {
+            "label": "Özel Başlıklar",
+            "help": "Her isteğe eklenecek HTTP başlıkları. Yalnızca pazaryeri özellikle istediyse kullanın."
+          }
+        },
+        "trendyol": {
+          "shipmentAddressId": {
+            "label": "Sevkiyat Adresi",
+            "help": "Trendyol satıcı panelinizde tanımlı gönderim adresi."
+          },
+          "returnAddressId": {
+            "label": "İade Adresi"
+          },
+          "fastDelivery": {
+            "label": "Hızlı Teslimat",
+            "help": "Ürünler Trendyol Hızlı Teslimat programında listelenir."
+          },
+          "buyboxStrategy": {
+            "label": "Buybox Stratejisi",
+            "help": "Buybox kaybedildiğinde fiyatın nasıl güncelleneceği."
+          }
+        },
+        "hb": {
+          "listingMode": {
+            "label": "Listeleme Biçimi",
+            "help": "Mevcut bir ürüne listing açmak yerine yeni ürün kaydı oluşturur."
+          },
+          "deliveryProfileId": {
+            "label": "Teslimat Profili",
+            "help": "Hepsiburada satıcı panelinizde tanımlı teslimat profili."
+          },
+          "cargoCompanyCode": {
+            "label": "Kargo Firma Kodu",
+            "help": "Hepsiburada'nın tanımladığı kargo firma kodu."
+          },
+          "fastDelivery": {
+            "label": "Hızlı Teslimat"
+          }
+        },
+        "n11": {
+          "shipmentTemplate": {
+            "label": "Kargo Şablonu",
+            "help": "n11 satıcı panelinizdeki kargo şablonunun adı."
+          },
+          "preparingDay": {
+            "label": "Hazırlama Günü",
+            "help": "n11'e bildirilecek hazırlama süresi (1-7 gün)."
+          },
+          "catalogMatch": {
+            "label": "Katalog Eşleştirme",
+            "help": "Ürünler n11 kataloğundaki mevcut kayıtlarla eşleştirilmeye çalışılır."
+          }
+        },
+        "amazon": {
+          "region": {
+            "label": "SP-API Bölgesi",
+            "help": "Hesabınızın bağlı olduğu Amazon bölgesi."
+          },
+          "marketplaceIds": {
+            "label": "Pazaryerleri",
+            "help": "Ürün ve stok gönderilecek Amazon pazaryerleri."
+          },
+          "fulfillmentChannel": {
+            "label": "Karşılama Kanalı",
+            "help": "FBA'da stok Amazon depolarından yönetilir, KroptOS stok göndermez."
+          },
+          "mfnShippingTemplate": {
+            "label": "MFN Gönderim Şablonu",
+            "help": "Seller Central'da tanımlı gönderim şablonunun adı."
+          },
+          "feedType": {
+            "label": "Feed Tipi",
+            "help": "Ürün gönderiminde kullanılacak SP-API feed formatı."
+          }
+        },
+        "cs": {
+          "deliveryType": {
+            "label": "Teslimat Tipi",
+            "help": "Aynı gün teslimat yalnızca seçili şehirlerde geçerlidir."
+          },
+          "deliveryCities": {
+            "label": "Aynı Gün Teslimat Şehirleri",
+            "help": "Aynı gün teslimat yapabildiğiniz şehirler."
+          },
+          "preparationHours": {
+            "label": "Hazırlama Süresi",
+            "help": "Siparişin hazırlanması için gereken saat."
+          },
+          "messageCardSupport": {
+            "label": "Not Kartı Desteği",
+            "help": "Alıcının hediye notu ekleyebilmesine izin verilir."
+          }
+        }
+      },
+      "options": {
+        "intervalMinutes": {
+          "5": "5 dakika",
+          "10": "10 dakika",
+          "15": "15 dakika",
+          "30": "30 dakika",
+          "60": "1 saat",
+          "180": "3 saat",
+          "360": "6 saat",
+          "720": "12 saat",
+          "1440": "Günde bir"
+        },
+        "general": {
+          "environment": {
+            "production": "Canlı",
+            "sandbox": "Test (Sandbox)"
+          },
+          "currency": {
+            "TRY": "₺ Türk Lirası",
+            "USD": "$ Amerikan Doları",
+            "EUR": "€ Euro",
+            "GBP": "£ Sterlin"
+          },
+          "timezone": {
+            "Europe/Istanbul": "İstanbul (GMT+3)",
+            "Europe/London": "Londra (GMT+0)",
+            "Europe/Berlin": "Berlin (GMT+1)",
+            "UTC": "UTC"
+          }
+        },
+        "orders": {
+          "importStatuses": {
+            "created": "Oluşturuldu",
+            "picking": "Hazırlanıyor",
+            "invoiced": "Faturalandı",
+            "shipped": "Kargoya Verildi",
+            "delivered": "Teslim Edildi",
+            "cancelled": "İptal Edildi",
+            "returned": "İade Edildi"
+          },
+          "kroptosStatus": {
+            "pending": "Beklemede",
+            "processing": "İşleniyor",
+            "shipped": "Kargoda",
+            "delivered": "Teslim Edildi",
+            "cancelled": "İptal"
+          },
+          "onCancelAction": {
+            "restock": "Stoğa geri al",
+            "keep": "Stoğu değiştirme",
+            "manual": "Elle karar ver"
+          }
+        },
+        "catalog": {
+          "updateMode": {
+            "full": "Tam gönderim",
+            "partial": "Yalnızca değişenler"
+          },
+          "descriptionSource": {
+            "long": "Uzun açıklama",
+            "short": "Kısa açıklama",
+            "custom": "Özel şablon"
+          },
+          "barcodeSource": {
+            "barcode": "Barkod",
+            "sku": "SKU",
+            "gtin": "GTIN"
+          },
+          "imageOrder": {
+            "default": "Varsayılan sıra",
+            "mainFirst": "Ana görsel önce",
+            "custom": "Özel sıra"
+          },
+          "missingAttributePolicy": {
+            "block": "Gönderimi engelle",
+            "warn": "Uyar ve gönder",
+            "useDefault": "Varsayılanı kullan"
+          }
+        },
+        "stock": {
+          "source": {
+            "allWarehouses": "Tüm depolar",
+            "selected": "Seçili depolar",
+            "allocationRule": "Dağıtım kuralı"
+          },
+          "onZeroAction": {
+            "sendZero": "Sıfır gönder",
+            "deactivateListing": "İlanı pasife al",
+            "ignore": "Hiçbir şey yapma"
+          }
+        },
+        "pricing": {
+          "basePriceField": {
+            "salePrice": "Satış fiyatı",
+            "listPrice": "Liste fiyatı",
+            "campaignPrice": "Kampanya fiyatı"
+          },
+          "markupType": {
+            "none": "Yok",
+            "percent": "Yüzdesel",
+            "fixed": "Sabit tutar"
+          },
+          "rounding": {
+            "none": "Yuvarlama yok",
+            "x99": ",99 ile bitir",
+            "x90": ",90 ile bitir",
+            "nearest1": "En yakın 1'e",
+            "nearest5": "En yakın 5'e"
+          }
+        },
+        "fulfillment": {
+          "model": {
+            "seller": "Satıcı gönderir",
+            "marketplace": "Pazaryeri gönderir"
+          },
+          "labelSource": {
+            "marketplace": "Pazaryeri etiketi",
+            "carrier": "Kargo firması etiketi",
+            "kroptos": "KroptOS etiketi"
+          },
+          "packageWeightSource": {
+            "product": "Ürün ağırlığı",
+            "fixed": "Sabit ağırlık",
+            "calculated": "Hesaplanan"
+          },
+          "marketplaceCarrier": {
+            "yurtici": "Yurtiçi Kargo",
+            "aras": "Aras Kargo",
+            "mng": "MNG Kargo",
+            "ptt": "PTT Kargo",
+            "surat": "Sürat Kargo",
+            "ups": "UPS"
+          }
+        },
+        "returns": {
+          "refundMode": {
+            "auto": "Otomatik",
+            "manual": "Elle"
+          }
+        },
+        "invoicing": {
+          "invoiceType": {
+            "e-archive": "e-Arşiv",
+            "e-invoice": "e-Fatura"
+          },
+          "trigger": {
+            "onOrder": "Sipariş alındığında",
+            "onShip": "Kargoya verildiğinde",
+            "onDeliver": "Teslim edildiğinde"
+          }
+        },
+        "notifications": {
+          "channels": {
+            "inApp": "Panel içi",
+            "email": "E-posta",
+            "slack": "Slack",
+            "webhook": "Webhook"
+          },
+          "events": {
+            "syncFailed": "Senkronizasyon hatası",
+            "authFailed": "Yetkilendirme hatası",
+            "stockMismatch": "Stok uyumsuzluğu",
+            "priceBlocked": "Fiyat engellendi",
+            "newOrder": "Yeni sipariş"
+          },
+          "backoffStrategy": {
+            "fixed": "Sabit",
+            "linear": "Doğrusal",
+            "exponential": "Üstel"
+          }
+        },
+        "advanced": {
+          "logLevel": {
+            "debug": "Debug",
+            "info": "Info",
+            "warn": "Warn",
+            "error": "Error"
+          }
+        },
+        "trendyol": {
+          "buyboxStrategy": {
+            "off": "Kapalı",
+            "matchLowest": "En düşük fiyatı yakala",
+            "minMargin": "Marj sınırına kadar in"
+          }
+        },
+        "hb": {
+          "listingMode": {
+            "listing": "Mevcut ürüne listing",
+            "product": "Yeni ürün kaydı"
+          }
+        },
+        "amazon": {
+          "region": {
+            "eu": "Avrupa (EU)",
+            "na": "Kuzey Amerika (NA)",
+            "fe": "Uzak Doğu (FE)"
+          },
+          "fulfillmentChannel": {
+            "FBA": "FBA (Amazon gönderir)",
+            "FBM": "FBM (Satıcı gönderir)"
+          },
+          "feedType": {
+            "JSON_LISTINGS_FEED": "JSON Listings Feed",
+            "POST_PRODUCT_DATA": "Product Data (XML)",
+            "POST_INVENTORY_AVAILABILITY_DATA": "Inventory Availability (XML)"
+          },
+          "marketplaceIds": {
+            "A1UNQM1SR2CHM": "Türkiye (amazon.com.tr)",
+            "A1PA6795UKMFR9": "Almanya (amazon.de)",
+            "A1RKKUPIHCS9HS": "İspanya (amazon.es)",
+            "A13V1IB3VIYZZH": "Fransa (amazon.fr)",
+            "APJ6JRA9NG5V4": "İtalya (amazon.it)",
+            "A1F83G8C2ARO7P": "Birleşik Krallık (amazon.co.uk)",
+            "ATVPDKIKX0DER": "ABD (amazon.com)"
+          }
+        },
+        "cs": {
+          "deliveryType": {
+            "sameDay": "Aynı gün",
+            "standard": "Standart"
+          },
+          "deliveryCities": {
+            "istanbul": "İstanbul",
+            "ankara": "Ankara",
+            "izmir": "İzmir",
+            "bursa": "Bursa",
+            "antalya": "Antalya",
+            "adana": "Adana"
+          }
+        }
+      },
+      "credentials": {
+        "trendyol": {
+          "sellerId": "Satıcı ID (Supplier ID)",
+          "sellerIdHelp": "Trendyol satıcı panelinde Hesap Bilgileri altında yer alır.",
+          "apiKey": "API Key",
+          "apiSecret": "API Secret"
+        },
+        "hepsiburada": {
+          "merchantId": "Merchant ID",
+          "merchantIdHelp": "Hepsiburada satıcı panelinde Entegrasyon Bilgileri altında yer alır.",
+          "apiKey": "API Key",
+          "apiSecret": "API Secret"
+        },
+        "n11": {
+          "apiKey": "API Key",
+          "apiSecret": "API Secret"
+        },
+        "amazon": {
+          "sellerId": "Seller ID",
+          "sellerIdHelp": "Seller Central > Hesap Bilgileri altındaki satıcı kimliğiniz.",
+          "awsAccessKey": "AWS Access Key",
+          "awsSecretKey": "AWS Secret Key",
+          "refreshToken": "Refresh Token"
+        },
+        "ciceksepeti": {
+          "apiKey": "API Key",
+          "apiKeyHelp": "ÇiçekSepeti satıcı panelinde Entegrasyon bölümünden alınır."
+        }
+      },
+      "mapping": {
+        "marketplaceStatus": "Pazaryeri Durumu",
+        "kroptosStatus": "KroptOS Durumu",
+        "marketplaceCarrier": "Pazaryeri Kargosu",
+        "kroptosCarrier": "KroptOS Kargosu"
+      },
+      "units": {
+        "pieces": "adet",
+        "minutes": "dk",
+        "hours": "saat",
+        "days": "gün",
+        "percent": "%",
+        "currency": "₺"
+      },
+      "weekdays": {
+        "mon": "Pzt",
+        "tue": "Sal",
+        "wed": "Çar",
+        "thu": "Per",
+        "fri": "Cum",
+        "sat": "Cmt",
+        "sun": "Paz"
+      },
+      "badges": {
+        "advanced": "Gelişmiş",
+        "beta": "Beta",
+        "providerOnly": "Sağlayıcıya özel"
+      },
+      "validation": {
+        "required": "Bu alan zorunludur.",
+        "unknownKey": "Bu ayar bu pazaryeri için tanımlı değil.",
+        "mustBeNumber": "Sayısal bir değer girin.",
+        "mustBeBoolean": "Açık veya kapalı olmalıdır.",
+        "mustBeText": "Metin değeri girin.",
+        "mustBeList": "Liste değeri bekleniyor.",
+        "mustBeStringList": "Yalnızca metin değerleri eklenebilir.",
+        "mustBeMap": "Eşleştirme değeri bekleniyor.",
+        "mustBeTime": "Saati SS:DD biçiminde girin.",
+        "min": "En az {min} olmalıdır.",
+        "max": "En fazla {max} olabilir.",
+        "step": "{step} katları şeklinde girin.",
+        "maxLength": "En fazla {maxLength} karakter olabilir.",
+        "pattern": "Biçim geçerli değil.",
+        "invalidOption": "Geçersiz seçim.",
+        "unmappedValues": "{count} değer eşleştirilmedi: {values}",
+        "warehouseRequired": "Seçili depolar modunda en az bir depo seçmelisiniz.",
+        "floorAboveCeil": "Taban fiyat tavan fiyattan büyük olamaz.",
+        "markupValueRequired": "Artış türü seçildiğinde artış değeri sıfırdan büyük olmalıdır.",
+        "erpRequired": "Otomatik fatura açıkken bir ERP entegrasyonu seçmelisiniz.",
+        "webhookUrlRequired": "Webhook kanalı için https:// ile başlayan bir adres girin.",
+        "statusRequired": "Otomatik çekim açıkken en az bir sipariş durumu seçmelisiniz."
+      },
+      "wizard": {
+        "title": "{name} Kurulumu",
+        "progress": "Adım {current} / {total}",
+        "nameLabel": "Entegrasyon Adı",
+        "howToGet": "Nasıl alınır?",
+        "connectAndTest": "Bağlan ve Test Et",
+        "testing": "Bağlantı test ediliyor…",
+        "next": "İleri",
+        "skip": "Şimdilik atla",
+        "close": "Kapat",
+        "startSync": "İlk Senkronizasyonu Başlat",
+        "doneTitle": "Kurulum tamamlandı",
+        "doneBody": "Entegrasyon yapılandırıldı. İlk senkronizasyonu şimdi başlatabilirsiniz.",
+        "doneIncomplete": "{count} zorunlu alan hâlâ boş. Senkronizasyon, ayarlar tamamlanana kadar başlatılamaz.",
+        "schemaFailed": "Pazaryeri ayar şeması yüklenemedi.",
+        "createFailed": "Entegrasyon oluşturulamadı.",
+        "syncFailed": "Senkronizasyon başlatılamadı.",
+        "steps": {
+          "stock": {
+            "title": "Stok Kaynağı",
+            "description": "Pazaryerine gönderilecek stoğun hangi depolardan hesaplanacağını ve güvenlik payını belirleyin."
+          },
+          "pricing": {
+            "title": "Fiyatlandırma",
+            "description": "Hangi fiyatın gönderileceğini, artış ve yuvarlama kurallarını tanımlayın."
+          },
+          "orders": {
+            "title": "Sipariş Akışı",
+            "description": "Siparişlerin hangi durumlarda ve hangi sıklıkla çekileceğini seçin."
+          },
+          "fulfillment": {
+            "title": "Kargo & Teslimat",
+            "description": "Teslimat modelini, hazırlama süresini ve kargo eşleştirmesini ayarlayın."
+          },
+          "invoicing": {
+            "title": "Fatura",
+            "description": "Faturaların otomatik kesilip kesilmeyeceğini belirleyin. Bu adımı atlayabilirsiniz."
+          },
+          "notifications": {
+            "title": "Bildirimler",
+            "description": "Hata ve uyarıların nereye iletileceğini seçin. Bu adımı atlayabilirsiniz."
+          }
+        }
+      },
+      "actions": {
+        "save": "Değişiklikleri Kaydet",
+        "discard": "Vazgeç",
+        "cancel": "İptal",
+        "choose": "Seçiniz",
+        "loading": "Yükleniyor…",
+        "reveal": "Göster",
+        "hide": "Gizle",
+        "addTag": "Yazıp Enter'a basın",
+        "addRow": "Satır ekle",
+        "keyPlaceholder": "Anahtar",
+        "valuePlaceholder": "Değer",
+        "unmapped": "Eşleştirilmedi",
+        "noMappingSource": "Eşleştirilecek değer bulunamadı.",
+        "optionsUnavailable": "Seçenekler yüklenemedi.",
+        "unknownResource": "Bulunamayan kayıt ({id})",
+        "resetSection": "Bu bölümü varsayılana döndür",
+        "testConnection": "Bağlantıyı Test Et",
+        "docs": "Dokümantasyon",
+        "editCredentials": "API bilgilerini düzenle",
+        "resumeSetup": "Kuruluma Devam Et",
+        "syncBlocked": "Önce entegrasyon ayarlarını tamamlayın",
+        "noManifest": "Bu pazaryeri için ayar şeması tanımlı değil",
+        "schemaUnavailable": "Ayar şeması yüklenemedi.",
+        "saveFailed": "Kaydedilemedi."
+      },
+      "status": {
+        "connected": "Bağlı",
+        "error": "Hata"
+      },
+      "badge": {
+        "configured": "Yapılandırıldı",
+        "pending": "Yapılandırma Bekliyor",
+        "missingFields": "{count} zorunlu alan eksik"
+      },
+      "dirty": {
+        "pending": "{count} değişiklik kaydedilmedi"
+      },
+      "confirmClose": {
+        "title": "Kaydedilmemiş değişiklikler",
+        "body": "{count} değişikliği kaydetmediniz. Kapatırsanız bu değişiklikler kaybolur.",
+        "stay": "Geri dön",
+        "leave": "Kaydetmeden çık"
+      },
+      "secretStored": "Kayıtlı değer gizlidir. Değiştirmek için alana tıklayıp yeni değeri girin."
     }
   },
   "system": {
@@ -1024,54 +2154,6 @@
       "submit": "Seçilenleri Sil"
     }
   },
-  "stores": {
-    "title": "Pazaryerleri",
-    "subtitle": "Çok kanallı pazaryeri mağazalarını yapılandırın ve yönetin",
-    "loading": "Pazaryerleri yükleniyor...",
-    "loadFailed": "Pazaryerleri yüklenemedi",
-    "submitFailed": "İşlem sırasında bir hata oluştu",
-    "deleteFailed": "Pazaryeri silinemedi",
-    "addStore": "Pazaryeri Ekle",
-    "agencyRequired": {
-      "title": "Ajans Bağlamı Gerekli",
-      "desc": "Pazaryeri listesini görüntülemek için lütfen aktif bir ajans bağlamı seçin."
-    },
-    "columns": {
-      "name": "Pazaryeri Adı",
-      "slug": "Kısa Ad (Slug)",
-      "status": "Durum",
-      "domain": "Adres (Domain)",
-      "currency": "Para Birimi",
-      "actions": "İşlemler"
-    },
-    "empty": "Seçili ajans/müşteri için yapılandırılmış pazaryeri bulunamadı. Yeni bir pazaryeri eklemek için \"Pazaryeri Ekle\" butonuna tıklayın.",
-    "modal": {
-      "editTitle": "Pazaryeri Ayarlarını Düzenle",
-      "createTitle": "Yeni Pazaryeri Kanalı Ekle",
-      "nameLabel": "Pazaryeri Adı *",
-      "namePlaceholder": "Örn: Trendyol Mağazam",
-      "domainLabel": "Web Domain / URL",
-      "statusLabel": "Durum",
-      "statusActive": "Aktif (Active)",
-      "statusDraft": "Taslak (Draft)",
-      "statusSuspended": "Durduruldu (Suspended)",
-      "currencyLabel": "Para Birimi",
-      "localeLabel": "Dil / Bölge (Locale)",
-      "localeTr": "Türkçe (tr-TR)",
-      "localeEn": "İngilizce (en-US)",
-      "localeDe": "Almanca (de-DE)",
-      "timezoneLabel": "Saat Dilimi (Timezone)",
-      "typeLabel": "Kanal Türü (Pazaryeri / Depo)",
-      "typeRetail": "Perakende Satış Kanalı (Pazaryeri)",
-      "typeWarehouse": "Depo Karşılama Noktası",
-      "saveChanges": "Değişiklikleri Kaydet",
-      "createStore": "Pazaryeri Oluştur"
-    },
-    "deleteModal": {
-      "title": "Pazaryeri Sil",
-      "desc": "<b>{name}</b> pazaryerini silmek istediğinize emin misiniz? Bu işlem, bu kanalla bağlantılı entegrasyon uç noktalarını ve senkronize edilmiş siparişleri kalıcı olarak devre dışı bırakacaktır."
-    }
-  },
   "inventory": {
     "title": "Stok & Envanter Kontrolü",
     "subtitle": "Stok seviyelerini, depo envanterini, rezervasyonları, stok ikmallerini, stok hareketlerini ve uyarıları izleyin.",
@@ -1084,10 +2166,7 @@
       "movements": "Hareket Kayıtları",
       "lowstock": "Stok İkmali",
       "counting": "Sayım & Denetim",
-      "reservations": "Rezervasyonlar",
-      "integrations": "Entegrasyonlar",
-      "ai": "Yapay Zeka Analizi",
-      "alerts": "Uyarı Merkezi"
+      "reservations": "Rezervasyonlar"
     },
     "ledger": {
       "searchPlaceholder": "SKU, Barkod veya Ürün Adı Ara...",
@@ -1779,9 +2858,21 @@
         "h1": "Ev ve Bahçe Satış Operasyonunuzu Tek Merkezden Yönetin",
         "desc": "Mobilyadan dekorasyona, bahçe ürünlerinden aydınlatmaya kadar geniş ürün kataloğunuzu; sipariş, stok, depo, kargo ve pazaryeri süreçleriyle birlikte tek platformda yönetin. Tekrarlayan görevleri otomatikleştirin, operasyon hatalarını azaltın ve satış kanallarınızı kontrollü biçimde büyütün.",
         "metrics": {
-          "m1": { "label": "Bugünkü Siparişler", "val": "1,482", "trend": "+14%" },
-          "m2": { "label": "Kritik Stok Uyarısı", "val": "12 Ürün", "trend": "Kritik" },
-          "m3": { "label": "Sevkiyat Durumu", "val": "98.4%", "trend": "Başarı" }
+          "m1": {
+            "label": "Bugünkü Siparişler",
+            "val": "1,482",
+            "trend": "+14%"
+          },
+          "m2": {
+            "label": "Kritik Stok Uyarısı",
+            "val": "12 Ürün",
+            "trend": "Kritik"
+          },
+          "m3": {
+            "label": "Sevkiyat Durumu",
+            "val": "98.4%",
+            "trend": "Başarı"
+          }
         },
         "solutions": {
           "s1": {
@@ -1858,9 +2949,21 @@
         "h1": "Varyant, Renk ve Beden Karmaşasını Alqora ile Çözün",
         "desc": "Giyim, ayakkabı ve aksesuar gruplarındaki geniş renk, beden ve model varyasyonlarınızı tek bir katalogda yönetin. Sezon geçişlerindeki ani talep artışlarını, askılı depo süreçlerini ve yüksek hacimli iade operasyonlarını barkod entegrasyonuyla sıfır hataya indirin.",
         "metrics": {
-          "m1": { "label": "Yeni Siparişler", "val": "2,940", "trend": "+28%" },
-          "m2": { "label": "İade Oranı", "val": "14.2%", "trend": "Kontrol Altında" },
-          "m3": { "label": "Askılı Raf Stok", "val": "8,420 Adet", "trend": "Düzenli" }
+          "m1": {
+            "label": "Yeni Siparişler",
+            "val": "2,940",
+            "trend": "+28%"
+          },
+          "m2": {
+            "label": "İade Oranı",
+            "val": "14.2%",
+            "trend": "Kontrol Altında"
+          },
+          "m3": {
+            "label": "Askılı Raf Stok",
+            "val": "8,420 Adet",
+            "trend": "Düzenli"
+          }
         },
         "solutions": {
           "s1": {
@@ -1949,9 +3052,21 @@
         "h1": "Kozmetik Depo ve Lot Takibinde Sıfır Hata",
         "desc": "Şampuan, krem, parfüm ve makyaj gruplarındaki son kullanma tarihlerini, parti (lot/batch) numaralarını ve sağlık regülasyonlarını tek merkezden takip edin. Kırılabilir sıvı paketleme süreçlerini ve setli/kampanyalı ürün envanterlerini barkodla hatasız yönetin.",
         "metrics": {
-          "m1": { "label": "Bugünkü Siparişler", "val": "1,940", "trend": "+18%" },
-          "m2": { "label": "SKT Uyarısı", "val": "0 Ürün", "trend": "Güvenli" },
-          "m3": { "label": "ÜTS Bildirimi", "val": "Aktif", "trend": "Uyumlu" }
+          "m1": {
+            "label": "Bugünkü Siparişler",
+            "val": "1,940",
+            "trend": "+18%"
+          },
+          "m2": {
+            "label": "SKT Uyarısı",
+            "val": "0 Ürün",
+            "trend": "Güvenli"
+          },
+          "m3": {
+            "label": "ÜTS Bildirimi",
+            "val": "Aktif",
+            "trend": "Uyumlu"
+          }
         },
         "solutions": {
           "s1": {
@@ -2028,9 +3143,21 @@
         "h1": "Elektronikte Seri No ve IMEI Takip Sistemi",
         "desc": "Telefon, bilgisayar, tablet ve akıllı saat gruplarındaki seri numaralarını (S/N) ve IMEI kodlarını depo girişinden kargo çıkışına kadar izleyin. Yüksek değerli ürün lojistiğinde çalınma ve kayıp riskini azaltın, garanti süreçlerini otomatikleştirin.",
         "metrics": {
-          "m1": { "label": "Siparişler (Bugün)", "val": "342", "trend": "+8%" },
-          "m2": { "label": "IMEI Girişleri", "val": "120 Kod", "trend": "Tümü İzleniyor" },
-          "m3": { "label": "Ort. Ürün Değeri", "val": "7,400 TL", "trend": "Yüksek Değerli" }
+          "m1": {
+            "label": "Siparişler (Bugün)",
+            "val": "342",
+            "trend": "+8%"
+          },
+          "m2": {
+            "label": "IMEI Girişleri",
+            "val": "120 Kod",
+            "trend": "Tümü İzleniyor"
+          },
+          "m3": {
+            "label": "Ort. Ürün Değeri",
+            "val": "7,400 TL",
+            "trend": "Yüksek Değerli"
+          }
         },
         "solutions": {
           "s1": {
@@ -2107,9 +3234,21 @@
         "h1": "OEM ve Çapraz Kod Uyumlu Yedek Parça Yönetimi",
         "desc": "Yedek parça sektöründeki binlerce OEM kodunu, çapraz (cross) referans kodlarını ve araç marka-model uyumluluklarını tek merkezde yönetin. Hacimli amortisörlerden küçük bujilere kadar karmaşık raf adresleme ve kargo süreçlerini otomatikleştirin.",
         "metrics": {
-          "m1": { "label": "Siparişler (Bugün)", "val": "620", "trend": "+12%" },
-          "m2": { "label": "OEM Eşleşme Oranı", "val": "99.8%", "trend": "Yüksek Uyum" },
-          "m3": { "label": "Ağır Kargo (Desi)", "val": "42 Sipariş", "trend": "Lojistik" }
+          "m1": {
+            "label": "Siparişler (Bugün)",
+            "val": "620",
+            "trend": "+12%"
+          },
+          "m2": {
+            "label": "OEM Eşleşme Oranı",
+            "val": "99.8%",
+            "trend": "Yüksek Uyum"
+          },
+          "m3": {
+            "label": "Ağır Kargo (Desi)",
+            "val": "42 Sipariş",
+            "trend": "Lojistik"
+          }
         },
         "solutions": {
           "s1": {
@@ -2186,9 +3325,21 @@
         "h1": "Soğuk Zincir ve SKT Takipli Gıda E-Ticaret Otomasyonu",
         "desc": "Taze gıda, kuru gıda, içecek ve hızlı tüketim ürünlerindeki son kullanma tarihlerini (SKT), parti lot kodlarını ve soğuk zincir taşıma gereksinimlerini Alqora ile hatasız yönetin. FIFO kuralına göre toplama rotaları oluşturun ve bölgesel hızlı teslimat kuralları tanımlayın.",
         "metrics": {
-          "m1": { "label": "Siparişler (Bugün)", "val": "2,400", "trend": "+22%" },
-          "m2": { "label": "Soğuk Zincir İzleme", "val": "Normal", "trend": "Isı Kontrollü" },
-          "m3": { "label": "SKT Uyarısı", "val": "0 Ürün", "trend": "Güvenli" }
+          "m1": {
+            "label": "Siparişler (Bugün)",
+            "val": "2,400",
+            "trend": "+22%"
+          },
+          "m2": {
+            "label": "Soğuk Zincir İzleme",
+            "val": "Normal",
+            "trend": "Isı Kontrollü"
+          },
+          "m3": {
+            "label": "SKT Uyarısı",
+            "val": "0 Ürün",
+            "trend": "Güvenli"
+          }
         },
         "solutions": {
           "s1": {
@@ -2259,6 +3410,55 @@
           }
         }
       }
+    }
+  },
+  "agencies": {
+    "title": "Dağıtıcı Firmalar",
+    "subtitle": "Platform üzerindeki dağıtıcı firmaları oluşturun ve yönetin",
+    "refresh": "Yenile",
+    "empty": "Henüz kayıtlı dağıtıcı firma yok.",
+    "current": "Aktif",
+    "fetchError": "Dağıtıcı firmalar yüklenemedi.",
+    "denied": {
+      "title": "Bu sayfaya erişiminiz yok",
+      "description": "Dağıtıcı firma yönetimi yalnızca platform yöneticisi tarafından yapılabilir."
+    },
+    "columns": {
+      "name": "Firma Adı",
+      "slug": "Kısa Ad (Slug)",
+      "website": "Web Sitesi",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "actions": {
+      "create": "Yeni Dağıtıcı Firma",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "deleteCurrentBlocked": "Şu anda içinde bulunduğunuz firmayı silemezsiniz",
+      "switch": "Geç"
+    },
+    "modal": {
+      "createTitle": "Yeni Dağıtıcı Firma",
+      "editTitle": "Dağıtıcı Firmayı Düzenle",
+      "nameLabel": "Firma Adı",
+      "namePlaceholder": "KroptOS Agency",
+      "websiteLabel": "Web Sitesi",
+      "activeLabel": "Firma aktif",
+      "cancel": "İptal",
+      "submit": "Kaydet"
+    },
+    "deleteModal": {
+      "title": "Dağıtıcı Firmayı Sil",
+      "body": "<strong>{name}</strong> firmasını silmek istediğinize emin misiniz? Firmaya bağlı tüm markalar, kullanıcılar ve entegrasyonlar erişilemez hale gelir.",
+      "cancel": "Vazgeç",
+      "confirm": "Evet, Sil"
+    },
+    "toast": {
+      "created": "{name} oluşturuldu.",
+      "updated": "{name} güncellendi.",
+      "deleted": "Dağıtıcı firma silindi.",
+      "saveFailed": "Kaydedilemedi.",
+      "deleteFailed": "Silinemedi."
     }
   }
 }

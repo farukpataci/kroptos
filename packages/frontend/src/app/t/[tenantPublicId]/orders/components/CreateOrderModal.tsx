@@ -132,7 +132,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
 
   if (!mounted) return null;
 
-  const labelCls = 'block text-[11px] font-medium text-kp-text-secondary mb-1';
+  const labelCls = 'block text-[0.6875rem] font-medium text-kp-text-secondary mb-1';
   const inputCls = 'w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-none focus:border-kp-accent transition-colors';
 
   return createPortal(
@@ -236,14 +236,14 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
             {activeTab === 'items' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest">
+                  <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest">
                     {t('orderItems')}
                   </h4>
                   <button
                     type="button"
                     onClick={addItem}
                     disabled={products.length === 0}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-kp-accent hover:text-kp-accent-hover disabled:opacity-40 transition-colors"
+                    className="flex items-center gap-1 text-[0.6875rem] font-semibold text-kp-accent hover:text-kp-accent-hover disabled:opacity-40 transition-colors"
                   >
                     <PlusIcon className="h-3.5 w-3.5" />
                     {t('addRow')}
@@ -257,9 +257,9 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
                 ) : (
                   <div className="space-y-3">
                     <div className="grid grid-cols-12 gap-2 px-1">
-                      <span className="col-span-7 text-[9px] font-semibold uppercase tracking-wider text-kp-text-tertiary">{t('colProduct')}</span>
-                      <span className="col-span-2 text-[9px] font-semibold uppercase tracking-wider text-kp-text-tertiary text-center">{t('colQuantity')}</span>
-                      <span className="col-span-2 text-[9px] font-semibold uppercase tracking-wider text-kp-text-tertiary text-right">{t('colPrice')}</span>
+                      <span className="col-span-7 text-[0.5625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary">{t('colProduct')}</span>
+                      <span className="col-span-2 text-[0.5625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary text-center">{t('colQuantity')}</span>
+                      <span className="col-span-2 text-[0.5625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary text-right">{t('colPrice')}</span>
                       <span className="col-span-1" />
                     </div>
 
@@ -313,7 +313,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
 
                     <div className="flex justify-end pt-2 border-t border-kp-border mt-4">
                       <div className="text-right">
-                        <span className="text-[10px] text-kp-text-tertiary block uppercase tracking-wider mb-0.5">{t('totalAmount')}</span>
+                        <span className="text-[0.625rem] text-kp-text-tertiary block uppercase tracking-wider mb-0.5">{t('totalAmount')}</span>
                         <span className="text-base font-extrabold text-kp-text-primary">
                           {currencySymbol}{totalPreview.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         </span>

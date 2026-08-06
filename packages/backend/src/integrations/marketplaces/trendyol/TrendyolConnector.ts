@@ -6,12 +6,15 @@ import { TrendyolMapper } from './TrendyolMapper';
 import { TrendyolOrder, TrendyolProduct } from './TrendyolTypes';
 
 export class TrendyolConnector extends MarketplaceConnector {
+  protected readonly defaultRateLimit = 100;
+
   constructor(
     credentials: Record<string, any>,
     httpClient: MarketplaceHttpClient,
     rateLimiter: MarketplaceRateLimiter,
+    settings: Record<string, unknown> = {},
   ) {
-    super('TRENDYOL', credentials, httpClient, rateLimiter);
+    super('TRENDYOL', credentials, httpClient, rateLimiter, settings);
   }
 
   private hasInvalidCredentials(): boolean {
@@ -22,7 +25,7 @@ export class TrendyolConnector extends MarketplaceConnector {
 
   async testConnection(): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {
@@ -40,7 +43,7 @@ export class TrendyolConnector extends MarketplaceConnector {
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('Trendyol API Authentication Failed');
@@ -105,7 +108,7 @@ export class TrendyolConnector extends MarketplaceConnector {
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('Trendyol API Authentication Failed');
@@ -136,7 +139,7 @@ export class TrendyolConnector extends MarketplaceConnector {
   }
 
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {

@@ -257,7 +257,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/10 p-5 text-center">
         <ExclamationTriangleIcon className="h-6 w-6 text-kp-text-tertiary mx-auto mb-2" />
         <p className="text-xs font-semibold text-kp-text-secondary">{t('noIntegration.title')}</p>
-        <p className="text-[11px] text-kp-text-tertiary mt-1">
+        <p className="text-[0.6875rem] text-kp-text-tertiary mt-1">
           {t('noIntegration.desc')}
         </p>
       </div>
@@ -274,7 +274,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       <div className="flex items-center justify-between border-b border-kp-border pb-4">
         <div>
           <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h4>
-          <p className="text-[11px] text-kp-text-tertiary">{t('subtitle')}</p>
+          <p className="text-[0.6875rem] text-kp-text-tertiary">{t('subtitle')}</p>
         </div>
         <select
           value={selectedIntegrationId}
@@ -304,12 +304,12 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
             <div>
               <p className="font-semibold capitalize">{t('syncStatus')}: {activeMapping.status}</p>
               {activeMapping.errorMessage && (
-                <p className="text-[10px] text-red-300 mt-0.5">{activeMapping.errorMessage}</p>
+                <p className="text-[0.625rem] text-red-300 mt-0.5">{activeMapping.errorMessage}</p>
               )}
             </div>
           </div>
           {activeMapping.marketplaceProductId && (
-            <span className="font-mono text-[10px] bg-white/5 px-2 py-0.5 rounded-sm">
+            <span className="font-mono text-[0.625rem] bg-white/5 px-2 py-0.5 rounded-sm">
               ID: {activeMapping.marketplaceProductId}
             </span>
           )}
@@ -319,7 +319,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
       {/* Categories Mappings Select Form */}
       <div className="space-y-4">
         <div className="relative">
-          <label className="block text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+          <label className="block text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
             {t('categoryMapping')}
           </label>
           
@@ -370,7 +370,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
         {/* Dynamic Attributes Mapping */}
         {selectedCategoryId && (
           <div className="space-y-3.5 border-t border-kp-border pt-4">
-            <h5 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('attributesTitle')}</h5>
+            <h5 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('attributesTitle')}</h5>
             
             {isLoadingAttributes ? (
               <div className="flex items-center justify-center py-6">
@@ -383,7 +383,7 @@ export default function ProductMarketplaceSettings({ productId }: ProductMarketp
               <div className="overflow-hidden border border-kp-border rounded-kp-md bg-kp-bg-primary/10">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
+                    <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase text-kp-text-tertiary">
                       <th className="py-2.5 px-3.5">{t('columns.attribute')}</th>
                       <th className="py-2.5 px-3.5">{t('columns.type')}</th>
                       <th className="py-2.5 px-3.5">{t('columns.value')}</th>

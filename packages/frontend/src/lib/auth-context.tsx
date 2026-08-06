@@ -8,6 +8,13 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
+  role?: string | null;
+  /**
+   * Whether this user may manage distributor firms. Decided by the API, not
+   * here — the flag only drives what the UI offers; every agency write is
+   * re-checked server-side.
+   */
+  isPlatformAdmin?: boolean;
 }
 
 interface TenantContext {
@@ -125,11 +132,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (data.agencies && data.agencies.length > 0) {
       const first = data.agencies[0];
       setTenantContext({
-        agencyId: first.id,
-        clientId: null,
-        storeId: null,
+        agencyId: first.agencyId || first.id,
+        clientId: first.clientId || null,
+        storeId: first.storeId || null,
       });
     }
+
+    // Refresh profile in background without blocking login navigation
+    refreshUserProfile().catch(console.error);
   };
 
   const register = async (

@@ -202,30 +202,30 @@ export default function Home() {
                 <span className="w-3 h-3 rounded-full bg-green-500/80" />
                 <span className="text-xs text-kp-text-tertiary ml-2 font-mono font-medium">alqora-dashboard.wms</span>
               </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">LIVE</span>
+              <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-green-500/10 text-green-500 border border-green-500/20">LIVE</span>
             </div>
 
             {/* Metrics cards grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 space-y-1">
-                <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.todaysOrders')}</p>
+                <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.todaysOrders')}</p>
                 <div className="flex items-baseline gap-1.5">
                   <p className="text-lg font-bold text-kp-text-primary">1,482</p>
-                  <span className="text-[10px] font-bold text-green-500">+14%</span>
+                  <span className="text-[0.625rem] font-bold text-green-500">+14%</span>
                 </div>
               </div>
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 space-y-1">
-                <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.criticalStock')}</p>
+                <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.criticalStock')}</p>
                 <div className="flex items-baseline gap-1.5">
                   <p className="text-lg font-bold text-red-500">12</p>
-                  <span className="text-[10px] font-semibold text-red-500/70">{t('mockup.sku')}</span>
+                  <span className="text-[0.625rem] font-semibold text-red-500/70">{t('mockup.sku')}</span>
                 </div>
               </div>
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 col-span-2 sm:col-span-1 space-y-1">
-                <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.shippingStatus')}</p>
+                <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.shippingStatus')}</p>
                 <div className="flex items-baseline gap-1.5">
                   <p className="text-lg font-bold text-kp-accent">98.4%</p>
-                  <span className="text-[10px] font-semibold text-kp-text-tertiary">{t('mockup.ontime')}</span>
+                  <span className="text-[0.625rem] font-semibold text-kp-text-tertiary">{t('mockup.ontime')}</span>
                 </div>
               </div>
             </div>
@@ -234,7 +234,7 @@ export default function Home() {
             <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-xs font-bold text-kp-text-primary">{t('mockup.salesVolume')}</h4>
-                <span className="text-[10px] font-semibold text-kp-text-tertiary">10-17 July</span>
+                <span className="text-[0.625rem] font-semibold text-kp-text-tertiary">10-17 July</span>
               </div>
               <svg className="w-full h-32 text-kp-accent" viewBox="0 0 300 100" fill="none">
                 <defs>
@@ -258,7 +258,7 @@ export default function Home() {
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 {['Trendyol', 'Hepsiburada', 'Amazon', 'N11', 'ÇiçekSepeti'].map((channel) => (
-                  <span key={channel} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border-subtle text-[10px] font-bold text-kp-text-secondary">
+                  <span key={channel} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border-subtle text-[0.625rem] font-bold text-kp-text-secondary">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     {channel}
                   </span>
@@ -335,7 +335,7 @@ export default function Home() {
           </div>
           <div className="lg:col-span-6 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
             <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.orders.panelTitle')}</h4>
-            <div className="space-y-2 text-[11px] font-mono text-kp-text-secondary">
+            <div className="space-y-2 text-[0.6875rem] font-mono text-kp-text-secondary">
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
                 <span>Trendyol #294029:</span>
                 <span className="font-bold text-green-500">{t('sections.orders.statusPulled')}</span>
@@ -374,13 +374,13 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="bg-kp-bg-primary border border-kp-border-subtle p-3 rounded text-center space-y-1">
                 <span className="font-bold text-kp-text-primary">{t('sections.wms.zoneA')}</span>
-                <p className="text-[10px] text-kp-text-tertiary">{t('sections.wms.zoneAItems')}</p>
+                <p className="text-[0.625rem] text-kp-text-tertiary">{t('sections.wms.zoneAItems')}</p>
               </div>
               <div className="bg-kp-bg-primary border border-kp-border-subtle p-3 rounded text-center space-y-1">
                 <span className="font-bold text-kp-text-primary">{t('sections.wms.zoneB')}</span>
-                <p className="text-[10px] text-kp-text-tertiary">{t('sections.wms.zoneBItems')}</p>
+                <p className="text-[0.625rem] text-kp-text-tertiary">{t('sections.wms.zoneBItems')}</p>
               </div>
-              <div className="col-span-2 bg-kp-bg-primary border border-kp-border-subtle p-2 text-center text-[10px] font-mono text-kp-text-secondary">
+              <div className="col-span-2 bg-kp-bg-primary border border-kp-border-subtle p-2 text-center text-[0.625rem] font-mono text-kp-text-secondary">
                 {t('sections.wms.autoRouting')}
               </div>
             </div>
@@ -449,11 +449,11 @@ export default function Home() {
           </div>
           <div className="lg:col-span-6 lg:order-1 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
             <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.packing.panelTitle')}</h4>
-            <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded text-[11px] font-bold mb-3 flex items-center gap-2">
+            <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded text-[0.6875rem] font-bold mb-3 flex items-center gap-2">
               <span className="animate-ping w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
               {t('sections.packing.fragileAlert')}
             </div>
-            <p className="text-[11px] text-kp-text-secondary font-mono border-l-2 border-kp-accent pl-3 italic">
+            <p className="text-[0.6875rem] text-kp-text-secondary font-mono border-l-2 border-kp-accent pl-3 italic">
               {t('sections.packing.fragileNote')}
             </p>
           </div>
@@ -478,7 +478,7 @@ export default function Home() {
           </div>
           <div className="lg:col-span-6 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
             <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.shipping.panelTitle')}</h4>
-            <div className="space-y-2 text-[11px] font-mono text-kp-text-secondary">
+            <div className="space-y-2 text-[0.6875rem] font-mono text-kp-text-secondary">
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
                 <span>{t('sections.shipping.carrierLabel')}</span>
                 <span className="font-bold text-kp-text-primary">MNG Kargo</span>
@@ -531,7 +531,7 @@ export default function Home() {
             <div className="flex flex-col items-center gap-4 py-6 w-full">
               <div className="px-4 py-2 bg-kp-accent text-white font-extrabold rounded shadow-md">ALQORA HUB</div>
               <div className="h-8 w-0.5 bg-kp-border-accent" />
-              <div className="grid grid-cols-3 gap-4 w-full max-w-sm text-center text-[10px] font-bold">
+              <div className="grid grid-cols-3 gap-4 w-full max-w-sm text-center text-[0.625rem] font-bold">
                 <div className="p-2 border border-kp-border bg-kp-bg-primary rounded text-kp-text-primary">Trendyol</div>
                 <div className="p-2 border border-kp-border bg-kp-bg-primary rounded text-kp-text-primary">Hepsiburada</div>
                 <div className="p-2 border border-kp-border bg-kp-bg-primary rounded text-kp-text-primary">Amazon</div>
@@ -567,7 +567,7 @@ export default function Home() {
               <div key={idx} className="bg-kp-bg-primary border border-kp-border rounded-kp-lg p-6 text-left space-y-4 shadow-kp-card hover:border-kp-accent/40 transition-colors">
                 <div className="flex items-center justify-between border-b border-kp-border-subtle pb-3">
                   <h4 className="text-sm font-bold text-kp-text-primary">{p.name}</h4>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  <span className={`px-2 py-0.5 rounded text-[0.625rem] font-bold ${
                     p.active
                       ? 'bg-green-500/10 text-green-500 border border-green-500/20'
                       : 'bg-kp-text-tertiary/10 text-kp-text-tertiary border border-kp-text-tertiary/20'
@@ -628,7 +628,7 @@ export default function Home() {
             <p className="text-sm text-kp-text-secondary leading-relaxed">
               {t('capabilities.workflow.desc')}
             </p>
-            <div className="space-y-1.5 font-mono text-[10px] text-kp-text-tertiary">
+            <div className="space-y-1.5 font-mono text-[0.625rem] text-kp-text-tertiary">
               <p>✔ {t('capabilities.workflow.rule1')}</p>
               <p>✔ {t('capabilities.workflow.rule2')}</p>
               <p>✔ {t('capabilities.workflow.rule3')}</p>
@@ -681,24 +681,24 @@ export default function Home() {
           <div className="bg-slate-900 border border-white/10 rounded-kp-lg p-6 max-w-4xl mx-auto shadow-2xl text-left space-y-6">
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">ALQORA WMS // LIVE STATISTICS</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">SYSTEM HEALTHY</span>
+              <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-green-500/10 text-green-500 border border-green-500/20">SYSTEM HEALTHY</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('mockup.todaysOrders')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('mockup.todaysOrders')}</p>
                 <p className="text-xl font-bold text-white mt-1">2,840</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('stats.pendingPicking')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('stats.pendingPicking')}</p>
                 <p className="text-xl font-bold text-yellow-500 mt-1">114</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('stats.criticalSku')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('stats.criticalSku')}</p>
                 <p className="text-xl font-bold text-red-500 mt-1">12</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{t('stats.delayedShipments')}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('stats.delayedShipments')}</p>
                 <p className="text-xl font-bold text-white mt-1">0</p>
               </div>
             </div>
@@ -709,7 +709,7 @@ export default function Home() {
                   <span className="font-bold">{t('stats.depotEfficiency')}</span>
                   <span>July 2026</span>
                 </div>
-                <div className="space-y-3 pt-1 text-[11px]">
+                <div className="space-y-3 pt-1 text-[0.6875rem]">
                   <div>
                     <div className="flex justify-between mb-1">
                       <span>{t('stats.pickingAccuracy')}</span>

@@ -29,10 +29,20 @@ export class TenantGuard implements CanActivate {
       return true;
     }
 
-    // Resolve Agency (Tenant) database record by publicId
-    const agency = await this.prisma.agency.findUnique({
-      where: { publicId: tenantPublicId },
+    // Resolve Agency (Tenant) or Store database record by publicId
+    let agency = await this.prisma.agency.findFirst({
+      where: { publicId: tenantPublicId, deletedAt: null },
     });
+
+    if (!agency) {
+      const store = await this.prisma.store.findFirst({
+        where: { publicId: tenantPublicId, deletedAt: null },
+        include: { agency: true },
+      });
+      if (store && store.agency) {
+        agency = store.agency;
+      }
+    }
 
     if (!agency) {
       throw new ForbiddenException('Invalid tenant identifier');

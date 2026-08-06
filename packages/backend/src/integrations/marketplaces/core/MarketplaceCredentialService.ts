@@ -1,8 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { decrypt } from '../../../common/utils/encryption.util';
+import { MarketplaceSettingsRegistry } from '../settings/manifest.registry';
 
 @Injectable()
 export class MarketplaceCredentialService {
+  constructor(private readonly registry: MarketplaceSettingsRegistry) {}
+
   /**
    * Decrypts and parses the database-stored credentials string.
    */
@@ -16,35 +19,20 @@ export class MarketplaceCredentialService {
   }
 
   /**
-   * Validates required credential keys for a provider and returns the decrypted credentials object.
-   * If any value contains the string "invalid", it will still pass structural validation
-   * (so the connector's testConnection can handle checking for actual connection validity).
+   * Checks that every credential the provider's manifest marks `required` is
+   * present. The required keys used to live in an if/else chain here and in the
+   * form on the frontend; both now read the same manifest, so the two can no
+   * longer drift apart.
+   *
+   * Values are not inspected beyond being present — a credential that looks
+   * well-formed but is wrong is the connector's testConnection to discover.
    */
   validate(provider: string, credentials: Record<string, any>): void {
-    const p = provider.toUpperCase();
-    const missingKeys: string[] = [];
+    const manifest = this.registry.getManifest(provider);
 
-    if (p === 'TRENDYOL') {
-      if (!credentials.apiKey) missingKeys.push('apiKey');
-      if (!credentials.apiSecret) missingKeys.push('apiSecret');
-      if (!credentials.sellerId) missingKeys.push('sellerId');
-    } else if (p === 'HEPSIBURADA') {
-      if (!credentials.merchantId) missingKeys.push('merchantId');
-      if (!credentials.apiKey) missingKeys.push('apiKey');
-      if (!credentials.apiSecret) missingKeys.push('apiSecret');
-    } else if (p === 'AMAZON') {
-      if (!credentials.sellerId) missingKeys.push('sellerId');
-      if (!credentials.awsAccessKey) missingKeys.push('awsAccessKey');
-      if (!credentials.awsSecretKey) missingKeys.push('awsSecretKey');
-      if (!credentials.refreshToken) missingKeys.push('refreshToken');
-    } else if (p === 'N11') {
-      if (!credentials.apiKey) missingKeys.push('apiKey');
-      if (!credentials.apiSecret) missingKeys.push('apiSecret');
-    } else if (p === 'CICEKSEPETI') {
-      if (!credentials.apiKey) missingKeys.push('apiKey');
-    } else {
-      throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
-    }
+    const missingKeys = manifest.credentials
+      .filter((field) => field.required && !credentials[field.key])
+      .map((field) => field.key);
 
     if (missingKeys.length > 0) {
       throw new BadRequestException(

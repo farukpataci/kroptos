@@ -22,7 +22,7 @@ export function AuditLogsShortcutPanel() {
 
       <div className="overflow-x-auto border border-gray-200 rounded-xl bg-white">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
-          <thead className="bg-gray-50 text-[10px] font-semibold text-gray-400 uppercase tracking-wider text-left">
+          <thead className="bg-gray-50 text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider text-left">
             <tr>
               <th className="px-6 py-3">Action</th>
               <th className="px-6 py-3">Module</th>

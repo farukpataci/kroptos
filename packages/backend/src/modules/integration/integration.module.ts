@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { IntegrationService } from './integration.service';
 import { IntegrationController } from './integration.controller';
 import { PrismaModule } from '../../common/prisma/prisma.module';
@@ -9,14 +9,17 @@ import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/cor
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
 import { IntegrationSyncWorker } from './integration-sync.worker';
+import { IntegrationSettingsModule } from '../integration-settings/integration-settings.module';
+import { MarketplaceSettingsRegistry } from '../../integrations/marketplaces/settings/manifest.registry';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, forwardRef(() => IntegrationSettingsModule)],
   controllers: [IntegrationController],
   providers: [
     IntegrationService,
     MarketplaceHttpClient,
     MarketplaceRateLimiter,
+    MarketplaceSettingsRegistry,
     MarketplaceCredentialService,
     MarketplaceConnectorFactory,
     ErpConnectorFactory,
@@ -27,6 +30,7 @@ import { IntegrationSyncWorker } from './integration-sync.worker';
     IntegrationService,
     MarketplaceHttpClient,
     MarketplaceRateLimiter,
+    MarketplaceSettingsRegistry,
     MarketplaceCredentialService,
     MarketplaceConnectorFactory,
     ErpConnectorFactory,

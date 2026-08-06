@@ -6,12 +6,15 @@ import { N11Mapper } from './N11Mapper';
 import { N11Order, N11Product } from './N11Types';
 
 export class N11Connector extends MarketplaceConnector {
+  protected readonly defaultRateLimit = 100;
+
   constructor(
     credentials: Record<string, any>,
     httpClient: MarketplaceHttpClient,
     rateLimiter: MarketplaceRateLimiter,
+    settings: Record<string, unknown> = {},
   ) {
-    super('N11', credentials, httpClient, rateLimiter);
+    super('N11', credentials, httpClient, rateLimiter, settings);
   }
 
   private hasInvalidCredentials(): boolean {
@@ -22,7 +25,7 @@ export class N11Connector extends MarketplaceConnector {
 
   async testConnection(): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {
@@ -40,7 +43,7 @@ export class N11Connector extends MarketplaceConnector {
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('N11 API Authentication Failed');
@@ -80,7 +83,7 @@ export class N11Connector extends MarketplaceConnector {
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('N11 API Authentication Failed');
@@ -102,7 +105,7 @@ export class N11Connector extends MarketplaceConnector {
   }
 
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    await this.rateLimiter.throttle(this.provider, 100, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {

@@ -171,7 +171,7 @@ export default function ProductsTable({
           >
             <TagIcon className="h-4 w-4" />
             <span>{t('salesMode.single')}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${salesMode === 'single' ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[0.625rem] ${salesMode === 'single' ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'}`}>
               {singleCount}
             </span>
           </button>
@@ -186,7 +186,7 @@ export default function ProductsTable({
           >
             <SparklesIcon className="h-4 w-4" />
             <span>{t('salesMode.multi')}</span>
-            <span className={`px-2 py-0.5 rounded-full text-[10px] ${salesMode === 'multi' ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'}`}>
+            <span className={`px-2 py-0.5 rounded-full text-[0.625rem] ${salesMode === 'multi' ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'}`}>
               {multiCount}
             </span>
           </button>
@@ -220,7 +220,7 @@ export default function ProductsTable({
               >
                 <span>{t(tab.labelKey)}</span>
                 <span
-                  className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                  className={`px-1.5 py-0.5 rounded-full text-[0.625rem] ${
                     isActive ? 'bg-white/20 text-white' : 'bg-kp-bg-primary text-kp-text-tertiary'
                   }`}
                 >
@@ -235,7 +235,7 @@ export default function ProductsTable({
           {lowStockCount > 0 && (
             <button
               onClick={() => onFilterChange({ ...filters, stockLevel: filters.stockLevel === 'low' ? 'all' : 'low' })}
-              className={`px-2.5 py-1 rounded-kp-md text-[11px] font-semibold border transition-all ${
+              className={`px-2.5 py-1 rounded-kp-md text-[0.6875rem] font-semibold border transition-all ${
                 filters.stockLevel === 'low'
                   ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
                   : 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20'
@@ -248,7 +248,7 @@ export default function ProductsTable({
           {outOfStockCount > 0 && (
             <button
               onClick={() => onFilterChange({ ...filters, stockLevel: filters.stockLevel === 'out' ? 'all' : 'out' })}
-              className={`px-2.5 py-1 rounded-kp-md text-[11px] font-semibold border transition-all ${
+              className={`px-2.5 py-1 rounded-kp-md text-[0.6875rem] font-semibold border transition-all ${
                 filters.stockLevel === 'out'
                   ? 'bg-kp-danger/20 text-kp-danger border-kp-danger/40'
                   : 'bg-kp-danger/10 text-kp-danger border-kp-danger/20 hover:bg-kp-danger/20'
@@ -320,9 +320,9 @@ export default function ProductsTable({
 
       {/* Table */}
       <div className="overflow-x-auto border border-kp-border rounded-kp-md bg-kp-bg-primary/10">
-        <table className="w-full text-left border-collapse text-xs text-kp-text-secondary">
+        <table className="kp-table w-full text-left border-collapse text-xs text-kp-text-secondary">
           <thead>
-            <tr className="border-b border-kp-border text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
+            <tr className="border-b border-kp-border text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
               <th className="py-3 px-4 w-10 text-center">
                 <input
                   type="checkbox"
@@ -417,11 +417,11 @@ export default function ProductsTable({
                         {/* Product Name */}
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-semibold text-kp-text-primary text-[12px] group-hover:text-kp-accent transition-colors">
+                            <p className="font-semibold text-kp-text-primary text-[0.75rem] group-hover:text-kp-accent transition-colors">
                               {product.name}
                             </p>
                             {product.description && (
-                              <p className="text-[10px] text-kp-text-tertiary max-w-xs truncate">{product.description}</p>
+                              <p className="text-[0.625rem] text-kp-text-tertiary max-w-xs truncate">{product.description}</p>
                             )}
                           </div>
                         </td>
@@ -429,9 +429,9 @@ export default function ProductsTable({
                         {/* SKU / Barcode */}
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-mono text-[11px] font-medium text-kp-text-primary">{product.sku}</p>
+                            <p className="font-mono text-[0.6875rem] font-medium text-kp-text-primary">{product.sku}</p>
                             {product.barcode && (
-                              <p className="text-[10px] text-kp-text-tertiary">{product.barcode}</p>
+                              <p className="text-[0.625rem] text-kp-text-tertiary">{product.barcode}</p>
                             )}
                           </div>
                         </td>
@@ -440,25 +440,25 @@ export default function ProductsTable({
                         <td className="py-3 px-4">
                           {product.locationCode ? (
                             <div>
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[10px] font-mono font-semibold bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[0.625rem] font-mono font-semibold bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
                                 <TagIcon className="h-3 w-3" />
                                 {product.locationCode}
                               </span>
                               {product.warehouseName && (
-                                <p className="text-[9px] text-kp-text-tertiary truncate max-w-[120px]" title={`${product.warehouseName}${product.zoneName ? ` - ${product.zoneName}` : ''}`}>
+                                <p className="text-[0.5625rem] text-kp-text-tertiary truncate max-w-[120px]" title={`${product.warehouseName}${product.zoneName ? ` - ${product.zoneName}` : ''}`}>
                                   {product.warehouseName}
                                 </p>
                               )}
                             </div>
                           ) : (
-                            <span className="text-[10px] text-kp-text-tertiary italic">{t('notAssigned')}</span>
+                            <span className="text-[0.625rem] text-kp-text-tertiary italic">{t('notAssigned')}</span>
                           )}
                         </td>
 
                         {/* Price */}
                         <td className="py-3 px-4 text-right">
                           <div>
-                            <p className="font-semibold text-kp-text-primary text-[12px]">
+                            <p className="font-semibold text-kp-text-primary text-[0.75rem]">
                               {product.currency === 'TRY' ? '₺' : product.currency === 'USD' ? '$' : '€'}
                               {parseFloat(product.price.toString()).toLocaleString('tr-TR', {
                                 minimumFractionDigits: 2,
@@ -466,7 +466,7 @@ export default function ProductsTable({
                               })}
                             </p>
                             {product.basePrice && product.basePrice !== product.price && (
-                              <p className="text-[10px] text-kp-text-tertiary line-through">
+                              <p className="text-[0.625rem] text-kp-text-tertiary line-through">
                                 {product.currency === 'TRY' ? '₺' : '$'}
                                 {parseFloat(product.basePrice.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                               </p>
@@ -485,21 +485,21 @@ export default function ProductsTable({
                         <td className="py-3 px-4">
                           <div>
                             <div className="flex items-center gap-1.5">
-                              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-kp-accent/10 text-kp-accent border border-kp-accent/20 uppercase">
+                              <span className="px-1.5 py-0.5 rounded text-[0.5625rem] font-bold bg-kp-accent/10 text-kp-accent border border-kp-accent/20 uppercase">
                                 {t('bundle.badge')}
                               </span>
-                              <p className="font-semibold text-kp-text-primary text-[12px] group-hover:text-kp-accent transition-colors">
+                              <p className="font-semibold text-kp-text-primary text-[0.75rem] group-hover:text-kp-accent transition-colors">
                                 {product.name}
                               </p>
                             </div>
-                            <p className="font-mono text-[10px] text-kp-text-tertiary mt-0.5">{product.sku}</p>
+                            <p className="font-mono text-[0.625rem] text-kp-text-tertiary mt-0.5">{product.sku}</p>
                           </div>
                         </td>
 
                         {/* Bundle Components */}
                         <td className="py-3 px-4">
                           <div className="flex flex-wrap gap-1 max-w-xs">
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[10px] font-medium bg-kp-bg-secondary text-kp-text-secondary border border-kp-border">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-kp-xs text-[0.625rem] font-medium bg-kp-bg-secondary text-kp-text-secondary border border-kp-border">
                               {t('bundle.sampleComponents')}
                             </span>
                           </div>
@@ -508,10 +508,10 @@ export default function ProductsTable({
                         {/* Bundle Price & Discount */}
                         <td className="py-3 px-4 text-right">
                           <div>
-                            <p className="font-bold text-emerald-600 text-[12px] font-mono">
+                            <p className="font-bold text-emerald-600 text-[0.75rem] font-mono">
                               ₺{parseFloat(product.price.toString()).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                             </p>
-                            <span className="inline-flex px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/10 text-emerald-600">
+                            <span className="inline-flex px-1.5 py-0.2 rounded text-[0.5625rem] font-bold bg-emerald-500/10 text-emerald-600">
                               {t('bundle.sampleDiscount')}
                             </span>
                           </div>
@@ -519,7 +519,7 @@ export default function ProductsTable({
 
                         {/* Bundle Component Stock Status */}
                         <td className="py-3 px-4 text-center">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[0.625rem] font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
                             {t('bundle.allInStock', { count: product.stockQuantity })}
                           </span>
                         </td>
@@ -617,7 +617,7 @@ export default function ProductsTable({
       {selectedIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-kp-lg bg-kp-bg-secondary/95 border border-kp-border shadow-kp-elevated backdrop-blur-md animate-slide-up">
           <div className="flex items-center gap-2 pr-3 border-r border-kp-border">
-            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-white text-[11px] font-bold">
+            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-white text-[0.6875rem] font-bold">
               {selectedIds.length}
             </span>
             <span className="text-xs font-semibold text-kp-text-primary">
@@ -627,7 +627,7 @@ export default function ProductsTable({
 
           {/* Status Bulk Select */}
           <div className="flex items-center gap-1.5">
-            <span className="text-[11px] text-kp-text-tertiary">{t('columns.status')}:</span>
+            <span className="text-[0.6875rem] text-kp-text-tertiary">{t('columns.status')}:</span>
             <select
               disabled={isSubmittingBulk}
               onChange={(e) => {
@@ -701,7 +701,7 @@ export default function ProductsTable({
                   })}
                 </p>
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">{t('bulkLocationModal.codeLabel')}</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('bulkLocationModal.codeLabel')}</label>
                   <input
                     type="text"
                     required

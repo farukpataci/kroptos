@@ -49,9 +49,18 @@ export class CreateStoreDto {
   @IsString()
   @IsOptional()
   type?: string;
+
+  @ApiPropertyOptional({ example: 'LOGO_SYNC', description: 'Order processing mode: LOGO_SYNC, POOL_ONLY, MANUAL_APPROVAL' })
+  @IsString()
+  @IsOptional()
+  orderProcessingMode?: string;
 }
 
 export class UpdateStoreDto {
+  @ApiPropertyOptional({ example: 'LOGO_SYNC', description: 'Order processing mode: LOGO_SYNC, POOL_ONLY, MANUAL_APPROVAL' })
+  @IsString()
+  @IsOptional()
+  orderProcessingMode?: string;
   @ApiPropertyOptional({ example: 'My Online Shop', description: 'Updated name of the store' })
   @IsString()
   @IsOptional()

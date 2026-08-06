@@ -6,12 +6,15 @@ import { HepsiburadaMapper } from './HepsiburadaMapper';
 import { HepsiburadaOrder, HepsiburadaProduct } from './HepsiburadaTypes';
 
 export class HepsiburadaConnector extends MarketplaceConnector {
+  protected readonly defaultRateLimit = 50;
+
   constructor(
     credentials: Record<string, any>,
     httpClient: MarketplaceHttpClient,
     rateLimiter: MarketplaceRateLimiter,
+    settings: Record<string, unknown> = {},
   ) {
-    super('HEPSIBURADA', credentials, httpClient, rateLimiter);
+    super('HEPSIBURADA', credentials, httpClient, rateLimiter, settings);
   }
 
   private hasInvalidCredentials(): boolean {
@@ -22,7 +25,7 @@ export class HepsiburadaConnector extends MarketplaceConnector {
 
   async testConnection(): Promise<ConnectionTestResult> {
     const startTime = Date.now();
-    await this.rateLimiter.throttle(this.provider, 50, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {
@@ -40,7 +43,7 @@ export class HepsiburadaConnector extends MarketplaceConnector {
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
-    await this.rateLimiter.throttle(this.provider, 50, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('Hepsiburada API Authentication Failed');
@@ -78,7 +81,7 @@ export class HepsiburadaConnector extends MarketplaceConnector {
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    await this.rateLimiter.throttle(this.provider, 50, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('Hepsiburada API Authentication Failed');
@@ -101,7 +104,7 @@ export class HepsiburadaConnector extends MarketplaceConnector {
   }
 
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    await this.rateLimiter.throttle(this.provider, 50, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {

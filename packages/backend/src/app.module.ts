@@ -9,6 +9,7 @@ import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
 import { IntegrationModule } from './modules/integration/integration.module';
+import { IntegrationSettingsModule } from './modules/integration-settings/integration-settings.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { WmsModule } from './modules/wms/wms.module';
@@ -37,6 +38,7 @@ import { FilesController } from './modules/files/files.controller';
     CategoryModule,
     OrderModule,
     IntegrationModule,
+    IntegrationSettingsModule,
     WmsModule,
     AuditModule,
     IntegrationLogModule,

@@ -15,19 +15,28 @@ export class MarketplaceConnectorFactory {
     private readonly rateLimiter: MarketplaceRateLimiter,
   ) {}
 
-  create(provider: string, credentials: Record<string, any>): MarketplaceConnector {
+  /**
+   * @param settings Resolved integration settings. Optional so credential-only
+   *   callers (connection tests, category lookups) keep working before an
+   *   integration has been configured.
+   */
+  create(
+    provider: string,
+    credentials: Record<string, any>,
+    settings: Record<string, unknown> = {},
+  ): MarketplaceConnector {
     const p = provider.toUpperCase();
     switch (p) {
       case 'TRENDYOL':
-        return new TrendyolConnector(credentials, this.httpClient, this.rateLimiter);
+        return new TrendyolConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'HEPSIBURADA':
-        return new HepsiburadaConnector(credentials, this.httpClient, this.rateLimiter);
+        return new HepsiburadaConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'AMAZON':
-        return new AmazonConnector(credentials, this.httpClient, this.rateLimiter);
+        return new AmazonConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'N11':
-        return new N11Connector(credentials, this.httpClient, this.rateLimiter);
+        return new N11Connector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'CICEKSEPETI':
-        return new CicekSepetiConnector(credentials, this.httpClient, this.rateLimiter);
+        return new CicekSepetiConnector(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }

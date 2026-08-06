@@ -61,8 +61,8 @@ export default function OrdersPage() {
             <ShoppingCartIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-kp-text-primary">{t('title')}</h1>
-            <p className="text-[13px] text-kp-text-tertiary">
+            <h1 className="page-title">{t('title')}</h1>
+            <p className="page-subtitle">
               {t('subtitle')}
             </p>
           </div>

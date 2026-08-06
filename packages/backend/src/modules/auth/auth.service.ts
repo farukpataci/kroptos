@@ -4,6 +4,7 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
+import { isPlatformAdmin } from '../../common/constants/platform-admin';
 
 @Injectable()
 export class AuthService {
@@ -318,14 +319,7 @@ export class AuthService {
       { email: user.email },
     );
 
-    const agenciesMap = userRoles.map((ur) => ({
-      id: ur.agency.id,
-      publicId: ur.agency.publicId,
-      name: ur.agency.name,
-      role: ur.role.name,
-      clientId: ur.clientId,
-      storeId: ur.storeId,
-    }));
+    const { accessibleTenants } = await this.getMe(user.id);
 
     return {
       accessToken: tokens.accessToken,
@@ -338,7 +332,7 @@ export class AuthService {
         isActive: user.isActive,
         twoFactorEnabled: user.twoFactorEnabled,
       },
-      agencies: agenciesMap,
+      agencies: accessibleTenants,
     };
   }
 
@@ -533,21 +527,72 @@ export class AuthService {
     const userRoles = await this.prisma.userRole.findMany({
       where: { userId, deletedAt: null },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            stores: {
+              where: { deletedAt: null },
+            },
+          },
+        },
         role: true,
       },
     });
 
+    const storeUsers = await this.prisma.storeUser.findMany({
+      where: { userId, deletedAt: null },
+      select: { storeId: true },
+    });
+    const allowedStoreIds = new Set(storeUsers.map((su) => su.storeId));
+    const hasSpecificStoreRestrictions = allowedStoreIds.size > 0;
+
+    const accessibleTenants: any[] = [];
+    const addedIds = new Set<string>();
+
+    for (const ur of userRoles) {
+      if (ur.agency && !addedIds.has(ur.agency.id)) {
+        addedIds.add(ur.agency.id);
+        accessibleTenants.push({
+          id: ur.agency.id,
+          publicId: ur.agency.publicId || `tn_${ur.agency.id}`,
+          name: ur.agency.name,
+          type: 'agency',
+          agencyId: ur.agency.id,
+          clientId: null,
+          storeId: null,
+        });
+
+        for (const store of ur.agency.stores || []) {
+          if (hasSpecificStoreRestrictions && !allowedStoreIds.has(store.id)) {
+            continue;
+          }
+
+          if (!addedIds.has(store.id)) {
+            addedIds.add(store.id);
+            accessibleTenants.push({
+              id: store.id,
+              publicId: store.publicId || `tn_${store.id}`,
+              name: store.name,
+              type: 'brand',
+              agencyId: ur.agency.id,
+              clientId: store.clientId || null,
+              storeId: store.id,
+            });
+          }
+        }
+      }
+    }
+
+    // The UI needs the role to decide what to show; it is advisory only, every
+    // protected route re-checks it server-side.
+    const role = userRoles[0]?.role?.name ?? null;
+
     return {
-      user,
-      accessibleTenants: userRoles.map((ur) => ({
-        id: ur.agency.id,
-        publicId: ur.agency.publicId,
-        name: ur.agency.name,
-        role: ur.role.name,
-        clientId: ur.clientId,
-        storeId: ur.storeId,
-      })),
+      user: {
+        ...user,
+        role,
+        isPlatformAdmin: isPlatformAdmin({ email: user.email, role }),
+      },
+      accessibleTenants,
     };
   }
 }

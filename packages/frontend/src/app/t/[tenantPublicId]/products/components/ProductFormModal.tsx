@@ -25,7 +25,6 @@ const TABS: { value: FormTab; labelKey: string }[] = [
   { value: 'images', labelKey: 'tabs.images' },
   { value: 'variants', labelKey: 'tabs.variants' },
   { value: 'bundle', labelKey: 'tabs.bundle' },
-  { value: 'cross_sell', labelKey: 'tabs.crossSell' },
   { value: 'accounting', labelKey: 'tabs.accounting' },
   { value: 'integrations', labelKey: 'tabs.integrations' },
 ];
@@ -400,7 +399,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
   };
 
   const inputCls = 'w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-none focus:border-kp-accent transition-colors';
-  const labelCls = 'block text-[11px] font-medium text-kp-text-secondary mb-1';
+  const labelCls = 'block text-[0.6875rem] font-medium text-kp-text-secondary mb-1';
 
   if (!mounted) return null;
 
@@ -519,7 +518,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                 <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 p-4 flex items-center justify-between">
                   <div className="space-y-1">
                     <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('accounting.statusTitle')}</h4>
-                    <p className="text-[11px] text-kp-text-tertiary">
+                    <p className="text-[0.6875rem] text-kp-text-tertiary">
                       {form.erpCode ? (
                         t.rich('accounting.linkedTo', {
                           code: form.erpCode,
@@ -564,7 +563,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                   </div>
 
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                    <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest">
+                    <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest">
                       {t('accounting.resultsTitle', { count: erpSearchResults.length })}
                     </p>
 
@@ -588,11 +587,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                               <div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-semibold text-kp-text-primary">{item.name}</span>
-                                  <span className="text-[10px] font-mono bg-kp-bg-secondary px-1.5 py-0.5 rounded text-kp-text-secondary">
+                                  <span className="text-[0.625rem] font-mono bg-kp-bg-secondary px-1.5 py-0.5 rounded text-kp-text-secondary">
                                     {item.code}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-4 mt-1 text-[10px] text-kp-text-tertiary">
+                                <div className="flex items-center gap-4 mt-1 text-[0.625rem] text-kp-text-tertiary">
                                   <span>{t('accounting.barcode')}: {item.barcode}</span>
                                   <span>{t('accounting.currentStock')}: <strong className="text-kp-text-secondary">{item.stock}</strong></span>
                                   <span>{t('accounting.erpPrice')}: <strong className="text-kp-text-secondary">{item.price.toLocaleString('tr-TR')} ₺</strong></span>
@@ -614,7 +613,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                                         erpId: item.id,
                                       }));
                                     }}
-                                    className="rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary px-2.5 py-1 text-[11px] font-semibold transition-all"
+                                    className="rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary px-2.5 py-1 text-[0.6875rem] font-semibold transition-all"
                                     title={t('accounting.pullInfoTitle')}
                                   >
                                     {t('accounting.pullInfo')}
@@ -626,7 +625,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                                     set('erpCode', item.code);
                                     set('erpId', item.id);
                                   }}
-                                  className={`rounded px-3 py-1 text-[11px] font-semibold transition-all ${
+                                  className={`rounded px-3 py-1 text-[0.6875rem] font-semibold transition-all ${
                                     isMatched
                                       ? 'bg-kp-accent text-white'
                                       : 'bg-kp-accent/15 text-kp-accent hover:bg-kp-accent/25'
@@ -720,7 +719,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                 <div className="flex items-center justify-between">
                   <div>
                     <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('variants.title')}</h4>
-                    <p className="text-[11px] text-kp-text-tertiary">{t('variants.desc')}</p>
+                    <p className="text-[0.6875rem] text-kp-text-tertiary">{t('variants.desc')}</p>
                   </div>
                   <button
                     type="button"
@@ -840,7 +839,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
               <div className="space-y-4 animate-fade-in">
                 <div>
                   <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('bundle.title')}</h4>
-                  <p className="text-[11px] text-kp-text-tertiary">{t('bundle.desc')}</p>
+                  <p className="text-[0.6875rem] text-kp-text-tertiary">{t('bundle.desc')}</p>
                 </div>
 
                 <div className="bg-kp-bg-primary/20 border border-kp-border rounded-kp-md p-4 space-y-4">
@@ -874,11 +873,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                         <div key={idx} className="flex items-center justify-between p-3 border border-kp-border rounded-kp-md bg-kp-bg-primary">
                           <div className="space-y-0.5">
                             <p className="text-xs font-semibold text-kp-text-primary">{item.name}</p>
-                            <p className="text-[10px] text-kp-text-tertiary font-mono">SKU: {item.sku} | {t('priceLabel')}: {item.price} ₺</p>
+                            <p className="text-[0.625rem] text-kp-text-tertiary font-mono">SKU: {item.sku} | {t('priceLabel')}: {item.price} ₺</p>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="w-24">
-                              <label className="text-[9px] font-medium text-kp-text-tertiary block mb-0.5">{t('bundle.quantity')}</label>
+                              <label className="text-[0.5625rem] font-medium text-kp-text-tertiary block mb-0.5">{t('bundle.quantity')}</label>
                               <input
                                 type="number"
                                 min="1"
@@ -892,7 +891,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                               />
                             </div>
                             <div className="w-24">
-                              <label className="text-[9px] font-medium text-kp-text-tertiary block mb-0.5">{t('bundle.discount')}</label>
+                              <label className="text-[0.5625rem] font-medium text-kp-text-tertiary block mb-0.5">{t('bundle.discount')}</label>
                               <input
                                 type="number"
                                 min="0"
@@ -927,7 +926,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
               <div className="space-y-4 animate-fade-in">
                 <div>
                   <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('crossSell.title')}</h4>
-                  <p className="text-[11px] text-kp-text-tertiary">{t('crossSell.desc')}</p>
+                  <p className="text-[0.6875rem] text-kp-text-tertiary">{t('crossSell.desc')}</p>
                 </div>
 
                 <div className="bg-kp-bg-primary/20 border border-kp-border rounded-kp-md p-4 space-y-4">
@@ -961,11 +960,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                         <div key={idx} className="flex items-center justify-between p-3 border border-kp-border rounded-kp-md bg-kp-bg-primary">
                           <div className="space-y-0.5">
                             <p className="text-xs font-semibold text-kp-text-primary">{item.name}</p>
-                            <p className="text-[10px] text-kp-text-tertiary font-mono">SKU: {item.sku} | {t('priceLabel')}: {item.price} ₺</p>
+                            <p className="text-[0.625rem] text-kp-text-tertiary font-mono">SKU: {item.sku} | {t('priceLabel')}: {item.price} ₺</p>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="w-24">
-                              <label className="text-[9px] font-medium text-kp-text-tertiary block mb-0.5">{t('crossSell.displayOrder')}</label>
+                              <label className="text-[0.5625rem] font-medium text-kp-text-tertiary block mb-0.5">{t('crossSell.displayOrder')}</label>
                               <input
                                 type="number"
                                 value={item.displayOrder}
@@ -1032,22 +1031,22 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
                 {/* Margin preview */}
                 <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 p-4">
-                  <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('pricing.marginCalc')}</p>
+                  <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('pricing.marginCalc')}</p>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                      <p className="text-[10px] text-kp-text-tertiary">{t('pricing.sale')}</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary">{t('pricing.sale')}</p>
                       <p className="font-bold text-kp-text-primary text-sm">
                         {form.price ? `${form.currency === 'TRY' ? '₺' : '$'}${parseFloat(form.price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-kp-text-tertiary">{t('pricing.cost')}</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary">{t('pricing.cost')}</p>
                       <p className="font-bold text-kp-text-primary text-sm">
                         {form.costPrice ? `${form.currency === 'TRY' ? '₺' : '$'}${parseFloat(form.costPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-kp-text-tertiary">{t('pricing.margin')}</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary">{t('pricing.margin')}</p>
                       <p className={`font-bold text-lg ${margin ? (parseFloat(margin) >= 30 ? 'text-emerald-400' : parseFloat(margin) >= 15 ? 'text-amber-400' : 'text-red-400') : 'text-kp-text-tertiary'}`}>
                         {margin ? `%${margin}` : '—'}
                       </p>
@@ -1088,11 +1087,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                 {/* Desi preview */}
                 {form.width && form.height && form.depth && (
                   <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 p-4">
-                    <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-2">{t('dimensions.desiCalc')}</p>
+                    <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-2">{t('dimensions.desiCalc')}</p>
                     <p className="text-sm font-bold text-kp-text-primary">
                       {((parseFloat(form.width) * parseFloat(form.height) * parseFloat(form.depth)) / 3000).toFixed(2)} desi
                     </p>
-                    <p className="text-[10px] text-kp-text-tertiary mt-0.5">{t('dimensions.desiFormula')}</p>
+                    <p className="text-[0.625rem] text-kp-text-tertiary mt-0.5">{t('dimensions.desiFormula')}</p>
                   </div>
                 )}
               </div>
@@ -1131,7 +1130,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                       </button>
 
                       {idx === 0 && (
-                        <span className="absolute top-1.5 left-1.5 z-10 px-2 py-0.5 rounded-kp-sm text-[9px] font-bold bg-kp-accent text-white uppercase tracking-wider shadow-sm flex items-center gap-1 select-none">
+                        <span className="absolute top-1.5 left-1.5 z-10 px-2 py-0.5 rounded-kp-sm text-[0.5625rem] font-bold bg-kp-accent text-white uppercase tracking-wider shadow-sm flex items-center gap-1 select-none">
                           ★ {t('images.mainImage')}
                         </span>
                       )}
@@ -1143,7 +1142,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                       ) : (
                         <div className="flex flex-col items-center gap-1.5 text-center w-full select-none">
                           <PhotoIcon className="h-5 w-5 text-kp-text-tertiary" />
-                          <label className="text-[10px] font-semibold text-kp-accent hover:text-kp-accent-hover cursor-pointer bg-kp-accent/15 px-2 py-0.5 rounded-kp-sm">
+                          <label className="text-[0.625rem] font-semibold text-kp-accent hover:text-kp-accent-hover cursor-pointer bg-kp-accent/15 px-2 py-0.5 rounded-kp-sm">
                             {t('images.choose')}
                             <input
                               type="file"
@@ -1155,7 +1154,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                           <input
                             type="text"
                             placeholder={t('images.pasteUrl')}
-                            className="w-full bg-kp-bg-secondary border border-kp-border rounded px-1.5 py-0.5 text-[9px] text-center text-kp-text-primary focus:outline-none focus:border-kp-accent"
+                            className="w-full bg-kp-bg-secondary border border-kp-border rounded px-1.5 py-0.5 text-[0.5625rem] text-center text-kp-text-primary focus:outline-none focus:border-kp-accent"
                             onBlur={(e) => handleImageURLAt(e.target.value, idx)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
@@ -1176,7 +1175,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                     className="aspect-square rounded-kp-md border border-dashed border-kp-border bg-kp-bg-primary/20 hover:bg-kp-bg-primary/50 flex flex-col items-center justify-center gap-1 text-kp-text-tertiary hover:text-kp-text-primary transition-colors"
                   >
                     <span className="text-xl font-bold">+</span>
-                    <span className="text-[10px] font-medium">{t('images.addImage')}</span>
+                    <span className="text-[0.625rem] font-medium">{t('images.addImage')}</span>
                   </button>
                 </div>
               </div>

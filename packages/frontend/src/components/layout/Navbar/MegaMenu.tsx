@@ -277,7 +277,7 @@ export function SolutionsMenu() {
       {/* Dynamic Theme Promo Card */}
       <div className="p-8 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-[#0b0e22] dark:to-neutral-950 flex flex-col justify-between space-y-6">
         <div className="space-y-3">
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-kp-accent-muted text-kp-accent border border-kp-accent/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[0.625rem] font-bold tracking-wider uppercase bg-kp-accent-muted text-kp-accent border border-kp-accent/20">
             {data.promo.tag}
           </span>
           <h4 className="text-base font-bold text-kp-text-primary leading-snug">

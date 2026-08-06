@@ -144,7 +144,7 @@ export default function DashboardPage() {
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <ExclamationTriangleIcon className="h-10 w-10 text-kp-danger" />
         <h3 className="mt-4 text-base font-semibold text-kp-text-primary">{t('loadFailed')}</h3>
-        <p className="mt-1 text-xs text-kp-text-tertiary">{error}</p>
+        <p className="page-subtitle">{error}</p>
       </div>
     );
   }
@@ -153,8 +153,8 @@ export default function DashboardPage() {
     <div className="space-y-6 animate-fade-in">
       {/* Page Header */}
       <div>
-        <h1 className="text-xl font-semibold text-kp-text-primary">{t('title')}</h1>
-        <p className="mt-1 text-[13px] text-kp-text-tertiary">
+        <h1 className="page-title">{t('title')}</h1>
+        <p className="mt-1 text-[0.8125rem] text-kp-text-tertiary">
           {t('subtitle')}
         </p>
       </div>
@@ -235,8 +235,8 @@ export default function DashboardPage() {
         <div className="card lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between border-b border-kp-border pb-3">
             <div>
-              <h2 className="text-[15px] font-semibold text-kp-text-primary">{t('integrationHealth.title')}</h2>
-              <p className="text-[11px] text-kp-text-tertiary">{t('integrationHealth.subtitle')}</p>
+              <h2 className="text-[0.9375rem] font-semibold text-kp-text-primary">{t('integrationHealth.title')}</h2>
+              <p className="text-[0.6875rem] text-kp-text-tertiary">{t('integrationHealth.subtitle')}</p>
             </div>
           </div>
           <div className="divide-y divide-kp-border">
@@ -253,7 +253,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-kp-text-primary">{item.name}</p>
-                      <p className="text-[11px] text-kp-text-tertiary">
+                      <p className="text-[0.6875rem] text-kp-text-tertiary">
                         {item.platform} • {t('integrationHealth.lastSync')}: {item.lastSyncAt ? new Date(item.lastSyncAt).toLocaleTimeString() : t('integrationHealth.never')}
                       </p>
                     </div>
@@ -273,8 +273,8 @@ export default function DashboardPage() {
         <div className="card space-y-4">
           <div className="flex items-center justify-between border-b border-kp-border pb-3">
             <div>
-              <h2 className="text-[15px] font-semibold text-kp-text-primary">{t('orderFeed.title')}</h2>
-              <p className="text-[11px] text-kp-text-tertiary">{t('orderFeed.subtitle')}</p>
+              <h2 className="text-[0.9375rem] font-semibold text-kp-text-primary">{t('orderFeed.title')}</h2>
+              <p className="text-[0.6875rem] text-kp-text-tertiary">{t('orderFeed.subtitle')}</p>
             </div>
           </div>
           <div className="divide-y divide-kp-border">
@@ -287,12 +287,12 @@ export default function DashboardPage() {
                 <div key={item.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                   <div>
                     <p className="text-xs font-semibold text-kp-text-primary font-mono">{item.orderNumber}</p>
-                    <p className="text-[11px] text-kp-text-tertiary">
+                    <p className="text-[0.6875rem] text-kp-text-tertiary">
                       {item.customerName || t('walkInCustomer')} • {new Date(item.createdAt).toLocaleTimeString()}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="text-[13px] font-semibold text-kp-text-primary">
+                    <span className="text-[0.8125rem] font-semibold text-kp-text-primary">
                       ₺{parseFloat(item.totalAmount).toLocaleString()}
                     </span>
                     <div className="mt-1">
@@ -310,7 +310,7 @@ export default function DashboardPage() {
 
       {/* Quick Actions Panel */}
       <div className="card space-y-4">
-        <h2 className="text-[15px] font-semibold text-kp-text-primary border-b border-kp-border pb-3">
+        <h2 className="text-[0.9375rem] font-semibold text-kp-text-primary border-b border-kp-border pb-3">
           {t('quickActions.title')}
         </h2>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">

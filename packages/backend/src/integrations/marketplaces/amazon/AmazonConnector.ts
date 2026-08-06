@@ -6,12 +6,15 @@ import { AmazonMapper } from './AmazonMapper';
 import { AmazonOrder, AmazonProduct } from './AmazonTypes';
 
 export class AmazonConnector extends MarketplaceConnector {
+  protected readonly defaultRateLimit = 20;
+
   constructor(
     credentials: Record<string, any>,
     httpClient: MarketplaceHttpClient,
     rateLimiter: MarketplaceRateLimiter,
+    settings: Record<string, unknown> = {},
   ) {
-    super('AMAZON', credentials, httpClient, rateLimiter);
+    super('AMAZON', credentials, httpClient, rateLimiter, settings);
   }
 
   private hasInvalidCredentials(): boolean {
@@ -23,7 +26,7 @@ export class AmazonConnector extends MarketplaceConnector {
   async testConnection(): Promise<ConnectionTestResult> {
     const startTime = Date.now();
     // Amazon SP-API dynamic throttling simulation
-    await this.rateLimiter.throttle(this.provider, 20, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {
@@ -41,7 +44,7 @@ export class AmazonConnector extends MarketplaceConnector {
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
-    await this.rateLimiter.throttle(this.provider, 20, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('Amazon SP-API Authentication Failed');
@@ -87,7 +90,7 @@ export class AmazonConnector extends MarketplaceConnector {
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    await this.rateLimiter.throttle(this.provider, 20, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       throw new Error('Amazon SP-API Authentication Failed');
@@ -114,7 +117,7 @@ export class AmazonConnector extends MarketplaceConnector {
   }
 
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    await this.rateLimiter.throttle(this.provider, 20, 60000);
+    await this.throttle();
 
     if (this.hasInvalidCredentials()) {
       return {

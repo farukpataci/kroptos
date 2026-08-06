@@ -19,7 +19,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { Order, OrderFilters } from '../hooks/useOrders';
-import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge } from './OrderStatusBadge';
+import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge, OrderModeBadge } from './OrderStatusBadge';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -123,7 +123,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'select' && (
-              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => { setSelectedOrderIds(orders.map(o => o.id)); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -151,7 +151,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'star' && (
-              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction(t('toolbar.addStar'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -179,7 +179,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'flag' && (
-              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction(t('toolbar.redFlag'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center gap-2"
@@ -220,7 +220,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'envelope' && (
-              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction(t('toolbar.sendEmail'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -254,7 +254,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'document' && (
-              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction(t('toolbar.bulkInvoicePdf'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -288,7 +288,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'printer' && (
-              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction(t('toolbar.printInvoices'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -333,13 +333,13 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'truck' && (
-              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction('DPD Romania')}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center justify-between"
                 >
                   <span>DPD Romania</span>
-                  <span className="text-[9px] bg-kp-accent/20 text-kp-accent rounded px-1.5 font-bold">{t('toolbar.defaultCarrier')}</span>
+                  <span className="text-[0.5625rem] bg-kp-accent/20 text-kp-accent rounded px-1.5 font-bold">{t('toolbar.defaultCarrier')}</span>
                 </button>
                 <button
                   onClick={() => handleAction('Yurtiçi Kargo')}
@@ -374,7 +374,7 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'more' && (
-              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => handleAction(t('toolbar.bulkStatusChange'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -408,7 +408,7 @@ export default function OrdersTable({
               <ArrowsUpDownIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
             </button>
             {activeDropdown === 'sort' && (
-              <div className="absolute right-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute right-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => { onFilterChange({ ...filters, dateRange: 'all' }); showToast(t('toolbar.sortedByDate')); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -433,7 +433,7 @@ export default function OrdersTable({
 
           {/* Selected Counter */}
           {selectedOrderIds.length > 0 && (
-            <span className="text-[11px] text-kp-accent font-semibold ml-2 animate-fade-in">
+            <span className="text-[0.6875rem] text-kp-accent font-semibold ml-2 animate-fade-in">
               {t('selectedCount', { count: selectedOrderIds.length })}
             </span>
           )}
@@ -442,7 +442,7 @@ export default function OrdersTable({
           {onCreateOrder && (
             <button
               onClick={onCreateOrder}
-              className="ml-auto flex items-center justify-center gap-1.5 rounded bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-[11px] font-bold shadow-sm transition-all h-[28px]"
+              className="ml-auto flex items-center justify-center gap-1.5 rounded bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-[0.6875rem] font-bold shadow-sm transition-all h-[28px]"
             >
               <span className="text-sm leading-none">+</span>
               {t('createOrder')}
@@ -453,9 +453,9 @@ export default function OrdersTable({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs text-kp-text-secondary">
+        <table className="kp-table w-full text-left border-collapse text-xs text-kp-text-secondary">
           <thead>
-            <tr className="border-b border-kp-border text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
+            <tr className="border-b border-kp-border text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
               <th className="py-3 px-4 w-10">
                 <input
                   type="checkbox"
@@ -529,23 +529,23 @@ export default function OrdersTable({
                       >
                         <StarIcon className="h-3.5 w-3.5" />
                       </button>
-                      <span className="font-mono text-[11px] font-semibold text-kp-text-primary group-hover:text-kp-accent transition-colors">
+                      <span className="font-mono text-[0.6875rem] font-semibold text-kp-text-primary group-hover:text-kp-accent transition-colors">
                         {order.orderNumber}
                       </span>
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
                     <div>
-                      <p className="font-medium text-kp-text-primary text-[12px]">
+                      <p className="font-medium text-kp-text-primary text-[0.75rem]">
                         {order.customerName || 'Walk-in'}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`inline-flex items-center justify-center text-[8px] font-bold text-white rounded-full h-3.5 w-3.5 ${
+                        <span className={`inline-flex items-center justify-center text-[0.5rem] font-bold text-white rounded-full h-3.5 w-3.5 ${
                           order.source === 'trendyol' ? 'bg-orange-500' : 'bg-slate-500'
                         }`}>
                           {order.source === 'trendyol' ? 'T' : 'M'}
                         </span>
-                        <span className="text-[10px] text-kp-text-tertiary font-semibold">
+                        <span className="text-[0.625rem] text-kp-text-tertiary font-semibold">
                           {order.source === 'trendyol' ? 'Trendyol Magros' : t('manualStore')}
                         </span>
                       </div>
@@ -553,15 +553,18 @@ export default function OrdersTable({
                   </td>
                   <td className="py-3.5 px-4 max-w-xs truncate">
                     {order.items && order.items.length > 0 ? (
-                      <span className="text-[11px] text-kp-text-secondary font-medium">
+                      <span className="text-[0.6875rem] text-kp-text-secondary font-medium">
                         {order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
                       </span>
                     ) : (
-                      <span className="text-[11px] text-kp-text-tertiary">-</span>
+                      <span className="text-[0.6875rem] text-kp-text-tertiary">-</span>
                     )}
                   </td>
                   <td className="py-3.5 px-4">
-                    <OrderStatusBadge status={order.status} />
+                    <div className="flex flex-col items-start gap-1">
+                      <OrderStatusBadge status={order.status} />
+                      <OrderModeBadge isPoolOrder={order.isPoolOrder} logoSyncStatus={order.logoSyncStatus} />
+                    </div>
                   </td>
                   <td className="py-3.5 px-4">
                     <PaymentStatusBadge status={order.paymentStatus} />
@@ -570,7 +573,7 @@ export default function OrdersTable({
                     <FulfillmentStatusBadge status={order.fulfillmentStatus} />
                   </td>
                   <td className="py-3.5 px-4 text-right">
-                    <span className="font-semibold text-kp-text-primary text-[12px]">
+                    <span className="font-semibold text-kp-text-primary text-[0.75rem]">
                       {parseFloat(order.totalAmount.toString()).toLocaleString('tr-TR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
@@ -581,14 +584,14 @@ export default function OrdersTable({
                   </td>
                   <td className="py-3.5 px-4">
                     <div>
-                      <p className="text-[11px] text-kp-text-secondary">
+                      <p className="text-[0.6875rem] text-kp-text-secondary">
                         {new Date(order.createdAt).toLocaleDateString('tr-TR', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </p>
-                      <p className="text-[10px] text-kp-text-tertiary">
+                      <p className="text-[0.625rem] text-kp-text-tertiary">
                         {new Date(order.createdAt).toLocaleTimeString('tr-TR', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -606,7 +609,7 @@ export default function OrdersTable({
       {/* Pagination */}
       {!isLoading && totalFiltered > 0 && (
         <div className="flex items-center justify-between border-t border-kp-border px-4 py-3 bg-kp-bg-primary/10">
-          <p className="text-[11px] text-kp-text-tertiary font-medium">
+          <p className="text-[0.6875rem] text-kp-text-tertiary font-medium">
             <span className="font-semibold text-kp-text-secondary">{startIdx}–{endIdx}</span>
             {' '}{t('paginationSummary', { total: totalFiltered })}
           </p>
@@ -629,7 +632,7 @@ export default function OrdersTable({
                 <button
                   key={page}
                   onClick={() => onPageChange(page)}
-                  className={`flex h-7 w-7 items-center justify-center rounded text-[11px] font-semibold transition-colors ${
+                  className={`flex h-7 w-7 items-center justify-center rounded text-[0.6875rem] font-semibold transition-colors ${
                     currentPage === page
                       ? 'bg-kp-accent text-white shadow-sm'
                       : 'border border-kp-border text-kp-text-tertiary hover:bg-kp-bg-hover hover:text-kp-text-primary'

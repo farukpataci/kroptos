@@ -266,7 +266,7 @@ export default function CategoryMappingModal({
             <FolderIcon className="h-5 w-5 text-kp-accent" />
             <div>
               <h2 className="text-base font-semibold text-kp-text-primary">{integrationName} - {t('title')}</h2>
-              <p className="text-[11px] text-kp-text-tertiary">{t('subtitle')}</p>
+              <p className="text-[0.6875rem] text-kp-text-tertiary">{t('subtitle')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded-kp-md hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
@@ -303,7 +303,7 @@ export default function CategoryMappingModal({
                     
                     {/* Local Category Select */}
                     <div>
-                      <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
                         {t('localCategoryLabel')}
                       </label>
                       <select
@@ -323,7 +323,7 @@ export default function CategoryMappingModal({
 
                     {/* Trendyol Category Search/Select */}
                     <div className="relative">
-                      <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
                         {t('trendyolSearchLabel')}
                       </label>
                       
@@ -385,7 +385,7 @@ export default function CategoryMappingModal({
                         <div className="overflow-hidden border border-kp-border rounded-kp-md bg-kp-bg-primary/10">
                           <table className="w-full text-left border-collapse text-xs text-kp-text-secondary">
                             <thead>
-                              <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary">
+                              <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary">
                                 <th className="py-2.5 px-4">{t('colAttribute')}</th>
                                 <th className="py-2.5 px-4">{t('colRequired')}</th>
                                 <th className="py-2.5 px-4">{t('colMappingType')}</th>
@@ -402,9 +402,9 @@ export default function CategoryMappingModal({
                                     <td className="py-3 px-4 font-medium text-kp-text-primary">{attr.attribute.name}</td>
                                     <td className="py-3 px-4">
                                       {attr.required ? (
-                                        <span className="text-[10px] bg-kp-danger/10 text-kp-danger px-1.5 py-0.5 rounded-sm font-semibold">{t('required')}</span>
+                                        <span className="text-[0.625rem] bg-kp-danger/10 text-kp-danger px-1.5 py-0.5 rounded-sm font-semibold">{t('required')}</span>
                                       ) : (
-                                        <span className="text-[10px] text-kp-text-tertiary">{t('optional')}</span>
+                                        <span className="text-[0.625rem] text-kp-text-tertiary">{t('optional')}</span>
                                       )}
                                     </td>
                                     <td className="py-3 px-4">
@@ -499,7 +499,7 @@ export default function CategoryMappingModal({
                 <div className="border border-kp-border rounded-kp-md overflow-hidden">
                   <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
                     <thead>
-                      <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/20">
+                      <tr className="border-b border-kp-border text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/20">
                         <th className="py-3 px-4">{t('colLocalCategory')}</th>
                         <th className="py-3 px-4">{t('colTrendyolCategory')}</th>
                         <th className="py-3 px-4">{t('colAttrMappings')}</th>
@@ -525,7 +525,7 @@ export default function CategoryMappingModal({
                             </td>
                             <td className="py-3.5 px-4 text-xs">
                               {m.attributesMapping ? (
-                                <code className="block max-w-[250px] truncate bg-kp-bg-primary/50 text-[10px] text-kp-text-tertiary px-1.5 py-0.5 rounded-sm">
+                                <code className="block max-w-[250px] truncate bg-kp-bg-primary/50 text-[0.625rem] text-kp-text-tertiary px-1.5 py-0.5 rounded-sm">
                                   {JSON.stringify(m.attributesMapping)}
                                 </code>
                               ) : (

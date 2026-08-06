@@ -1,3 +1,9 @@
+⚠️ **BU DOSYA GÜNCEL DEĞİL — koddan saptığı doğrulandı (2026-08).**
+> Endpoint yolları, response şekilleri ve auth kalıpları gerçek kodla uyuşmuyor.
+> Tek doğruluk kaynağı: `packages/` altındaki kod.
+> Düzeltme P0 görevinde yapılacak; o zamana kadar bu dosyaya dayanarak kod üretme.
+
+
 # AGENTS.md - Custom Copilot Agent Instructions for KroptOS
 
 This file contains custom instructions for GitHub Copilot and code generation patterns specific to the KroptOS multi-tenant commerce OS project.

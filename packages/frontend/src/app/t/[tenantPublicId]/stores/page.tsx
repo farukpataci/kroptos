@@ -194,7 +194,7 @@ export default function StoresPage() {
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <ExclamationTriangleIcon className="h-10 w-10 text-kp-danger" />
         <h3 className="mt-4 text-base font-semibold text-kp-text-primary">{t('loadFailed')}</h3>
-        <p className="mt-1 text-xs text-kp-text-tertiary">{error}</p>
+        <p className="page-subtitle">{error}</p>
         <button
           onClick={fetchStores}
           className="mt-4 flex items-center gap-2 rounded-kp-md bg-kp-accent px-4 py-2 text-xs font-medium text-white hover:bg-kp-accent-hover transition-colors"
@@ -213,23 +213,25 @@ export default function StoresPage() {
             <BuildingStorefrontIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-kp-text-primary">{t('title')}</h1>
-            <p className="text-[13px] text-kp-text-tertiary">{t('subtitle')}</p>
+            <h1 className="page-title">{t('title')}</h1>
+            <p className="text-[0.8125rem] text-kp-text-tertiary">{t('subtitle')}</p>
           </div>
         </div>
-        <button
-          onClick={handleOpenCreate}
-          className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
-        >
-          <PlusIcon className="h-4 w-4" /> {t('addStore')}
-        </button>
+        {!tenantContext.storeId && (
+          <button
+            onClick={handleOpenCreate}
+            className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
+          >
+            <PlusIcon className="h-4 w-4" /> {t('addStore')}
+          </button>
+        )}
       </div>
 
       <div className="card">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
+          <table className="kp-table w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
             <thead>
-              <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
+              <tr className="border-b border-kp-border text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
                 <th className="py-3 px-4">{t('columns.name')}</th>
                 <th className="py-3 px-4">{t('columns.slug')}</th>
                 <th className="py-3 px-4">{t('columns.status')}</th>
@@ -251,12 +253,12 @@ export default function StoresPage() {
                     <td className="py-3.5 px-4 font-medium text-kp-text-primary">
                       <div>
                         <span>{store.name}</span>
-                        <span className="ml-2 text-[10px] text-kp-text-tertiary uppercase tracking-wider bg-kp-bg-primary px-1.5 py-0.5 rounded-kp-md">
+                        <span className="ml-2 text-[0.625rem] text-kp-text-tertiary uppercase tracking-wider bg-kp-bg-primary px-1.5 py-0.5 rounded-kp-md">
                           {store.type}
                         </span>
                       </div>
                     </td>
-                    <td className="py-3.5 px-4 font-mono text-[13px]">{store.slug}</td>
+                    <td className="py-3.5 px-4 font-mono text-[0.8125rem]">{store.slug}</td>
                     <td className="py-3.5 px-4">
                       <StatusBadge status={store.status === 'active' ? 'active' : store.status === 'suspended' ? 'error' : 'warning'} label={store.status} />
                     </td>
@@ -313,7 +315,7 @@ export default function StoresPage() {
                 )}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.nameLabel')}
                     </label>
                     <input
@@ -326,7 +328,7 @@ export default function StoresPage() {
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.domainLabel')}
                     </label>
                     <input
@@ -338,7 +340,7 @@ export default function StoresPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.statusLabel')}
                     </label>
                     <select
@@ -352,7 +354,7 @@ export default function StoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.currencyLabel')}
                     </label>
                     <select
@@ -367,7 +369,7 @@ export default function StoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.localeLabel')}
                     </label>
                     <select
@@ -381,7 +383,7 @@ export default function StoresPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.timezoneLabel')}
                     </label>
                     <select
@@ -395,7 +397,7 @@ export default function StoresPage() {
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-1.5">
                       {t('modal.typeLabel')}
                     </label>
                     <select

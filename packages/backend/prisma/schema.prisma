@@ -111,6 +111,7 @@ model Client {
   country      String?
   isActive     Boolean   @default(true)
   status       String    @default("active")
+  orderProcessingMode String @default("LOGO_SYNC") // LOGO_SYNC, POOL_ONLY, MANUAL_APPROVAL
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
@@ -141,6 +142,7 @@ model Store {
   locale    String    @default("en-US")
   timezone  String    @default("UTC")
   type      String    @default("retail") // retail, warehouse, pop
+  orderProcessingMode String @default("LOGO_SYNC") // LOGO_SYNC, POOL_ONLY, MANUAL_APPROVAL
   address   String?
   city      String?
   country   String?
@@ -358,6 +360,8 @@ model Order {
   paymentStatus     String    @default("pending") // pending, paid, partially_refunded, refunded, failed
   fulfillmentStatus String    @default("unfulfilled") // unfulfilled, partially_fulfilled, fulfilled, returned
   source            String    @default("manual") // manual, shopify, trendyol, etc.
+  isPoolOrder       Boolean   @default(false)
+  logoSyncStatus    String    @default("PENDING") // PENDING, SYNCED, BYPASSED_POOL, FAILED
   totalAmount       Decimal   @db.Decimal(12, 2)
   currency          String    @default("USD")
   idempotencyKey    String?
@@ -512,12 +516,69 @@ model Integration {
   queue   IntegrationQueue[]
   apiLogs ApiLog[]
   productMappings ProductMapping[]
+  setting IntegrationSetting?
 
   @@index([agencyId])
   @@index([clientId])
   @@index([storeId])
   @@index([providerType])
   @@index([deletedAt])
+}
+
+/// Per-integration behaviour settings, shaped by the provider's settings manifest.
+/// Credentials stay on Integration.credentialsEncrypted; this model only holds
+/// what the integration *does* with them.
+model IntegrationSetting {
+  id            String      @id @default(cuid())
+  integrationId String      @unique
+  integration   Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  /// Denormalised from Integration so every query can filter on tenant without a join.
+  agencyId String
+  clientId String?
+  storeId  String?
+
+  provider      String // resolves which manifest applies
+  schemaVersion Int    @default(1)
+
+  /// Flat "<section>.<field>" map holding only what the user explicitly set.
+  /// Manifest defaults are merged in at read time and never written here.
+  values Json @default("{}")
+  /// Values of fields marked `secret: true` (AES-256, common/utils/encryption.util).
+  secretsEncrypted String?
+
+  isConfigured   Boolean  @default(false)
+  completedSteps String[] @default([])
+  lastAppliedAt  DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  revisions IntegrationSettingRevision[]
+
+  @@index([agencyId])
+  @@index([clientId])
+  @@index([storeId])
+  @@index([provider])
+  @@index([deletedAt])
+}
+
+model IntegrationSettingRevision {
+  id                   String             @id @default(cuid())
+  integrationSettingId String
+  integrationSetting   IntegrationSetting @relation(fields: [integrationSettingId], references: [id], onDelete: Cascade)
+  version              Int
+  values               Json
+  /// { "stock.bufferQuantity": { "before": 0, "after": 5 } }
+  diff                 Json?
+  changedByUserId      String?
+  changedByName        String?
+  note                 String?
+  createdAt            DateTime           @default(now())
+
+  @@unique([integrationSettingId, version])
+  @@index([integrationSettingId])
 }
 
 model ProductMapping {

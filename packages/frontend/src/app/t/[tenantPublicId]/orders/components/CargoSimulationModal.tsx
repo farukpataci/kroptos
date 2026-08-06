@@ -75,7 +75,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
             </div>
             <div>
               <h3 className="text-sm font-semibold text-kp-text-primary">{t('title')}</h3>
-              <p className="text-[10px] text-kp-text-tertiary">{order.orderNumber}</p>
+              <p className="text-[0.625rem] text-kp-text-tertiary">{order.orderNumber}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
@@ -96,7 +96,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
               </p>
             </div>
             <div className="bg-kp-bg-primary/60 border border-kp-border rounded-kp-md p-4">
-              <p className="text-[10px] text-kp-text-tertiary uppercase tracking-widest mb-1">{t('trackingNumber')}</p>
+              <p className="text-[0.625rem] text-kp-text-tertiary uppercase tracking-widest mb-1">{t('trackingNumber')}</p>
               <p className="font-mono text-sm font-bold text-kp-accent">{trackingResult}</p>
             </div>
             <button
@@ -114,7 +114,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
               </p>
 
               <div>
-                <label className="block text-[11px] font-medium text-kp-text-secondary mb-1.5">
+                <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1.5">
                   {t('carrier')}
                 </label>
                 <select
@@ -130,7 +130,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1.5">
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1.5">
                     {t('weight')}
                   </label>
                   <input
@@ -144,7 +144,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1.5">
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1.5">
                     {t('packageCount')}
                   </label>
                   <input

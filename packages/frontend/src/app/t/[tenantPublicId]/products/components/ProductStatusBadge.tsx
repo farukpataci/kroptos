@@ -31,7 +31,7 @@ export function ProductStatusBadge({ status }: ProductStatusBadgeProps) {
         className: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
       };
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${cfg.className}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[0.625rem] font-semibold ${cfg.className}`}>
       {cfg.label}
     </span>
   );
@@ -46,7 +46,7 @@ export function StockBadge({ quantity, threshold = 10 }: StockBadgeProps) {
   const t = useTranslations('products.stock');
   if (quantity === 0) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold bg-red-500/15 text-red-400 border border-red-500/20">
+      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.625rem] font-semibold bg-red-500/15 text-red-400 border border-red-500/20">
         <span className="h-1.5 w-1.5 rounded-full bg-red-400" />
         {t('outOfStock')}
       </span>
@@ -56,7 +56,7 @@ export function StockBadge({ quantity, threshold = 10 }: StockBadgeProps) {
     return (
       <div className="flex flex-col gap-0.5">
         <span className="font-semibold text-amber-400 text-xs">{quantity}</span>
-        <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <span className="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[0.5625rem] font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/20">
           {t('lowStock')}
         </span>
       </div>
@@ -73,13 +73,13 @@ interface MarginBadgeProps {
 }
 
 export function MarginBadge({ price, costPrice }: MarginBadgeProps) {
-  if (!costPrice || costPrice <= 0 || price <= 0) return <span className="text-kp-text-tertiary text-[10px]">—</span>;
+  if (!costPrice || costPrice <= 0 || price <= 0) return <span className="text-kp-text-tertiary text-[0.625rem]">—</span>;
   const margin = ((price - costPrice) / price) * 100;
   const isGood = margin >= 30;
   const isMid = margin >= 15;
   return (
     <span
-      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold ${
+      className={`inline-flex items-center rounded px-1.5 py-0.5 text-[0.625rem] font-bold ${
         isGood
           ? 'bg-emerald-500/10 text-emerald-400'
           : isMid

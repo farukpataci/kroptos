@@ -90,14 +90,34 @@ export class TenantMiddleware implements NestMiddleware {
         }
       }
 
-      // Translate public ID formats (e.g. tn_..., st_...) to internal CUIDs
-      if (agencyId && agencyId.startsWith('tn_')) {
-        const record = await this.prisma.agency.findFirst({ where: { publicId: agencyId, deletedAt: null } });
-        if (record) agencyId = record.id;
+      // Translate agencyId / storeId to internal CUIDs and ensure storeId -> agencyId mapping
+      if (agencyId) {
+        const agencyRecord = await this.prisma.agency.findFirst({
+          where: { OR: [{ id: agencyId }, { publicId: agencyId }], deletedAt: null },
+        });
+        if (agencyRecord) {
+          agencyId = agencyRecord.id;
+        } else {
+          const storeRecord = await this.prisma.store.findFirst({
+            where: { OR: [{ id: agencyId }, { publicId: agencyId }], deletedAt: null },
+          });
+          if (storeRecord) {
+            storeId = storeRecord.id;
+            agencyId = storeRecord.agencyId;
+            clientId = storeRecord.clientId || clientId;
+          }
+        }
       }
-      if (storeId && storeId.startsWith('st_')) {
-        const record = await this.prisma.store.findFirst({ where: { publicId: storeId, deletedAt: null } });
-        if (record) storeId = record.id;
+
+      if (storeId) {
+        const storeRecord = await this.prisma.store.findFirst({
+          where: { OR: [{ id: storeId }, { publicId: storeId }], deletedAt: null },
+        });
+        if (storeRecord) {
+          storeId = storeRecord.id;
+          if (!agencyId) agencyId = storeRecord.agencyId;
+          if (!clientId) clientId = storeRecord.clientId || clientId;
+        }
       }
 
       const isSuper = role === 'super_admin' || role === 'Super Admin';

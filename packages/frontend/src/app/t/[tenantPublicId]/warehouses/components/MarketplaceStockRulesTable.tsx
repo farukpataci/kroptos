@@ -312,9 +312,9 @@ export function MarketplaceStockRulesTable() {
 
       {/* Table */}
       <div className="overflow-x-auto border border-kp-border rounded-kp-md bg-kp-bg-primary/20">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="kp-table w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-kp-border text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
+            <tr className="border-b border-kp-border text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
               <th className="py-3 px-4">Kural Adı</th>
               <th className="py-3 px-4">Pazaryeri</th>
               <th className="py-3 px-4">Kural Tipi</th>
@@ -332,7 +332,7 @@ export function MarketplaceStockRulesTable() {
                   <div className="flex flex-col items-center gap-2">
                     <SparklesIcon className="h-8 w-8 text-kp-text-tertiary animate-pulse" />
                     <p className="font-semibold text-kp-text-secondary text-xs">Stok kuralı bulunamadı</p>
-                    <p className="text-[11px]">Filtreleri değiştirin veya yeni bir kural ekleyin.</p>
+                    <p className="text-[0.6875rem]">Filtreleri değiştirin veya yeni bir kural ekleyin.</p>
                   </div>
                 </td>
               </tr>
@@ -350,33 +350,33 @@ export function MarketplaceStockRulesTable() {
                     {/* Name */}
                     <td className="py-3.5 px-4">
                       <div>
-                        <p className="font-semibold text-kp-text-primary text-[12px]">{rule.name}</p>
-                        <p className="text-[10px] font-mono text-kp-text-tertiary">{rule.id} • Son güncelleme: {rule.updatedAt}</p>
+                        <p className="font-semibold text-kp-text-primary text-[0.75rem]">{rule.name}</p>
+                        <p className="text-[0.625rem] font-mono text-kp-text-tertiary">{rule.id} • Son güncelleme: {rule.updatedAt}</p>
                       </div>
                     </td>
 
                     {/* Channel */}
                     <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${channelClass}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[0.625rem] font-bold border ${channelClass}`}>
                         {rule.channel}
                       </span>
                     </td>
 
                     {/* Rule Type */}
                     <td className="py-3.5 px-4">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-kp-xs text-[10px] font-semibold border ${ruleBadge.bgClass} ${ruleBadge.textClass}`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-kp-xs text-[0.625rem] font-semibold border ${ruleBadge.bgClass} ${ruleBadge.textClass}`}>
                         {ruleBadge.label}
                       </span>
                     </td>
 
                     {/* Value */}
-                    <td className="py-3.5 px-4 font-mono font-bold text-kp-text-primary text-[12px]">
+                    <td className="py-3.5 px-4 font-mono font-bold text-kp-text-primary text-[0.75rem]">
                       {rule.value}
                     </td>
 
                     {/* Target Scope */}
                     <td className="py-3.5 px-4">
-                      <span className="text-[11px] font-medium text-kp-text-secondary">
+                      <span className="text-[0.6875rem] font-medium text-kp-text-secondary">
                         {rule.targetScope}
                       </span>
                     </td>
@@ -384,7 +384,7 @@ export function MarketplaceStockRulesTable() {
                     {/* Priority */}
                     <td className="py-3.5 px-4 text-center">
                       <span
-                        className={`inline-flex px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${
+                        className={`inline-flex px-2 py-0.5 rounded-full text-[0.5625rem] font-bold uppercase tracking-wider ${
                           rule.priority === 'high'
                             ? 'bg-red-500/10 text-red-600'
                             : rule.priority === 'medium'
@@ -400,7 +400,7 @@ export function MarketplaceStockRulesTable() {
                     <td className="py-3.5 px-4 text-center">
                       <button
                         onClick={() => handleToggleStatus(rule.id)}
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[0.625rem] font-bold transition-all cursor-pointer ${
                           rule.status === 'active'
                             ? 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20'
                             : 'bg-kp-bg-tertiary text-kp-text-tertiary hover:bg-kp-bg-hover'
@@ -458,7 +458,7 @@ export function MarketplaceStockRulesTable() {
               <div className="p-6 space-y-4 text-xs">
                 {/* Rule Name */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                  <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                     Kural Adı *
                   </label>
                   <input
@@ -474,7 +474,7 @@ export function MarketplaceStockRulesTable() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Channel */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                       Pazaryeri Kanalı *
                     </label>
                     <select
@@ -493,7 +493,7 @@ export function MarketplaceStockRulesTable() {
 
                   {/* Rule Type */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                       Kural Tipi *
                     </label>
                     <select
@@ -512,7 +512,7 @@ export function MarketplaceStockRulesTable() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Value */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                       Eşik / Kota Değeri *
                     </label>
                     <input
@@ -527,7 +527,7 @@ export function MarketplaceStockRulesTable() {
 
                   {/* Priority */}
                   <div>
-                    <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                    <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                       Öncelik Seviyesi
                     </label>
                     <select
@@ -544,7 +544,7 @@ export function MarketplaceStockRulesTable() {
 
                 {/* Target Scope */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-kp-text-secondary mb-1">
+                  <label className="block text-[0.6875rem] font-semibold text-kp-text-secondary mb-1">
                     Uygulanacak Kapsam / Kategori / Depo
                   </label>
                   <input
@@ -558,7 +558,7 @@ export function MarketplaceStockRulesTable() {
 
                 {/* Status Toggle */}
                 <div className="flex items-center gap-3 pt-2">
-                  <label className="text-[11px] font-semibold text-kp-text-secondary">
+                  <label className="text-[0.6875rem] font-semibold text-kp-text-secondary">
                     Kural Durumu:
                   </label>
                   <button
@@ -619,7 +619,7 @@ export function MarketplaceStockRulesTable() {
               <p className="text-xs text-kp-text-secondary leading-relaxed">
                 <span className="font-bold text-kp-text-primary">{deletingRule.name}</span> isimli pazaryeri stok kuralını silmek istediğinize emin misiniz?
               </p>
-              <p className="text-[11px] text-kp-text-tertiary">
+              <p className="text-[0.6875rem] text-kp-text-tertiary">
                 Bu kural silindiğinde ilgili pazaryerindeki stok kotaları varsayılan ayarlara dönecektir.
               </p>
             </div>

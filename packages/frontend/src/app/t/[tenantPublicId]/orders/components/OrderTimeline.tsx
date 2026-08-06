@@ -64,9 +64,9 @@ export default function OrderTimeline({ timeline }: OrderTimelineProps) {
 
               {/* Content */}
               <div className="flex-1 min-w-0 pt-0.5">
-                <p className={`text-[11px] font-semibold ${cfg.color}`}>{cfg.label}</p>
+                <p className={`text-[0.6875rem] font-semibold ${cfg.color}`}>{cfg.label}</p>
                 {(event.oldValue || event.newValue) && (
-                  <p className="mt-0.5 text-[11px] text-kp-text-secondary">
+                  <p className="mt-0.5 text-[0.6875rem] text-kp-text-secondary">
                     {event.oldValue && (
                       <span className="inline-flex items-center rounded px-1.5 py-0.5 bg-kp-bg-primary text-kp-text-tertiary font-medium">
                         {formatValue(event.oldValue)}
@@ -82,7 +82,7 @@ export default function OrderTimeline({ timeline }: OrderTimelineProps) {
                     )}
                   </p>
                 )}
-                <p className="mt-1 text-[10px] text-kp-text-tertiary">
+                <p className="mt-1 text-[0.625rem] text-kp-text-tertiary">
                   {new Date(event.createdAt).toLocaleString('tr-TR', {
                     day: '2-digit',
                     month: 'short',

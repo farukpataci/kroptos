@@ -1,4 +1,4 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
@@ -6,6 +6,7 @@ import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/cor
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 import { decrypt } from '../../common/utils/encryption.util';
 import { syncEventEmitter } from './integration-queue.service';
+import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 import { Worker, Job } from 'bullmq';
 import { Prisma } from '@prisma/client';
 
@@ -19,6 +20,8 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     private credentialService: MarketplaceCredentialService,
     private connectorFactory: MarketplaceConnectorFactory,
     private erpConnectorFactory: ErpConnectorFactory,
+    @Inject(forwardRef(() => IntegrationSettingsService))
+    private settingsService: IntegrationSettingsService,
   ) {}
 
   onModuleInit() {
@@ -71,6 +74,32 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     if (this.worker) {
       await this.worker.close().catch(() => {});
     }
+  }
+
+  /**
+   * Turns an on-hand quantity into the number actually pushed to the
+   * marketplace, applying the buffer, cap and minimum-threshold settings.
+   * Keeping it here rather than in each connector means one rule for all five.
+   */
+  private applyStockPolicy(quantity: number, settings: Record<string, unknown>): number {
+    const num = (key: string, fallback: number) => {
+      const value = Number(settings[key]);
+      return Number.isFinite(value) ? value : fallback;
+    };
+
+    const buffer = num('stock.bufferQuantity', 0);
+    const bufferPercent = num('stock.bufferPercent', 0);
+    const minThreshold = num('stock.minThreshold', 0);
+    const maxCap = settings['stock.maxCap'];
+
+    let available = quantity - buffer - Math.floor((quantity * bufferPercent) / 100);
+    if (available < 0) available = 0;
+    if (available < minThreshold) available = 0;
+
+    const cap = Number(maxCap);
+    if (Number.isFinite(cap) && cap > 0 && available > cap) available = cap;
+
+    return available;
   }
 
   private async processJob(data: {
@@ -208,16 +237,15 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
             });
           }
           logMessage = `Successfully synced ${erpProducts.length} products from ERP.`;
-        } else if (eventType === 'sync_orders') {
+          // 1. Fetch pending orders that are marked for Logo ERP sync (excluding POOL orders)
           const pendingOrders = await this.prisma.order.findMany({
             where: {
-              storeId,
-              status: 'pending',
-              deletedAt: null,
+              agencyId: integration.agencyId,
+              status: { in: ['pending', 'processing'] },
+              isPoolOrder: false,
+              logoSyncStatus: { in: ['PENDING', 'FAILED'] },
             },
-            include: {
-              items: true,
-            },
+            include: { items: true },
           });
 
           // Resolve default warehouse mapping for this agency context if it exists
@@ -281,7 +309,7 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                 count++;
                 await this.prisma.order.update({
                   where: { id: o.id },
-                  data: { status: 'processing' },
+                  data: { status: 'processing', logoSyncStatus: 'SYNCED' },
                 });
 
                 await this.prisma.orderTimeline.create({
@@ -302,15 +330,25 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         // Marketplace integration sync logic
         const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
         this.credentialService.validate(integration.provider, credentials);
-        const connector = this.connectorFactory.create(integration.provider, credentials);
+        // Behaviour settings (rate limit, buffers, dry run) come from the
+        // integration's manifest-backed configuration rather than constants.
+        const settings = await this.settingsService.resolveForRuntime(integration.id);
+        const connector = this.connectorFactory.create(integration.provider, credentials, settings);
+        const dryRun = settings['advanced.dryRun'] === true;
 
         if (eventType === 'sync_stock') {
           const { sku, quantity } = payload;
-          const res = await connector.updateStock(sku, quantity);
-          if (!res.success) {
-            throw new Error(res.error || 'Stock update failed');
+          const outbound = this.applyStockPolicy(quantity, settings);
+
+          if (dryRun) {
+            logMessage = `[dry-run] Would have pushed stock ${outbound} for SKU '${sku}'`;
+          } else {
+            const res = await connector.updateStock(sku, outbound);
+            if (!res.success) {
+              throw new Error(res.error || 'Stock update failed');
+            }
+            logMessage = `Successfully synced stock for SKU '${sku}' to ${outbound}`;
           }
-          logMessage = `Successfully synced stock for SKU '${sku}' to ${quantity}`;
         } else if (eventType === 'sync_products') {
           const marketplaceProducts = await connector.getProducts();
 
@@ -395,6 +433,15 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                 });
               }
 
+              // Check store order processing mode (LOGO_SYNC vs POOL_ONLY / MANUAL_APPROVAL)
+              const targetStore = await this.prisma.store.findUnique({
+                where: { id: storeId },
+                select: { orderProcessingMode: true },
+              });
+              const processingMode = targetStore?.orderProcessingMode || 'LOGO_SYNC';
+              const isPool = processingMode === 'POOL_ONLY' || processingMode === 'MANUAL_APPROVAL';
+              const initialLogoSyncStatus = processingMode === 'POOL_ONLY' ? 'BYPASSED_POOL' : 'PENDING';
+
               // Create Order
               await this.prisma.order.create({
                 data: {
@@ -411,6 +458,8 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                   totalAmount: new Prisma.Decimal(o.totalAmount),
                   currency: o.currency || 'TRY',
                   source: o.source || 'marketplace',
+                  isPoolOrder: isPool,
+                  logoSyncStatus: initialLogoSyncStatus,
                   createdBy: 'system',
                   items: {
                     create: orderItemsData,

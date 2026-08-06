@@ -19,7 +19,7 @@ export default function QuickActionCard({ icon, label, onClick }: QuickActionCar
           {icon}
         </div>
       </div>
-      <span className="text-[13px] font-medium text-kp-text-secondary group-hover:text-kp-text-primary transition-colors">
+      <span className="text-[0.8125rem] font-medium text-kp-text-secondary group-hover:text-kp-text-primary transition-colors">
         {label}
       </span>
     </button>
