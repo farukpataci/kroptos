@@ -1,7 +1,9 @@
-⚠️ **BU DOSYA GÜNCEL DEĞİL — koddan saptığı doğrulandı (2026-08).**
-> Endpoint yolları, response şekilleri ve auth kalıpları gerçek kodla uyuşmuyor.
-> Tek doğruluk kaynağı: `packages/` altındaki kod.
-> Düzeltme P0 görevinde yapılacak; o zamana kadar bu dosyaya dayanarak kod üretme.
+> ⚠️ **KISMEN DÜZELTİLDİ (P0, `c23ce7c`).**
+> API istemci kalıbı ("API Client Pattern") ve geliştirici kontrol listesi gerçek koddan
+> yeniden yazıldı. **Dosyanın geri kalanı doğrulanmadı** ve koddan sapmış olabilir.
+> Endpoint yolları, guard setleri ve response şekilleri için tek doğruluk kaynağı:
+> **`docs/API_CONTRACT.md`** (35 controller · 165 endpoint, koddan türetilmiş).
+> Onun da altında `packages/` içindeki kod gelir.
 
 
 # AGENTS.md - Custom Copilot Agent Instructions for KroptOS
@@ -751,36 +753,74 @@ export default function AgenciesPage() {
 ```
 
 ### API Client Pattern
+
+> **DÜZELTİLDİ (P0).** Bu bölüm daha önce axios ve interceptor kullanan bir istemci
+> gösteriyordu. Gerçek kodda axios **yok**; istemci `fetch` tabanlı `apiFetch`.
+> Kaynak: `packages/frontend/src/lib/api.ts`.
+
 ```typescript
-// lib/api.ts
-import axios from 'axios';
+// packages/frontend/src/lib/api.ts — gerçek kalıp (özet)
+export async function apiFetch<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
-const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
-});
+  // baseUrl zaten /api ile bittiği için gelen path'teki /api önekini kırp.
+  // apiFetch('/products') ve apiFetch('/api/products') aynı URL'i üretir.
+  const cleanPath = path.startsWith('/api') ? path.substring(4) : path;
+  let url = `${baseUrl}${cleanPath}`;
 
-// ✓ Automatically add JWT to requests
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  // JWT localStorage'daki 'auth' nesnesinden okunur (düz 'accessToken' anahtarından DEĞİL)
+  const stored = localStorage.getItem('auth');
+  const token = stored ? JSON.parse(stored).accessToken : '';
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+
+  // Kiracı bağlamı 'selected_tenant'tan üç ayrı başlık olarak gider
+  if (options.useTenantHeaders !== false) {
+    const { agencyId, clientId, storeId } = JSON.parse(localStorage.getItem('selected_tenant'));
+    if (agencyId) headers.set('x-agency-id', agencyId);
+    if (clientId) headers.set('x-client-id', clientId);
+    if (storeId) headers.set('x-store-id', storeId);
   }
-  return config;
-});
 
-// ✓ Handle 401 → redirect to login
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      window.location.href = '/auth/login';
-    }
-    return Promise.reject(error);
+  const response = await fetch(url, { ...options, headers });
+
+  if (response.status === 401) {
+    // login sayfasında ve landing'de yönlendirme yapılmaz
+    localStorage.removeItem('auth');
+    window.location.href = '/auth/login';
+    throw new Error('Unauthorized');
   }
-);
+  if (!response.ok) throw new Error((await response.json()).message ?? `API Request failed (${response.status})`);
+  if (response.status === 204) return {} as T;   // 204 No Content desteği
 
-export default apiClient;
+  return response.json() as Promise<T>;
+}
+
+export const api = {
+  get:    <T = any>(url: string, options?: RequestOptions) => apiFetch<T>(url, { ...options, method: 'GET' }),
+  post:   <T = any>(url: string, body?: any, o?: RequestOptions) => apiFetch<T>(url, { ...o, method: 'POST',   body: JSON.stringify(body) }),
+  put:    <T = any>(url: string, body?: any, o?: RequestOptions) => apiFetch<T>(url, { ...o, method: 'PUT',    body: JSON.stringify(body) }),
+  delete: <T = any>(url: string, options?: RequestOptions) => apiFetch<T>(url, { ...options, method: 'DELETE' }),
+};
 ```
+
+**Axios'tan farkı — en sık yapılan hata:** `api.get()` doğrudan `response.json()` döndürür,
+axios'taki `{ data }` sargısı **yoktur**.
+
+```typescript
+// ✗ YANLIŞ — data undefined olur, sonraki erişim TypeError atar
+const { data } = await api.get('/integration-logs');
+setLogs(data.items);
+
+// ✓ DOĞRU — gövde neyse odur
+const res = await api.get<{ items: Log[]; total: number }>('/integration-logs');
+setLogs(res.items ?? []);
+```
+
+Bu hata gerçekten iki sayfada bulundu ve `f74d6a8` ile düzeltildi; ayrıntı için
+`docs/prompt/KESIF_SONUCU.md` §4.
+
+`api.delete` gövde almaz. `api.post`/`api.put` gövdeyi kendisi `JSON.stringify` eder —
+çağıran taraf stringify etmemelidir.
 
 ---
 
@@ -788,11 +828,18 @@ export default apiClient;
 
 When implementing a new feature in KroptOS:
 
-- [ ] Extract `agencyId` from route params or JWT
+- [ ] Kiracı bağlamını `req.activeAgency` / `req.activeClient` / `req.activeStore`'dan al
+      (bunları `TenantMiddleware` global olarak doldurur — `app.module.ts`, `forRoutes('*')`).
+      **`req.user.agencyId` kullanma:** o JWT'den gelir, kullanıcı kiracı değiştirdiğinde
+      token yenilenene kadar eski değeri taşır
 - [ ] Add `agencyId` filter to ALL database queries
 - [ ] Verify tenant ownership before UPDATE/DELETE (throw 403)
-- [ ] Use `@UseGuards(AuthGuard, TenantGuard, PermissionGuard)`
-- [ ] Apply `@RequirePermission()` decorator
+- [ ] `@UseGuards(AuthGuard('jwt'), PermissionGuard)` kullan.
+      **`TenantGuard`'ı ekleme:** yalnızca 2 controller'da mevcut ve fiilen etkisiz —
+      `tenantPublicId` yoksa `return true` yapar, frontend `x-tenant-id` göndermez,
+      yazdığı `request.tenant` alanını hiçbir controller okumaz
+- [ ] Apply `@RequirePermission('kaynak.aksiyon')` decorator — **nokta** biçimi.
+      `kaynak:aksiyon` (iki nokta) biçimi 6 yerde kullanılmış durumda ama kural dışı
 - [ ] Log mutations with `auditService.log()`
 - [ ] Queue integration events with `integrationQueueService`
 - [ ] Use soft deletes (set `deletedAt`, never hard delete)

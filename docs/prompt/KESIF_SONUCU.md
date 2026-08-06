@@ -38,25 +38,34 @@ Dolayısıyla **gerçek yol = controller'ın kendi yazdığı yol**. Controller'
 Yani `apiFetch('/products')` ve `apiFetch('/api/products')` ikisi de
 `http://localhost:3001/api/products` üretiyor. Çift prefix riski yok.
 
-### ⚠️ ANCAK — `/api` prefix'i olmayan 3 controller var
+### ⚠️ ANCAK — `/api` prefix'i olmayan 1 controller var
 
-35 controller'ın `@Controller(...)` taraması yapıldı; **üçü hariç** hepsi `/api/...` ile başlıyor:
+> **GÜNCELLEME (`c23ce7c` sonrası):** Bu bölüm ilk yazıldığında 3 controller listeleniyordu.
+> `f74d6a8` commit'i `audit-logs` ve `integration-logs` controller'larına `/api` prefix'ini
+> ekledi. Geriye **yalnızca `files.controller.ts`** kaldı. Aşağıdaki tablo güncellenmiştir;
+> güncel envanter için `docs/API_CONTRACT.md` §3.
+
+35 controller'ın `@Controller(...)` taraması yapıldı; **biri hariç** hepsi `/api/...` ile başlıyor:
 
 | Dosya | Decorator | Gerçek yol | Frontend'in çağırdığı yol |
 |---|---|---|---|
-| `modules/integration-log/integration-log.controller.ts:6` | `@Controller('integration-logs')` | `/integration-logs` | `/api/integration-logs` |
-| `modules/audit/audit.controller.ts:6` | `@Controller('audit-logs')` | `/audit-logs` | `/api/audit-logs` |
-| `modules/files/files.controller.ts:6` | `@Controller('files')` | `/files` | — (frontend çağrısı yok) |
+| `modules/files/files.controller.ts` | `@Controller('files')` | `/files` | — (frontend çağrısı yok) |
+
+**Düzeltilenler** (`f74d6a8`):
+
+| Dosya | Önce | Sonra |
+|---|---|---|
+| `modules/audit/audit.controller.ts` | `@Controller('audit-logs')` | `@Controller('/api/audit-logs')` |
+| `modules/integration-log/integration-log.controller.ts` | `@Controller('integration-logs')` | `@Controller('/api/integration-logs')` |
 
 `packages/frontend/next.config.js` içinde API için rewrite/proxy YOK — satır 8-32'deki
-rewrite'ların hepsi landing sayfası locale yönlendirmesi. Bu nedenle `/integration-logs` ve
-`/audit-logs` çağrıları **404 döner**:
+rewrite'ların hepsi landing sayfası locale yönlendirmesi. Prefix eklenmeden önce
+`/integration-logs` ve `/audit-logs` çağrıları 404 dönüyordu; **artık dönmüyor.**
+Canlı doğrulama (`c23ce7c`): her ikisi de `HTTP 200`, gövde `{items, total}`.
 
-- `products/hooks/useProducts.ts:201`
-- `orders/hooks/useOrders.ts:214`
-- `integrations/errors/page.tsx:30`
-- `system/audit-logs/page.tsx:26`
-- `system/settings/components/AuditLogsShortcutPanel.tsx:9`
+Etkilenen çağrı yerleri: `products/hooks/useProducts.ts` · `orders/hooks/useOrders.ts` ·
+`integrations/errors/page.tsx` · `system/audit-logs/page.tsx` ·
+`system/settings/components/AuditLogsShortcutPanel.tsx`
 
 Ayrıca iki controller **bare** `@Controller()` kullanıp yolu metot seviyesinde yazıyor:
 `modules/order/order.controller.ts:18` ve `modules/agency/agency.controller.ts:14`
@@ -282,17 +291,27 @@ Tekil nesne dönen ayar endpoint'leri (zarf sayılmaz): `/profile`, `/system/set
 `/system/tenant-settings`, `/system/security-settings`, `/system/notification-settings`,
 `/system/warehouse-settings`, `/stock-source/settings`, `/logo-stock/settings`.
 
-### ⚠️ Yan bulgu — 2 sayfada axios kalıntısı, kodu sessizce bozuyor
+### ✅ ÇÖZÜLDÜ — 2 sayfadaki axios kalıntısı (`f74d6a8`)
 
-`api.get()` (`lib/api.ts:98`) doğrudan `apiFetch`'i, o da `response.json()`'ı döndürür
-(`api.ts:94`). Axios'taki `{data}` sargısı **yok**. Buna rağmen:
+> **GÜNCELLEME (`c23ce7c` sonrası):** Bu yan bulgu düzeltildi. Bölüm tarihsel kayıt olarak
+> bırakıldı.
 
-- `integrations/errors/page.tsx:30` → `const { data } = await api.get('/integration-logs', ...)`
-- `system/audit-logs/page.tsx:26` → `const { data } = await api.get('/audit-logs', ...)`
+`api.get()` doğrudan `apiFetch`'i, o da `response.json()`'ı döndürür. Axios'taki `{data}`
+sargısı **yok**. İlk tespitte iki sayfa buna rağmen `{data}` destructuring yapıyordu:
 
-Gövde `{items, total}` olduğu için `data` → `undefined`, sonraki `data.items` → TypeError,
-`catch` bloğu yutuyor → **liste her zaman boş görünür**. (Soru 1'deki `/api` prefix eksikliği
-zaten aynı iki endpoint'i 404'e düşürdüğü için hata iki katmanlı.)
+```ts
+// ÖNCE — data undefined, data.items TypeError, catch yutuyor, liste hep boş
+const { data } = await api.get('/integration-logs', { params: {...} });
+setLogs(data.items || []);
+
+// SONRA (f74d6a8)
+const res = await api.get<{ items: any[]; total: number }>('/integration-logs', { params: {...} });
+setLogs(res.items || []);
+```
+
+Aynı düzeltme `integrations/errors/page.tsx` ve `system/audit-logs/page.tsx` için uygulandı.
+Bu iki endpoint'te hata iki katmanlıydı (prefix 404 + `{data}` sargısı); `f74d6a8` **ikisini
+birden** kapattı.
 
 ---
 
@@ -420,9 +439,10 @@ numaraları yeniden doğrulanmalı.
 
 Paketin kuralı gereği düzeltilmedi, yalnızca not düşüldü:
 
-1. **`/integration-logs` ve `/audit-logs` şu an çalışmıyor** — `/api` prefix eksikliği (Soru 1) +
-   axios `{data}` kalıntısı (Soru 4). İki bağımsız hata aynı endpoint'lerde üst üste binmiş.
-   Her ikisi de `main`'de de mevcut.
+1. ~~**`/integration-logs` ve `/audit-logs` şu an çalışmıyor**~~ — **ÇÖZÜLDÜ (`f74d6a8`).**
+   `/api` prefix eksikliği (Soru 1) + axios `{data}` kalıntısı (Soru 4) birlikte düzeltildi.
+   Canlı doğrulandı: `HTTP 200`, `{items, total}`, `total` = 422 / 3.
+   **`main`'de hâlâ mevcut** — bu dal merge edilene kadar orada iki katmanlı hata sürüyor.
 2. **`lib/auth-context.tsx:115` ve `:152` ham `fetch` kullanıyor** — `apiFetch` değil. Paketin
    DEĞİŞMEZ KURALLAR #1 maddesinin ihlali. (Login/register akışı, token henüz yokken.)
 3. **`TenantGuard` fiilen ölü kod** — `request.tenant`'ı hiçbir controller okumuyor ve
