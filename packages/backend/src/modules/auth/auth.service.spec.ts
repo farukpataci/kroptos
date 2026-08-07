@@ -28,6 +28,12 @@ describe('AuthService', () => {
       findFirst: jest.fn(),
       findMany: jest.fn(),
     },
+    client: {
+      findFirst: jest.fn(),
+    },
+    store: {
+      findFirst: jest.fn(),
+    },
     session: {
       create: jest.fn(),
       findFirst: jest.fn(),
@@ -216,8 +222,15 @@ describe('AuthService', () => {
   });
 
   describe('switchTenant', () => {
+    const agencyWideRole = {
+      agencyId: 'new-agency-id',
+      clientId: null,
+      storeId: null,
+      role: { name: 'agency_owner', permissions: [{ name: 'orders.read' }] },
+    };
+
     it('should throw ForbiddenException if user has no access to target tenant', async () => {
-      mockPrismaService.userRole.findFirst.mockResolvedValue(null);
+      mockPrismaService.userRole.findMany.mockResolvedValue([]);
 
       await expect(
         service.switchTenant('user-id', {
@@ -228,12 +241,15 @@ describe('AuthService', () => {
 
     it('should generate new tokens with updated tenant context', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-id', email: 'test@example.com' });
-      mockPrismaService.userRole.findFirst.mockResolvedValue({
-        agencyId: 'new-agency-id',
-        clientId: 'client-id',
-        storeId: null,
-        role: { name: 'Client Manager', permissions: [{ name: 'order:read' }] },
-      });
+      mockPrismaService.client.findFirst.mockResolvedValue({ id: 'client-id' });
+      mockPrismaService.userRole.findMany.mockResolvedValue([
+        {
+          agencyId: 'new-agency-id',
+          clientId: 'client-id',
+          storeId: null,
+          role: { name: 'client_admin', permissions: [{ name: 'orders.read' }] },
+        },
+      ]);
 
       const response = await service.switchTenant('user-id', {
         agencyId: 'new-agency-id',
@@ -243,6 +259,69 @@ describe('AuthService', () => {
       expect(response).toHaveProperty('accessToken');
       expect(response).toHaveProperty('refreshToken');
       expect(mockPrismaService.session.create).toHaveBeenCalled();
+    });
+
+    // Daraltma yonu: ajans geneli baglam istenirse YALNIZCA ajans geneli bir rol
+    // kapsar. Eski sorgu `clientId/storeId: dto.X || undefined` yazdigi icin bu
+    // durumda filtreyi tamamen kaldiriyor, magaza kapsamli bir rolun ajans
+    // geneli token almasina izin veriyordu.
+    it('should only accept an agency-wide role when switching to agency scope', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-id', email: 'test@example.com' });
+      mockPrismaService.userRole.findMany.mockResolvedValue([agencyWideRole]);
+
+      await service.switchTenant('user-id', { agencyId: 'new-agency-id' });
+
+      const where = mockPrismaService.userRole.findMany.mock.calls[0][0].where;
+      expect(where.OR).toEqual([{ clientId: null, storeId: null }]);
+      expect(mockPrismaService.store.findFirst).not.toHaveBeenCalled();
+    });
+
+    // Gevsetme yonu: magaza baglami istenirse ajans geneli rol de kapsar.
+    // Eski sorgu TAM eslesme aradigi icin marka gecisi 403 veriyordu.
+    it('should accept an agency-wide role when switching to a store in that agency', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-id', email: 'test@example.com' });
+      mockPrismaService.store.findFirst.mockResolvedValue({ clientId: null });
+      mockPrismaService.userRole.findMany.mockResolvedValue([agencyWideRole]);
+
+      const response = await service.switchTenant('user-id', {
+        agencyId: 'new-agency-id',
+        storeId: 'store-id',
+      });
+
+      const where = mockPrismaService.userRole.findMany.mock.calls[0][0].where;
+      expect(where.OR).toEqual([{ clientId: null, storeId: null }, { storeId: 'store-id' }]);
+      expect(response).toHaveProperty('accessToken');
+    });
+
+    it('should reject a store that does not belong to the requested agency', async () => {
+      mockPrismaService.store.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.switchTenant('user-id', { agencyId: 'new-agency-id', storeId: 'foreign-store-id' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockPrismaService.userRole.findMany).not.toHaveBeenCalled();
+    });
+
+    // Birden fazla rol ayni baglami kapsayabilir; token en OZEL rolun izinlerini
+    // almali, findMany'nin dondurdugu rastgele ilk satirinkini degil.
+    it('should pick the most specific covering role', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-id', email: 'test@example.com' });
+      mockPrismaService.store.findFirst.mockResolvedValue({ clientId: null });
+      mockPrismaService.userRole.findMany.mockResolvedValue([
+        agencyWideRole,
+        {
+          agencyId: 'new-agency-id',
+          clientId: null,
+          storeId: 'store-id',
+          role: { name: 'store_manager', permissions: [{ name: 'products.read' }] },
+        },
+      ]);
+
+      await service.switchTenant('user-id', { agencyId: 'new-agency-id', storeId: 'store-id' });
+
+      const signedPayload: any = (mockJwtService.sign as jest.Mock).mock.calls[0]?.[0];
+      expect(signedPayload.role).toBe('store_manager');
+      expect(signedPayload.permissions).toEqual(['products.read']);
     });
   });
 });

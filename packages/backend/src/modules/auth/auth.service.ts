@@ -446,13 +446,55 @@ export class AuthService {
   }
 
   async switchTenant(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const userRole = await this.prisma.userRole.findFirst({
+    // İstenen bağlamı DB'den çöz; istemcinin gönderdiği clientId'ye güvenme.
+    // Mağaza verilmişse gerçek clientId mağaza kaydından gelir ve mağazanın
+    // hedef ajansa ait olduğu da böylece doğrulanmış olur.
+    const requestedStoreId = dto.storeId || null;
+    let requestedClientId = dto.clientId || null;
+
+    if (requestedStoreId) {
+      const store = await this.prisma.store.findFirst({
+        where: { id: requestedStoreId, agencyId: dto.agencyId, deletedAt: null },
+        select: { clientId: true },
+      });
+      if (!store) {
+        throw new ForbiddenException('Access to the requested tenant context is denied');
+      }
+      requestedClientId = store.clientId ?? null;
+    } else if (requestedClientId) {
+      const client = await this.prisma.client.findFirst({
+        where: { id: requestedClientId, agencyId: dto.agencyId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!client) {
+        throw new ForbiddenException('Access to the requested tenant context is denied');
+      }
+    }
+
+    // Bir rol istenen bağlamı KAPSIYORSA geçiş yetkilidir. Kapsama semantiği
+    // TenantMiddleware ile aynı olmak zorunda (oradaki store dalının OR bloğu):
+    // ajans geneli rol altındaki her şeyi, client kapsamlı rol o client'ın
+    // mağazalarını, mağaza kapsamlı rol yalnızca kendi mağazasını kapsar.
+    //
+    // Önceki sorgu `clientId/storeId: dto.X || undefined` yazıyordu ve bu iki
+    // yönde birden yanlıştı: değer verilince TAM eşleşme arayıp ajans geneli
+    // rolü eliyordu (marka geçişi 403), verilmeyince de filtreyi tamamen
+    // kaldırıp mağaza kapsamlı bir rolün ajans geneli token almasına izin
+    // veriyordu. Aşağıdaki OR ikisini birden kapatıyor.
+    const coverage: Prisma.UserRoleWhereInput[] = [{ clientId: null, storeId: null }];
+    if (requestedClientId) {
+      coverage.push({ clientId: requestedClientId, storeId: null });
+    }
+    if (requestedStoreId) {
+      coverage.push({ storeId: requestedStoreId });
+    }
+
+    const candidates = await this.prisma.userRole.findMany({
       where: {
         userId,
         agencyId: dto.agencyId,
-        clientId: dto.clientId || undefined,
-        storeId: dto.storeId || undefined,
         deletedAt: null,
+        OR: coverage,
       },
       include: {
         role: {
@@ -463,9 +505,15 @@ export class AuthService {
       },
     });
 
-    if (!userRole) {
+    if (candidates.length === 0) {
       throw new ForbiddenException('Access to the requested tenant context is denied');
     }
+
+    // Birden fazla rol aynı bağlamı kapsayabilir (ör. hem ajans geneli hem
+    // mağaza kapsamlı). En özel olan kazanır; aksi halde token'ın izin kümesi
+    // findFirst'in döndürdüğü rastgele satıra bağlı kalırdı.
+    const specificity = (ur: (typeof candidates)[number]) => (ur.storeId ? 3 : ur.clientId ? 2 : 1);
+    const userRole = candidates.reduce((best, cur) => (specificity(cur) > specificity(best) ? cur : best));
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -476,8 +524,8 @@ export class AuthService {
       userId,
       user.email,
       dto.agencyId,
-      dto.clientId || null,
-      dto.storeId || null,
+      requestedClientId,
+      requestedStoreId,
       userRole.role.name,
       userRole.role.permissions.map((p) => p.name),
     );
@@ -500,7 +548,8 @@ export class AuthService {
       userId,
       dto.agencyId,
       ipAddress,
-      { switchTarget: dto },
+      // Çözülmüş bağlamı logla, istemcinin gönderdiğini değil: token bununla üretildi.
+      { switchTarget: { agencyId: dto.agencyId, clientId: requestedClientId, storeId: requestedStoreId } },
     );
 
     return tokens;
