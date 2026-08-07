@@ -9,7 +9,7 @@ export class OrderService {
   constructor(private prisma: PrismaService) {}
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,

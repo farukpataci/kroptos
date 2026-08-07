@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
 import { isPlatformAdmin } from '../../common/constants/platform-admin';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +27,7 @@ export class AuthService {
   }
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityType: string,
     entityId: string,

@@ -19,7 +19,7 @@ export class ProductService {
   // yutuyordu - yani urun create/update/delete kayitlarinin hicbiri hic yazilmadi. Dogru
   // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,

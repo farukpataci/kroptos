@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class CategoryService {
@@ -18,7 +19,7 @@ export class CategoryService {
   // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
   // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateAgencyDto, UpdateAgencyDto } from './dto/agency.dto';
+import { Prisma } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
@@ -17,7 +18,7 @@ export class AgencyService {
   }
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,

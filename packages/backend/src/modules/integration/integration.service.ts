@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateIntegrationDto, UpdateIntegrationDto } from './dto/integration.dto';
+import { Prisma } from '@prisma/client';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
 import { stripMaskedCredentials } from '@kroptos/shared';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
@@ -30,7 +31,7 @@ export class IntegrationService {
   ) {}
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
