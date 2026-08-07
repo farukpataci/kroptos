@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 
@@ -74,7 +74,11 @@ export class CategoryService {
     return false;
   }
 
-  async list(activeAgencyId?: string, activeClientId?: string, activeStoreId?: string) {
+  async list(activeAgencyId?: string, activeClientId?: string, activeStoreId?: string, isSuperAdmin?: boolean) {
+    if (!activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency context is required (x-agency-id header)');
+    }
+
     const whereClause: any = { deletedAt: null };
 
     if (activeStoreId) {
@@ -104,7 +108,11 @@ export class CategoryService {
     });
   }
 
-  async get(id: string, activeAgencyId?: string, activeClientId?: string, activeStoreId?: string) {
+  async get(id: string, activeAgencyId?: string, activeClientId?: string, activeStoreId?: string, isSuperAdmin?: boolean) {
+    if (!activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency context is required (x-agency-id header)');
+    }
+
     const category = await this.prisma.category.findFirst({
       where: { id, deletedAt: null },
     });
@@ -114,8 +122,8 @@ export class CategoryService {
     }
 
     // Verify context access if context is provided
-    if (activeAgencyId && category.agencyId !== activeAgencyId) {
-      throw new NotFoundException(`Category does not belong to authorized agency`);
+    if (!isSuperAdmin && category.agencyId !== activeAgencyId) {
+      throw new ForbiddenException('Access denied. Category belongs to a different agency context.');
     }
 
     return category;
