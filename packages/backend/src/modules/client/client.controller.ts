@@ -41,7 +41,7 @@ export class ClientController {
 
   @Post()
   @HttpCode(201)
-  @RequirePermission('client:create')
+  @RequirePermission('clients.create')
   @ApiOperation({ summary: 'Create new client under an agency' })
   @ApiResponse({ status: 201, type: ClientResponseDto })
   async create(@Body() dto: CreateClientDto, @Req() req: Request) {
@@ -53,7 +53,7 @@ export class ClientController {
 
   @Patch(':id')
   @HttpCode(200)
-  @RequirePermission('client:write')
+  @RequirePermission('clients.write')
   @ApiOperation({ summary: 'Update client details' })
   @ApiResponse({ status: 200, type: ClientResponseDto })
   async update(
@@ -69,7 +69,7 @@ export class ClientController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission('client:write')
+  @RequirePermission('clients.write')
   @ApiOperation({ summary: 'Soft delete client and cascade to its stores' })
   @ApiResponse({ status: 204, description: 'Client soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {

@@ -53,7 +53,7 @@ export class AgencyController {
   @Post('/api/agencies')
   @HttpCode(201)
   @UseGuards(PlatformAdminGuard)
-  @RequirePermission('agency:create')
+  @RequirePermission('agencies.create')
   @ApiOperation({ summary: 'Create new agency and assign creator as Agency Owner' })
   @ApiResponse({ status: 201, type: AgencyResponseDto })
   async create(@Body() dto: CreateAgencyDto, @Req() req: Request) {
@@ -65,7 +65,7 @@ export class AgencyController {
   @Patch('/api/agencies/:id')
   @HttpCode(200)
   @UseGuards(PlatformAdminGuard)
-  @RequirePermission('agency:write')
+  @RequirePermission('agencies.write')
   @ApiOperation({ summary: 'Update agency details' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
   async update(
@@ -82,7 +82,7 @@ export class AgencyController {
   @Delete('/api/agencies/:id')
   @HttpCode(204)
   @UseGuards(PlatformAdminGuard)
-  @RequirePermission('agency:write')
+  @RequirePermission('agencies.write')
   @ApiOperation({ summary: 'Soft delete agency and its nested relations' })
   @ApiResponse({ status: 204, description: 'Agency soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {

@@ -41,7 +41,7 @@ export class StoreController {
 
   @Post()
   @HttpCode(201)
-  @RequirePermission('store:create')
+  @RequirePermission('stores.create')
   @ApiOperation({ summary: 'Create a new store sales channel' })
   @ApiResponse({ status: 201, type: StoreResponseDto })
   async create(@Body() dto: CreateStoreDto, @Req() req: Request) {
@@ -53,7 +53,7 @@ export class StoreController {
 
   @Patch(':id')
   @HttpCode(200)
-  @RequirePermission('store:write')
+  @RequirePermission('stores.write')
   @ApiOperation({ summary: 'Update store details' })
   @ApiResponse({ status: 200, type: StoreResponseDto })
   async update(
@@ -69,7 +69,7 @@ export class StoreController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission('store:write')
+  @RequirePermission('stores.write')
   @ApiOperation({ summary: 'Soft delete store' })
   @ApiResponse({ status: 204, description: 'Store soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {

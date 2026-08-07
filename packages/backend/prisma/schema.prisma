@@ -180,7 +180,7 @@ model Role {
 
 model Permission {
   id          String  @id @default(cuid())
-  name        String  @unique // e.g., "product:create", "order:read"
+  name        String  @unique // kaynak.aksiyon, e.g., "products.create", "orders.read"
   description String?
   roles       Role[]
 }
