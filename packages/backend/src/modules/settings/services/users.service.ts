@@ -1,9 +1,13 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import { AuditLogService } from '../../audit/audit.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private auditLogService: AuditLogService,
+  ) {}
 
   async findAll(agencyId: string) {
     const users = await this.prisma.user.findMany({
@@ -54,9 +58,39 @@ export class UsersService {
     };
   }
 
-  async updateUserStores(userId: string, storeIds: string[]) {
+  async updateUserStores(
+    userId: string,
+    storeIds: string[],
+    activeAgencyId?: string,
+    isSuperAdmin?: boolean,
+    performingUserId?: string,
+    ipAddress?: string,
+  ) {
+    if (!activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency context is required (x-agency-id header)');
+    }
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
+
+    if (!isSuperAdmin) {
+      const userRole = await this.prisma.userRole.findFirst({
+        where: { userId, agencyId: activeAgencyId, deletedAt: null },
+      });
+      if (!userRole) {
+        throw new ForbiddenException('Access denied. Target user does not belong to authorized agency context.');
+      }
+    }
+
+    if (storeIds.length > 0 && !isSuperAdmin) {
+      const validStores = await this.prisma.store.findMany({
+        where: { id: { in: storeIds }, agencyId: activeAgencyId, deletedAt: null },
+        select: { id: true },
+      });
+      if (validStores.length !== storeIds.length) {
+        throw new ForbiddenException('Access denied. One or more stores do not belong to authorized agency context.');
+      }
+    }
 
     // Get default role for StoreUser (or super admin role)
     const defaultRole = await this.prisma.role.findFirst();
@@ -88,6 +122,21 @@ export class UsersService {
           },
         });
       }
+    }
+
+    if (performingUserId) {
+      await this.auditLogService.createLog({
+        tenantId: activeAgencyId,
+        userId: performingUserId,
+        action: 'user.update_stores',
+        module: 'system',
+        entityType: 'User',
+        entityId: userId,
+        entityDisplayName: user.email,
+        description: `Updated store assignments for user ${user.email}`,
+        newValue: { storeIds },
+        ipAddress,
+      });
     }
 
     return { success: true, updatedStoreIds: storeIds };

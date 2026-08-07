@@ -13,6 +13,11 @@ import { RequirePermission } from '@common/decorators/require-permission.decorat
 export class UsersController {
   constructor(private readonly service: UsersService) {}
 
+  private checkSuperAdmin(req: Request): boolean {
+    const user = (req as any).user;
+    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+  }
+
   @Get()
   @RequirePermission('system.settings.read')
   async findAll(@Req() req: Request) {
@@ -25,7 +30,20 @@ export class UsersController {
   async updateUserStores(
     @Param('id') userId: string,
     @Body('storeIds') storeIds: string[],
+    @Req() req: Request,
   ) {
-    return this.service.updateUserStores(userId, storeIds || []);
+    const user = req.user as any;
+    const activeAgency = (req as any).activeAgency;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+    const ipAddress = (req.ip || req.headers['x-forwarded-for']) as string;
+
+    return this.service.updateUserStores(
+      userId,
+      storeIds || [],
+      activeAgency?.id,
+      isSuperAdmin,
+      user?.userId || user?.id,
+      ipAddress,
+    );
   }
 }
