@@ -721,12 +721,6 @@ export class ProductService {
       throw new BadRequestException('Active store context is required (x-store-id header)');
     }
 
-    if (!isSuperAdmin && (!activeAgencyId || !activeClientId || !activeStoreId)) {
-      throw new BadRequestException(
-        'Missing active tenant context headers (x-agency-id, x-client-id, and x-store-id are required)',
-      );
-    }
-
     const productIds = Array.from(new Set(dto.productIds));
 
     const now = new Date();
@@ -763,9 +757,14 @@ export class ProductService {
       deletedAt: null,
     };
     if (!isSuperAdmin) {
+      // storeId kosulsuz: yukaridaki 400 dolu olmasini garanti ediyor ve izolasyonu tek
+      // basina o sagliyor - Store satiri agency/client'i sabitliyor. clientId ve agencyId
+      // ek guvence; middleware ikisini de magazadan turetiyor ama client'siz magazalarda
+      // (store.clientId = null, tenant.middleware.ts:165) activeClient hic kurulmuyor.
+      // Onceki hata "hicbiri yoksa filtre de yok"tu; storeId'yi kosulsuz yazmak onu kapatir.
       whereClause.storeId = activeStoreId;
-      whereClause.clientId = activeClientId;
-      whereClause.agencyId = activeAgencyId;
+      if (activeClientId) whereClause.clientId = activeClientId;
+      if (activeAgencyId) whereClause.agencyId = activeAgencyId;
     }
 
     const scopedProducts = await this.prisma.product.findMany({

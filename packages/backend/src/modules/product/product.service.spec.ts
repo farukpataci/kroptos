@@ -267,6 +267,37 @@ describe('ProductService', () => {
       );
     });
 
+    it('should still scope by storeId when the store has no client', async () => {
+      // Client'siz magazalarda TenantMiddleware activeClient'i hic kurmuyor
+      // (tenant.middleware.ts:165). Bu durumda istek reddedilmemeli; storeId
+      // izolasyonu tek basina sagliyor.
+      mockPrismaService.product.findMany.mockResolvedValue([
+        { id: 'prod-1', sku: 'SKU1', status: 'active', agencyId: 'agency-1', locationId: null, locationCode: null },
+      ]);
+      mockPrismaService.product.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.bulkAction(
+        { productIds: ['prod-1'], action: 'delete' },
+        'user-1',
+        'agency-1',
+        undefined,
+        'store-1',
+        false,
+        '127.0.0.1',
+      );
+
+      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: { in: ['prod-1'] },
+            deletedAt: null,
+            storeId: 'store-1',
+            agencyId: 'agency-1',
+          },
+        }),
+      );
+    });
+
     it('should throw ForbiddenException if an id is outside the active tenant', async () => {
       // 'prod-foreign' kapsamli sorgudan donmuyor: baska bir kiracinin urunu.
       mockPrismaService.product.findMany.mockResolvedValue([
