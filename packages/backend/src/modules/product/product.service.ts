@@ -155,15 +155,13 @@ export class ProductService {
       throw new NotFoundException(`Product with ID '${id}' not found or soft-deleted`);
     }
 
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
     if (!isSuperAdmin) {
-      if (activeStoreId && product.storeId !== activeStoreId) {
+      if (product.storeId !== activeStoreId) {
         throw new ForbiddenException('Access denied. Product belongs to a different store context.');
-      }
-      if (activeClientId && product.clientId !== activeClientId) {
-        throw new ForbiddenException('Access denied. Product belongs to a different client context.');
-      }
-      if (activeAgencyId && product.agencyId !== activeAgencyId) {
-        throw new ForbiddenException('Access denied. Product belongs to a different agency context.');
       }
     }
 
