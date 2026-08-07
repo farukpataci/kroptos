@@ -135,7 +135,9 @@ describe('CategoryService', () => {
           action: 'create',
           entityType: 'Category',
           entityId: 'cat-123',
-          performedBy: 'user-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
+          ipAddress: '127.0.0.1',
         }),
       });
     });
