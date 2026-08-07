@@ -6,6 +6,8 @@ import { CreateClientDto, UpdateClientDto } from './dto/client.dto';
 export class ClientService {
   constructor(private prisma: PrismaService) {}
 
+  // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
+  // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
     tx: any,
     action: string,
@@ -21,10 +23,10 @@ export class ClientService {
           action,
           entityType: 'Client',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {

@@ -111,7 +111,15 @@ describe('ClientService', () => {
 
       expect(result.id).toBe('new-client-id');
       expect(mockPrismaService.client.create).toHaveBeenCalled();
-      expect(mockPrismaService.auditLog.create).toHaveBeenCalled();
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'create',
+          entityType: 'Client',
+          entityId: 'new-client-id',
+          userId: 'user-id',
+          tenantId: 'agency-1',
+        }),
+      });
     });
   });
 
@@ -138,7 +146,15 @@ describe('ClientService', () => {
           status: 'suspended',
         },
       });
-      expect(mockPrismaService.auditLog.create).toHaveBeenCalled();
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'delete',
+          entityType: 'Client',
+          entityId: 'client-1',
+          userId: 'user-id',
+          tenantId: 'agency-1',
+        }),
+      });
     });
   });
 });
