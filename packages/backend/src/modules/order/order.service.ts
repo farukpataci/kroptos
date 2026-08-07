@@ -97,15 +97,13 @@ export class OrderService {
       throw new NotFoundException(`Order with ID '${id}' not found or soft-deleted`);
     }
 
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
     if (!isSuperAdmin) {
-      if (activeStoreId && order.storeId !== activeStoreId) {
+      if (order.storeId !== activeStoreId) {
         throw new ForbiddenException('Access denied. Order belongs to a different store context.');
-      }
-      if (activeClientId && order.clientId !== activeClientId) {
-        throw new ForbiddenException('Access denied. Order belongs to a different client context.');
-      }
-      if (activeAgencyId && order.agencyId !== activeAgencyId) {
-        throw new ForbiddenException('Access denied. Order belongs to a different agency context.');
       }
     }
 
