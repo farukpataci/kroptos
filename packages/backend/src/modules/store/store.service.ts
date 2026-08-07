@@ -16,6 +16,8 @@ export class StoreService {
       .replace(/-+/g, '-');
   }
 
+  // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
+  // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
     tx: any,
     action: string,
@@ -31,10 +33,10 @@ export class StoreService {
           action,
           entityType: 'Store',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {

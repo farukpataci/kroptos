@@ -198,8 +198,8 @@ describe('StoreService', () => {
           action: 'create',
           entityType: 'Store',
           entityId: 'store-123',
-          performedBy: 'user-1',
-          agencyId: 'agency-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
         }),
       });
     });
@@ -249,7 +249,8 @@ describe('StoreService', () => {
           action: 'update',
           entityType: 'Store',
           entityId: 'store-123',
-          performedBy: 'user-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
         }),
       });
     });
@@ -276,7 +277,8 @@ describe('StoreService', () => {
           action: 'delete',
           entityType: 'Store',
           entityId: 'store-123',
-          performedBy: 'user-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
         }),
       });
     });
