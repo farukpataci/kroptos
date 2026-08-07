@@ -46,6 +46,11 @@ async function main() {
     { name: 'audit.read', description: 'View audit log records' },
     { name: 'integration.logs.read', description: 'View integration error logs' },
     { name: 'integration.logs.manage', description: 'Resolve, ignore or retry integration errors' },
+    // agencies.write bilincli olarak hicbir role bagli degil: distributor firma
+    // yonetimi PlatformAdminGuard ile kilitli, super_admin de '*:*' ile kapsiyor.
+    { name: 'agencies.write', description: 'Update or delete agencies' },
+    { name: 'clients.write', description: 'Update or delete clients' },
+    { name: 'stores.write', description: 'Update or delete stores' },
   ];
 
   console.log('Seeding permissions...');
@@ -106,6 +111,8 @@ async function main() {
         'audit.read',
         'integration.logs.read',
         'integration.logs.manage',
+        'clients.write',
+        'stores.write',
       ],
     },
     {
