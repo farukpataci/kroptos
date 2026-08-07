@@ -160,7 +160,16 @@ describe('RbacService', () => {
 
       expect(result).toEqual(mockUserRole);
       expect(mockPrismaService.userRole.create).toHaveBeenCalled();
-      expect(mockPrismaService.auditLog.create).toHaveBeenCalled();
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'assign',
+          entityType: 'UserRole',
+          entityId: 'ur-1',
+          userId: 'admin-user',
+          tenantId: 'agency-1',
+          ipAddress: '127.0.0.1',
+        }),
+      });
     });
 
     it('should reactivate soft-deleted role assignment', async () => {
@@ -181,7 +190,15 @@ describe('RbacService', () => {
 
       expect(result.deletedAt).toBeNull();
       expect(mockPrismaService.userRole.update).toHaveBeenCalled();
-      expect(mockPrismaService.auditLog.create).toHaveBeenCalled();
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'assign',
+          entityType: 'UserRole',
+          entityId: 'ur-1',
+          userId: 'admin-user',
+          tenantId: 'agency-1',
+        }),
+      });
     });
   });
 
@@ -204,7 +221,16 @@ describe('RbacService', () => {
         where: { id: 'ur-1' },
         data: { deletedAt: expect.any(Date) },
       });
-      expect(mockPrismaService.auditLog.create).toHaveBeenCalled();
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'revoke',
+          entityType: 'UserRole',
+          entityId: 'ur-1',
+          userId: 'admin-user',
+          tenantId: 'agency-1',
+          ipAddress: '127.0.0.1',
+        }),
+      });
     });
   });
 });
