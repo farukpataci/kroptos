@@ -15,6 +15,7 @@ describe('ProductService', () => {
       findFirst: jest.fn(),
       create: jest.fn(),
       update: jest.fn(),
+      updateMany: jest.fn(),
     },
     category: {
       findFirst: jest.fn(),
@@ -215,6 +216,106 @@ describe('ProductService', () => {
           isActive: false,
           status: 'suspended',
         },
+      });
+    });
+  });
+
+  describe('bulkAction', () => {
+    it('should throw BadRequestException if there is no active tenant context', async () => {
+      await expect(
+        service.bulkAction(
+          { productIds: ['prod-1'], action: 'delete' },
+          'user-1',
+          undefined,
+          undefined,
+          undefined,
+          false,
+          '127.0.0.1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockPrismaService.product.findMany).not.toHaveBeenCalled();
+      expect(mockPrismaService.product.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should scope the lookup to the active tenant', async () => {
+      mockPrismaService.product.findMany.mockResolvedValue([
+        { id: 'prod-1', sku: 'SKU1', status: 'active', agencyId: 'agency-1', locationId: null, locationCode: null },
+      ]);
+      mockPrismaService.product.updateMany.mockResolvedValue({ count: 1 });
+
+      await service.bulkAction(
+        { productIds: ['prod-1'], action: 'delete' },
+        'user-1',
+        'agency-1',
+        'client-1',
+        'store-1',
+        false,
+        '127.0.0.1',
+      );
+
+      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            id: { in: ['prod-1'] },
+            deletedAt: null,
+            storeId: 'store-1',
+            clientId: 'client-1',
+            agencyId: 'agency-1',
+          },
+        }),
+      );
+    });
+
+    it('should throw ForbiddenException if an id is outside the active tenant', async () => {
+      // 'prod-foreign' kapsamli sorgudan donmuyor: baska bir kiracinin urunu.
+      mockPrismaService.product.findMany.mockResolvedValue([
+        { id: 'prod-1', sku: 'SKU1', status: 'active', agencyId: 'agency-1', locationId: null, locationCode: null },
+      ]);
+
+      await expect(
+        service.bulkAction(
+          { productIds: ['prod-1', 'prod-foreign'], action: 'delete' },
+          'user-1',
+          'agency-1',
+          'client-1',
+          'store-1',
+          false,
+          '127.0.0.1',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(mockPrismaService.product.updateMany).not.toHaveBeenCalled();
+    });
+
+    it('should write one audit log per affected product', async () => {
+      mockPrismaService.product.findMany.mockResolvedValue([
+        { id: 'prod-1', sku: 'SKU1', status: 'active', agencyId: 'agency-1', locationId: null, locationCode: null },
+        { id: 'prod-2', sku: 'SKU2', status: 'active', agencyId: 'agency-1', locationId: null, locationCode: null },
+      ]);
+      mockPrismaService.product.updateMany.mockResolvedValue({ count: 2 });
+
+      const result = await service.bulkAction(
+        { productIds: ['prod-1', 'prod-2'], action: 'update_status', data: { status: 'suspended' } },
+        'user-1',
+        'agency-1',
+        'client-1',
+        'store-1',
+        false,
+        '127.0.0.1',
+      );
+
+      expect(result).toEqual({ success: true, updatedCount: 2 });
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledTimes(2);
+      expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          action: 'bulk_update_status',
+          entityType: 'Product',
+          entityId: 'prod-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
+          ipAddress: '127.0.0.1',
+        }),
       });
     });
   });

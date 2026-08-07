@@ -712,44 +712,103 @@ export class ProductService {
       throw new BadRequestException('No products selected for bulk action.');
     }
 
+    // Baglam zorunlu. Onceden tenant filtresi kosullu kuruluyordu; ucu de bos gelirse
+    // where yalnizca { id: { in: … } } kaliyor ve toplu islem butun kiracilarin
+    // urunlerine dokunuyordu. Tenant header'i gondermemek istemcide erisilebilir bir
+    // durum (lib/api.ts, selected_tenant bos olabilir), dolayisiyla "baglam yok" asla
+    // "tum kiracilar" demek olamaz. Kontroller create() ile birebir ayni.
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
+    if (!isSuperAdmin && (!activeAgencyId || !activeClientId || !activeStoreId)) {
+      throw new BadRequestException(
+        'Missing active tenant context headers (x-agency-id, x-client-id, and x-store-id are required)',
+      );
+    }
+
+    const productIds = Array.from(new Set(dto.productIds));
+
+    const now = new Date();
+    let auditAction: string;
+    let updateData: any;
+    let auditChangesFor: (product: any) => any;
+
+    if (dto.action === 'delete') {
+      auditAction = 'bulk_delete';
+      updateData = { deletedAt: now };
+      auditChangesFor = (product) => ({ sku: product.sku, deletedAt: now });
+    } else if (dto.action === 'update_status' && dto.data?.status) {
+      auditAction = 'bulk_update_status';
+      updateData = { status: dto.data.status };
+      auditChangesFor = (product) => ({
+        before: { status: product.status },
+        after: { status: dto.data.status },
+      });
+    } else if (dto.action === 'update_location') {
+      const locationCode = dto.data?.locationCode || null;
+      const locationId = dto.data?.locationId || null;
+      auditAction = 'bulk_update_location';
+      updateData = { locationCode, locationId };
+      auditChangesFor = (product) => ({
+        before: { locationId: product.locationId, locationCode: product.locationCode },
+        after: { locationId, locationCode },
+      });
+    } else {
+      throw new BadRequestException(`Unsupported bulk action '${dto.action}'`);
+    }
+
     const whereClause: any = {
-      id: { in: dto.productIds },
+      id: { in: productIds },
       deletedAt: null,
     };
     if (!isSuperAdmin) {
-      if (activeStoreId) whereClause.storeId = activeStoreId;
-      if (activeClientId) whereClause.clientId = activeClientId;
-      if (activeAgencyId) whereClause.agencyId = activeAgencyId;
+      whereClause.storeId = activeStoreId;
+      whereClause.clientId = activeClientId;
+      whereClause.agencyId = activeAgencyId;
     }
 
-    if (dto.action === 'delete') {
-      const result = await this.prisma.product.updateMany({
-        where: whereClause,
-        data: { deletedAt: new Date() },
+    const scopedProducts = await this.prisma.product.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        sku: true,
+        status: true,
+        agencyId: true,
+        locationId: true,
+        locationCode: true,
+      },
+    });
+
+    // Hepsi ya da hicbiri. updateMany kapsam disi id'leri sessizce atlasaydi donen
+    // updatedCount, bir id'nin baska bir kiracida var olup olmadigini soyleyen bir
+    // oracle olurdu. 403, get()'in yanlis baglam icin verdigi cevapla ayni.
+    if (scopedProducts.length !== productIds.length) {
+      throw new ForbiddenException(
+        'Access denied. One or more products belong to a different tenant context.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.product.updateMany({
+        where: { id: { in: scopedProducts.map((product) => product.id) } },
+        data: updateData,
       });
-      return { success: true, updatedCount: result.count };
-    }
 
-    if (dto.action === 'update_status' && dto.data?.status) {
-      const result = await this.prisma.product.updateMany({
-        where: whereClause,
-        data: { status: dto.data.status },
-      });
-      return { success: true, updatedCount: result.count };
-    }
+      for (const product of scopedProducts) {
+        await this.writeAuditLog(
+          tx,
+          auditAction,
+          product.id,
+          userId,
+          product.agencyId,
+          ipAddress,
+          auditChangesFor(product),
+        );
+      }
 
-    if (dto.action === 'update_location') {
-      const result = await this.prisma.product.updateMany({
-        where: whereClause,
-        data: {
-          locationCode: dto.data?.locationCode || null,
-          locationId: dto.data?.locationId || null,
-        },
-      });
       return { success: true, updatedCount: result.count };
-    }
-
-    throw new BadRequestException(`Unsupported bulk action '${dto.action}'`);
+    });
   }
 }
 
