@@ -173,30 +173,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const switchTenant = async (agencyId: string, clientId: string | null, storeId: string | null) => {
-    // Always update the local context immediately so UI reflects the selection
-    setTenantContext({ agencyId, clientId, storeId });
+    // Sıra kritik: önce token, sonra bağlam. Tersi çalışmıyor çünkü apiFetch
+    // x-agency-id'yi selected_tenant'tan okuyor; bağlamı önce yazarsak istek
+    // YENİ ajans header'ı + ESKİ JWT ile gider ve TenantMiddleware bunu
+    // "tenant context mismatch" diye 403'ler. Yani ajans değiştirmek
+    // yapısal olarak imkânsız hale geliyordu. Bu çağrı hâlâ eski bağlamın
+    // header'larıyla gittiği için middleware'in eşitlik kontrolünden geçiyor.
+    const tokens = await apiFetch<{ accessToken: string; refreshToken: string }>('/auth/switch-tenant', {
+      method: 'POST',
+      body: JSON.stringify({ agencyId, clientId, storeId }),
+    });
 
-    try {
-      const tokens = await apiFetch<{ accessToken: string; refreshToken: string }>('/auth/switch-tenant', {
-        method: 'POST',
-        body: JSON.stringify({ agencyId, clientId, storeId }),
-      });
-
-      // Update stored access tokens only if backend returns new tokens
-      setAccessToken(tokens.accessToken);
-      const stored = localStorage.getItem('auth');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        parsed.accessToken = tokens.accessToken;
-        localStorage.setItem('auth', JSON.stringify(parsed));
-      }
-    } catch (err: any) {
-      // Backend token refresh failed (e.g. no exact UserRole match),
-      // but context is already updated above so UI selection persists.
-      // API calls use x-agency-id/x-client-id/x-store-id headers which are
-      // set from selected_tenant regardless of JWT content.
-      console.warn('Tenant switch token refresh failed (non-fatal):', err?.message);
+    // Önce token'ı yaz: bundan sonra atılacak her istek yeni bağlamın
+    // header'larını taşıyacak ve onlara eşlik eden JWT hazır olmalı.
+    setAccessToken(tokens.accessToken);
+    const stored = localStorage.getItem('auth');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      parsed.accessToken = tokens.accessToken;
+      localStorage.setItem('auth', JSON.stringify(parsed));
     }
+
+    setTenantContext({ agencyId, clientId, storeId });
   };
 
 

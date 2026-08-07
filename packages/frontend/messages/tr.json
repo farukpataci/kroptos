@@ -104,7 +104,8 @@
     "client": "Marka",
     "marketplace": "Pazaryeri",
     "toggleTheme": "Temayı Değiştir",
-    "wms": "WMS / Depo Yönetimi"
+    "wms": "WMS / Depo Yönetimi",
+    "tenantSwitchFailed": "Marka/ajans değiştirilemedi. Bu bağlama erişim yetkiniz yok."
   },
   "orderModes": {
     "title": "Sipariş İşleme Modu",

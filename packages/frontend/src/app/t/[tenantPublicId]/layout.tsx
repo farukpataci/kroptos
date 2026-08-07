@@ -29,6 +29,14 @@ export default function DashboardGroupLayout({
       (t: any) => t.publicId === tenantPublicId || t.id === tenantPublicId || t.storeId === tenantPublicId
     );
 
+    // accessibleTenants bu bağlamı listeliyor olsa da geçiş reddedilebilir
+    // (ör. rol bu arada kaldırıldı). O durumda kullanıcıyı URL'de bırakmak
+    // sessiz 403 yağmuru demek; aşağıdaki yetkisiz dalıyla aynı yere gönder.
+    const onSwitchFailed = (err: any) => {
+      console.warn(`Tenant switch rejected for ${tenantPublicId}:`, err?.message);
+      router.push('/select-tenant');
+    };
+
     if (matchedTenant) {
       if (matchedTenant.type === 'brand') {
         const targetAgencyId = matchedTenant.agencyId || tenantContext.agencyId;
@@ -36,12 +44,12 @@ export default function DashboardGroupLayout({
         const targetClientId = matchedTenant.clientId || null;
         if (tenantContext.agencyId !== targetAgencyId || tenantContext.storeId !== targetStoreId) {
           console.log(`Auto-switching active tenant context to Brand store ID: ${targetStoreId}, Agency ID: ${targetAgencyId}`);
-          switchTenant(targetAgencyId, targetClientId, targetStoreId);
+          switchTenant(targetAgencyId, targetClientId, targetStoreId).catch(onSwitchFailed);
         }
       } else {
         if (tenantContext.agencyId !== matchedTenant.id || tenantContext.storeId) {
           console.log(`Auto-switching active tenant context to Agency ID: ${matchedTenant.id}`);
-          switchTenant(matchedTenant.id, null, null);
+          switchTenant(matchedTenant.id, null, null).catch(onSwitchFailed);
         }
       }
     } else if (accessibleTenants.length > 0) {

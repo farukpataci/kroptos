@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/auth-context';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import { useTheme } from '@/context/ThemeContext';
 import { apiFetch } from '@/lib/api';
+import { useToast } from '@/components/ui/Toast';
 import { useTranslations } from 'next-intl';
 import {
   MagnifyingGlassIcon,
@@ -99,6 +100,7 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
   const params = useParams();
   const t = useTranslations('navigation');
   const th = useTranslations('header');
+  const toast = useToast();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
@@ -122,7 +124,14 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
 
   const handleAgencyChange = async (agencyId: string) => {
     const agency = agencies.find((a: any) => a.id === agencyId);
-    await switchTenant(agencyId, null, null);
+    try {
+      await switchTenant(agencyId, null, null);
+    } catch (err: any) {
+      // Geçiş başarısızsa yönlendirme YAPMA: kullanıcı erişemediği bir bağlamın
+      // sayfasına düşerse orada her istek 403 alır ve sebebi görünmez olur.
+      toast.error(err?.message || th('tenantSwitchFailed'));
+      return;
+    }
     if (agency?.publicId) {
       router.push(`/t/${agency.publicId}/dashboard`);
     } else {
@@ -132,7 +141,12 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
 
   const handleStoreChange = async (storeId: string) => {
     if (storeId === 'all') {
-      await switchTenant(tenantContext.agencyId!, null, null);
+      try {
+        await switchTenant(tenantContext.agencyId!, null, null);
+      } catch (err: any) {
+        toast.error(err?.message || th('tenantSwitchFailed'));
+        return;
+      }
       const isTenantRoute = pathname.startsWith('/t/');
       const subPath = isTenantRoute ? pathname.replace(/^\/t\/[^\/]+/, '') : '/dashboard';
       const targetPath = `/t/${agencyPublicId}${subPath || '/dashboard'}`;
@@ -144,7 +158,12 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
     if (!store) return;
 
     const targetPublicId = store.publicId || `tn_${store.id}`;
-    await switchTenant(store.agencyId || tenantContext.agencyId!, store.clientId || null, store.id || store.storeId);
+    try {
+      await switchTenant(store.agencyId || tenantContext.agencyId!, store.clientId || null, store.id || store.storeId);
+    } catch (err: any) {
+      toast.error(err?.message || th('tenantSwitchFailed'));
+      return;
+    }
 
     // Keep current subpath (e.g. /products, /orders) when switching brand inside /t/[tenantPublicId] routes
     const isTenantRoute = pathname.startsWith('/t/');
