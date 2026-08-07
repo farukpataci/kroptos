@@ -10,6 +10,7 @@
 | Üretim tarihi | 2026-08-06 |
 | Kapsam | 35 controller · 165 endpoint |
 | Yöntem | Statik kod okuma + `/api/audit-logs`, `/api/integration-logs` için canlı HTTP doğrulaması |
+| Sonraki güncellemeler | P1 İŞ 1 (`09dff1f`) · İŞ 4 (`a6305db`, `83bb0e3`) · İŞ 5 (`2902ed1`) · **İŞ 3 (`73fcc71`, `47d76a6`)** — §2, §12, §13, §20, §23, §25 |
 
 ## Referans kuralı
 
@@ -68,7 +69,15 @@ birlikte verilir.
 
 ## 2. Kullanıcı profili — `ProfileController`
 
-`@Controller('/api/profile')` · `@UseGuards(AuthGuard('jwt'))` · **`PermissionGuard` yok, `@RequirePermission` yok (10/10 endpoint)**
+`@Controller('/api/profile')` · `@UseGuards(AuthGuard('jwt'))` · **`PermissionGuard` yok, `@RequirePermission` yok (10/10 endpoint) — bilinçli istisna**
+
+P1 İŞ 3 bu controller'ı kasıtlı olarak dışarıda bıraktı. Servisteki her sorgu
+`where: { id: userId }` / `where: { userId }` ile isteği yapanın kendi kaydına kilitli ve
+`userId` her zaman `req.user.userId`'den geliyor, gövdeden değil — izin katmanı bir şey
+eklemez. `logout-all-devices` (`profile.service.ts` `updateMany where: { userId }`) ve
+`delete-account` (`update where: { id: userId }`, ayrıca tek Owner ise `ForbiddenException`)
+ayrıca tek tek doğrulandı. Kapsam dışı gözlem: `delete-account` parola/2FA ile yeniden
+doğrulama istemiyor — bu bir izin değil, hassas işlem re-auth sorunu.
 
 | Metot | Yol | İzin | İstek gövdesi | Dönüş | Tenant kaynağı | Kaynak |
 |---|---|---|---|---|---|---|
@@ -327,52 +336,53 @@ kullandığı için bu decorator'dan görünmüyor.
 
 ## 12. Denetim kayıtları — `AuditLogController`
 
-`@Controller('/api/audit-logs')` · `@UseGuards(AuthGuard('jwt'))` · **`PermissionGuard` yok, `@RequirePermission` yok**
+`@Controller('/api/audit-logs')` · `@UseGuards(AuthGuard('jwt'), PermissionGuard)` — P1 İŞ 3 (`73fcc71`)
 
 | Metot | Yol | İzin | İstek | Dönüş | Tenant kaynağı | Kaynak |
 |---|---|---|---|---|---|---|
-| GET | `/api/audit-logs` | — | `@Query() any` | **`{ items: T[], total: number }`** | `user.agencyId` ?? `x-agency-id` başlığı | `AuditLogController.getLogs` |
-| GET | `/api/audit-logs/:id` | — | — | tekil | `user.agencyId` ?? `x-agency-id` başlığı | `AuditLogController.getLogById` |
+| GET | `/api/audit-logs` | `audit.read` | `@Query() any` | **`{ items: T[], total: number }`** | `activeAgency.id` ?? `user.agencyId` | `AuditLogController.getLogs` |
+| GET | `/api/audit-logs/:id` | `audit.read` | — | tekil | `activeAgency.id` ?? `user.agencyId` | `AuditLogController.getLogById` |
 
-**Canlı doğrulandı** (`c23ce7c`, imzalı dev token ile `localhost:3001`):
-`GET /api/audit-logs?take=5` → `HTTP 200`, gövde anahtarları tam olarak `[items, total]`,
-`items` 5 elemanlı dizi, `total` = 422.
+`audit.read` seed'de `agency_owner` ve `agency_admin` rollerine bağlı (`prisma/seed.ts`);
+`agency_admin` bağlantısı P1 İŞ 3'te eklendi (`47d76a6`).
+
+**Canlı doğrulandı** (`73fcc71` sonrası, imzalı dev token ile `localhost:3001`):
+`GET /api/audit-logs?take=5` → `HTTP 200`, gövde anahtarları tam olarak `[items, total]`.
+Aynı endpoint izinsiz token ile `HTTP 403`, token'sız `HTTP 401`.
 
 `tenantId` yoksa servise gitmeden `{ items: [], total: 0 }` döner
-(`AuditLogController.getLogs` erken dönüşü) — yani yetkisiz bağlam 403 değil **boş liste**
-üretir.
+(`AuditLogController.getLogs` erken dönüşü). Bu erken dönüş **izin kontrolünden sonra**
+çalışır; yetkisiz kullanıcı artık boş liste değil 403 alır.
 
 ---
 
 ## 13. Entegrasyon hata kayıtları — `IntegrationLogController`
 
-`@Controller('/api/integration-logs')` · `@UseGuards(AuthGuard('jwt'))` · **`PermissionGuard` yok, `@RequirePermission` yok**
+`@Controller('/api/integration-logs')` · `@UseGuards(AuthGuard('jwt'), PermissionGuard)` — P1 İŞ 3 (`73fcc71`)
 
 | Metot | Yol | İzin | İstek gövdesi | Dönüş | Tenant kaynağı | Kaynak |
 |---|---|---|---|---|---|---|
-| GET | `/api/integration-logs` | — | `@Query() any` | **`{ items: T[], total: number }`** | `user.agencyId` ?? `x-agency-id` | `IntegrationLogController.getLogs` |
-| GET | `/api/integration-logs/:id` | — | — | tekil | `user.agencyId` ?? `x-agency-id` | `IntegrationLogController.getLogById` |
-| POST | `/api/integration-logs/:id/resolve` | — | inline `{ resolutionNote?: string }` | DOĞRULANAMADI | `user.agencyId` ?? `x-agency-id` | `IntegrationLogController.resolveLog` |
-| POST | `/api/integration-logs/:id/ignore` | — | inline `{ resolutionNote?: string }` | DOĞRULANAMADI | `user.agencyId` ?? `x-agency-id` | `IntegrationLogController.ignoreLog` |
-| POST | `/api/integration-logs/:id/retry` | — | — | DOĞRULANAMADI | `user.agencyId` ?? `x-agency-id` | `IntegrationLogController.retryLog` |
+| GET | `/api/integration-logs` | `integration.logs.read` | `@Query() any` | **`{ items: T[], total: number }`** | `activeAgency.id` ?? `user.agencyId` | `IntegrationLogController.getLogs` |
+| GET | `/api/integration-logs/:id` | `integration.logs.read` | — | tekil | `activeAgency.id` ?? `user.agencyId` | `IntegrationLogController.getLogById` |
+| POST | `/api/integration-logs/:id/resolve` | `integration.logs.manage` | inline `{ resolutionNote?: string }` | DOĞRULANAMADI | `activeAgency.id` ?? `user.agencyId` | `IntegrationLogController.resolveLog` |
+| POST | `/api/integration-logs/:id/ignore` | `integration.logs.manage` | inline `{ resolutionNote?: string }` | DOĞRULANAMADI | `activeAgency.id` ?? `user.agencyId` | `IntegrationLogController.ignoreLog` |
+| POST | `/api/integration-logs/:id/retry` | `integration.logs.manage` | — | DOĞRULANAMADI | `activeAgency.id` ?? `user.agencyId` | `IntegrationLogController.retryLog` |
 
-**Canlı doğrulandı:** `GET /api/integration-logs?take=5` → `HTTP 200`, anahtarlar `[items, total]`,
-`items` 3 elemanlı, `total` = 3.
+`read`/`manage` ayrımı seed'deki izin açıklamasından türetildi:
+`integration.logs.manage` = "Resolve, ignore or retry integration errors" (`prisma/seed.ts`).
+Üç fiil, üç `POST` endpoint. İki izin de `agency_owner` ve `agency_admin` rollerinde.
 
-### `x-agency-id` başlığı doğrulamasız tenant filtresi oluyor
+**Canlı doğrulandı** (`73fcc71` sonrası): `GET /api/integration-logs?take=5` → `HTTP 200`,
+anahtarlar `[items, total]`. İzinsiz token ile beş endpoint de `HTTP 403`.
+`POST .../resolve` ve `.../ignore` izinli token + var olmayan `id` ile `HTTP 201`
+(`updateMany` eşleşme bulamıyor, veri değişmiyor) — yani `manage` izni geçiyor.
 
-§12 ve §13'teki yedi endpoint de tenant filtresini şöyle kuruyor:
+### ~~`x-agency-id` başlığı doğrulamasız tenant filtresi oluyor~~ KAPANDI
 
-```ts
-const tenantId = (req as any).user?.agencyId || (req.headers['x-agency-id'] as string);
-```
-
-JWT'de `agencyId` yoksa **başlıktaki ham değer** doğrudan tenant filtresi olur; hiçbir üyelik
-kontrolünden geçmez. `TenantMiddleware`'in cross-tenant doğrulaması `req.activeAgency` yolunu
-korur, bu ifade o yolu **atlar**. Ayrıca bu iki controller'da `PermissionGuard` da yok.
-
-`f74d6a8` bu iki controller'ın `/api` prefix eksikliğini ve frontend'deki axios `{data}`
-kalıntısını düzeltti; **bu kalıba dokunmadı.** P1'in girdisi.
+P1 İŞ 1 (`09dff1f`) ham başlık fallback'ini kaldırdı; her iki controller da artık
+`(req as any).activeAgency?.id ?? (req as any).user?.agencyId` kullanıyor, yani
+`TenantMiddleware`'in doğruladığı aktif bağlamı. P1 İŞ 3 (`73fcc71`) eksik
+`PermissionGuard`'ı ekledi. Bu bölüm tarihsel kayıt olarak bırakıldı.
 
 ---
 
@@ -606,8 +616,8 @@ Yalnızca gözlem; öneri sütunu **bilinçli olarak yok** (P1'in kararı).
 
 | # | Tutarsızlık | Yer | Gözlem |
 |---|---|---|---|
-| 1 | `PermissionGuard` ve `@RequirePermission` ikisi de yok | `AuditLogController` · `IntegrationLogController` · `ProfileController` | 17 endpoint yalnızca `AuthGuard('jwt')` ile korunuyor |
-| 2 | Doğrulamasız başlık tenant filtresi oluyor | `AuditLogController` (2 ep) · `IntegrationLogController` (5 ep) | `user?.agencyId \|\| req.headers['x-agency-id']` — `TenantMiddleware` doğrulamasını atlar |
+| 1 | ~~`PermissionGuard` ve `@RequirePermission` ikisi de yok~~ **KAPANDI (P1 İŞ 3)** | `AuditLogController` · `IntegrationLogController` · `ProfileController` | Yedi endpoint guard + izin aldı (`73fcc71`, §12/§13). `ProfileController` (10 ep) **bilinçli istisna**: her sorgu `where: { id: userId }` ile kendi kaydına kilitli, izin katmanı bir şey eklemez — `logout-all-devices` ve `delete-account` dahil ayrıca doğrulandı |
+| 2 | ~~Doğrulamasız başlık tenant filtresi oluyor~~ **KAPANDI (P1 İŞ 1)** | `AuditLogController` (2 ep) · `IntegrationLogController` (5 ep) | `09dff1f` ham `x-agency-id` fallback'ini kaldırdı; artık `activeAgency?.id ?? user?.agencyId` |
 | 3 | `TenantGuard` var ama etkisiz | `ProductController` · `OrderController` | `tenantPublicId` yoksa `return true`; frontend `x-tenant-id` göndermiyor; `request.tenant`'ı hiçbir controller okumuyor |
 | 4 | ~~Aynı kaynak için iki izin adlandırma kalıbı~~ **KAPANDI (P1 İŞ 4)** | `AgencyController` (`agency:create`) vs `RbacController` (`agencies.create`) | Altı iki-nokta ad noktaya çevrildi; kod tabanında tek kalıp kaldı — §23 |
 | 5 | Üçüncü eylem adı | `UsersController.updateUserStores` | `system.settings.write` — ailenin geri kalanı `read`/`manage` |
@@ -622,6 +632,7 @@ Yalnızca gözlem; öneri sütunu **bilinçli olarak yok** (P1'in kararı).
 | 14 | Guard ailesi çatallanması | `RbacGuard` (`agency`/`client`/`store`) vs `PermissionGuard` (diğerleri) | İki ayrı yetkilendirme guard'ı |
 | 15 | Yol prefix'i paylaşan controller çiftleri | §15+§16 (`/api/integrations`) · §19 (`/api/wms`) · §4+§11 (`/api/tenants`) | Bugün çakışma yok; tek segmentlik rota eklenirse sessiz gölgeleme |
 | 16 | `/api` prefix'i yok | `FilesController` | Tek istisna; `apiFetch` üzerinden çağrılamaz |
+| 17 | Guard ile controller aynı isteği farklı tenant kaynağından okuyor | `AuditLogController` · `IntegrationLogController` (P1 İŞ 3 sonrası) | `PermissionGuard` rolü `user.agencyId`/`user.clientId` (JWT) ile arıyor; controller tenant filtresini `activeAgency.id` (doğrulanmış bağlam) ile kuruyor. Bağlam değişip token yenilenmediğinde ikisi ayrışır — İŞ 2'nin kapsamına eklendi |
 
 ---
 
@@ -653,17 +664,22 @@ Tek uygulamada iki farklı Decimal sözleşmesi var. P2'nin karar vermesi gereke
 
 ## 23. İzin envanteri
 
-33 benzersiz izin adı, **tek adlandırma kalıbı** (`kaynak.aksiyon`):
+36 benzersiz izin adı, **tek adlandırma kalıbı** (`kaynak.aksiyon`):
 
 `agencies.create`, `agencies.read`, `agencies.write`, `analytics.export`,
 `analytics.financial.read`, `analytics.integration.read`, `analytics.read`,
-`clients.create`, `clients.write`, `integrations.manage`, `integrations.read`,
+`audit.read`, `clients.create`, `clients.write`, `integration.logs.manage`,
+`integration.logs.read`, `integrations.manage`, `integrations.read`,
 `integrations.settings.update`, `orders.read`, `orders.update`, `products.create`,
 `products.read`, `stock.allocation.manage`, `stock.allocation.read`, `stores.create`,
 `stores.write`, `system.settings.manage`, `system.settings.read`,
 `system.settings.write`, `warehouse.manage`, `warehouse.settings.manage`,
 `warehouse.settings.read`, `wms.labels.create`, `wms.labels.view`, `wms.print`,
 `wms.settings.update`, `wms.stock.update`, `wms.stock.view`, `wms.view`
+
+Son üç ad (`audit.read`, `integration.logs.read`, `integration.logs.manage`) P1 İŞ 3'ün
+ilk yarısında seed'e eklenmişti ama hiçbir endpoint kullanmıyordu; `73fcc71` ile
+kullanıma girdiler.
 
 İki nokta (`kaynak:aksiyon`) kalıbı P1 İŞ 4'te kaldırıldı; altı ad şu karşılıklarını aldı:
 `agency:create` → `agencies.create`, `agency:write` → `agencies.write`, `client:create` →
@@ -672,7 +688,7 @@ Tek uygulamada iki farklı Decimal sözleşmesi var. P2'nin karar vermesi gereke
 tamamında geçerli.
 (Yalnızca `*:*` wildcard'ı iki nokta içerir; o bir kaynak.aksiyon adı değil.)
 
-**Seed durumu (P1 İŞ 3 + İŞ 4 sonrası):** 33 adın hepsi `prisma/seed.ts`'te tanımlı;
+**Seed durumu (P1 İŞ 3 + İŞ 4 sonrası):** 36 adın hepsi `prisma/seed.ts`'te tanımlı;
 `permissionsList` 41 kayıt tutuyor (kullanılmayan `accounting.export`, `wms.manage` ve
 `*:*` dahil). `agencies.create` ve `agencies.write` bilinçli olarak **hiçbir role bağlı
 değil** — distribütör firma yönetimi `PlatformAdminGuard` ile kilitli, `super_admin` da
@@ -696,8 +712,9 @@ P0 yalnızca doküman üretir/düzeltir; aşağıdakiler **kod** değişikliği 
 düzeltilmedi:
 
 1. `ProductController.searchErp` rota gölgelemesi nedeniyle erişilemez (§8).
-2. `AuditLogController` / `IntegrationLogController` `x-agency-id` başlığını doğrulamasız
-   tenant filtresi olarak kullanıyor (§13).
+2. ~~`AuditLogController` / `IntegrationLogController` `x-agency-id` başlığını doğrulamasız
+   tenant filtresi olarak kullanıyor (§13).~~ **KAPANDI** — P1 İŞ 1 (`09dff1f`) ham başlık
+   fallback'ini, P1 İŞ 3 (`73fcc71`) eksik `PermissionGuard`'ı kapattı.
 3. `SettingsController.updateSettings` var olmayan `user.id` alanını okuyor (§17).
 4. `SignedUrlService` imza karşılaştırması sabit zamanlı değil; `payload.purpose`
    `FilesController`'da doğrulanmıyor (§3).
