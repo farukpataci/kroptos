@@ -137,6 +137,9 @@ async function main() {
         'analytics.read',
         'analytics.integration.read',
         'system.settings.read',
+        // agency_admin ajans icindeki kullanici/magaza yonetimine yardim eden rol;
+        // denetim kaydini gorememesi bu rolun varlik sebebiyle celisiyordu.
+        'audit.read',
         'integration.logs.read',
         'integration.logs.manage',
       ],
