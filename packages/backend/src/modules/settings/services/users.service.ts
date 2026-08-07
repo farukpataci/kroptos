@@ -92,9 +92,14 @@ export class UsersService {
       }
     }
 
-    // Get default role for StoreUser (or super admin role)
-    const defaultRole = await this.prisma.role.findFirst();
-    const roleId = defaultRole ? defaultRole.id : 'cmqs71dv9000eqk3t4qahl4vt';
+    // Get default role for StoreUser ('store_manager'). Never fall back to super_admin.
+    const storeManagerRole = await this.prisma.role.findFirst({
+      where: { name: 'store_manager' },
+    });
+    if (!storeManagerRole) {
+      throw new NotFoundException("Default store role ('store_manager') not found");
+    }
+    const roleId = storeManagerRole.id;
 
     // Soft delete existing store users for this user
     await this.prisma.storeUser.updateMany({
