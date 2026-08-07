@@ -142,9 +142,9 @@ endpoint'inde de geçerli olur. İkisi de P0 kapsamı dışında, kaydedildi.
 | GET | `/api/agencies` | — | — | — | DOĞRULANAMADI | üyelik (`userId` + `isSuperAdmin`) | `AgencyController.list` |
 | GET | `/api/agencies/:id` | — | — | — | DOĞRULANAMADI | üyelik | `AgencyController.get` |
 | GET | `/api/tenants/:tenantPublicId` | — | — | — | DOĞRULANAMADI | üyelik | `AgencyController.getByTenantPublicId` |
-| POST | `/api/agencies` | `PlatformAdminGuard` | `agency:create` | `CreateAgencyDto` | DOĞRULANAMADI | üyelik | `AgencyController.create` |
-| PATCH | `/api/agencies/:id` | `PlatformAdminGuard` | `agency:write` | `UpdateAgencyDto` | DOĞRULANAMADI | üyelik | `AgencyController.update` |
-| DELETE | `/api/agencies/:id` | `PlatformAdminGuard` | `agency:write` | — | DOĞRULANAMADI | üyelik | `AgencyController.delete` |
+| POST | `/api/agencies` | `PlatformAdminGuard` | `agencies.create` | `CreateAgencyDto` | DOĞRULANAMADI | üyelik | `AgencyController.create` |
+| PATCH | `/api/agencies/:id` | `PlatformAdminGuard` | `agencies.write` | `UpdateAgencyDto` | DOĞRULANAMADI | üyelik | `AgencyController.update` |
+| DELETE | `/api/agencies/:id` | `PlatformAdminGuard` | `agencies.write` | — | DOĞRULANAMADI | üyelik | `AgencyController.delete` |
 
 **Bu controller iki ayrı yol ailesi sunuyor:** `/api/agencies/*` ve `/api/tenants/:tenantPublicId`.
 İkincisi `AgencyService.get`'i aynı imzayla çağırıyor, yani `:tenantPublicId` ile `:id` aynı
@@ -166,9 +166,9 @@ bir dosya.
 |---|---|---|---|---|---|---|
 | GET | `/api/clients` | **—** | — | DOĞRULANAMADI | üyelik | `ClientController.list` |
 | GET | `/api/clients/:id` | **—** | — | DOĞRULANAMADI | üyelik | `ClientController.get` |
-| POST | `/api/clients` | `client:create` | `CreateClientDto` | DOĞRULANAMADI | üyelik | `ClientController.create` |
-| PATCH | `/api/clients/:id` | `client:write` | `UpdateClientDto` | DOĞRULANAMADI | üyelik | `ClientController.update` |
-| DELETE | `/api/clients/:id` | `client:write` | — | DOĞRULANAMADI | üyelik | `ClientController.delete` |
+| POST | `/api/clients` | `clients.create` | `CreateClientDto` | DOĞRULANAMADI | üyelik | `ClientController.create` |
+| PATCH | `/api/clients/:id` | `clients.write` | `UpdateClientDto` | DOĞRULANAMADI | üyelik | `ClientController.update` |
+| DELETE | `/api/clients/:id` | `clients.write` | — | DOĞRULANAMADI | üyelik | `ClientController.delete` |
 
 ---
 
@@ -180,9 +180,9 @@ bir dosya.
 |---|---|---|---|---|---|---|
 | GET | `/api/stores` | **—** | — | DOĞRULANAMADI | üyelik | `StoreController.list` |
 | GET | `/api/stores/:id` | **—** | — | DOĞRULANAMADI | üyelik | `StoreController.get` |
-| POST | `/api/stores` | `store:create` | `CreateStoreDto` | DOĞRULANAMADI | üyelik | `StoreController.create` |
-| PATCH | `/api/stores/:id` | `store:write` | `UpdateStoreDto` | DOĞRULANAMADI | üyelik | `StoreController.update` |
-| DELETE | `/api/stores/:id` | `store:write` | — | DOĞRULANAMADI | üyelik | `StoreController.delete` |
+| POST | `/api/stores` | `stores.create` | `CreateStoreDto` | DOĞRULANAMADI | üyelik | `StoreController.create` |
+| PATCH | `/api/stores/:id` | `stores.write` | `UpdateStoreDto` | DOĞRULANAMADI | üyelik | `StoreController.update` |
+| DELETE | `/api/stores/:id` | `stores.write` | — | DOĞRULANAMADI | üyelik | `StoreController.delete` |
 
 **§4–§6 ortak kalıbı — kasıtlı ve doğru.** Üçü de tenant ID yerine `user.userId` +
 `isSuperAdmin` geçirip servise üyelik sorgusu yaptırıyor. "Erişebildiğim kiracıları listele"
@@ -211,9 +211,10 @@ olduğu için okuma tamamen korumasız değil, ancak izin kontrolü yazma/okuma 
 global olduğu için bu beklenen olabilir; kiracıya özel rol tanımı varsa sorun olur.
 Servis içi filtre durumu bu turda incelenmedi → **DOĞRULANAMADI**, P1'in girdisi.
 
-**İzin adlandırma çatallanması burada görünür hale geliyor:** bu controller ajans kaynağı
-için `agencies.read` / `agencies.create` (nokta) kullanırken, `AgencyController` aynı kaynak
-için `agency:create` / `agency:write` (iki nokta) kullanıyor. Ayrıntı §13'te.
+**İzin adlandırma çatallanması — P1 İŞ 4'te kapatıldı.** Bu controller ajans kaynağı için
+`agencies.read` / `agencies.create` (nokta) kullanırken, `AgencyController` aynı kaynak için
+`agency:create` / `agency:write` (iki nokta) kullanıyordu. Artık ikisi de nokta kalıbında;
+`AgencyController` `agencies.create` / `agencies.write` diyor. Ayrıntı §23'te.
 
 ---
 
@@ -608,7 +609,7 @@ Yalnızca gözlem; öneri sütunu **bilinçli olarak yok** (P1'in kararı).
 | 1 | `PermissionGuard` ve `@RequirePermission` ikisi de yok | `AuditLogController` · `IntegrationLogController` · `ProfileController` | 17 endpoint yalnızca `AuthGuard('jwt')` ile korunuyor |
 | 2 | Doğrulamasız başlık tenant filtresi oluyor | `AuditLogController` (2 ep) · `IntegrationLogController` (5 ep) | `user?.agencyId \|\| req.headers['x-agency-id']` — `TenantMiddleware` doğrulamasını atlar |
 | 3 | `TenantGuard` var ama etkisiz | `ProductController` · `OrderController` | `tenantPublicId` yoksa `return true`; frontend `x-tenant-id` göndermiyor; `request.tenant`'ı hiçbir controller okumuyor |
-| 4 | Aynı kaynak için iki izin adlandırma kalıbı | `AgencyController` (`agency:create`) vs `RbacController` (`agencies.create`) | Nokta ve iki nokta biçimleri yan yana |
+| 4 | ~~Aynı kaynak için iki izin adlandırma kalıbı~~ **KAPANDI (P1 İŞ 4)** | `AgencyController` (`agency:create`) vs `RbacController` (`agencies.create`) | Altı iki-nokta ad noktaya çevrildi; kod tabanında tek kalıp kaldı — §23 |
 | 5 | Üçüncü eylem adı | `UsersController.updateUserStores` | `system.settings.write` — ailenin geri kalanı `read`/`manage` |
 | 6 | İzin kapsaması asimetrik | `AgencyController` (3/6) · `ClientController` (3/5) · `StoreController` (3/5) | `list` ve `get` izinsiz, yalnızca yazma izinli |
 | 7 | Tek izin tüm eylemleri kapsıyor | `IntegrationController` (13/13) | Okuma, yazma ve `delete`/`sync` aynı `integrations.manage` |
@@ -652,26 +653,30 @@ Tek uygulamada iki farklı Decimal sözleşmesi var. P2'nin karar vermesi gereke
 
 ## 23. İzin envanteri
 
-34 benzersiz izin adı, iki adlandırma kalıbı:
+33 benzersiz izin adı, **tek adlandırma kalıbı** (`kaynak.aksiyon`):
 
-**Nokta (`kaynak.aksiyon`) — 28 adet:** `analytics.export`, `analytics.financial.read`,
-`analytics.integration.read`, `analytics.read`, `agencies.create`, `agencies.read`,
-`integrations.manage`, `integrations.read`, `integrations.settings.update`, `orders.read`,
-`orders.update`, `products.create`, `products.read`, `stock.allocation.manage`,
-`stock.allocation.read`, `system.settings.manage`, `system.settings.read`,
+`agencies.create`, `agencies.read`, `agencies.write`, `analytics.export`,
+`analytics.financial.read`, `analytics.integration.read`, `analytics.read`,
+`clients.create`, `clients.write`, `integrations.manage`, `integrations.read`,
+`integrations.settings.update`, `orders.read`, `orders.update`, `products.create`,
+`products.read`, `stock.allocation.manage`, `stock.allocation.read`, `stores.create`,
+`stores.write`, `system.settings.manage`, `system.settings.read`,
 `system.settings.write`, `warehouse.manage`, `warehouse.settings.manage`,
 `warehouse.settings.read`, `wms.labels.create`, `wms.labels.view`, `wms.print`,
 `wms.settings.update`, `wms.stock.update`, `wms.stock.view`, `wms.view`
 
-**İki nokta (`kaynak:aksiyon`) — 6 adet:** `agency:create`, `agency:write`, `client:create`,
-`client:write`, `store:create`, `store:write`
+İki nokta (`kaynak:aksiyon`) kalıbı P1 İŞ 4'te kaldırıldı; altı ad şu karşılıklarını aldı:
+`agency:create` → `agencies.create`, `agency:write` → `agencies.write`, `client:create` →
+`clients.create`, `client:write` → `clients.write`, `store:create` → `stores.create`,
+`store:write` → `stores.write`. `CLAUDE.md`'deki değişmez kural artık kod tabanının
+tamamında geçerli.
+(Yalnızca `*:*` wildcard'ı iki nokta içerir; o bir kaynak.aksiyon adı değil.)
 
-`CLAUDE.md`'deki değişmez kural `'kaynak.aksiyon'` biçimini şart koşuyor; iki nokta kalıbı
-bu kuralın dışında.
-
-**Bu izinlerin seed'de tanımlı olup olmadığı bu envanterde doğrulanmadı** — P1'in kapsamı
-(`00_IYILESTIRME_PAKETI.md` › P1 › "Her endpoint'in `@RequirePermission` izni gerçekten
-tanımlı mı kontrol et").
+**Seed durumu (P1 İŞ 3 + İŞ 4 sonrası):** 33 adın hepsi `prisma/seed.ts`'te tanımlı;
+`permissionsList` 41 kayıt tutuyor (kullanılmayan `accounting.export`, `wms.manage` ve
+`*:*` dahil). `agencies.create` ve `agencies.write` bilinçli olarak **hiçbir role bağlı
+değil** — distribütör firma yönetimi `PlatformAdminGuard` ile kilitli, `super_admin` da
+`*:*` ile kapsıyor.
 
 ## 24. DOĞRULANAMADI özeti
 
