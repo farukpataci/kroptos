@@ -511,8 +511,11 @@ tek başına **`system.settings.write`** kullanıyor. Aynı ailede üçüncü bi
 dönüşü `{ userId, email, tenantId, agencyId, clientId, role, permissions }` — **`id` alanı
 yok**, dolayısıyla bu değer `undefined`.
 
-Aynı klasördeki diğer sekiz controller savunmacı `user.userId || user.id` kalıbını
-kullanıyor; yalnızca bu biri doğrudan `user.id` okuyor. Etkisi audit/güncelleyen-kullanıcı
+Aynı klasördeki, servise kullanıcı kimliği geçen diğer dört controller
+(`integration-settings`, `notification-settings`, `security-settings`, `tenant-settings`)
+savunmacı `user.userId || user.id` kalıbını kullanıyor; yalnızca bu biri doğrudan `user.id`
+okuyor. (Kalan dört controller — `api-keys`, `permissions`, `roles`, `users` — `req.user`'ı
+okuyor ama servise `userId` geçirmiyor, yani karşılaştırmaya girmiyor.) Etkisi audit/güncelleyen-kullanıcı
 alanının boş kalması olur. Kod hatası, P0 kapsamı dışı — kaydedildi.
 
 ---

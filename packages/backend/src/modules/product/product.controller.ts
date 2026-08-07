@@ -42,6 +42,17 @@ export class ProductController {
     );
   }
 
+  // Literal rotalar ':id'den ÖNCE bildirilmek zorunda: Nest/Express ilk eşleşen
+  // rotayı seçer, dolayısıyla ':id' yukarıda olursa 'erp-search' ona ürün kimliği
+  // olarak düşer ve bu metot hiç çağrılmaz.
+  @Get('erp-search')
+  @HttpCode(200)
+  @RequirePermission('products.read')
+  @ApiOperation({ summary: 'Search ERP accounting items for mapping (stub: returns [] until the real ERP integration lands)' })
+  async searchErp(@Query('q') query?: string) {
+    return this.productService.searchErpItems(query);
+  }
+
   @Get(':id')
   @HttpCode(200)
   @RequirePermission('products.read')
@@ -146,14 +157,6 @@ export class ProductController {
   @ApiOperation({ summary: 'Parse e-commerce product URL and extract information' })
   async parseUrl(@Body() body: { url: string }) {
     return this.productService.parseUrl(body.url);
-  }
-
-  @Get('erp-search')
-  @HttpCode(200)
-  @RequirePermission('products.read')
-  @ApiOperation({ summary: 'Search mock ERP accounting items for mapping' })
-  async searchErp(@Query('q') query?: string) {
-    return this.productService.searchErpItems(query);
   }
 
   @Post('bulk-action')

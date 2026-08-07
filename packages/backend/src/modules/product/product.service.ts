@@ -645,25 +645,34 @@ export class ProductService {
     }
   }
 
+  // TODO: gerçek ERP entegrasyonu; şimdilik boş dönüyor.
+  //
+  // Bu uç, controller'daki @Get(':id') gölgelemesi nedeniyle bugüne kadar hiç
+  // çalışmadı (istek ProductController.get'e düşüp 404 üretiyordu). Gölgeleme
+  // düzeltildi, ancak aşağıdaki mock katalog kullanıcıya gerçek muhasebe kalemi
+  // gibi görüneceği için yayına açılmadı. Beklenen yanıt şekli — gerçek
+  // entegrasyon yazılırken uyulacak sözleşme — korunsun diye burada bırakıldı:
+  //
+  // const mockErpItems = [
+  //   { id: 'erp-001', code: '150.01.001', name: 'Apple iPhone 13 128GB (Siyah)', stock: 42, price: 28999.00, barcode: '868000000123' },
+  //   { id: 'erp-002', code: '150.01.002', name: 'Samsung Galaxy S22 256GB', stock: 28, price: 24999.00, barcode: '868000000124' },
+  //   { id: 'erp-003', code: '150.02.015', name: 'Sony WH-1000XM4 Kablosuz Kulaklık', stock: 15, price: 8499.00, barcode: '868000000125' },
+  //   { id: 'erp-004', code: '150.03.004', name: 'Dell XPS 13 9310 Core i7', stock: 7, price: 45999.00, barcode: '868000000126' },
+  //   { id: 'erp-005', code: '150.04.088', name: 'Logitech MX Master 3S Mouse', stock: 65, price: 3299.00, barcode: '868000000127' },
+  //   { id: 'erp-006', code: '150.05.002', name: 'Xiaomi Mi Band 7 Akıllı Bileklik', stock: 120, price: 999.00, barcode: '868000000128' },
+  // ];
+  //
+  // if (!query) return mockErpItems;
+  //
+  // const q = query.toLowerCase();
+  // return mockErpItems.filter(
+  //   (item) =>
+  //     item.name.toLowerCase().includes(q) ||
+  //     item.code.toLowerCase().includes(q) ||
+  //     item.barcode.includes(q),
+  // );
   async searchErpItems(query?: string) {
-    const mockErpItems = [
-      { id: 'erp-001', code: '150.01.001', name: 'Apple iPhone 13 128GB (Siyah)', stock: 42, price: 28999.00, barcode: '868000000123' },
-      { id: 'erp-002', code: '150.01.002', name: 'Samsung Galaxy S22 256GB', stock: 28, price: 24999.00, barcode: '868000000124' },
-      { id: 'erp-003', code: '150.02.015', name: 'Sony WH-1000XM4 Kablosuz Kulaklık', stock: 15, price: 8499.00, barcode: '868000000125' },
-      { id: 'erp-004', code: '150.03.004', name: 'Dell XPS 13 9310 Core i7', stock: 7, price: 45999.00, barcode: '868000000126' },
-      { id: 'erp-005', code: '150.04.088', name: 'Logitech MX Master 3S Mouse', stock: 65, price: 3299.00, barcode: '868000000127' },
-      { id: 'erp-006', code: '150.05.002', name: 'Xiaomi Mi Band 7 Akıllı Bileklik', stock: 120, price: 999.00, barcode: '868000000128' },
-    ];
-
-    if (!query) return mockErpItems;
-
-    const q = query.toLowerCase();
-    return mockErpItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(q) ||
-        item.code.toLowerCase().includes(q) ||
-        item.barcode.includes(q),
-    );
+    return [];
   }
 
   private mapProductResponse(product: any) {
