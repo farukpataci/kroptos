@@ -187,7 +187,8 @@ describe('ProductService', () => {
           action: 'create',
           entityType: 'Product',
           entityId: 'prod-123',
-          performedBy: 'user-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
         }),
       });
     });

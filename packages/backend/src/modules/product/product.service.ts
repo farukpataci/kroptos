@@ -13,6 +13,11 @@ export class ProductService {
     private integrationQueueService: IntegrationQueueService,
   ) {}
 
+  // Alan adlari sema ile hizali olmak zorunda: AuditLog'da `performedBy`, `agencyId` ve
+  // `changes` alanlari YOK (schema.prisma › model AuditLog). Buraya once o adlar yaziliyordu;
+  // Prisma her cagriyi PrismaClientValidationError ile reddediyor, asagidaki catch da hatayi
+  // yutuyordu - yani urun create/update/delete kayitlarinin hicbiri hic yazilmadi. Dogru
+  // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
     tx: any,
     action: string,
@@ -28,10 +33,10 @@ export class ProductService {
           action,
           entityType: 'Product',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
