@@ -6,14 +6,13 @@ import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, ProductResponseDto, BulkActionDto } from './dto/product.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
-import { TenantGuard } from '../../common/guards/tenant.guard';
 
 @ApiTags('Products')
 @ApiBearerAuth()
 @ApiHeader({ name: 'x-agency-id', required: true, description: 'Active Agency ID context' })
 @ApiHeader({ name: 'x-client-id', required: true, description: 'Active Client ID context' })
 @ApiHeader({ name: 'x-store-id', required: true, description: 'Active Store ID context' })
-@UseGuards(AuthGuard('jwt'), TenantGuard, PermissionGuard)
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller('/api/products')
 export class ProductController {
   constructor(private productService: ProductService) {}

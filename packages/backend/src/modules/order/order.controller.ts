@@ -7,14 +7,13 @@ import { CreateOrderDto, UpdateOrderStatusDto, OrderResponseDto } from './dto/or
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { PrismaService } from '../../common/prisma/prisma.service';
-import { TenantGuard } from '../../common/guards/tenant.guard';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
 @ApiHeader({ name: 'x-agency-id', required: true, description: 'Active Agency ID context' })
 @ApiHeader({ name: 'x-client-id', required: false, description: 'Active Client ID context' })
 @ApiHeader({ name: 'x-store-id', required: true, description: 'Active Store ID context' })
-@UseGuards(AuthGuard('jwt'), TenantGuard, PermissionGuard)
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller()
 export class OrderController {
   constructor(
