@@ -102,6 +102,10 @@ export class IntegrationService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
+    if (!activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency context is required (x-agency-id header)');
+    }
+
     const integration = await this.prisma.integration.findFirst({
       where: {
         OR: [
@@ -117,7 +121,7 @@ export class IntegrationService {
     }
 
     if (!isSuperAdmin) {
-      if (activeAgencyId && integration.agencyId !== activeAgencyId) {
+      if (integration.agencyId !== activeAgencyId) {
         throw new ForbiddenException('Access denied. Integration belongs to a different agency.');
       }
       // If scoped to store or client specifically
