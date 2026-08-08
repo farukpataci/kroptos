@@ -45,7 +45,9 @@ Kiracı hiyerarşisi: Agency > Client > Store. Aktif bağlam {agencyId, clientId
    @RequirePermission('kaynak.aksiyon'). Servis her sorguda tenant filtresi +
    soft delete (deletedAt) + audit uygular.
 5. Metinler i18n anahtarıyla; yeni anahtar TÜM messages/*.json dosyalarına eklenir.
-6. eticaret-system/ klasörü ARŞİVDİR. Oraya asla kod yazma, oradan örnek alma.
+6. Bu depoda eticaret-system/ arşiv klasörü ARTIK YOKTUR (2026-08-08'de
+   kaldırıldı, commit geçmişinde duruyor). Eski dokümanlarda veya sohbetlerde
+   adı geçerse yok say; oradan örnek alma, geri getirme.
 
 # YASAKLAR (ihlali görevi geçersiz kılar)
 - Görmediğin bir alan adını, endpoint'i veya dönüş tipini UYDURMA.
