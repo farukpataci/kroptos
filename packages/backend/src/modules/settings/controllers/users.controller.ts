@@ -22,7 +22,7 @@ export class UsersController {
   @RequirePermission('system.settings.read')
   async findAll(@Req() req: Request) {
     const user = req.user as any;
-    return this.service.findAll(user.agencyId);
+    return this.service.findAll(user.agencyId, this.checkSuperAdmin(req));
   }
 
   @Patch(':id/stores')

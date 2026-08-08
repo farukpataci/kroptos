@@ -9,16 +9,25 @@ export class UsersService {
     private auditLogService: AuditLogService,
   ) {}
 
-  async findAll(agencyId: string) {
+  async findAll(agencyId: string, isSuperAdmin?: boolean) {
+    // Sistem yöneticisi tüm ajansları görür; diğer herkes yalnızca aktif
+    // ajansını. Kapsama sorgunun her katmanına inmek zorunda: satır seçimi
+    // kapsansa bile include'lar kapsanmazsa başka ajansların rol, ajans ve
+    // mağaza adları yanıta sızar.
+    const agencyScope = isSuperAdmin ? {} : { agencyId };
+
     const users = await this.prisma.user.findMany({
-      where: { deletedAt: null },
+      where: {
+        deletedAt: null,
+        ...(isSuperAdmin ? {} : { userRoles: { some: { agencyId, deletedAt: null } } }),
+      },
       include: {
         userRoles: {
-          where: { deletedAt: null },
+          where: { ...agencyScope, deletedAt: null },
           include: { role: true, agency: true },
         },
         storeUsers: {
-          where: { deletedAt: null },
+          where: { deletedAt: null, store: { ...agencyScope, deletedAt: null } },
           include: { store: true },
         },
       },
@@ -26,13 +35,16 @@ export class UsersService {
     });
 
     const stores = await this.prisma.store.findMany({
-      where: { agencyId, deletedAt: null },
+      where: { ...agencyScope, deletedAt: null },
       select: { id: true, name: true, publicId: true },
     });
 
     return {
       users: users.map((u) => {
-        const agencyRole = u.userRoles.find((ur) => ur.agencyId === agencyId) || u.userRoles[0];
+        // Süper admin başka ajansların kullanıcılarını da görür; onların aktif
+        // ajansta rolü olmadığı için kendi ajanslarındaki rolü gösterilir.
+        const agencyRole =
+          u.userRoles.find((ur) => ur.agencyId === agencyId) ?? (isSuperAdmin ? u.userRoles[0] : undefined);
         const assignedStores = u.storeUsers.map((su) => su.store);
         return {
           id: u.id,
