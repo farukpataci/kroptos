@@ -56,6 +56,12 @@ Kiracı hiyerarşisi: Agency > Client > Store. Aktif bağlam {agencyId, clientId
 - Kapsam dışına çıkma. Yol üstünde gördüğün başka bir sorunu DÜZELTME,
   sadece "Kapsam dışı gözlem" başlığı altında not düş.
 
+# DB YAZMA KISITI
+DB'ye kalıcı yazma. Kalıcı olmayan doğrulama yazması (transaction içinde
+yaz-oku-rollback, veya fixture ekle-doğrula-sil) BENİM ONAYIMLA yapılabilir.
+Onay almadan yazma. Yazdıysan öncesi/sonrası satır sayısını göster.
+Seed değişikliği gerekiyorsa ÖNER, uygulama.
+
 # KANIT ZORUNLULUĞU
 Her iddian için kaynağını belirt: "X şöyle çalışıyor (kaynak: packages/.../y.ts)".
 Kaynak gösteremiyorsan iddiayı yazma, dosyayı iste.

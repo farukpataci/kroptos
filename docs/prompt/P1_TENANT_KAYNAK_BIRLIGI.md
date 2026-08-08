@@ -118,7 +118,10 @@ Kararı kullanıcı verecek. Faz A'da uygulama.
   DOĞRULA ve raporla, ama DÜZELTME. Ayrı bir görev olacak.
 - Yeni izin adı icat etme (eksikleri sadece listele)
 - TenantMiddleware'in iç mantığını değiştirme
-- DB'ye yazma. Seed değişikliği gerekiyorsa ÖNER, uygulama.
+- DB'ye kalıcı yazma. Kalıcı olmayan doğrulama yazması (transaction içinde
+  yaz-oku-rollback, veya fixture ekle-doğrula-sil) BENİM ONAYIMLA yapılabilir.
+  Onay almadan yazma. Yazdıysan öncesi/sonrası satır sayısını göster.
+  Seed değişikliği gerekiyorsa ÖNER, uygulama.
 
 ## FAZ A'DA ÖNCE ŞUNLARI CEVAPLA
 
