@@ -96,3 +96,37 @@ Tenant/izin davranışı için canlı doğrulama protokolü:
 
 Ölçülemeyen bir iddia `DOĞRULANAMADI` olarak işaretlenir; sessizce
 "çalışıyor" denmez. Ölçüm sonucu commit mesajının gövdesine yazılır.
+
+### 8. Silme ve taşıma işlemleri: önce listele, onay al, yedekle
+
+Dosya silen veya taşıyan HER komuttan önce — `rm -rf`, `Remove-Item -Recurse`,
+`robocopy /MIR`, `git clean`, toplu `mv`/`Move-Item` — şu dört adım sırayla
+uygulanır. Adım atlanamaz.
+
+1. **Listele:** Etkilenecek alandaki gitignore'lu dosyaları göster:
+   `git status --ignored <yol>`. Bunlar git'ten geri gelmez; kayıpları kalıcıdır.
+2. **Onay al:** Listeyi kullanıcıya sun ve bekle. Onaysız silme yok.
+3. **Yedekle:** Repo DIŞINA kopyala → `C:\Users\Administrator\Desktop\kroptos-backup\`
+   Scratchpad yedek yeri DEĞİLDİR; oturum sonunda kaybolur.
+4. **Sonra sil.**
+
+**Junction/symlink içeren dizinlerde ASLA `/MIR` (veya benzeri ayna/`--delete`
+kipi) kullanma.** pnpm, workspace paketlerini `node_modules/@kroptos/*` altında
+junction olarak kurar; ayna araçları bu bağlantıları takip edip **hedefi** siler.
+`node_modules` temizliği için `Remove-Item -Recurse -Force`, uzun yol hatasında
+`cmd /c rmdir /s /q` kullan.
+
+Silmeden önce bağlantı var mı diye bak:
+```powershell
+Get-ChildItem <hedef> -Recurse -Attributes ReparsePoint
+```
+
+Gerçek vaka (2026-08-08): `node_modules` silmek için `robocopy <boş> <hedef> /MIR`
+çalıştırıldı. Junction'lar takip edildi, `packages/{backend,frontend,shared}`
+içeriği boşaldı — 362 tracked dosya silindi. Tracked olanlar `git restore packages/`
+ile geri geldi; gitignore'lu `packages/backend/.env` **kalıcı olarak kayboldu**
+(pm2 dump, shadow copy, eski oturum kayıtları — hiçbir kurtarma yolu işe yaramadı).
+İçindeki `ENCRYPTION_KEY`, DB'deki entegrasyon kimlik bilgilerini şifreleyen anahtardı.
+
+Kontrol sorusu: **bu komut çalıştıktan sonra geri getiremeyeceğim ne kaybolur?**
+Cevabı bilmiyorsan komutu çalıştırma — önce 1. adımı yap.
