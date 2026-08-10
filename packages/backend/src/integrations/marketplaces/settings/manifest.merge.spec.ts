@@ -228,7 +228,11 @@ describe('resolveManifest', () => {
   it('rejects an unknown provider by name', () => {
     const registry = new MarketplaceSettingsRegistry();
 
-    expect(() => registry.getManifest('pazarama')).toThrow(/Unsupported marketplace provider/);
+    // Deliberately a name that will never be registered: this test used to say
+    // 'pazarama', which stopped being unknown the day that provider shipped.
+    expect(() => registry.getManifest('definitely-not-a-provider')).toThrow(
+      /Unsupported marketplace provider/,
+    );
     expect(registry.isSupported('TRENDYOL')).toBe(true);
   });
 });

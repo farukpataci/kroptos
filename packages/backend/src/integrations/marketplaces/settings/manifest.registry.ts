@@ -10,6 +10,7 @@ import { hepsiburadaOverride } from './providers/hepsiburada.settings';
 import { n11Override } from './providers/n11.settings';
 import { amazonOverride } from './providers/amazon.settings';
 import { ciceksepetiOverride } from './providers/ciceksepeti.settings';
+import { pazaramaOverride } from './providers/pazarama.settings';
 
 /**
  * The one place a marketplace is registered. Adding a provider is this list
@@ -22,6 +23,7 @@ const OVERRIDES: ProviderSettingsOverride[] = [
   n11Override,
   amazonOverride,
   ciceksepetiOverride,
+  pazaramaOverride,
 ];
 
 @Injectable()

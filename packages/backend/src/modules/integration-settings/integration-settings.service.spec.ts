@@ -346,7 +346,11 @@ describe('IntegrationSettingsService', () => {
     });
 
     it('assertConfigured ignores providers with no manifest', async () => {
-      await expect(service.assertConfigured('int-1', 'pazarama')).resolves.toBeUndefined();
+      // Deliberately a name that will never be registered: this test used to say
+      // 'pazarama', which gained a manifest the day that provider shipped.
+      await expect(
+        service.assertConfigured('int-1', 'definitely-not-a-provider'),
+      ).resolves.toBeUndefined();
     });
   });
 

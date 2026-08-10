@@ -1990,6 +1990,11 @@
         "ciceksepeti": {
           "apiKey": "API Key",
           "apiKeyHelp": "ÇiçekSepeti satıcı panelinde Entegrasyon bölümünden alınır."
+        },
+        "pazarama": {
+          "apiKey": "API Key",
+          "apiKeyHelp": "Pazarama İş Ortağım panelinde Entegrasyon > API Bilgileri altında yer alır.",
+          "secretKey": "Secret Key"
         }
       },
       "mapping": {
