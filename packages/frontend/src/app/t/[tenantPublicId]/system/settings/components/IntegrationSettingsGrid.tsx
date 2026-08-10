@@ -1,194 +1,134 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import useSWR from 'swr';
+import { ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/lib/api';
-import { useToast } from '@/components/ui/Toast';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
+interface IntegrationSettingsRow {
+  id: string;
+  provider: string;
+  status: string;
+  isActive: boolean;
+  lastSyncAt: string | null;
+  errorCount: number;
+}
+
+function formatLastSync(value: string | null) {
+  if (!value) return 'Hiç senkronize edilmedi';
+  return new Date(value).toLocaleString('tr-TR');
+}
+
+/**
+ * Read-only mirror of the integrations page.
+ *
+ * This screen used to own its own `IntegrationSettings` rows and its own
+ * credential form, which is why a marketplace connected under /integrations
+ * stayed "Disconnected" here forever — nothing joined the two. The rows are now
+ * derived from `Integration`, so the state shown is the real one, and the
+ * editing path lives in one place instead of two.
+ */
 export function IntegrationSettingsGrid() {
-  const { data: integrations, error, mutate } = useSWR<any[]>('/system/integration-settings', fetcher);
-  const [editingProvider, setEditingProvider] = useState<string | null>(null);
-  const [configData, setConfigData] = useState<any>({});
-  const toast = useToast();
-  const [isSaving, setIsSaving] = useState(false);
+  const params = useParams();
+  const tenantPublicId = params?.tenantPublicId as string | undefined;
+  const integrationsHref = tenantPublicId ? `/t/${tenantPublicId}/integrations` : '/integrations';
 
-  const handleToggle = async (provider: string, currentStatus: string) => {
-    const newStatus = currentStatus === 'connected' ? 'disconnected' : 'connected';
-    try {
-      await apiFetch(`/system/integration-settings/${provider.toLowerCase()}`, {
-        method: 'PUT',
-        body: JSON.stringify({ status: newStatus }),
-      });
-      mutate();
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to toggle integration.');
-    }
-  };
-
-  const handleEditClick = (integration: any) => {
-    setEditingProvider(integration.provider);
-    setConfigData(integration.config || {});
-  };
-
-  const handleConfigChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setConfigData((prev: any) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSaveConfig = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingProvider) return;
-    setIsSaving(true);
-    try {
-      await apiFetch(`/system/integration-settings/${editingProvider.toLowerCase()}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-          status: 'connected',
-          config: configData,
-        }),
-      });
-      setEditingProvider(null);
-      mutate();
-      toast.success('Integration connected and settings saved.');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to save configuration.');
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  const { data: integrations, error } = useSWR<IntegrationSettingsRow[]>(
+    '/system/integration-settings',
+    fetcher,
+  );
 
   if (error) return <div className="text-red-500">Failed to load integration settings.</div>;
   if (!integrations) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium leading-6 text-gray-900">Marketplace & ERP Integrations</h3>
-        <p className="mt-1 text-sm text-gray-500">Connect and manage external sales channels and ERP integrations.</p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-medium leading-6 text-gray-900">
+            Marketplace &amp; ERP Integrations
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Bağlı kanallarınızın güncel durumu. Bağlantı kurmak, ayarlamak veya kaldırmak için
+            Entegrasyon Merkezi&apos;ni kullanın.
+          </p>
+        </div>
+
+        <Link
+          href={integrationsHref}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 px-3.5 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+        >
+          Entegrasyon Merkezi
+          <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
+        </Link>
       </div>
 
-      {editingProvider ? (
-        <div className="bg-gray-50 rounded-xl p-6 border border-gray-200 animate-scale-in">
-          <div className="flex justify-between items-center mb-4">
-            <h4 className="text-md font-bold text-gray-900 uppercase">
-              Configure {editingProvider} Integration
-            </h4>
-            <button onClick={() => setEditingProvider(null)} className="text-gray-400 hover:text-gray-600">
-              ✕ Cancel
-            </button>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {integrations.map((item) => {
+          const isConnected = item.status === 'connected';
+          const hasFailed = item.status === 'failed';
 
-          <form onSubmit={handleSaveConfig} className="space-y-4 max-w-md">
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">API Key / Seller ID</label>
-              <input
-                type="text"
-                name="apiKey"
-                value={configData.apiKey || ''}
-                onChange={handleConfigChange}
-                required
-                className="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">API Secret / Token</label>
-              <input
-                type="password"
-                name="apiSecret"
-                value={configData.apiSecret || ''}
-                onChange={handleConfigChange}
-                required
-                className="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-              />
-            </div>
-            {editingProvider.toLowerCase() === 'logo' && (
+          return (
+            <div
+              key={item.id}
+              className="card flex flex-col justify-between border border-gray-200 rounded-xl p-5 bg-white shadow-sm"
+            >
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Server URL</label>
-                <input
-                  type="url"
-                  name="serverUrl"
-                  value={configData.serverUrl || ''}
-                  onChange={handleConfigChange}
-                  required
-                  placeholder="https://logo-rest-endpoint.com"
-                  className="w-full rounded-lg border-gray-300 text-sm shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-              </div>
-            )}
-
-            <div className="flex gap-2 pt-2">
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="px-4 py-2 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg"
-              >
-                {isSaving ? 'Connecting...' : 'Save & Connect'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setEditingProvider(null)}
-                className="px-4 py-2 text-xs font-semibold bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-              >
-                Back
-              </button>
-            </div>
-          </form>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {integrations.map((item: any) => {
-            const isConnected = item.status === 'connected';
-            return (
-              <div
-                key={item.provider}
-                className="card flex flex-col justify-between border border-gray-200 rounded-xl p-5 bg-white shadow-sm hover:shadow transition-shadow"
-              >
-                <div>
-                  <div className="flex justify-between items-start">
-                    <span className="text-sm font-bold text-gray-900 capitalize">{item.provider}</span>
-                    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
-                      isConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-500'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-600' : 'bg-gray-400'}`}></span>
-                      {isConnected ? 'Connected' : 'Disconnected'}
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-gray-400 mt-2">
-                    {item.provider === 'logo'
-                      ? 'Integrate with Logo Tiger/Go ERP systems.'
-                      : `Synchronize products and orders with ${item.provider}.`}
-                  </p>
-                </div>
-
-                <div className="flex justify-between items-center mt-5 pt-4 border-t border-gray-50">
-                  <button
-                    onClick={() => handleEditClick(item)}
-                    className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
-                  >
-                    Configure
-                  </button>
-
-                  <button
-                    onClick={() => handleToggle(item.provider, item.status)}
-                    className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      isConnected ? 'bg-indigo-600' : 'bg-gray-200'
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-sm font-bold text-gray-900 capitalize">{item.provider}</span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium ${
+                      isConnected
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : hasFailed
+                          ? 'bg-red-50 text-red-700'
+                          : 'bg-gray-100 text-gray-500'
                     }`}
                   >
                     <span
-                      className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        isConnected ? 'translate-x-4' : 'translate-x-0'
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isConnected ? 'bg-emerald-600' : hasFailed ? 'bg-red-600' : 'bg-gray-400'
                       }`}
-                    />
-                  </button>
+                    ></span>
+                    {isConnected ? 'Connected' : hasFailed ? 'Failed' : 'Disconnected'}
+                  </span>
                 </div>
+
+                <p className="text-xs text-gray-400 mt-2">
+                  {item.provider === 'logo' || item.provider === 'logo_erp'
+                    ? 'Integrate with Logo Tiger/Go ERP systems.'
+                    : `Synchronize products and orders with ${item.provider}.`}
+                </p>
+
+                <dl className="mt-3 space-y-1 text-xs text-gray-500">
+                  <div className="flex justify-between gap-2">
+                    <dt>Son senkronizasyon</dt>
+                    <dd className="font-medium text-gray-700">{formatLastSync(item.lastSyncAt)}</dd>
+                  </div>
+                  {item.errorCount > 0 && (
+                    <div className="flex justify-between gap-2">
+                      <dt>Başarısız iş</dt>
+                      <dd className="font-medium text-red-600">{item.errorCount}</dd>
+                    </div>
+                  )}
+                </dl>
               </div>
-            );
-          })}
-        </div>
-      )}
+
+              <div className="mt-5 pt-4 border-t border-gray-50">
+                <Link
+                  href={integrationsHref}
+                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
+                >
+                  {isConnected || hasFailed ? 'Yönet' : 'Bağlantı kur'} →
+                </Link>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
