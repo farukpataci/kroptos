@@ -19,6 +19,7 @@ export default function IntegrationsParentPage() {
   const [activeDrawerIntegration, setActiveDrawerIntegration] = useState<any>(null);
   const [wizardProvider, setWizardProvider] = useState<CatalogProvider | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const fetchIntegrations = async () => {
     try {
@@ -58,6 +59,30 @@ export default function IntegrationsParentPage() {
       toast.error(err.message || 'Senkronizasyon sırasında hata oluştu');
     } finally {
       setSyncingId(null);
+    }
+  };
+
+  const handleToggleStatus = async (item: ActiveIntegrationItem) => {
+    // 'error' is a system state, not a user choice: turning the switch on from
+    // there means "try again", so it maps to active like a passive row does.
+    const nextStatus = item.status === 'active' ? 'inactive' : 'active';
+    setTogglingId(item.id);
+    try {
+      await apiFetch(`/integrations/${item.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: nextStatus }),
+      });
+      toast.success(
+        nextStatus === 'active'
+          ? `${item.name} aktifleştirildi`
+          : `${item.name} pasifleştirildi, senkronizasyon durduruldu`,
+      );
+      await fetchIntegrations();
+      window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+    } catch (err: any) {
+      toast.error(err.message || 'Entegrasyon durumu güncellenemedi');
+    } finally {
+      setTogglingId(null);
     }
   };
 
@@ -104,7 +129,9 @@ export default function IntegrationsParentPage() {
         onOpenSettings={(item) => setActiveDrawerIntegration(item)}
         onSync={handleSync}
         onDelete={handleDelete}
+        onToggleStatus={handleToggleStatus}
         syncingId={syncingId}
+        togglingId={togglingId}
       />
 
       {/* Add Integration Catalog Search Modal */}
