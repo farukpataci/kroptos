@@ -57,8 +57,11 @@ export abstract class MarketplaceConnector {
   /**
    * Provider-specific authentication headers. Defaults to none so a connector
    * that has not been wired to a real API yet still compiles.
+   *
+   * May return a promise: OAuth marketplaces have to exchange a refresh token
+   * for a short-lived access token before they can sign a request.
    */
-  protected authHeaders(): Record<string, string> {
+  protected authHeaders(): Record<string, string> | Promise<Record<string, string>> {
     return {};
   }
 
@@ -87,7 +90,7 @@ export abstract class MarketplaceConnector {
 
     const headers: Record<string, string> = {
       Accept: 'application/json',
-      ...this.authHeaders(),
+      ...(await this.authHeaders()),
       ...(options.headers ?? {}),
     };
     if (options.body !== undefined) {

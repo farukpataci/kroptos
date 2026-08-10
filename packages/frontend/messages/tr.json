@@ -1980,9 +1980,12 @@
         "amazon": {
           "sellerId": "Seller ID",
           "sellerIdHelp": "Seller Central > Hesap Bilgileri altındaki satıcı kimliğiniz.",
+          "clientId": "LWA Client ID",
+          "clientIdHelp": "Seller Central > Uygulama Geliştirme altında oluşturduğunuz LWA uygulamasının istemci kimliği.",
+          "clientSecret": "LWA Client Secret",
+          "refreshToken": "Refresh Token",
           "awsAccessKey": "AWS Access Key",
-          "awsSecretKey": "AWS Secret Key",
-          "refreshToken": "Refresh Token"
+          "awsSecretKey": "AWS Secret Key"
         },
         "ciceksepeti": {
           "apiKey": "API Key",

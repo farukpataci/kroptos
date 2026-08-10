@@ -25,11 +25,17 @@ export const amazonOverride: ProviderSettingsOverride = {
     'shipment.track',
     'returns.read',
   ],
+  // SP-API authenticates with Login with Amazon: clientId + clientSecret exchange
+  // the refresh token for a short-lived access token. The AWS key pair below was
+  // only ever needed for SigV4 request signing, which Amazon stopped requiring;
+  // it stays optional so already-saved integrations keep validating.
   credentials: [
     { key: 'sellerId', type: 'text', labelKey: cred('sellerId'), helpKey: cred('sellerIdHelp'), required: true },
-    { key: 'awsAccessKey', type: 'password', labelKey: cred('awsAccessKey'), required: true, secret: true },
-    { key: 'awsSecretKey', type: 'password', labelKey: cred('awsSecretKey'), required: true, secret: true },
+    { key: 'clientId', type: 'text', labelKey: cred('clientId'), helpKey: cred('clientIdHelp'), required: true },
+    { key: 'clientSecret', type: 'password', labelKey: cred('clientSecret'), required: true, secret: true },
     { key: 'refreshToken', type: 'password', labelKey: cred('refreshToken'), required: true, secret: true },
+    { key: 'awsAccessKey', type: 'password', labelKey: cred('awsAccessKey'), required: false, secret: true },
+    { key: 'awsSecretKey', type: 'password', labelKey: cred('awsSecretKey'), required: false, secret: true },
   ],
   // Amazon issues its own invoices through VAT Calculation Service; pushing
   // ours would produce duplicates.
