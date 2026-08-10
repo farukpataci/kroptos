@@ -1,12 +1,51 @@
 import { MarketplaceConnector } from '../core/MarketplaceConnector';
-import { ConnectionTestResult, MarketplaceOrder, MarketplaceProduct, StockUpdateResult } from '../core/MarketplaceTypes';
+import {
+  ConnectionTestResult,
+  MarketplaceOrder,
+  MarketplaceProduct,
+  StockUpdateResult,
+} from '../core/MarketplaceTypes';
 import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
 import { CicekSepetiMapper } from './CicekSepetiMapper';
-import { CicekSepetiOrder, CicekSepetiProduct } from './CicekSepetiTypes';
+import { CicekSepetiOrder, CicekSepetiOrderItem, CicekSepetiProduct } from './CicekSepetiTypes';
+
+/**
+ * ÇiçekSepeti exposes one gateway with no public sandbox twin, so both
+ * environments resolve to the same host.
+ *
+ * DOĞRULANAMADI: paths below are written from ÇiçekSepeti's API documentation
+ * and have not been exercised against a real seller account.
+ */
+const BASE_URL = 'https://apis.ciceksepeti.com';
+
+const PATHS = {
+  orders: () => '/api/v1/Order/GetOrders',
+  products: () => '/api/v1/Product/GetProducts',
+  stockUpdate: () => '/api/v1/Product/UpdateProductStock',
+  categories: () => '/api/v1/Categories',
+  categoryAttributes: (categoryId: string) => `/api/v1/Categories/${categoryId}/attributes`,
+};
+
+const PAGE_SIZE = 100;
+const MAX_PAGES = 50;
+
+interface CicekSepetiPage<T> {
+  /** ÇiçekSepeti nests its collections under a per-endpoint key. */
+  orderList?: T[];
+  productList?: T[];
+  items?: T[];
+  categories?: T[];
+  totalCount?: number;
+  pageCount?: number;
+}
 
 export class CicekSepetiConnector extends MarketplaceConnector {
   protected readonly defaultRateLimit = 100;
+
+  protected get displayName(): string {
+    return 'ÇiçekSepeti';
+  }
 
   constructor(
     credentials: Record<string, any>,
@@ -17,119 +56,189 @@ export class CicekSepetiConnector extends MarketplaceConnector {
     super('CICEKSEPETI', credentials, httpClient, rateLimiter, settings);
   }
 
-  private hasInvalidCredentials(): boolean {
-    return Object.values(this.credentials).some(
-      (val) => typeof val === 'string' && val.toLowerCase().includes('invalid'),
-    );
+  protected authHeaders(): Record<string, string> {
+    const { apiKey } = this.requireCredentials('apiKey');
+    // A single API key header; ÇiçekSepeti issues no secret alongside it.
+    return { 'x-api-key': apiKey };
+  }
+
+  private call<T>(
+    path: string,
+    options: {
+      method?: string;
+      query?: Record<string, string | number | boolean | undefined>;
+      body?: unknown;
+    } = {},
+  ): Promise<T> {
+    return this.send<T>(`${BASE_URL}${path}`, options);
+  }
+
+  private rows<T>(page: CicekSepetiPage<T> | undefined, key: 'orderList' | 'productList'): T[] {
+    return page?.[key] ?? page?.items ?? [];
+  }
+
+  private async fetchAllPages<T>(
+    path: string,
+    key: 'orderList' | 'productList',
+    query: Record<string, string | number | undefined>,
+  ): Promise<T[]> {
+    const collected: T[] = [];
+    let page = 0;
+    let pageCount = 1;
+
+    while (page < pageCount && page < MAX_PAGES) {
+      const result = await this.call<CicekSepetiPage<T>>(path, {
+        query: { ...query, page, pageSize: PAGE_SIZE },
+      });
+
+      const rows = this.rows(result, key);
+      collected.push(...rows);
+      pageCount = Number(result?.pageCount) || 1;
+      page++;
+
+      // A short page ends the walk even when pageCount is absent or wrong.
+      if (rows.length < PAGE_SIZE) break;
+    }
+
+    return collected;
   }
 
   async testConnection(): Promise<ConnectionTestResult> {
-    const startTime = Date.now();
-    await this.throttle();
+    return this.probe(async () => {
+      this.requireCredentials('apiKey');
+      const result = await this.call<CicekSepetiPage<unknown>>(PATHS.products(), {
+        query: { page: 0, pageSize: 1 },
+      });
 
-    if (this.hasInvalidCredentials()) {
-      return {
-        success: false,
-        message: 'ÇiçekSepeti API bağlantısı başarısız: Geçersiz x-api-key',
-        durationMs: Date.now() - startTime,
-      };
-    }
-
-    return {
-      success: true,
-      message: 'ÇiçekSepeti bağlantısı başarıyla doğrulandı',
-      durationMs: Date.now() - startTime,
-    };
+      const total = Number(result?.totalCount);
+      return Number.isFinite(total)
+        ? `ÇiçekSepeti bağlantısı doğrulandı. Satıcı hesabında ${total} ürün görüldü.`
+        : 'ÇiçekSepeti bağlantısı doğrulandı.';
+    });
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
-    await this.throttle();
+    this.requireCredentials('apiKey');
 
-    if (this.hasInvalidCredentials()) {
-      throw new Error('CicekSepeti API Authentication Failed');
-    }
+    const backfillDays = Number(this.setting<number>('orders.backfillDays', 7));
+    const startDate = new Date(Date.now() - Math.max(0, backfillDays) * 24 * 60 * 60 * 1000);
 
-    const mockCicekSepetiOrders: CicekSepetiOrder[] = [
-      {
-        id: 5001,
-        orderCode: 'CS-444455556',
-        receiverName: 'Zeynep Yılmaz',
-        receiverPhone: '+905051234567',
-        address: 'Barbaros Bulvarı No:12 Daire:4',
-        city: 'İstanbul',
-        district: 'Beşiktaş',
-        status: 'Created',
-        totalPrice: 349.0,
-        currency: 'TRY',
-        items: [
-          {
-            variantCode: 'CS-FLWR-RED-ROSE',
-            name: 'Kırmızı Gül Buketi - 11 Adet',
-            quantity: 1,
-            price: 349.0,
-          },
-        ],
-      },
-    ];
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.orders(), 'orderList', {
+      startDate: startDate.toISOString(),
+      endDate: new Date().toISOString(),
+    });
 
-    return mockCicekSepetiOrders.map((o) => CicekSepetiMapper.toUnifiedOrder(o));
+    const wanted = this.setting<string[]>('orders.importStatuses', ['created', 'picking', 'shipped']);
+    const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
+
+    return raw
+      .map((order) => this.toCicekSepetiOrder(order))
+      .filter((order) => wantedSet.size === 0 || wantedSet.has(order.status.toLowerCase()))
+      .map((order) => CicekSepetiMapper.toUnifiedOrder(order));
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    await this.throttle();
+    this.requireCredentials('apiKey');
 
-    if (this.hasInvalidCredentials()) {
-      throw new Error('CicekSepeti API Authentication Failed');
-    }
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(), 'productList', {});
 
-    const mockCicekSepetiProducts: CicekSepetiProduct[] = [
-      {
-        stockCode: 'CS-FLWR-RED-ROSE',
-        name: 'Kırmızı Gül Buketi - 11 Adet',
-        description: 'Özenle hazırlanmış kırmızı gül aranjmanı.',
-        price: 349.0,
-        stock: 50,
-        mainImage: 'https://images.ciceksepeti.com/roses.jpg',
-        barcode: '868000552211',
-      },
-    ];
-
-    return mockCicekSepetiProducts.map((p) => CicekSepetiMapper.toUnifiedProduct(p));
+    return raw.map((product) => CicekSepetiMapper.toUnifiedProduct(this.toCicekSepetiProduct(product)));
   }
 
+  /** ÇiçekSepeti addresses inventory by the seller's stock code. */
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    await this.throttle();
+    try {
+      this.requireCredentials('apiKey');
 
-    if (this.hasInvalidCredentials()) {
+      await this.call<unknown>(PATHS.stockUpdate(), {
+        method: 'POST',
+        body: { products: [{ stockCode: sku, stockQuantity: quantity }] },
+      });
+
+      return { sku, quantity, success: true };
+    } catch (error: any) {
       return {
         sku,
         quantity,
         success: false,
-        error: 'CicekSepeti API Authentication Failed',
+        error: error?.message || 'ÇiçekSepeti stok güncellemesi başarısız',
       };
     }
-
-    if (sku.toLowerCase().includes('error')) {
-      return {
-        sku,
-        quantity,
-        success: false,
-        error: `ÇiçekSepeti API error: SKU '${sku}' is not active or could not be found.`,
-      };
-    }
-
-    return {
-      sku,
-      quantity,
-      success: true,
-    };
   }
 
   async getCategories(): Promise<any[]> {
-    return [];
+    const result = await this.call<CicekSepetiPage<any>>(PATHS.categories());
+    return result?.categories ?? result?.items ?? [];
   }
 
   async getCategoryAttributes(categoryId: string): Promise<any> {
-    return { categoryAttributes: [] };
+    return this.call<any>(PATHS.categoryAttributes(categoryId));
+  }
+
+  // --------------------------------------------------------------------------
+  // Response normalisation
+  // --------------------------------------------------------------------------
+
+  /**
+   * CicekSepetiMapper compares against capitalised status names, so incoming
+   * values are folded to that spelling instead of widening the mapper.
+   */
+  private toStatusName(raw: unknown): string {
+    switch (String(raw ?? '').toLowerCase()) {
+      case 'shipped':
+      case 'intransit':
+        return 'Shipped';
+      case 'delivered':
+      case 'completed':
+        return 'Delivered';
+      case 'cancelled':
+      case 'canceled':
+        return 'Cancelled';
+      default:
+        return 'Created';
+    }
+  }
+
+  private toCicekSepetiOrder(raw: Record<string, any>): CicekSepetiOrder {
+    const items: CicekSepetiOrderItem[] = (raw.items ?? raw.orderItems ?? raw.products ?? []).map(
+      (item: Record<string, any>) => ({
+        variantCode: item.variantCode ?? item.stockCode ?? item.sku ?? '',
+        name: item.name ?? item.productName ?? '',
+        quantity: Number(item.quantity) || 0,
+        price: Number(item.price ?? item.salePrice ?? 0),
+      }),
+    );
+
+    return {
+      id: Number(raw.id ?? raw.orderId) || 0,
+      orderCode: raw.orderCode ?? raw.orderNumber ?? String(raw.id ?? ''),
+      receiverName: raw.receiverName ?? raw.customerName ?? '',
+      receiverPhone: raw.receiverPhone ?? raw.phone,
+      address: raw.address ?? raw.deliveryAddress ?? '',
+      city: raw.city ?? '',
+      district: raw.district ?? raw.town ?? '',
+      status: this.toStatusName(raw.status ?? raw.orderStatus),
+      totalPrice: Number(raw.totalPrice ?? raw.totalAmount ?? 0),
+      currency: raw.currency ?? 'TRY',
+      items,
+    };
+  }
+
+  private toCicekSepetiProduct(raw: Record<string, any>): CicekSepetiProduct {
+    const image = Array.isArray(raw.images)
+      ? typeof raw.images[0] === 'string'
+        ? raw.images[0]
+        : raw.images[0]?.url
+      : raw.mainImage ?? raw.image;
+
+    return {
+      stockCode: raw.stockCode ?? raw.productCode ?? raw.sku ?? '',
+      name: raw.name ?? raw.productName ?? raw.title ?? '',
+      description: raw.description,
+      price: Number(raw.price ?? raw.salePrice ?? 0),
+      stock: Number(raw.stock ?? raw.stockQuantity ?? raw.quantity) || 0,
+      mainImage: image,
+      barcode: raw.barcode,
+    };
   }
 }
