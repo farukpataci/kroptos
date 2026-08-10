@@ -26,10 +26,21 @@ describe('MarketplaceConnectorFactory / registry agreement', () => {
     expect(registered.length).toBeGreaterThan(0);
   });
 
+  /**
+   * Credentials are built from the provider's own manifest rather than a fixed
+   * literal, so a connector that validates a field at construction time (a
+   * storefront country, say) gets a value its manifest actually allows.
+   */
+  const credentialsFor = (provider: string): Record<string, string> => {
+    const creds: Record<string, string> = {};
+    for (const field of registry.getManifest(provider).credentials) {
+      creds[field.key] = field.options?.length ? String(field.options[0].value) : 'x';
+    }
+    return creds;
+  };
+
   it.each(registered)('builds a connector for the registered provider %s', (provider) => {
-    // Credentials are not inspected at construction time; a connector that
-    // cannot even be instantiated is the failure this guards against.
-    const connector = factory.create(provider, { apiKey: 'x', apiSecret: 'y' });
+    const connector = factory.create(provider, credentialsFor(provider));
     expect(connector).toBeDefined();
   });
 

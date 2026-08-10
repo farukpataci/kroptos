@@ -35,9 +35,19 @@ export abstract class MarketplaceConnector {
   /** Used when no settings row exists yet; overridden per marketplace. */
   protected readonly defaultRateLimit: number = 60;
 
+  /**
+   * Throttling bucket. Defaults to the provider name, which is right when one
+   * provider means one upstream quota. A connector whose quota is really per
+   * storefront or per account overrides this — otherwise a busy scope stalls a
+   * quiet one that shares the name.
+   */
+  protected get rateLimitKey(): string {
+    return this.provider;
+  }
+
   /** Convenience wrapper so call sites do not repeat the window. */
   protected throttle(): Promise<void> {
-    return this.rateLimiter.throttle(this.provider, this.rateLimitPerMinute, 60000);
+    return this.rateLimiter.throttle(this.rateLimitKey, this.rateLimitPerMinute, 60000);
   }
 
   /** Which environment the manifest's `general.environment` field selected. */

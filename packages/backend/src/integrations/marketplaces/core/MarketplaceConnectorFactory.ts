@@ -3,6 +3,7 @@ import { MarketplaceConnector } from './MarketplaceConnector';
 import { MarketplaceHttpClient } from './MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from './MarketplaceRateLimiter';
 import { TrendyolConnector } from '../trendyol/TrendyolConnector';
+import { TrendyolGlobalConnector } from '../trendyol_global/TrendyolGlobalConnector';
 import { HepsiburadaConnector } from '../hepsiburada/HepsiburadaConnector';
 import { AmazonConnector } from '../amazon/AmazonConnector';
 import { N11Connector } from '../n11/N11Connector';
@@ -33,6 +34,8 @@ export class MarketplaceConnectorFactory {
     switch (p) {
       case 'TRENDYOL':
         return new TrendyolConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'TRENDYOL_GLOBAL':
+        return new TrendyolGlobalConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'HEPSIBURADA':
         return new HepsiburadaConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'AMAZON':
