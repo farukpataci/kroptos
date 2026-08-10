@@ -16,6 +16,7 @@ import type { IntegrationStatus, ProviderSettingsManifest, SettingsSection } fro
 import { useIntegrationSettings } from '../hooks/useIntegrationSettings';
 import { SettingsSchemaRenderer } from './SettingsSchemaRenderer';
 import { SettingsFieldContext } from './fields';
+import { wizardProgress, type WizardPhase } from './wizardProgress';
 
 interface Integration {
   id: string;
@@ -30,7 +31,7 @@ interface Integration {
  * re-entered at the first incomplete step, so abandoning it halfway loses
  * nothing.
  */
-type Phase = 'credentials' | 'testing' | 'configure' | 'done';
+type Phase = WizardPhase;
 
 interface Props {
   provider: string;
@@ -196,9 +197,11 @@ export function IntegrationSetupWizard({
 
   // ------------------------------------------------------------------- render
 
-  const totalSteps = 3 + wizardSteps.length;
-  const currentNumber =
-    phase === 'credentials' ? 2 : phase === 'testing' ? 3 : phase === 'done' ? totalSteps : 4 + stepIndex;
+  const { current: currentNumber, total: totalSteps } = wizardProgress(
+    phase,
+    stepIndex,
+    wizardSteps.length,
+  );
 
   return (
     <SettingsFieldContext.Provider value={{ integrationId: integration?.id ?? null }}>
