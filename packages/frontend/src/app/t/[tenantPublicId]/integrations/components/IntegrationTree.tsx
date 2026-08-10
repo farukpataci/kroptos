@@ -9,13 +9,14 @@ import {
   TruckIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import type { IntegrationStatus } from '@kroptos/shared';
 
 interface Integration {
   id: string;
   name: string;
   provider: string;
   providerType: string;
-  status: string;
+  status: IntegrationStatus;
 }
 
 export function IntegrationTree() {

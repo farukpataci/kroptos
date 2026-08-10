@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsObject, IsIn } from 'class-validator';
+import { INTEGRATION_STATUSES, IntegrationStatus } from '@kroptos/shared';
 
 export class CreateIntegrationDto {
   @ApiProperty({ example: 'cuid-agency-id', description: 'Agency ID context' })
@@ -40,10 +41,14 @@ export class UpdateIntegrationDto {
   @IsOptional()
   name?: string;
 
-  @ApiPropertyOptional({ example: 'active', description: 'Updated status (active, inactive, error)' })
+  // Previously an unconstrained string: PATCH accepted any value and wrote it
+  // straight to the column, which is how a status no consumer has styling for
+  // could reach the UI.
+  @ApiPropertyOptional({ example: 'active', enum: INTEGRATION_STATUSES, description: 'Updated status' })
   @IsString()
+  @IsIn(INTEGRATION_STATUSES as readonly string[])
   @IsOptional()
-  status?: string;
+  status?: IntegrationStatus;
 
   @ApiPropertyOptional({ example: { apiKey: 'new-key' }, description: 'Updated credentials dictionary to encrypt' })
   @IsObject()

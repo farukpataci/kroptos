@@ -11,6 +11,7 @@ import {
   LinkIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import type { IntegrationStatus } from '@kroptos/shared';
 import { useIntegrationSettings } from '../hooks/useIntegrationSettings';
 import { SettingsSchemaRenderer } from './SettingsSchemaRenderer';
 import { SettingsDirtyBar } from './SettingsDirtyBar';
@@ -28,7 +29,7 @@ function TabIcon({ name }: { name?: string }) {
 interface Props {
   integrationId: string;
   integrationName: string;
-  status: string;
+  status: IntegrationStatus;
   onClose: () => void;
   onTestConnection?: () => void;
   isTesting?: boolean;

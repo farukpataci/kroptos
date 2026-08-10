@@ -11,13 +11,14 @@ import {
   DocumentTextIcon,
   Squares2X2Icon,
 } from '@heroicons/react/24/outline';
+import type { IntegrationStatus } from '@kroptos/shared';
 
 export interface ActiveIntegrationItem {
   id: string;
   name: string;
   provider: string;
   providerType: string;
-  status: string;
+  status: IntegrationStatus;
   lastSyncAt?: string;
   store?: { id: string; name: string } | null;
   setting?: { isConfigured: boolean; completedSteps: string[] } | null;

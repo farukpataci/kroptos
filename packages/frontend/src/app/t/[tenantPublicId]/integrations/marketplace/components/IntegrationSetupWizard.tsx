@@ -12,7 +12,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import type { ProviderSettingsManifest, SettingsSection } from '@kroptos/shared';
+import type { IntegrationStatus, ProviderSettingsManifest, SettingsSection } from '@kroptos/shared';
 import { useIntegrationSettings } from '../hooks/useIntegrationSettings';
 import { SettingsSchemaRenderer } from './SettingsSchemaRenderer';
 import { SettingsFieldContext } from './fields';
@@ -21,7 +21,7 @@ interface Integration {
   id: string;
   name: string;
   provider: string;
-  status: string;
+  status: IntegrationStatus;
 }
 
 /**
