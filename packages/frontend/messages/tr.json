@@ -2018,6 +2018,17 @@
           "refreshTokenHelp": "Etsy OAuth akışıyla bir kez alınır. Süresi dolduğunda yeni token alıp buraya yapıştırın.",
           "shopId": "Shop ID",
           "shopIdHelp": "Etsy mağaza kimliğiniz (yalnızca rakam)."
+        },
+        "pttavm": {
+          "apiKey": "API Key",
+          "apiKeyHelp": "PttAVM satıcı panelinde Entegrasyon Ayarları altında yer alır.",
+          "apiSecret": "API Secret"
+        },
+        "idefix": {
+          "vendorId": "Satıcı (Vendor) ID",
+          "vendorIdHelp": "idefix satıcı panelindeki satıcı kimliğiniz. Tüm istekler bu kimlikle kapsanır.",
+          "apiKey": "API Key",
+          "apiSecret": "API Secret"
         }
       },
       "mapping": {
