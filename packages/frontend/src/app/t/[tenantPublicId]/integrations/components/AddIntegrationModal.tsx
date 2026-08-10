@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   MagnifyingGlassIcon,
   XMarkIcon,
@@ -10,9 +10,12 @@ import {
   CpuChipIcon,
   DocumentTextIcon,
   CheckCircleIcon,
+  ClockIcon,
   PlusIcon,
   SparklesIcon,
 } from '@heroicons/react/24/outline';
+import type { ProviderSummary } from '@kroptos/shared';
+import { apiFetch } from '@/lib/api';
 
 export interface CatalogProvider {
   id: string;
@@ -374,8 +377,44 @@ export function AddIntegrationModal({
 }: AddIntegrationModalProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<CategoryTab>('all');
+  // `null` while the registry is still loading: until it answers we cannot tell
+  // a connectable provider from one that only exists in this list.
+  const [supportedMarketplaces, setSupportedMarketplaces] = useState<Set<string> | null>(null);
+
+  // The backend registry is the authority on which marketplaces can actually be
+  // connected. The catalogue used to assert this itself, which is how entries
+  // with no manifest kept offering a "Bağlantı Kur" button that dead-ended in a
+  // 400 from the schema endpoint.
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+
+    apiFetch<ProviderSummary[]>('/integrations/settings/providers')
+      .then((providers) => {
+        if (cancelled) return;
+        setSupportedMarketplaces(new Set(providers.map((p) => p.provider.toLowerCase())));
+      })
+      .catch(() => {
+        // A failed lookup must not present everything as connectable; an empty
+        // set degrades to "coming soon", which is the safe direction.
+        if (!cancelled) setSupportedMarketplaces(new Set());
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  /**
+   * Only marketplaces can be connected through this modal — the setup wizard
+   * resolves its form from the marketplace manifest registry, so an ERP, cargo,
+   * accounting or e-commerce entry has no schema to render. Those are shown as
+   * upcoming rather than removed, so the catalogue still says what is planned.
+   */
+  const isConnectable = (provider: CatalogProvider) =>
+    provider.category === 'marketplace' && (supportedMarketplaces?.has(provider.id) ?? false);
 
   const CATEGORY_TABS: { id: CategoryTab; label: string; icon: any; count: number }[] = [
     {
@@ -547,11 +586,17 @@ export function AddIntegrationModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {catGroup.items.map((provider) => {
                     const isConnected = connectedProviderIds.includes(provider.id);
+                    const connectable = isConnectable(provider);
+                    const isPending = supportedMarketplaces === null;
 
                     return (
                       <div
                         key={provider.id}
-                        className="group flex flex-col justify-between rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 transition-all duration-200 hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/5"
+                        className={`group flex flex-col justify-between rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 transition-all duration-200 ${
+                          connectable
+                            ? 'hover:border-blue-500/50 hover:shadow-lg hover:shadow-blue-500/5'
+                            : 'opacity-60'
+                        }`}
                       >
                         <div>
                           {/* Card Header & Badge */}
@@ -563,6 +608,11 @@ export function AddIntegrationModal({
                               <span className="flex items-center gap-1 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 px-2 py-0.5 text-[0.6875rem] font-bold border border-emerald-200 dark:border-emerald-800">
                                 <CheckCircleIcon className="h-3.5 w-3.5" />
                                 Bağlı
+                              </span>
+                            ) : isPending ? null : !connectable ? (
+                              <span className="flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 px-2 py-0.5 text-[0.6875rem] font-bold">
+                                <ClockIcon className="h-3.5 w-3.5" />
+                                Çok yakında
                               </span>
                             ) : provider.status === 'beta' ? (
                               <span className="rounded-full bg-purple-50 text-purple-600 px-2 py-0.5 text-[0.6875rem] font-bold">
@@ -602,14 +652,28 @@ export function AddIntegrationModal({
                               onSelectProvider(provider);
                               onClose();
                             }}
+                            disabled={!connectable && !isConnected}
+                            title={
+                              connectable || isConnected
+                                ? undefined
+                                : 'Bu sağlayıcı için bağlantı formu henüz hazır değil.'
+                            }
                             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-all ${
                               isConnected
                                 ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200'
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-blue-500/20'
+                                : connectable
+                                  ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm hover:shadow-blue-500/20'
+                                  : 'bg-slate-100 text-slate-400 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
                             }`}
                           >
-                            <PlusIcon className="h-3.5 w-3.5 stroke-[2.5]" />
-                            <span>{isConnected ? 'Ayarlar' : 'Bağlantı Kur'}</span>
+                            {connectable || isConnected ? (
+                              <PlusIcon className="h-3.5 w-3.5 stroke-[2.5]" />
+                            ) : (
+                              <ClockIcon className="h-3.5 w-3.5 stroke-[2.5]" />
+                            )}
+                            <span>
+                              {isConnected ? 'Ayarlar' : connectable ? 'Bağlantı Kur' : 'Çok yakında'}
+                            </span>
                           </button>
                         </div>
                       </div>
