@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react';
 import type { SettingsField } from '@kroptos/shared';
 import { useTranslations } from 'next-intl';
+import { useFieldText } from './useFieldText';
 
 export interface FieldProps<T = unknown> {
   field: SettingsField;
@@ -34,19 +35,25 @@ export function FieldShell({
   htmlFor?: string;
 }) {
   const t = useTranslations();
+  const text = useFieldText();
 
   return (
-    <div className={field.colSpan === 2 ? 'md:col-span-2' : undefined}>
-      <div className="mb-1.5 flex items-center justify-between gap-2">
+    // `min-w-0` is what stops a long label from pushing the cell wider than its
+    // grid track: without it a grid item is sized by its content and overflows
+    // into the neighbouring column instead of wrapping.
+    <div className={`min-w-0 ${field.colSpan === 2 ? 'md:col-span-2' : ''}`}>
+      <div className="mb-1.5 flex items-start justify-between gap-2">
         <label
           htmlFor={htmlFor}
-          className="block text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary"
+          // `break-words` handles a single unbroken token (a raw message key,
+          // say) that no amount of wrapping would otherwise fit.
+          className="block min-w-0 flex-1 text-[0.6875rem] font-semibold uppercase tracking-wider break-words text-kp-text-tertiary"
         >
-          {t(field.labelKey)}
+          {text(field.labelKey)}
           {field.required && <span className="ml-1 text-kp-danger">*</span>}
         </label>
         {field.badgeKey && (
-          <span className="rounded-kp-md border border-kp-border bg-kp-bg-tertiary px-1.5 py-0.5 text-[0.5625rem] font-bold uppercase tracking-wide text-kp-text-tertiary">
+          <span className="shrink-0 rounded-kp-md border border-kp-border bg-kp-bg-tertiary px-1.5 py-0.5 text-[0.5625rem] font-bold uppercase tracking-wide text-kp-text-tertiary">
             {t(`integrations.settings.badges.${field.badgeKey}`)}
           </span>
         )}
@@ -55,9 +62,13 @@ export function FieldShell({
       {children}
 
       {field.helpKey && !error && (
-        <p className="mt-1.5 text-[0.6875rem] leading-relaxed text-kp-text-tertiary">{t(field.helpKey)}</p>
+        <p className="mt-1.5 text-[0.6875rem] leading-relaxed break-words text-kp-text-tertiary">
+          {text(field.helpKey)}
+        </p>
       )}
-      {error && <p className="mt-1.5 text-[0.6875rem] font-semibold text-kp-danger">{error}</p>}
+      {error && (
+        <p className="mt-1.5 text-[0.6875rem] font-semibold break-words text-kp-danger">{error}</p>
+      )}
     </div>
   );
 }
