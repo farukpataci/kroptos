@@ -73,6 +73,27 @@ export function evaluateCondition(
   }
 }
 
+/**
+ * `evaluateCondition` answers true for a missing condition, which is right for
+ * visibility and backwards for everything else. Leaving that default at the
+ * call site is what made every field without a `disabledWhen` render disabled.
+ * These two put the default in the name instead, so picking the wrong one is a
+ * visible mistake rather than a silent inversion.
+ */
+export function isVisible(
+  condition: SettingsCondition | SettingsCondition[] | undefined,
+  values: Record<string, unknown>,
+): boolean {
+  return condition ? evaluateCondition(condition, values) : true;
+}
+
+export function isDisabled(
+  condition: SettingsCondition | SettingsCondition[] | undefined,
+  values: Record<string, unknown>,
+): boolean {
+  return condition ? evaluateCondition(condition, values) : false;
+}
+
 /** Every field in the manifest, flattened across tabs and sections. */
 export function collectFields(manifest: ProviderSettingsManifest): SettingsField[] {
   const fields: SettingsField[] = [];

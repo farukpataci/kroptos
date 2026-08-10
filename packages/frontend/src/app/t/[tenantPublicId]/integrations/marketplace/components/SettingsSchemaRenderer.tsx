@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProviderSettingsManifest, SettingsField, SettingsSection } from '@kroptos/shared';
-import { evaluateCondition } from '@kroptos/shared';
+import { isDisabled, isVisible } from '@kroptos/shared';
 import { FIELD_REGISTRY } from './fields';
 import { SettingsSectionCard } from './SettingsSectionCard';
 
@@ -54,10 +54,7 @@ function FieldRenderer({
       field={field}
       value={values[field.key]}
       error={errors[field.key]}
-      // `evaluateCondition` treats a missing condition as true — right for
-      // `visibleWhen`, inverted for `disabledWhen`. No condition means the
-      // field stays editable, so the absent case is checked before evaluating.
-      disabled={disabled || (field.disabledWhen ? evaluateCondition(field.disabledWhen, values) : false)}
+      disabled={disabled || isDisabled(field.disabledWhen, values)}
       onChange={(next: unknown) => onChange(field.key, next)}
     />
   );
@@ -79,15 +76,13 @@ export function SettingsSchemaRenderer({
   onResetSection,
 }: Props) {
   const visibleSections = resolveSections(manifest, activeTabId, sections).filter((section) =>
-    evaluateCondition(section.visibleWhen, values),
+    isVisible(section.visibleWhen, values),
   );
 
   return (
     <div className="space-y-5">
       {visibleSections.map((section) => {
-        const fields = section.fields.filter((field) =>
-          evaluateCondition(field.visibleWhen, values),
-        );
+        const fields = section.fields.filter((field) => isVisible(field.visibleWhen, values));
         if (fields.length === 0) return null;
 
         const hasError = fields.some((field) => errors[field.key]);
