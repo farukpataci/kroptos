@@ -1995,6 +1995,14 @@
           "apiKey": "API Key",
           "apiKeyHelp": "Pazarama İş Ortağım panelinde Entegrasyon > API Bilgileri altında yer alır.",
           "secretKey": "Secret Key"
+        },
+        "etsy": {
+          "keystring": "API Keystring",
+          "keystringHelp": "Etsy Developers > Your Apps altındaki uygulamanızın keystring değeri.",
+          "refreshToken": "Refresh Token",
+          "refreshTokenHelp": "Etsy OAuth akışıyla bir kez alınır. Süresi dolduğunda yeni token alıp buraya yapıştırın.",
+          "shopId": "Shop ID",
+          "shopIdHelp": "Etsy mağaza kimliğiniz (yalnızca rakam)."
         }
       },
       "mapping": {

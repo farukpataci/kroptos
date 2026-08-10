@@ -8,6 +8,7 @@ import { AmazonConnector } from '../amazon/AmazonConnector';
 import { N11Connector } from '../n11/N11Connector';
 import { CicekSepetiConnector } from '../ciceksepeti/CicekSepetiConnector';
 import { PazaramaConnector } from '../pazarama/PazaramaConnector';
+import { EtsyConnector } from '../etsy/EtsyConnector';
 
 @Injectable()
 export class MarketplaceConnectorFactory {
@@ -40,6 +41,8 @@ export class MarketplaceConnectorFactory {
         return new CicekSepetiConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'PAZARAMA':
         return new PazaramaConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'ETSY':
+        return new EtsyConnector(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }
