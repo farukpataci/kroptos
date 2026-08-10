@@ -1282,6 +1282,18 @@
           "gifting": {
             "title": "Hediye Seçenekleri"
           }
+        },
+        "pazarama": {
+          "listing": {
+            "title": "Ürün Listeleme",
+            "description": "Pazarama’ya gönderilecek ürünlerin hangi koşullarda listeleneceği."
+          }
+        },
+        "etsy": {
+          "listing": {
+            "title": "İlan Ayarları",
+            "description": "Etsy’de oluşturulacak ilanların varsayılan durumu."
+          }
         }
       },
       "fields": {
@@ -1734,6 +1746,24 @@
             "label": "Not Kartı Desteği",
             "help": "Alıcının hediye notu ekleyebilmesine izin verilir."
           }
+        },
+        "trendyol_global": {
+          "country": {
+            "label": "Ülke / Mağaza",
+            "help": "Bağlantının hangi Trendyol yurt dışı mağazasına kurulacağı. Kod, satıcı panelinizdeki storefront (mağaza) bilgisiyle aynıdır. Her ülke için ayrı bağlantı kurulur."
+          }
+        },
+        "pazarama": {
+          "onlyApprovedProducts": {
+            "label": "Yalnızca onaylı ürünleri gönder",
+            "help": "Açıkken, Pazarama’da onay sürecini tamamlamamış ürünler senkronizasyona dahil edilmez."
+          }
+        },
+        "etsy": {
+          "listingState": {
+            "label": "İlan durumu",
+            "help": "Yeni gönderilen ürünlerin Etsy’de hangi durumda oluşturulacağı."
+          }
         }
       },
       "options": {
@@ -1973,6 +2003,22 @@
             "antalya": "Antalya",
             "adana": "Adana"
           }
+        },
+        "trendyol_global": {
+          "country": {
+            "SA": "Suudi Arabistan (SA)",
+            "AE": "Birleşik Arap Emirlikleri (AE)",
+            "KW": "Kuveyt (KW)",
+            "RO": "Romanya (RO)",
+            "GR": "Yunanistan (GR)"
+          }
+        },
+        "etsy": {
+          "listingState": {
+            "active": "Aktif (hemen yayında)",
+            "draft": "Taslak (elle yayınlanır)",
+            "inactive": "Pasif"
+          }
         }
       },
       "credentials": {
@@ -2027,6 +2073,12 @@
         "idefix": {
           "vendorId": "Satıcı (Vendor) ID",
           "vendorIdHelp": "idefix satıcı panelindeki satıcı kimliğiniz. Tüm istekler bu kimlikle kapsanır.",
+          "apiKey": "API Key",
+          "apiSecret": "API Secret"
+        },
+        "trendyol_global": {
+          "sellerId": "Satıcı ID (Supplier ID)",
+          "sellerIdHelp": "Trendyol satıcı panelinde Hesap Bilgileri > Entegrasyon Bilgileri altında yer alır.",
           "apiKey": "API Key",
           "apiSecret": "API Secret"
         }
