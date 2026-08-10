@@ -31,6 +31,31 @@ export const trendyolOverride: ProviderSettingsOverride = {
   ],
   addSections: [
     {
+      tabId: 'general',
+      section: {
+        id: 'trendyol.marketplace',
+        titleKey: `${I}.sections.trendyol.marketplace.title`,
+        descriptionKey: `${I}.sections.trendyol.marketplace.description`,
+        icon: 'GlobeAltIcon',
+        fields: [
+          {
+            // One Trendyol account can sell on Türkiye and on the international
+            // storefronts; the connector routes by this rather than asking the
+            // seller to create a second integration.
+            key: 'trendyol.marketplace',
+            type: 'select',
+            labelKey: label('trendyol.marketplace'),
+            helpKey: help('trendyol.marketplace'),
+            default: 'tr',
+            options: ['tr', 'int', 'az', 'de', 'gb'].map((value) => ({
+              value,
+              labelKey: option('trendyol.marketplace', value),
+            })),
+          },
+        ],
+      },
+    },
+    {
       tabId: 'fulfillment',
       section: {
         id: 'trendyol.shipment',

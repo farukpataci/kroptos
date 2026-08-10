@@ -1238,6 +1238,10 @@
           "shipment": {
             "title": "Trendyol Gönderi Ayarları",
             "description": "Trendyol satıcı panelinizde tanımlı adres ve gönderim seçenekleri."
+          },
+          "marketplace": {
+            "title": "Pazar Seçimi",
+            "description": "Trendyol satıcı hesabınızın hangi pazarına bağlanılacağını seçin."
           }
         },
         "hb": {
@@ -1654,6 +1658,10 @@
           "buyboxStrategy": {
             "label": "Buybox Stratejisi",
             "help": "Buybox kaybedildiğinde fiyatın nasıl güncelleneceği."
+          },
+          "marketplace": {
+            "label": "Pazar",
+            "help": "Bu bağlantının hangi Trendyol pazarına ait siparişleri ve ürünleri işleyeceği. Tek satıcı hesabıyla birden fazla pazara satış yapıyorsanız her pazar için ayrı entegrasyon kurun."
           }
         },
         "hb": {
@@ -1912,6 +1920,13 @@
             "off": "Kapalı",
             "matchLowest": "En düşük fiyatı yakala",
             "minMargin": "Marj sınırına kadar in"
+          },
+          "marketplace": {
+            "tr": "Türkiye",
+            "int": "Trendyol Global (Uluslararası)",
+            "az": "Azerbaycan",
+            "de": "Almanya",
+            "gb": "Birleşik Krallık"
           }
         },
         "hb": {

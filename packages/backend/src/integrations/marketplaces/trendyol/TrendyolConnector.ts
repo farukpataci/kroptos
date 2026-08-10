@@ -22,6 +22,23 @@ const BASE_URLS: Record<string, string> = {
   sandbox: 'https://stageapigw.trendyol.com',
 };
 
+/**
+ * One Trendyol seller account can serve Türkiye and the international
+ * storefronts. The gateway is shared; what changes is the storefront the call
+ * is scoped to, so a marketplace is a query scope rather than a second
+ * integration.
+ *
+ * DOĞRULANAMADI: storefront codes are written from Trendyol's international
+ * seller documentation and have not been exercised against a real account.
+ */
+const MARKETPLACES: Record<string, { storefrontCode?: string; label: string }> = {
+  tr: { label: 'Türkiye' },
+  int: { storefrontCode: 'INT', label: 'Trendyol Global' },
+  az: { storefrontCode: 'AZ', label: 'Azerbaycan' },
+  de: { storefrontCode: 'DE', label: 'Almanya' },
+  gb: { storefrontCode: 'GB', label: 'Birleşik Krallık' },
+};
+
 /** Every Trendyol path in one place, so a gateway version bump lands here only. */
 const PATHS = {
   orders: (sellerId: string) => `/integration/order/sellers/${sellerId}/orders`,
@@ -63,6 +80,21 @@ export class TrendyolConnector extends MarketplaceConnector {
 
   private get baseUrl(): string {
     return BASE_URLS[this.environment] ?? BASE_URLS.production;
+  }
+
+  private get marketplace(): { storefrontCode?: string; label: string } {
+    const selected = String(this.setting<string>('trendyol.marketplace', 'tr')).toLowerCase();
+    return MARKETPLACES[selected] ?? MARKETPLACES.tr;
+  }
+
+  /**
+   * Storefront scope for order and product reads. Türkiye is the account's home
+   * storefront and takes no parameter, so the key is omitted rather than sent
+   * empty — an empty value would filter everything out.
+   */
+  private get storefrontQuery(): Record<string, string | undefined> {
+    const code = this.marketplace.storefrontCode;
+    return code ? { storeFrontCode: code } : {};
   }
 
   protected authHeaders(): Record<string, string> {
@@ -110,13 +142,14 @@ export class TrendyolConnector extends MarketplaceConnector {
       // Cheapest authenticated read: one product row proves the credentials,
       // the seller id and the environment all line up.
       const result = await this.call<TrendyolPage<unknown>>(PATHS.products(sellerId), {
-        query: { page: 0, size: 1 },
+        query: { page: 0, size: 1, ...this.storefrontQuery },
       });
 
       const total = Number(result?.totalElements);
+      const where = this.marketplace.label;
       return Number.isFinite(total)
-        ? `Trendyol bağlantısı doğrulandı. Satıcı hesabında ${total} ürün görüldü.`
-        : 'Trendyol bağlantısı doğrulandı.';
+        ? `Trendyol bağlantısı doğrulandı (${where}). Satıcı hesabında ${total} ürün görüldü.`
+        : `Trendyol bağlantısı doğrulandı (${where}).`;
     });
   }
 
@@ -129,6 +162,7 @@ export class TrendyolConnector extends MarketplaceConnector {
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.orders(sellerId), {
       startDate,
       endDate: Date.now(),
+      ...this.storefrontQuery,
     });
 
     // The status filter is applied here rather than as a query parameter: the
@@ -146,7 +180,10 @@ export class TrendyolConnector extends MarketplaceConnector {
   async getProducts(): Promise<MarketplaceProduct[]> {
     const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
 
-    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(sellerId), {});
+    const raw = await this.fetchAllPages<Record<string, any>>(
+      PATHS.products(sellerId),
+      this.storefrontQuery,
+    );
 
     return raw.map((product) => TrendyolMapper.toUnifiedProduct(this.toTrendyolProduct(product)));
   }

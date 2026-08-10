@@ -53,6 +53,45 @@ describe('TrendyolConnector', () => {
       expect(lastCall()[0]).toContain('https://stageapigw.trendyol.com');
     });
 
+    it('should not scope to a storefront for the Türkiye marketplace', async () => {
+      httpClient.request.mockResolvedValue({ content: [], totalPages: 1 });
+
+      await build().getProducts();
+
+      // An empty storeFrontCode would filter every row out, so the key is left
+      // off entirely rather than sent blank.
+      expect(lastCall()[0]).not.toContain('storeFrontCode');
+    });
+
+    it('should scope orders and products to the selected international storefront', async () => {
+      httpClient.request.mockResolvedValue({ content: [], totalPages: 1 });
+
+      const connector = build({ 'trendyol.marketplace': 'de' });
+      await connector.getProducts();
+      expect(lastCall()[0]).toContain('storeFrontCode=DE');
+
+      await connector.getOrders();
+      expect(lastCall()[0]).toContain('storeFrontCode=DE');
+    });
+
+    it('should name the marketplace in the connection test message', async () => {
+      httpClient.request.mockResolvedValue({ content: [], totalElements: 4, totalPages: 1 });
+
+      const result = await build({ 'trendyol.marketplace': 'int' }).testConnection();
+
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Trendyol Global');
+      expect(lastCall()[0]).toContain('storeFrontCode=INT');
+    });
+
+    it('should fall back to Türkiye when the marketplace value is unknown', async () => {
+      httpClient.request.mockResolvedValue({ content: [], totalPages: 1 });
+
+      await build({ 'trendyol.marketplace': 'atlantis' }).getProducts();
+
+      expect(lastCall()[0]).not.toContain('storeFrontCode');
+    });
+
     it('should fail before any request when a credential field is empty', async () => {
       const result = await build({}, { sellerId: '123456', apiKey: '', apiSecret: 'x' }).testConnection();
 
