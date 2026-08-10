@@ -6,6 +6,7 @@ import type {
 } from '@kroptos/shared';
 import { resolveManifest } from './manifest.merge';
 import { trendyolOverride } from './providers/trendyol.settings';
+import { trendyolGlobalOverride } from './providers/trendyol_global.settings';
 import { hepsiburadaOverride } from './providers/hepsiburada.settings';
 import { n11Override } from './providers/n11.settings';
 import { amazonOverride } from './providers/amazon.settings';
@@ -22,6 +23,7 @@ import { idefixOverride } from './providers/idefix.settings';
  */
 const OVERRIDES: ProviderSettingsOverride[] = [
   trendyolOverride,
+  trendyolGlobalOverride,
   hepsiburadaOverride,
   n11Override,
   amazonOverride,

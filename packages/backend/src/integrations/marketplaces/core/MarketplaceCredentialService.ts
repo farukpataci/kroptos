@@ -39,5 +39,25 @@ export class MarketplaceCredentialService {
         `Missing required credentials for ${provider}: ${missingKeys.join(', ')}`,
       );
     }
+
+    // A field that declares options accepts only those options. Without this a
+    // storefront code the marketplace has never heard of is stored happily and
+    // surfaces later as a 404 — or, worse, as another storefront's data. Written
+    // against the manifest rather than one provider so every enumerated
+    // credential is covered by the same rule.
+    for (const field of manifest.credentials) {
+      if (!field.options?.length) continue;
+
+      const value = credentials[field.key];
+      if (value === undefined || value === null || value === '') continue;
+
+      const allowed = field.options.map((opt) => opt.value);
+      if (!allowed.includes(value)) {
+        throw new BadRequestException(
+          `Invalid value for ${provider}.${field.key}: '${value}'. ` +
+            `Supported values: ${allowed.join(', ')}`,
+        );
+      }
+    }
   }
 }

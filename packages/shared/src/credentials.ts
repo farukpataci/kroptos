@@ -27,6 +27,11 @@ export const CREDENTIAL_MASK = '••••••••••••';
  */
 export const PUBLIC_CREDENTIAL_KEYS = [
   'apiUrl',
+  // Which storefront/country an integration is pointed at. Collected with the
+  // credentials because the connector needs it from the first request, but it
+  // authenticates nothing — and masking it would leave the UI unable to show
+  // which country a connection belongs to.
+  'country',
   'firmNo',
   'merchantId',
   'periodNo',
