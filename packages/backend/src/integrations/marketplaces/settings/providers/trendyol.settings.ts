@@ -29,32 +29,11 @@ export const trendyolOverride: ProviderSettingsOverride = {
     { key: 'apiKey', type: 'password', labelKey: cred('apiKey'), required: true, secret: true },
     { key: 'apiSecret', type: 'password', labelKey: cred('apiSecret'), required: true, secret: true },
   ],
+  // No storefront selector: this provider is Türkiye. Selling on an
+  // international storefront is the `trendyol_global` provider, which gets its
+  // own integration record per country so that category mappings, rate limits
+  // and connection status stay separated.
   addSections: [
-    {
-      tabId: 'general',
-      section: {
-        id: 'trendyol.marketplace',
-        titleKey: `${I}.sections.trendyol.marketplace.title`,
-        descriptionKey: `${I}.sections.trendyol.marketplace.description`,
-        icon: 'GlobeAltIcon',
-        fields: [
-          {
-            // One Trendyol account can sell on Türkiye and on the international
-            // storefronts; the connector routes by this rather than asking the
-            // seller to create a second integration.
-            key: 'trendyol.marketplace',
-            type: 'select',
-            labelKey: label('trendyol.marketplace'),
-            helpKey: help('trendyol.marketplace'),
-            default: 'tr',
-            options: ['tr', 'int', 'az', 'de', 'gb'].map((value) => ({
-              value,
-              labelKey: option('trendyol.marketplace', value),
-            })),
-          },
-        ],
-      },
-    },
     {
       tabId: 'fulfillment',
       section: {

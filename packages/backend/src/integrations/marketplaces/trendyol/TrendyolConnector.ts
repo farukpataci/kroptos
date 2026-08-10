@@ -23,28 +23,19 @@ const BASE_URLS: Record<string, string> = {
 };
 
 /**
- * One Trendyol seller account can serve Türkiye and the international
- * storefronts. The gateway is shared; what changes is the storefront the call
- * is scoped to, so a marketplace is a query scope rather than a second
- * integration.
+ * This connector is Türkiye only. International storefronts are a separate
+ * provider (`trendyol_global`) with its own integration record, because a
+ * country's category tree, ProductMapping rows, rate limit and connection
+ * status all have to be tracked per country — none of which fits inside one
+ * shared record.
  *
- * DOĞRULANAMADI: storefront codes are written from Trendyol's international
- * seller documentation and have not been exercised against a real account.
- */
-/**
- * Türkiye's storefront code. Documented as "1"; set to `undefined` to go back
- * to sending no storefront header for TR at all, which is what this connector
- * did before.
+ * Türkiye's storefront code is documented as "1". Set to `undefined` to go back
+ * to sending no storefront header at all, which is what this connector did
+ * before the header fix.
+ *
+ * DOĞRULANAMADI: not exercised against a real seller account.
  */
 const TR_STOREFRONT_CODE: string | undefined = '1';
-
-const MARKETPLACES: Record<string, { storefrontCode?: string; label: string }> = {
-  tr: { storefrontCode: TR_STOREFRONT_CODE, label: 'Türkiye' },
-  int: { storefrontCode: 'INT', label: 'Trendyol Global' },
-  az: { storefrontCode: 'AZ', label: 'Azerbaycan' },
-  de: { storefrontCode: 'DE', label: 'Almanya' },
-  gb: { storefrontCode: 'GB', label: 'Birleşik Krallık' },
-};
 
 /** Every Trendyol path in one place, so a gateway version bump lands here only. */
 const PATHS = {
@@ -89,32 +80,12 @@ export class TrendyolConnector extends MarketplaceConnector {
     return BASE_URLS[this.environment] ?? BASE_URLS.production;
   }
 
-  private get marketplace(): { storefrontCode?: string; label: string } {
-    const selected = String(this.setting<string>('trendyol.marketplace', 'tr')).toLowerCase();
-    return MARKETPLACES[selected] ?? MARKETPLACES.tr;
-  }
-
   /**
-   * Storefront scope, sent as a HEADER.
-   *
-   * Trendyol's integration documentation states storeFrontCode "must be sent as
-   * a Header Parameter" and that "each service needs storeFrontCode as a header
-   * parameter". It was previously appended to the query string, where the
-   * gateway would simply ignore it — every call silently ran against the
-   * account's default storefront.
-   *
-   * Türkiye's code is documented as "1" (Trendyol's own integration developer
-   * tool: TR marketplace storefrontCode is always "1"). Sending it is new
-   * behaviour: the connector used to send nothing at all for TR.
-   *
-   * DOĞRULANAMADI: neither the header placement nor the TR value has been
-   * exercised against a real seller account. To revert to the previous
-   * behaviour for TR, set TR_STOREFRONT_CODE to undefined — that single line is
-   * the whole change for Türkiye.
+   * Storefront scope, sent as a HEADER — Trendyol documents storeFrontCode as a
+   * header parameter, and a value in the query string is ignored.
    */
   private get storefrontHeaders(): Record<string, string> {
-    const code = this.marketplace.storefrontCode;
-    return code ? { storeFrontCode: code } : {};
+    return TR_STOREFRONT_CODE ? { storeFrontCode: TR_STOREFRONT_CODE } : {};
   }
 
   protected authHeaders(): Record<string, string> {
@@ -179,10 +150,9 @@ export class TrendyolConnector extends MarketplaceConnector {
       });
 
       const total = Number(result?.totalElements);
-      const where = this.marketplace.label;
       return Number.isFinite(total)
-        ? `Trendyol bağlantısı doğrulandı (${where}). Satıcı hesabında ${total} ürün görüldü.`
-        : `Trendyol bağlantısı doğrulandı (${where}).`;
+        ? `Trendyol bağlantısı doğrulandı (Türkiye). Satıcı hesabında ${total} ürün görüldü.`
+        : 'Trendyol bağlantısı doğrulandı (Türkiye).';
     });
   }
 
