@@ -1,12 +1,56 @@
 import { MarketplaceConnector } from '../core/MarketplaceConnector';
-import { ConnectionTestResult, MarketplaceOrder, MarketplaceProduct, StockUpdateResult } from '../core/MarketplaceTypes';
+import {
+  ConnectionTestResult,
+  MarketplaceOrder,
+  MarketplaceProduct,
+  StockUpdateResult,
+} from '../core/MarketplaceTypes';
 import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
 import { TrendyolMapper } from './TrendyolMapper';
-import { TrendyolOrder, TrendyolProduct } from './TrendyolTypes';
+import { TrendyolOrder, TrendyolOrderLine, TrendyolProduct } from './TrendyolTypes';
+
+/**
+ * Host per environment, chosen by the `general.environment` setting. Trendyol
+ * serves the stage tenant from a separate gateway; the paths are identical.
+ *
+ * DOĞRULANAMADI: paths and hosts below are written from Trendyol's integration
+ * documentation but have not been exercised against a real seller account.
+ */
+const BASE_URLS: Record<string, string> = {
+  production: 'https://apigw.trendyol.com',
+  sandbox: 'https://stageapigw.trendyol.com',
+};
+
+/** Every Trendyol path in one place, so a gateway version bump lands here only. */
+const PATHS = {
+  orders: (sellerId: string) => `/integration/order/sellers/${sellerId}/orders`,
+  products: (sellerId: string) => `/integration/product/sellers/${sellerId}/products`,
+  priceAndInventory: (sellerId: string) =>
+    `/integration/inventory/sellers/${sellerId}/products/price-and-inventory`,
+  categories: () => '/integration/product/product-categories',
+  categoryAttributes: (categoryId: string) =>
+    `/integration/product/product-categories/${categoryId}/attributes`,
+};
+
+/** Trendyol pages are capped at 200 rows; asking for more is silently trimmed. */
+const PAGE_SIZE = 200;
+
+/** Stops a malformed totalPages from turning one sync into an endless loop. */
+const MAX_PAGES = 50;
+
+interface TrendyolPage<T> {
+  content?: T[];
+  totalPages?: number;
+  totalElements?: number;
+}
 
 export class TrendyolConnector extends MarketplaceConnector {
   protected readonly defaultRateLimit = 100;
+
+  protected get displayName(): string {
+    return 'Trendyol';
+  }
 
   constructor(
     credentials: Record<string, any>,
@@ -17,248 +61,185 @@ export class TrendyolConnector extends MarketplaceConnector {
     super('TRENDYOL', credentials, httpClient, rateLimiter, settings);
   }
 
-  private hasInvalidCredentials(): boolean {
-    return Object.values(this.credentials).some(
-      (val) => typeof val === 'string' && val.toLowerCase().includes('invalid'),
-    );
+  private get baseUrl(): string {
+    return BASE_URLS[this.environment] ?? BASE_URLS.production;
   }
 
-  async testConnection(): Promise<ConnectionTestResult> {
-    const startTime = Date.now();
-    await this.throttle();
-
-    if (this.hasInvalidCredentials()) {
-      return {
-        success: false,
-        message: 'Trendyol API bağlantısı başarısız: Yetkisiz Satıcı ID veya API Anahtarı',
-        durationMs: Date.now() - startTime,
-      };
-    }
-
+  protected authHeaders(): Record<string, string> {
+    const { sellerId, apiKey, apiSecret } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
     return {
-      success: true,
-      message: 'Trendyol bağlantısı başarıyla doğrulandı',
-      durationMs: Date.now() - startTime,
+      Authorization: `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`,
+      // Trendyol rejects integration traffic that does not identify the seller
+      // in the agent string.
+      'User-Agent': `${sellerId} - SelfIntegration`,
     };
   }
 
-  async getOrders(): Promise<MarketplaceOrder[]> {
-    await this.throttle();
+  private call<T>(
+    path: string,
+    options: { method?: string; query?: Record<string, string | number | undefined>; body?: unknown } = {},
+  ): Promise<T> {
+    return this.send<T>(`${this.baseUrl}${path}`, options);
+  }
 
-    if (this.hasInvalidCredentials()) {
-      throw new Error('Trendyol API Authentication Failed');
+  /** Walks a paged Trendyol collection to the end, honouring the page cap. */
+  private async fetchAllPages<T>(
+    path: string,
+    query: Record<string, string | number | undefined>,
+  ): Promise<T[]> {
+    const collected: T[] = [];
+    let page = 0;
+    let totalPages = 1;
+
+    while (page < totalPages && page < MAX_PAGES) {
+      const result = await this.call<TrendyolPage<T>>(path, {
+        query: { ...query, page, size: PAGE_SIZE },
+      });
+
+      collected.push(...(result?.content ?? []));
+      totalPages = Number(result?.totalPages) || 1;
+      page++;
     }
 
-    const mockTrendyolOrders: TrendyolOrder[] = [
-      {
-        id: 1001,
-        orderNumber: 'TY-2026-98124',
-        customerFirstName: 'Ahmet',
-        customerLastName: 'Yılmaz',
-        customerEmail: 'ahmet.yilmaz@example.com',
-        customerPhone: '+905551234567',
-        shipmentAddress: {
-          address1: 'Kadıköy Mahallesi, Göztepe Caddesi No:45',
-          city: 'İstanbul',
-          country: 'Türkiye',
-        },
-        lines: [
-          {
-            barcode: '868000123456',
-            sku: 'TY-SHIRT-BLK-M',
-            productName: 'Trendyol Basic Erkek Tişört Siyah - M',
-            quantity: 2,
-            price: 249.9,
-            merchantId: Number(this.credentials.sellerId) || 123456,
-          },
-        ],
-        status: 'Created',
-        totalPrice: 499.8,
-        currency: 'TRY',
-      },
-      {
-        id: 1002,
-        orderNumber: 'TY-2026-98125',
-        customerFirstName: 'Ayşe',
-        customerLastName: 'Kaya',
-        customerEmail: 'ayse.kaya@example.com',
-        customerPhone: '+905429876543',
-        shipmentAddress: {
-          address1: 'Çankaya Caddesi No:12 Daire:5',
-          city: 'Ankara',
-          country: 'Türkiye',
-        },
-        lines: [
-          {
-            barcode: '868000987654',
-            sku: 'TY-SHOE-RUN-42',
-            productName: 'Trendyol Run Spor Ayakkabı Siyah - 42',
-            quantity: 1,
-            price: 1299.9,
-            merchantId: Number(this.credentials.sellerId) || 123456,
-          },
-        ],
-        status: 'Created',
-        totalPrice: 1299.9,
-        currency: 'TRY',
-      },
-    ];
+    return collected;
+  }
 
-    return mockTrendyolOrders.map((o) => TrendyolMapper.toUnifiedOrder(o));
+  async testConnection(): Promise<ConnectionTestResult> {
+    return this.probe(async () => {
+      const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
+      // Cheapest authenticated read: one product row proves the credentials,
+      // the seller id and the environment all line up.
+      const result = await this.call<TrendyolPage<unknown>>(PATHS.products(sellerId), {
+        query: { page: 0, size: 1 },
+      });
+
+      const total = Number(result?.totalElements);
+      return Number.isFinite(total)
+        ? `Trendyol bağlantısı doğrulandı. Satıcı hesabında ${total} ürün görüldü.`
+        : 'Trendyol bağlantısı doğrulandı.';
+    });
+  }
+
+  async getOrders(): Promise<MarketplaceOrder[]> {
+    const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
+
+    const backfillDays = Number(this.setting<number>('orders.backfillDays', 7));
+    const startDate = Date.now() - Math.max(0, backfillDays) * 24 * 60 * 60 * 1000;
+
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.orders(sellerId), {
+      startDate,
+      endDate: Date.now(),
+    });
+
+    // The status filter is applied here rather than as a query parameter: the
+    // settings list is our own vocabulary, and matching it locally keeps one
+    // mapping table instead of two that can drift.
+    const wanted = this.setting<string[]>('orders.importStatuses', ['created', 'picking', 'shipped']);
+    const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
+
+    return raw
+      .map((order) => this.toTrendyolOrder(order))
+      .filter((order) => wantedSet.size === 0 || wantedSet.has(order.status.toLowerCase()))
+      .map((order) => TrendyolMapper.toUnifiedOrder(order));
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    await this.throttle();
+    const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
 
-    if (this.hasInvalidCredentials()) {
-      throw new Error('Trendyol API Authentication Failed');
-    }
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(sellerId), {});
 
-    const mockTrendyolProducts: TrendyolProduct[] = [
-      {
-        title: 'Trendyol Basic Erkek Tişört Siyah - M',
-        stockCode: 'TY-SHIRT-BLK-M',
-        description: 'Yüzde yüz pamuk erkek tişört.',
-        salePrice: 249.9,
-        quantity: 150,
-        images: [{ url: 'https://images.trendyol.com/tshirt.jpg' }],
-        barcode: '868000123456',
-      },
-      {
-        title: 'Trendyol Run Spor Ayakkabı Siyah - 42',
-        stockCode: 'TY-SHOE-RUN-42',
-        description: 'Rahat koşu ayakkabısı.',
-        salePrice: 1299.9,
-        quantity: 35,
-        images: [{ url: 'https://images.trendyol.com/shoe.jpg' }],
-        barcode: '868000987654',
-      },
-    ];
-
-    return mockTrendyolProducts.map((p) => TrendyolMapper.toUnifiedProduct(p));
+    return raw.map((product) => TrendyolMapper.toUnifiedProduct(this.toTrendyolProduct(product)));
   }
 
+  /**
+   * Trendyol identifies inventory rows by barcode, so the value handed in must
+   * be the barcode Trendyol knows. Where the local SKU differs, the caller is
+   * responsible for translating it through ProductMapping first.
+   */
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    await this.throttle();
+    try {
+      const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
 
-    if (this.hasInvalidCredentials()) {
+      await this.call<unknown>(PATHS.priceAndInventory(sellerId), {
+        method: 'POST',
+        body: { items: [{ barcode: sku, quantity }] },
+      });
+
+      return { sku, quantity, success: true };
+    } catch (error: any) {
       return {
         sku,
         quantity,
         success: false,
-        error: 'Trendyol API Authentication Failed',
+        error: error?.message || 'Trendyol stok güncellemesi başarısız',
       };
     }
-
-    return {
-      sku,
-      quantity,
-      success: true,
-    };
   }
 
   async getCategories(): Promise<any[]> {
-    try {
-      const url = 'https://apigw.trendyol.com/integration/product/product-categories';
-      const res = await this.httpClient.request<{ categories: any[] }>(url, {
-        method: 'GET',
-        timeout: 5000,
-        retries: 1,
-      });
-      return res.categories || [];
-    } catch (e: any) {
-      console.warn('[TrendyolConnector] Failed to fetch real categories, falling back to mock categories tree:', e.message);
-      return [
-        {
-          id: 387,
-          name: "Tişört",
-          parentId: null,
-          subCategories: [
-            { id: 1045, name: "Erkek Tişört", parentId: 387, subCategories: [] },
-            { id: 1046, name: "Kadın Tişört", parentId: 387, subCategories: [] }
-          ]
-        },
-        {
-          id: 388,
-          name: "Ayakkabı",
-          parentId: null,
-          subCategories: [
-            { id: 1050, name: "Spor Ayakkabı", parentId: 388, subCategories: [] },
-            { id: 1051, name: "Klasik Ayakkabı", parentId: 388, subCategories: [] }
-          ]
-        },
-        {
-          id: 389,
-          name: "Elbise",
-          parentId: null,
-          subCategories: []
-        }
-      ];
-    }
+    const result = await this.call<{ categories?: any[] }>(PATHS.categories());
+    return result?.categories ?? [];
   }
 
   async getCategoryAttributes(categoryId: string): Promise<any> {
-    try {
-      const url = `https://api.trendyol.com/sapigw/product-categories/${categoryId}/attributes`;
-      const res = await this.httpClient.request<any>(url, {
-        method: 'GET',
-        timeout: 5000,
-        retries: 1,
-      });
-      return res || { categoryAttributes: [] };
-    } catch (e: any) {
-      console.warn(`[TrendyolConnector] Failed to fetch attributes for category ${categoryId}, falling back to mock attributes:`, e.message);
-      return {
-        id: Number(categoryId),
-        displayName: "Test Kategori",
-        categoryAttributes: [
-          {
-            required: true,
-            allowCustom: false,
-            attribute: { id: 338, name: "Beden" },
-            variability: "VARIANTS",
-            attributeValues: [
-              { id: 1, name: "S" },
-              { id: 2, name: "M" },
-              { id: 3, name: "L" },
-              { id: 4, name: "XL" }
-            ]
-          },
-          {
-            required: true,
-            allowCustom: false,
-            attribute: { id: 343, name: "Renk" },
-            variability: "VARIANTS",
-            attributeValues: [
-              { id: 10, name: "Siyah" },
-              { id: 11, name: "Beyaz" },
-              { id: 12, name: "Mavi" },
-              { id: 13, name: "Kırmızı" }
-            ]
-          },
-          {
-            required: true,
-            allowCustom: false,
-            attribute: { id: 12, name: "Cinsiyet" },
-            variability: "UNIFIED",
-            attributeValues: [
-              { id: 20, name: "Erkek" },
-              { id: 21, name: "Kadın" },
-              { id: 22, name: "Unisex" }
-            ]
-          },
-          {
-            required: false,
-            allowCustom: true,
-            attribute: { id: 102, name: "Materyal" },
-            variability: "UNIFIED",
-            attributeValues: [
-              { id: 30, name: "Pamuk" },
-              { id: 31, name: "Polyester" }
-            ]
-          }
-        ]
-      };
-    }
+    return this.call<any>(PATHS.categoryAttributes(categoryId));
+  }
+
+  // --------------------------------------------------------------------------
+  // Response normalisation
+  // --------------------------------------------------------------------------
+
+  /**
+   * Narrows a raw order payload down to the shape TrendyolMapper already knows.
+   * Field names differ between Trendyol's order versions, so each value has a
+   * fallback rather than assuming one spelling.
+   */
+  private toTrendyolOrder(raw: Record<string, any>): TrendyolOrder {
+    const lines: TrendyolOrderLine[] = (raw.lines ?? []).map((line: Record<string, any>) => ({
+      barcode: line.barcode ?? '',
+      sku: line.merchantSku ?? line.sku ?? line.stockCode ?? line.barcode ?? '',
+      quantity: Number(line.quantity) || 0,
+      price: Number(line.price ?? line.amount ?? 0),
+      merchantId: Number(line.merchantId) || 0,
+      productName: line.productName ?? line.productTitle ?? '',
+    }));
+
+    const address = raw.shipmentAddress ?? raw.invoiceAddress ?? {};
+
+    return {
+      id: Number(raw.id) || 0,
+      orderNumber: raw.orderNumber ?? raw.id?.toString() ?? '',
+      customerFirstName: raw.customerFirstName ?? '',
+      customerLastName: raw.customerLastName ?? '',
+      customerEmail: raw.customerEmail,
+      customerPhone: raw.customerPhone ?? address.phone,
+      shipmentAddress: {
+        address1: address.address1 ?? address.fullAddress ?? '',
+        city: address.city ?? '',
+        country: address.countryCode ?? address.country ?? 'TR',
+      },
+      lines,
+      status: raw.status ?? raw.shipmentPackageStatus ?? 'Created',
+      totalPrice: Number(raw.totalPrice ?? raw.grossAmount ?? 0),
+      currency: raw.currencyCode ?? raw.currency ?? 'TRY',
+    };
+  }
+
+  private toTrendyolProduct(raw: Record<string, any>): TrendyolProduct {
+    const images = Array.isArray(raw.images)
+      ? raw.images
+          .map((image: any) => ({ url: typeof image === 'string' ? image : image?.url }))
+          .filter((image: { url?: string }): image is { url: string } => Boolean(image.url))
+      : [];
+
+    return {
+      title: raw.title ?? '',
+      stockCode: raw.stockCode ?? raw.productMainId ?? raw.barcode ?? '',
+      description: raw.description,
+      salePrice: Number(raw.salePrice ?? raw.listPrice ?? 0),
+      quantity: Number(raw.quantity) || 0,
+      images,
+      barcode: raw.barcode,
+    };
   }
 }
