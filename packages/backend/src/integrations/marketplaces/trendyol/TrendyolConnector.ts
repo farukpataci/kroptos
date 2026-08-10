@@ -31,8 +31,15 @@ const BASE_URLS: Record<string, string> = {
  * DOĞRULANAMADI: storefront codes are written from Trendyol's international
  * seller documentation and have not been exercised against a real account.
  */
+/**
+ * Türkiye's storefront code. Documented as "1"; set to `undefined` to go back
+ * to sending no storefront header for TR at all, which is what this connector
+ * did before.
+ */
+const TR_STOREFRONT_CODE: string | undefined = '1';
+
 const MARKETPLACES: Record<string, { storefrontCode?: string; label: string }> = {
-  tr: { label: 'Türkiye' },
+  tr: { storefrontCode: TR_STOREFRONT_CODE, label: 'Türkiye' },
   int: { storefrontCode: 'INT', label: 'Trendyol Global' },
   az: { storefrontCode: 'AZ', label: 'Azerbaycan' },
   de: { storefrontCode: 'DE', label: 'Almanya' },
@@ -88,11 +95,24 @@ export class TrendyolConnector extends MarketplaceConnector {
   }
 
   /**
-   * Storefront scope for order and product reads. Türkiye is the account's home
-   * storefront and takes no parameter, so the key is omitted rather than sent
-   * empty — an empty value would filter everything out.
+   * Storefront scope, sent as a HEADER.
+   *
+   * Trendyol's integration documentation states storeFrontCode "must be sent as
+   * a Header Parameter" and that "each service needs storeFrontCode as a header
+   * parameter". It was previously appended to the query string, where the
+   * gateway would simply ignore it — every call silently ran against the
+   * account's default storefront.
+   *
+   * Türkiye's code is documented as "1" (Trendyol's own integration developer
+   * tool: TR marketplace storefrontCode is always "1"). Sending it is new
+   * behaviour: the connector used to send nothing at all for TR.
+   *
+   * DOĞRULANAMADI: neither the header placement nor the TR value has been
+   * exercised against a real seller account. To revert to the previous
+   * behaviour for TR, set TR_STOREFRONT_CODE to undefined — that single line is
+   * the whole change for Türkiye.
    */
-  private get storefrontQuery(): Record<string, string | undefined> {
+  private get storefrontHeaders(): Record<string, string> {
     const code = this.marketplace.storefrontCode;
     return code ? { storeFrontCode: code } : {};
   }
@@ -107,11 +127,24 @@ export class TrendyolConnector extends MarketplaceConnector {
     };
   }
 
+  /**
+   * Every Trendyol call carries the storefront header, so it is attached here
+   * rather than at each call site — a read that forgets it would quietly run
+   * against the wrong storefront instead of failing.
+   */
   private call<T>(
     path: string,
-    options: { method?: string; query?: Record<string, string | number | undefined>; body?: unknown } = {},
+    options: {
+      method?: string;
+      query?: Record<string, string | number | undefined>;
+      body?: unknown;
+      headers?: Record<string, string>;
+    } = {},
   ): Promise<T> {
-    return this.send<T>(`${this.baseUrl}${path}`, options);
+    return this.send<T>(`${this.baseUrl}${path}`, {
+      ...options,
+      headers: { ...this.storefrontHeaders, ...(options.headers ?? {}) },
+    });
   }
 
   /** Walks a paged Trendyol collection to the end, honouring the page cap. */
@@ -142,7 +175,7 @@ export class TrendyolConnector extends MarketplaceConnector {
       // Cheapest authenticated read: one product row proves the credentials,
       // the seller id and the environment all line up.
       const result = await this.call<TrendyolPage<unknown>>(PATHS.products(sellerId), {
-        query: { page: 0, size: 1, ...this.storefrontQuery },
+        query: { page: 0, size: 1 },
       });
 
       const total = Number(result?.totalElements);
@@ -162,7 +195,6 @@ export class TrendyolConnector extends MarketplaceConnector {
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.orders(sellerId), {
       startDate,
       endDate: Date.now(),
-      ...this.storefrontQuery,
     });
 
     // The status filter is applied here rather than as a query parameter: the
@@ -180,10 +212,7 @@ export class TrendyolConnector extends MarketplaceConnector {
   async getProducts(): Promise<MarketplaceProduct[]> {
     const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
 
-    const raw = await this.fetchAllPages<Record<string, any>>(
-      PATHS.products(sellerId),
-      this.storefrontQuery,
-    );
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(sellerId), {});
 
     return raw.map((product) => TrendyolMapper.toUnifiedProduct(this.toTrendyolProduct(product)));
   }
