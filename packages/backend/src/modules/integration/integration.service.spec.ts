@@ -116,6 +116,9 @@ describe('IntegrationService', () => {
           setting: {
             select: { isConfigured: true, completedSteps: true, deletedAt: true },
           },
+          store: {
+            select: { id: true, name: true },
+          },
         },
       });
     });

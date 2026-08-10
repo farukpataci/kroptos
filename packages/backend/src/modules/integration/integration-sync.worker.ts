@@ -485,7 +485,9 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
       await this.prisma.integration.update({
         where: { id: integrationId },
         data: {
-          status: 'active',
+          // A successful run clears a previous error, but it must never re-enable
+          // an integration the user paused: status is the user's switch, not ours.
+          ...(integration.status === 'error' ? { status: 'active' } : {}),
           lastSyncAt: new Date(),
         },
       });

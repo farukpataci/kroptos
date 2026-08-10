@@ -92,6 +92,11 @@ export class IntegrationService {
         setting: {
           select: { isConfigured: true, completedSteps: true, deletedAt: true },
         },
+        // The row shows which store an integration belongs to; storeId is null
+        // for agency-wide integrations, so the relation may come back null.
+        store: {
+          select: { id: true, name: true },
+        },
       },
     });
   }
@@ -379,6 +384,15 @@ export class IntegrationService {
     activeStoreId?: string,
   ) {
     const integration = await this.get(id, activeAgencyId, activeClientId, activeStoreId);
+
+    // A paused integration must stay paused: the status switch is the user's
+    // explicit "do not talk to this marketplace", so it gates the manual button
+    // too, not only the scheduled runs.
+    if (integration.status === 'inactive') {
+      throw new BadRequestException(
+        'Pasif entegrasyon senkronize edilemez. Önce entegrasyonu aktifleştirin.',
+      );
+    }
 
     // The UI disables this button for an unconfigured integration, but the UI
     // is not the boundary: syncing without a stock source or price rule would
