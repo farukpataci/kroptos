@@ -902,6 +902,9 @@ model TenantSettings {
   @@index([agencyId])
 }
 
+/// @deprecated Artık ne okunuyor ne yazılıyor. System Settings ekranı
+/// satırlarını `Integration`'dan türetiyor; bu tablo yalnızca düşürülmeyi
+/// bekliyor. Plan: docs/plans/integration-settings-removal.md
 model IntegrationSettings {
   id               String   @id @default(cuid())
   agencyId         String
