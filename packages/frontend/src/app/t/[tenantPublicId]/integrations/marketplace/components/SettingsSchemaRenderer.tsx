@@ -54,7 +54,10 @@ function FieldRenderer({
       field={field}
       value={values[field.key]}
       error={errors[field.key]}
-      disabled={disabled || evaluateCondition(field.disabledWhen, values)}
+      // `evaluateCondition` treats a missing condition as true — right for
+      // `visibleWhen`, inverted for `disabledWhen`. No condition means the
+      // field stays editable, so the absent case is checked before evaluating.
+      disabled={disabled || (field.disabledWhen ? evaluateCondition(field.disabledWhen, values) : false)}
       onChange={(next: unknown) => onChange(field.key, next)}
     />
   );
