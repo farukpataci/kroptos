@@ -33,13 +33,29 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
   // 🛒 PAZARYERLERİ
   {
     id: 'trendyol',
-    name: 'Trendyol',
+    name: 'Trendyol (Türkiye)',
     category: 'marketplace',
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-orange-500/10 border-orange-500/20 text-orange-600',
-    badgeText: 'Trendyol',
-    description: 'Türkiye\'nin lider pazaryeri. Otomatik sipariş, ürün ve anlık stok senkronizasyonu.',
+    badgeText: 'Trendyol TR',
+    description:
+      'Trendyol Türkiye mağazanız. Otomatik sipariş, ürün ve anlık stok senkronizasyonu. Yurt dışı mağazalar için "Trendyol Global" kartını kullanın.',
     capabilities: ['Siparişler (1dk)', 'Stok (5dk)', 'Fiyatlar', 'Kargo Etiketi'],
+    status: 'active',
+  },
+  {
+    // Separate provider, not a mode of the card above: each country gets its own
+    // integration record so category mappings, rate limits and connection
+    // status stay apart.
+    id: 'trendyol_global',
+    name: 'Trendyol Global (Uluslararası)',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-orange-600/10 border-orange-600/20 text-orange-700',
+    badgeText: 'Trendyol Global',
+    description:
+      'Trendyol\'un yurt dışı mağazaları. Kurulumda ülke seçilir; her ülke için ayrı bağlantı kurulur.',
+    capabilities: ['Ülke seçimi', 'Siparişler', 'Stok', 'Fiyatlar'],
     status: 'active',
   },
   {
