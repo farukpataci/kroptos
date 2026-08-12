@@ -2,6 +2,8 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { decrypt, encrypt } from '../../../common/utils/encryption.util';
 import { MarketplaceSettingsRegistry } from '../settings/manifest.registry';
+// TEMPORARY (live-verification round): remove with IntegrationTrace.
+import { trace } from './IntegrationTrace';
 
 @Injectable()
 export class MarketplaceCredentialService {
@@ -41,7 +43,15 @@ export class MarketplaceCredentialService {
         where: { id: integrationId },
         data: { credentialsEncrypted: encrypt(JSON.stringify(merged)) },
       });
+
+      // TEMPORARY (live-verification round): the write is the step that used to
+      // be missing entirely, so its success is what has to be observable.
+      trace('persistRotatedCredentials ok', {
+        integrationId,
+        keys: Object.keys(patch).join(','),
+      });
     } catch (error: any) {
+      trace('persistRotatedCredentials FAILED', { integrationId, message: error?.message });
       // Never log the values themselves — only which keys rotated.
       console.error(
         `Failed to persist rotated credentials for integration ${integrationId} ` +

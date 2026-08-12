@@ -1,6 +1,8 @@
 import { ConnectionTestResult, MarketplaceOrder, MarketplaceProduct, StockUpdateResult } from './MarketplaceTypes';
 import { MarketplaceHttpClient, MarketplaceHttpError } from './MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from './MarketplaceRateLimiter';
+// TEMPORARY (live-verification round): remove with IntegrationTrace.
+import { trace, traceHeaders } from './IntegrationTrace';
 
 export abstract class MarketplaceConnector {
   protected constructor(
@@ -42,6 +44,8 @@ export abstract class MarketplaceConnector {
 
   /** Called by a subclass when the marketplace issues replacement credentials. */
   protected recordRotatedCredentials(patch: Record<string, string>): void {
+    // TEMPORARY (live-verification round): keys only, never values.
+    trace(`${this.provider} recordRotatedCredentials`, { keys: Object.keys(patch).join(',') });
     this.rotatedCredentials = { ...this.rotatedCredentials, ...patch };
   }
 
@@ -53,7 +57,13 @@ export abstract class MarketplaceConnector {
   consumeRotatedCredentials(): Record<string, string> | undefined {
     const rotated = this.rotatedCredentials;
     this.rotatedCredentials = undefined;
-    return rotated && Object.keys(rotated).length > 0 ? rotated : undefined;
+    const result = rotated && Object.keys(rotated).length > 0 ? rotated : undefined;
+    // TEMPORARY (live-verification round): did the caller find anything?
+    trace(`${this.provider} consumeRotatedCredentials`, {
+      found: Boolean(result),
+      keys: result ? Object.keys(result).join(',') : '',
+    });
+    return result;
   }
 
   /**
@@ -141,13 +151,22 @@ export abstract class MarketplaceConnector {
       headers['Content-Type'] = headers['Content-Type'] ?? 'application/json';
     }
 
+    // TEMPORARY (live-verification round): see IntegrationTrace.
+    traceHeaders(`${this.provider} request ${options.method ?? 'GET'} ${target.pathname}`, headers);
+
     try {
-      return await this.httpClient.request<T>(target.toString(), {
+      const result = await this.httpClient.request<T>(target.toString(), {
         method: options.method ?? 'GET',
         headers,
         body: options.body === undefined ? undefined : JSON.stringify(options.body),
       });
+      trace(`${this.provider} response ok`, { path: target.pathname });
+      return result;
     } catch (error) {
+      trace(`${this.provider} response failed`, {
+        path: target.pathname,
+        upstreamStatus: error instanceof MarketplaceHttpError ? error.upstreamStatus : undefined,
+      });
       throw this.describeError(error);
     }
   }
