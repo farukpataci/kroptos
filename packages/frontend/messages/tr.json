@@ -2124,6 +2124,13 @@
           "clientSecret": "Client Secret",
           "refreshToken": "Refresh Token",
           "refreshTokenHelp": "Satıcı hesabınızla yetki verdikten sonra üretilen refresh token. 3 ay geçerlidir; sistem her yenilemede gelen yeni token'ı otomatik olarak saklar."
+        },
+        "aliexpress": {
+          "appKey": "App Key",
+          "appKeyHelp": "AliExpress Open Platform uygulamanızın anahtarı.",
+          "appSecret": "App Secret",
+          "accessToken": "Access Token",
+          "accessTokenHelp": "Satıcı hesabınızda uygulamaya yetki verdikten sonra üretilen erişim anahtarı. İstek gövdesinde session parametresi olarak gönderilir."
         }
       },
       "mapping": {

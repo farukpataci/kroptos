@@ -8,6 +8,7 @@ import type {
 import { MarketplaceSettingsRegistry } from './manifest.registry';
 import { temuOverride } from './providers/temu.settings';
 import { zalandoOverride } from './providers/zalando.settings';
+import { aliexpressOverride } from './providers/aliexpress.settings';
 
 /**
  * A manifest references message keys; the dictionary supplies them. Nothing
@@ -96,6 +97,7 @@ function manifestKeys(manifest: ProviderSettingsManifest): string[] {
 const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [
   ['temu', temuOverride],
   ['zalando', zalandoOverride],
+  ['aliexpress', aliexpressOverride],
 ];
 
 describe('provider manifests have translations', () => {
