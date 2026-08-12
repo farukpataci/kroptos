@@ -7,8 +7,6 @@ import {
 } from '../core/MarketplaceTypes';
 import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
-// TEMPORARY (live-verification round): remove with IntegrationTrace.
-import { trace } from '../core/IntegrationTrace';
 import { AllegroMapper } from './AllegroMapper';
 import {
   AllegroCheckoutFormsPage,
@@ -84,8 +82,6 @@ export class AllegroConnector extends MarketplaceConnector {
   private currentRefreshToken?: string;
   /** sku -> offer id, built on demand; see updateStock. */
   private offerIndex?: Map<string, string>;
-  /** TEMPORARY (live-verification round): how many refreshes this instance did. */
-  private refreshCount = 0;
 
   constructor(
     credentials: Record<string, any>,
@@ -161,16 +157,6 @@ export class AllegroConnector extends MarketplaceConnector {
       throw new Error('Allegro oturum anahtarı alınamadı: yanıt access_token içermiyor.');
     }
 
-    // TEMPORARY (live-verification round): the two facts that decide whether the
-    // rotation machinery is exercised at all.
-    trace('ALLEGRO token refreshed', {
-      refreshCount: ++this.refreshCount,
-      expires_in: response.expires_in,
-      returnedNewRefreshToken: Boolean(
-        response.refresh_token && response.refresh_token !== inUse,
-      ),
-    });
-
     // Allegro rotates the refresh token on every exchange and the previous one
     // stops working within about a minute. Reporting it is what keeps the
     // integration alive past the next process restart.
@@ -189,15 +175,6 @@ export class AllegroConnector extends MarketplaceConnector {
   }
 
   private async bearer(): Promise<string> {
-    // TEMPORARY (live-verification round): the access token lives 12 hours, so
-    // waiting for a natural refresh is not practical. With
-    // ALLEGRO_FORCE_REFRESH=1 the cached token is treated as already expired,
-    // which exercises the refresh and the rotation path on every call.
-    if (process.env.ALLEGRO_FORCE_REFRESH === '1') {
-      trace('ALLEGRO forcing token refresh (ALLEGRO_FORCE_REFRESH=1)');
-      return this.fetchAccessToken();
-    }
-
     if (this.accessToken && this.accessToken.expiresAt > Date.now()) {
       return this.accessToken.value;
     }
