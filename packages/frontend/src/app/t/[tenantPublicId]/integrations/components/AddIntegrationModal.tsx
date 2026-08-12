@@ -7,7 +7,6 @@ import {
   BuildingStorefrontIcon,
   ShoppingBagIcon,
   TruckIcon,
-  CpuChipIcon,
   DocumentTextIcon,
   CheckCircleIcon,
   ClockIcon,
@@ -20,7 +19,7 @@ import { apiFetch } from '@/lib/api';
 export interface CatalogProvider {
   id: string;
   name: string;
-  category: 'marketplace' | 'ecommerce' | 'carrier' | 'erp' | 'accounting';
+  category: 'marketplace' | 'ecommerce' | 'carrier' | 'accounting';
   categoryLabel: string;
   badgeBg: string;
   badgeText: string;
@@ -396,12 +395,12 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
 
-  // 🏬 ERP & STOK / DEPO
+  // 💼 MUHASEBE ENTEGRASYONU (ERP & STOK & E-FATURA)
   {
     id: 'logo_go3',
     name: 'Logo GO3 / Tiger ERP',
-    category: 'erp',
-    categoryLabel: 'ERP & Stok',
+    category: 'accounting',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-sky-600/10 border-sky-600/20 text-sky-700',
     badgeText: 'Logo ERP',
     description: 'Logo REST / Web Servis entegrasyonu ile malzeme, stok hareketi ve sipariş akışı.',
@@ -411,8 +410,8 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
   {
     id: 'mikro',
     name: 'Mikro ERP',
-    category: 'erp',
-    categoryLabel: 'ERP & Stok',
+    category: 'accounting',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-red-600/10 border-red-600/20 text-red-700',
     badgeText: 'Mikro ERP',
     description: 'Mikro Jump / Fly ERP ile çift yönlü stok ve cari senkronizasyonu.',
@@ -422,8 +421,8 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
   {
     id: 'netsis',
     name: 'Logo Netsis ERP',
-    category: 'erp',
-    categoryLabel: 'ERP & Stok',
+    category: 'accounting',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-blue-700/10 border-blue-700/20 text-blue-800 dark:text-blue-300',
     badgeText: 'Netsis',
     description: 'Netsis Enterprise ERP web servis entegrasyonu ile üretim ve envanter takibi.',
@@ -433,21 +432,19 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
   {
     id: 'nebim',
     name: 'Nebim V3 ERP',
-    category: 'erp',
-    categoryLabel: 'ERP & Stok',
+    category: 'accounting',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-purple-600/10 border-purple-600/20 text-purple-700',
     badgeText: 'Nebim V3',
     description: 'Nebim V3 Perakende & Mağazacılık ERP stok ve envanter senkronizasyonu.',
     capabilities: ['Varyantlı Stok', 'Mağaza Depoları'],
     status: 'active',
   },
-
-  // 🧾 E-FATURA & MUHASEBE
   {
     id: 'parasut',
     name: 'Paraşüt E-Fatura',
     category: 'accounting',
-    categoryLabel: 'E-Fatura & Muhasebe',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-emerald-600/10 border-emerald-600/20 text-emerald-700',
     badgeText: 'Paraşüt',
     description: 'Paraşüt bulut ön muhasebe uygulaması ile otomatik e-Fatura ve e-Arşiv resmi belgeleme.',
@@ -458,7 +455,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     id: 'bizimhesap',
     name: 'BizimHesap',
     category: 'accounting',
-    categoryLabel: 'E-Fatura & Muhasebe',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-teal-600/10 border-teal-600/20 text-teal-700',
     badgeText: 'BizimHesap',
     description: 'BizimHesap online ön muhasebe ile pazaryeri siparişlerinizi anında faturalandırın.',
@@ -469,7 +466,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     id: 'kolaybi',
     name: 'KolayBi',
     category: 'accounting',
-    categoryLabel: 'E-Fatura & Muhasebe',
+    categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-indigo-600/10 border-indigo-600/20 text-indigo-700',
     badgeText: 'KolayBi',
     description: 'KolayBi bulut e-Fatura entegrasyonu ile otomatik resmi fatura oluşturma.',
@@ -485,7 +482,7 @@ interface AddIntegrationModalProps {
   onSelectProvider: (provider: CatalogProvider) => void;
 }
 
-type CategoryTab = 'all' | 'marketplace' | 'ecommerce' | 'carrier' | 'erp' | 'accounting';
+type CategoryTab = 'all' | 'marketplace' | 'ecommerce' | 'carrier' | 'accounting';
 
 export function AddIntegrationModal({
   isOpen,
@@ -560,14 +557,8 @@ export function AddIntegrationModal({
       count: CATALOG_PROVIDERS.filter((p) => p.category === 'carrier').length,
     },
     {
-      id: 'erp',
-      label: 'ERP & Stok',
-      icon: CpuChipIcon,
-      count: CATALOG_PROVIDERS.filter((p) => p.category === 'erp').length,
-    },
-    {
       id: 'accounting',
-      label: 'E-Fatura & Muhasebe',
+      label: 'Muhasebe Entegrasyonu',
       icon: DocumentTextIcon,
       count: CATALOG_PROVIDERS.filter((p) => p.category === 'accounting').length,
     },
@@ -593,8 +584,7 @@ export function AddIntegrationModal({
           { id: 'marketplace', title: '🛒 Pazaryerleri', items: filteredProviders.filter((p) => p.category === 'marketplace') },
           { id: 'ecommerce', title: '🛍️ E-Ticaret Altyapıları', items: filteredProviders.filter((p) => p.category === 'ecommerce') },
           { id: 'carrier', title: '🚚 Kargo & Lojistik', items: filteredProviders.filter((p) => p.category === 'carrier') },
-          { id: 'erp', title: '🏬 ERP & Depo / Stok', items: filteredProviders.filter((p) => p.category === 'erp') },
-          { id: 'accounting', title: 'Receipt E-Fatura & Muhasebe', items: filteredProviders.filter((p) => p.category === 'accounting') },
+          { id: 'accounting', title: '💼 Muhasebe Entegrasyonu', items: filteredProviders.filter((p) => p.category === 'accounting') },
         ]
       : [
           {
