@@ -177,8 +177,13 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-orange-500/10 border-orange-500/20 text-orange-600',
     badgeText: 'Temu',
-    description: 'Hızla büyüyen küresel pazaryeri. Sipariş ve stok senkronizasyonu planlanıyor.',
-    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    description:
+      'Hızla büyüyen küresel pazaryeri. Bağlantı altyapısı hazır; API metot adları doğrulanmadığı için henüz etkinleştirilmedi.',
+    // Only the operation the connector actually implements. "Stok" and
+    // "Fiyatlar" were listed here while METHODS.stock was null and no price
+    // method existed at all — a badge for an operation that refuses is how a
+    // seller ends up trusting a sync that cannot happen.
+    capabilities: ['Siparişler'],
     status: 'coming_soon',
   },
   {

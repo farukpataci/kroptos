@@ -2104,12 +2104,12 @@
         },
         "temu": {
           "apiUrl": "API Adresi (Gateway)",
-          "apiUrlHelp": "Temu partner hesabınızdaki API bilgilerinde yer alan istek adresi. Bölgenize göre değişir; adresi olduğu gibi kopyalayın.",
+          "apiUrlHelp": "Temu ISV panelinde API Reference sayfasında yer alan istek (gateway) adresi. Bölgenize göre değişir; adresi olduğu gibi kopyalayın. Bu alan boş bırakılamaz.",
           "appKey": "App Key",
           "appKeyHelp": "Temu Open Platform uygulamanızın anahtarı.",
           "appSecret": "App Secret",
           "accessToken": "Access Token",
-          "accessTokenHelp": "Satıcı hesabınızda uygulamaya yetki verdikten sonra üretilen erişim anahtarı."
+          "accessTokenHelp": "Satıcı hesabınızda uygulamaya yetki verdikten sonra üretilen erişim anahtarı. İstek gövdesinde access_token parametresi olarak gönderilir."
         },
         "zalando": {
           "clientId": "Client ID",

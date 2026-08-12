@@ -43,9 +43,21 @@ import { TemuEnvelope, TemuOrder, TemuOrderListResult } from './TemuTypes';
  * change once the ISV documentation is at hand.
  */
 const METHODS: Record<'orders' | 'products' | 'stock' | 'categories', string | null> = {
-  // Seen in Temu's published documentation index.
+  /**
+   * Taken from a Temu documentation page *title* in the search index. Its
+   * parameters and response were never seen.
+   *
+   * ⚠️ EVIDENTIAL INCONSISTENCY, left visible on purpose: four further names
+   * (`bg.local.goods.sku.list.query` and friends) come from exactly the same
+   * kind of source and were deliberately kept OUT of this file, recorded only
+   * in docs/plans/temu-integration.md. By that standard this one does not
+   * belong here either. It stays for now because `testConnection` is built on
+   * it and removing it would silently change behaviour — but it is a decision
+   * to make, not a verified fact to rely on.
+   */
   orders: 'bg.order.list.v2.get',
-  // DOĞRULANAMADI — no confirmed method name.
+  // DOĞRULANAMADI — no confirmed method name. Candidates are listed in
+  // docs/plans/temu-integration.md and deliberately not written here.
   products: null,
   stock: null,
   categories: null,
