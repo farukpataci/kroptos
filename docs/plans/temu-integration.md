@@ -17,8 +17,7 @@ sıfırdan araştırma yapmak yerine doğrudan doğrulanacak maddelere gitmek.
 | POST zarfı (`type`, `app_key`, `access_token`, `timestamp`, `data_type`, `sign`) | Yazıldı |
 | İş hatası çözümleme (`success:false` → hata) | Yazıldı |
 | Gateway host'u | **Koda yazılmadı** — `apiUrl` credential'ı olarak satıcıdan alınıyor |
-| Sipariş metodu | `bg.order.list.v2.get` — Temu doküman navigasyonunda görüldü |
-| Ürün / stok / kategori metotları | `METHODS` içinde `null`; çağrılırsa doldurulacak sabitin adını söyleyen hata veriyor |
+| **Tüm metot adları** | `METHODS` içinde **dördü de `null`**; her işlem doldurulacak sabitin adını söyleyerek reddediyor |
 | Manifest | `temu.settings.ts` yazıldı, `OVERRIDES`'a **eklenmedi** |
 | Çeviriler | `tr.json`'a eklendi, kaydedilmemiş manifest testi bunları koruyor |
 
@@ -45,9 +44,17 @@ bir hata kodu olarak döner ve hatanın kaynağını bulmak günler alır.
 | `bg.local.goods.stock.edit` | Stok güncelleme | `METHODS.stock` |
 | `bg.local.goods.priceorder.change.sku.price` | Fiyat güncelleme | Şu an karşılığı yok — connector fiyat göndermiyor |
 
-Ayrıca daha önce görülen ve şu an kullanılan tek ad:
+Beşinci aday, aynı listeye taşındı:
 
-| `bg.order.list.v2.get` | Sipariş listeleme | `METHODS.orders` — **kullanımda**, ama parametreleri yine doğrulanmadı |
+| `bg.order.list.v2.get` | Sipariş listeleme | `METHODS.orders` — **artık `null`** |
+
+> **2026-08-12'de kaldırıldı.** Bu ad bir süre `METHODS.orders`'ta duruyordu ve
+> `testConnection` onun üzerine kuruluydu. Kaynağı diğer dördüyle aynıydı: bir
+> doküman sayfa başlığı; parametreleri ve yanıtı hiç görülmedi. Bir adı
+> diğerlerinden daha zayıf bir ölçütle kabul etmek, tahminin zamanla olgu
+> görünümü kazanmasının yoludur. Sonuç: connector artık **hiçbir dış istek
+> yapmıyor**; `testConnection` kimlik bilgilerini ve gateway adresini biçimsel
+> olarak doğruluyor, sonra "doğrulanmış metot adı yok" diyerek başarısız oluyor.
 
 ### Panelde bunlarla ne yapılacak
 

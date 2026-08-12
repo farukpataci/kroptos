@@ -25,7 +25,10 @@ const cred = (key: string) => `${I}.credentials.temu.${key}`;
 export const temuOverride: ProviderSettingsOverride = {
   provider: 'temu',
   displayName: 'Temu',
-  capabilities: ['orders.read'],
+  // Empty on purpose: no operation name is confirmed, so the connector supports
+  // nothing yet. Claiming `orders.read` here would also un-hide settings fields
+  // gated on that capability, describing behaviour that does not exist.
+  capabilities: [],
   credentials: [
     {
       key: 'apiUrl',

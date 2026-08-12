@@ -179,11 +179,11 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Temu',
     description:
       'Hızla büyüyen küresel pazaryeri. Bağlantı altyapısı hazır; API metot adları doğrulanmadığı için henüz etkinleştirilmedi.',
-    // Only the operation the connector actually implements. "Stok" and
-    // "Fiyatlar" were listed here while METHODS.stock was null and no price
-    // method existed at all — a badge for an operation that refuses is how a
-    // seller ends up trusting a sync that cannot happen.
-    capabilities: ['Siparişler'],
+    // Empty on purpose: every operation refuses because no Temu API method name
+    // is confirmed. A badge for an operation that refuses is how a seller ends
+    // up trusting a sync that cannot happen. Badges come back one at a time as
+    // names are confirmed.
+    capabilities: [],
     status: 'coming_soon',
   },
   {
