@@ -26,7 +26,11 @@ describe('AddIntegrationModal', () => {
       />,
     );
 
-  const cardFor = (name: string) => screen.getByText(name).closest('div.group') as HTMLElement;
+  // Anchored on the card heading rather than any matching text: several
+  // providers use the same string for their name and their badge, so a plain
+  // text lookup finds two nodes and throws.
+  const cardFor = (name: string) =>
+    screen.getByRole('heading', { name }).closest('div.group') as HTMLElement;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -74,6 +78,67 @@ describe('AddIntegrationModal', () => {
       expect(
         within(cardFor('Trendyol Global (Uluslararası)')).getByText('Bağlantı Kur'),
       ).toBeInTheDocument();
+    });
+  });
+
+  describe('planned marketplaces', () => {
+    const PLANNED = [
+      'temu',
+      'zalando',
+      'allegro',
+      'aliexpress',
+      'emag',
+      'kaufland',
+      'otto',
+      'bol',
+    ];
+
+    it.each(PLANNED)('lists %s in the catalogue', (id) => {
+      expect(CATALOG_PROVIDERS.map((p) => p.id)).toContain(id);
+    });
+
+    it('marks every planned marketplace as coming soon', () => {
+      for (const id of PLANNED) {
+        const provider = CATALOG_PROVIDERS.find((p) => p.id === id);
+        expect(provider?.status).toBe('coming_soon');
+      }
+    });
+
+    it('never offers a planned marketplace for connection', async () => {
+      // The registry knows nothing about them, so the derived state must be
+      // "coming soon" — a connectable card here would dead-end the seller.
+      // The label appears twice per card (badge and button); asserting on the
+      // button is the one that decides whether the card can be acted on.
+      open();
+
+      await waitFor(() => {
+        expect(within(cardFor('Temu')).getByRole('button')).toHaveTextContent('Çok yakında');
+      });
+
+      for (const name of ['Zalando', 'AliExpress', 'eMAG', 'Kaufland Marketplace', 'OTTO Market', 'Bol']) {
+        expect(within(cardFor(name)).getByRole('button')).toHaveTextContent('Çok yakında');
+      }
+    });
+
+    it('disables the button on a planned marketplace', async () => {
+      open();
+
+      await waitFor(() => {
+        expect(within(cardFor('Allegro')).getByRole('button')).toBeDisabled();
+      });
+    });
+
+    it('becomes connectable on its own once the registry lists it', async () => {
+      // Adding a manifest is the whole change; the catalogue needs no edit.
+      apiFetch.mockResolvedValue([
+        ...REGISTERED,
+        { provider: 'temu', displayName: 'Temu', capabilities: [] },
+      ]);
+      open();
+
+      await waitFor(() => {
+        expect(within(cardFor('Temu')).getByText('Bağlantı Kur')).toBeInTheDocument();
+      });
     });
   });
 

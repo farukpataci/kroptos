@@ -163,6 +163,103 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'beta',
   },
 
+  // Planlanan pazaryerleri. Bunların hiçbirinin manifesti yok, dolayısıyla
+  // registry onları tanımıyor ve kartları kendiliğinden "Çok yakında" olarak,
+  // butonları devre dışı çıkıyor — burada ayrıca bir şey yapmak gerekmiyor.
+  // Bir sağlayıcının manifesti eklendiği gün kartı kendiliğinden bağlanabilir
+  // hale gelir; bu listede tek satır bile değişmez.
+  //
+  // `capabilities` burada bir taahhüt değil, planlanan kapsam. Kart bağlanabilir
+  // olmadığı için kimse ona göre işlem yapamaz.
+  {
+    id: 'temu',
+    name: 'Temu',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-orange-500/10 border-orange-500/20 text-orange-600',
+    badgeText: 'Temu',
+    description: 'Hızla büyüyen küresel pazaryeri. Sipariş ve stok senkronizasyonu planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'zalando',
+    name: 'Zalando',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-slate-800/10 border-slate-800/20 text-slate-800 dark:text-slate-200',
+    badgeText: 'Zalando',
+    description: 'Avrupa moda pazaryeri. Zalando Partner Programme entegrasyonu planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Varyantlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'allegro',
+    name: 'Allegro',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-orange-600/10 border-orange-600/20 text-orange-700',
+    badgeText: 'Allegro',
+    description: 'Polonya’nın en büyük pazaryeri. Sipariş ve ürün aktarımı planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'aliexpress',
+    name: 'AliExpress',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-red-500/10 border-red-500/20 text-red-600',
+    badgeText: 'AliExpress',
+    description: 'Alibaba’nın küresel perakende pazaryeri. Sipariş ve stok akışı planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'emag',
+    name: 'eMAG',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-sky-600/10 border-sky-600/20 text-sky-700',
+    badgeText: 'eMAG',
+    description: 'Romanya, Bulgaristan ve Macaristan’ın önde gelen pazaryeri. Entegrasyon planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'kaufland',
+    name: 'Kaufland Marketplace',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-red-600/10 border-red-600/20 text-red-700',
+    badgeText: 'Kaufland',
+    description: 'Almanya merkezli Kaufland pazaryeri. Sipariş ve stok senkronizasyonu planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'otto',
+    name: 'OTTO Market',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-red-500/10 border-red-500/20 text-red-600',
+    badgeText: 'OTTO',
+    description: 'Almanya’nın büyük perakende pazaryeri. Sipariş ve ürün aktarımı planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Varyantlar'],
+    status: 'coming_soon',
+  },
+  {
+    id: 'bol',
+    name: 'Bol',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-blue-500/10 border-blue-500/20 text-blue-600',
+    badgeText: 'Bol',
+    description: 'Hollanda ve Belçika’nın önde gelen pazaryeri. Entegrasyon planlanıyor.',
+    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
+    status: 'coming_soon',
+  },
+
   // 🛍️ E-TİCARET ALTYAPILARI
   {
     id: 'shopify',
