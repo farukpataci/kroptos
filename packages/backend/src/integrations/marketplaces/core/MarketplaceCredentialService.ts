@@ -1,10 +1,54 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { decrypt } from '../../../common/utils/encryption.util';
+import { PrismaService } from '@common/prisma/prisma.service';
+import { decrypt, encrypt } from '../../../common/utils/encryption.util';
 import { MarketplaceSettingsRegistry } from '../settings/manifest.registry';
 
 @Injectable()
 export class MarketplaceCredentialService {
-  constructor(private readonly registry: MarketplaceSettingsRegistry) {}
+  constructor(
+    private readonly registry: MarketplaceSettingsRegistry,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  /**
+   * Writes credentials a marketplace replaced during a call back onto the
+   * integration — a rotated OAuth refresh token, in practice.
+   *
+   * Merges rather than overwrites: the patch carries only what rotated, and the
+   * rest of the stored credential set has to survive. Failure is logged and
+   * swallowed on purpose; the operation that triggered the rotation already
+   * succeeded, and turning a bookkeeping problem into a failed sync would be
+   * the worse outcome. The next call falls back to the previous refresh token,
+   * which is still valid until the marketplace expires it.
+   */
+  async persistRotatedCredentials(
+    integrationId: string,
+    patch: Record<string, string>,
+  ): Promise<void> {
+    if (!patch || Object.keys(patch).length === 0) return;
+
+    try {
+      const integration = await this.prisma.integration.findUnique({
+        where: { id: integrationId },
+        select: { credentialsEncrypted: true },
+      });
+      if (!integration) return;
+
+      const current = JSON.parse(decrypt(integration.credentialsEncrypted));
+      const merged = { ...current, ...patch };
+
+      await this.prisma.integration.update({
+        where: { id: integrationId },
+        data: { credentialsEncrypted: encrypt(JSON.stringify(merged)) },
+      });
+    } catch (error: any) {
+      // Never log the values themselves — only which keys rotated.
+      console.error(
+        `Failed to persist rotated credentials for integration ${integrationId} ` +
+          `(keys: ${Object.keys(patch).join(', ')}): ${error?.message}`,
+      );
+    }
+  }
 
   /**
    * Decrypts and parses the database-stored credentials string.

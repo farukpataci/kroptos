@@ -324,6 +324,14 @@ export class IntegrationService {
         const testResult = await connector.testConnection();
         success = testResult.success;
         message = testResult.message;
+
+        // An OAuth marketplace may have handed back a replacement refresh token
+        // while authenticating. Persisting it here is what stops the next
+        // process restart from finding a token the marketplace no longer honours.
+        const rotated = connector.consumeRotatedCredentials();
+        if (rotated) {
+          await this.credentialService.persistRotatedCredentials(integration.id, rotated);
+        }
       } else if (integration.providerType === 'erp') {
         const creds = JSON.parse(decrypt(integration.credentialsEncrypted));
         const connector = this.erpConnectorFactory.create(integration.provider, creds);

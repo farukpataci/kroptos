@@ -4,7 +4,9 @@ import { MarketplaceCredentialService } from './MarketplaceCredentialService';
 import { MarketplaceSettingsRegistry } from '../settings/manifest.registry';
 
 describe('MarketplaceCredentialService.validate', () => {
-  const service = new MarketplaceCredentialService(new MarketplaceSettingsRegistry());
+  // validate() reads only the manifest; the Prisma client is required by the
+  // constructor for the credential-rotation path, which these cases never take.
+  const service = new MarketplaceCredentialService(new MarketplaceSettingsRegistry(), {} as any);
 
   const GLOBAL_CREDS = { sellerId: '1', apiKey: 'k', apiSecret: 's', country: 'RO' };
 

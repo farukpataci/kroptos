@@ -3,6 +3,7 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
+import type { MarketplaceConnector } from '../../integrations/marketplaces/core/MarketplaceConnector';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 import { decrypt } from '../../common/utils/encryption.util';
 import { syncEventEmitter } from './integration-queue.service';
@@ -110,6 +111,10 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
   }) {
     const { queueRecordId, integrationId, eventType, payload } = data;
     const startTime = Date.now();
+
+    // Set once a marketplace connector is built, so the rotated-credential
+    // check after the sync can reach it without widening the branch scopes.
+    let rotatingConnector: MarketplaceConnector | undefined;
 
     // 1. Update status to processing
     await this.prisma.integrationQueue.update({
@@ -334,6 +339,7 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         // integration's manifest-backed configuration rather than constants.
         const settings = await this.settingsService.resolveForRuntime(integration.id);
         const connector = this.connectorFactory.create(integration.provider, credentials, settings);
+        rotatingConnector = connector;
         const dryRun = settings['advanced.dryRun'] === true;
 
         if (eventType === 'sync_stock') {
@@ -469,6 +475,16 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
             }
           }
           logMessage = `Successfully synced ${marketplaceOrders.length} orders.`;
+        }
+      }
+
+      // A marketplace that rotates its refresh token does so during the calls
+      // above; collecting it here means a long-running sync cannot leave the
+      // stored credential a generation behind.
+      if (rotatingConnector) {
+        const rotated = rotatingConnector.consumeRotatedCredentials();
+        if (rotated) {
+          await this.credentialService.persistRotatedCredentials(integrationId, rotated);
         }
       }
 

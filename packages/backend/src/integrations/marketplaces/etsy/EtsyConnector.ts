@@ -56,9 +56,11 @@ export class EtsyConnector extends MarketplaceConnector {
   private accessToken?: { value: string; expiresAt: number };
 
   /**
-   * Etsy hands back a refresh token with every exchange. The pasted one is the
-   * only copy we can persist, so a rotated value is kept for the lifetime of
-   * this instance and the seller re-pastes when it finally expires.
+   * Etsy hands back a refresh token with every exchange. It is kept here for
+   * the rest of this instance's calls and also recorded for the caller to
+   * persist — previously it lived only in memory, so every process restart went
+   * back to the token the seller originally pasted and the integration died the
+   * moment Etsy stopped honouring it.
    */
   private rotatedRefreshToken?: string;
 
@@ -110,7 +112,14 @@ export class EtsyConnector extends MarketplaceConnector {
     }
 
     if (response.refresh_token) {
+      const previous = this.rotatedRefreshToken ?? this.credentials.refreshToken;
       this.rotatedRefreshToken = response.refresh_token;
+
+      // Only report an actual change: Etsy returning the same token is not a
+      // rotation, and persisting it would rewrite the row on every sync.
+      if (response.refresh_token !== previous) {
+        this.recordRotatedCredentials({ refreshToken: response.refresh_token });
+      }
     }
 
     const lifetimeMs = (Number(response.expires_in) || 3600) * 1000;

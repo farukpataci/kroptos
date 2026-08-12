@@ -22,6 +22,40 @@ export abstract class MarketplaceConnector {
     return value === undefined || value === null ? fallback : (value as T);
   }
 
+  // --------------------------------------------------------------------------
+  // Rotated credentials
+  //
+  // Some marketplaces hand back a *new* refresh token every time the old one is
+  // exchanged. Keeping that value only in memory means the integration works
+  // until the process restarts and then fails to authenticate for good — the
+  // seller has to paste a fresh token even though nothing they did was wrong.
+  //
+  // The connector cannot persist it itself: it holds credentials as a plain
+  // read-only object and has no database. So it records the new value and the
+  // caller — which does have the integration id and Prisma — collects it after
+  // the operation. A pull rather than a callback: no async side effect fires
+  // from inside a connector, and a caller that forgets simply persists nothing
+  // instead of writing at an unpredictable moment.
+  // --------------------------------------------------------------------------
+
+  private rotatedCredentials?: Record<string, string>;
+
+  /** Called by a subclass when the marketplace issues replacement credentials. */
+  protected recordRotatedCredentials(patch: Record<string, string>): void {
+    this.rotatedCredentials = { ...this.rotatedCredentials, ...patch };
+  }
+
+  /**
+   * Credentials that changed during this connector's lifetime, or `undefined`
+   * when nothing rotated. Clears on read so a caller cannot persist the same
+   * rotation twice.
+   */
+  consumeRotatedCredentials(): Record<string, string> | undefined {
+    const rotated = this.rotatedCredentials;
+    this.rotatedCredentials = undefined;
+    return rotated && Object.keys(rotated).length > 0 ? rotated : undefined;
+  }
+
   /**
    * Requests per minute this connector may make. Comes from
    * `advanced.rateLimitPerMinute`, which each provider manifest defaults to
