@@ -14,6 +14,7 @@ import { PttAvmConnector } from '../pttavm/PttAvmConnector';
 import { IdefixConnector } from '../idefix/IdefixConnector';
 import { EbayConnector } from '../ebay/EbayConnector';
 import { TemuConnector } from '../temu/TemuConnector';
+import { ZalandoConnector } from '../zalando/ZalandoConnector';
 
 @Injectable()
 export class MarketplaceConnectorFactory {
@@ -58,6 +59,8 @@ export class MarketplaceConnectorFactory {
         return new EbayConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'TEMU':
         return new TemuConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'ZALANDO':
+        return new ZalandoConnector(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }

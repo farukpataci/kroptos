@@ -2110,6 +2110,13 @@
           "appSecret": "App Secret",
           "accessToken": "Access Token",
           "accessTokenHelp": "Satıcı hesabınızda uygulamaya yetki verdikten sonra üretilen erişim anahtarı."
+        },
+        "zalando": {
+          "clientId": "Client ID",
+          "clientIdHelp": "zDirect portalında oluşturduğunuz uygulamanın Client ID değeri.",
+          "clientSecret": "Client Secret",
+          "merchantId": "Satıcı ID (Merchant ID)",
+          "merchantIdHelp": "zDirect hesabınızın satıcı kimliği. Sipariş uç noktalarında adresin bir parçası olarak kullanılır."
         }
       },
       "mapping": {

@@ -7,6 +7,7 @@ import type {
 } from '@kroptos/shared';
 import { MarketplaceSettingsRegistry } from './manifest.registry';
 import { temuOverride } from './providers/temu.settings';
+import { zalandoOverride } from './providers/zalando.settings';
 
 /**
  * A manifest references message keys; the dictionary supplies them. Nothing
@@ -92,7 +93,10 @@ function manifestKeys(manifest: ProviderSettingsManifest): string[] {
  * paired with why. Keeping them here means their translations are covered
  * before they are switched on.
  */
-const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [['temu', temuOverride]];
+const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [
+  ['temu', temuOverride],
+  ['zalando', zalandoOverride],
+];
 
 describe('provider manifests have translations', () => {
   const registry = new MarketplaceSettingsRegistry();
