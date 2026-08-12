@@ -199,9 +199,14 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-orange-600/10 border-orange-600/20 text-orange-700',
     badgeText: 'Allegro',
-    description: 'Polonya’nın en büyük pazaryeri. Sipariş ve ürün aktarımı planlanıyor.',
-    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
-    status: 'coming_soon',
+    description:
+      'Polonya’nın en büyük pazaryeri. Sipariş çekme, ilan listeleme ve stok gönderimi. Kurulumda refresh token yapıştırılır.',
+    // No "Fiyatlar": the connector patches stock only. Allegro can change price
+    // through the same endpoint, but nothing here sends one, and listing a
+    // capability the integration does not use is how a seller ends up trusting
+    // a sync that never happens.
+    capabilities: ['Siparişler', 'Ürünler', 'Stok', 'Kategoriler'],
+    status: 'beta',
   },
   {
     id: 'aliexpress',

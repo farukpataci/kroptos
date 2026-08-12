@@ -16,6 +16,7 @@ import { etsyOverride } from './providers/etsy.settings';
 import { pttavmOverride } from './providers/pttavm.settings';
 import { idefixOverride } from './providers/idefix.settings';
 import { ebayOverride } from './providers/ebay.settings';
+import { allegroOverride } from './providers/allegro.settings';
 
 /**
  * The one place a marketplace is registered. Adding a provider is this list
@@ -34,6 +35,7 @@ const OVERRIDES: ProviderSettingsOverride[] = [
   pttavmOverride,
   idefixOverride,
   ebayOverride,
+  allegroOverride,
 ];
 
 @Injectable()

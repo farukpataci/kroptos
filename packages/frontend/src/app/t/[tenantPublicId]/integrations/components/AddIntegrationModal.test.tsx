@@ -82,16 +82,9 @@ describe('AddIntegrationModal', () => {
   });
 
   describe('planned marketplaces', () => {
-    const PLANNED = [
-      'temu',
-      'zalando',
-      'allegro',
-      'aliexpress',
-      'emag',
-      'kaufland',
-      'otto',
-      'bol',
-    ];
+    // `allegro` deliberately left out: its manifest is registered, so the card
+    // is connectable and it is no longer a planned entry.
+    const PLANNED = ['temu', 'zalando', 'aliexpress', 'emag', 'kaufland', 'otto', 'bol'];
 
     it.each(PLANNED)('lists %s in the catalogue', (id) => {
       expect(CATALOG_PROVIDERS.map((p) => p.id)).toContain(id);
@@ -124,7 +117,7 @@ describe('AddIntegrationModal', () => {
       open();
 
       await waitFor(() => {
-        expect(within(cardFor('Allegro')).getByRole('button')).toBeDisabled();
+        expect(within(cardFor('Temu')).getByRole('button')).toBeDisabled();
       });
     });
 

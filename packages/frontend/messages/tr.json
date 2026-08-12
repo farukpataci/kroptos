@@ -2117,6 +2117,13 @@
           "clientSecret": "Client Secret",
           "merchantId": "Satıcı ID (Merchant ID)",
           "merchantIdHelp": "zDirect hesabınızın satıcı kimliği. Sipariş uç noktalarında adresin bir parçası olarak kullanılır."
+        },
+        "allegro": {
+          "clientId": "Client ID",
+          "clientIdHelp": "Allegro Developer Console'da oluşturduğunuz uygulamanın Client ID değeri.",
+          "clientSecret": "Client Secret",
+          "refreshToken": "Refresh Token",
+          "refreshTokenHelp": "Satıcı hesabınızla yetki verdikten sonra üretilen refresh token. 3 ay geçerlidir; sistem her yenilemede gelen yeni token'ı otomatik olarak saklar."
         }
       },
       "mapping": {
