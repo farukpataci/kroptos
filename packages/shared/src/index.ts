@@ -3,4 +3,5 @@
 export * from './credentials';
 export * from './integration-status';
 export * from './trendyol-global-countries';
+export * from './ebay-marketplaces';
 export * from './integration-settings';

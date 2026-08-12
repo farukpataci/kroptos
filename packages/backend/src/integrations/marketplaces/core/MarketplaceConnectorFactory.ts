@@ -12,6 +12,7 @@ import { PazaramaConnector } from '../pazarama/PazaramaConnector';
 import { EtsyConnector } from '../etsy/EtsyConnector';
 import { PttAvmConnector } from '../pttavm/PttAvmConnector';
 import { IdefixConnector } from '../idefix/IdefixConnector';
+import { EbayConnector } from '../ebay/EbayConnector';
 
 @Injectable()
 export class MarketplaceConnectorFactory {
@@ -52,6 +53,8 @@ export class MarketplaceConnectorFactory {
         return new PttAvmConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'IDEFIX':
         return new IdefixConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'EBAY':
+        return new EbayConnector(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }
