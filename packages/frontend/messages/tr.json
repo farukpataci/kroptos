@@ -1764,6 +1764,12 @@
             "label": "İlan durumu",
             "help": "Yeni gönderilen ürünlerin Etsy’de hangi durumda oluşturulacağı."
           }
+        },
+        "ebay": {
+          "marketplace": {
+            "label": "Pazar (eBay sitesi)",
+            "help": "Bağlantının hangi eBay sitesine kurulacağı. Her site için ayrı bağlantı kurulur; kategori ağacı ve siparişler siteye göre değişir."
+          }
         }
       },
       "options": {
@@ -2019,6 +2025,13 @@
             "draft": "Taslak (elle yayınlanır)",
             "inactive": "Pasif"
           }
+        },
+        "ebay": {
+          "marketplace": {
+            "EBAY_US": "Amerika Birleşik Devletleri (EBAY_US)",
+            "EBAY_GB": "Birleşik Krallık (EBAY_GB)",
+            "EBAY_DE": "Almanya (EBAY_DE)"
+          }
         }
       },
       "credentials": {
@@ -2081,6 +2094,13 @@
           "sellerIdHelp": "Trendyol satıcı panelinde Hesap Bilgileri > Entegrasyon Bilgileri altında yer alır.",
           "apiKey": "API Key",
           "apiSecret": "API Secret"
+        },
+        "ebay": {
+          "clientId": "Client ID (App ID)",
+          "clientIdHelp": "eBay geliştirici hesabınızda uygulamanızın anahtar setinde yer alır.",
+          "clientSecret": "Client Secret (Cert ID)",
+          "refreshToken": "Refresh Token",
+          "refreshTokenHelp": "eBay geliştirici portalında kullanıcı izni verdikten sonra üretilen refresh token. Yaklaşık 18 ay geçerlidir; süresi dolunca yenisini alıp buraya yapıştırın."
         }
       },
       "mapping": {

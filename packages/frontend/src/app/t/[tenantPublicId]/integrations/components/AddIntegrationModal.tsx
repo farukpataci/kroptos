@@ -148,13 +148,18 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
   },
   {
     id: 'ebay',
-    name: 'eBay Commerce',
+    name: 'eBay',
     category: 'marketplace',
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-yellow-500/10 border-yellow-500/20 text-yellow-600',
     badgeText: 'eBay',
-    description: 'eBay REST API ile uluslararası satışlarınızı ve sipariş akışını yönetin.',
-    capabilities: ['Siparişler', 'Stok', 'Kargo Kodu'],
+    description:
+      'eBay Sell API ile sipariş çekme ve stok gönderimi. Kurulumda pazar (site) seçilir; her site için ayrı bağlantı kurulur.',
+    // Deliberately no "Fiyatlar": eBay models price on the offer rather than the
+    // inventory item, so this connector cannot push it. Listing a capability
+    // the integration does not have is how a seller ends up trusting a sync
+    // that never happens.
+    capabilities: ['Pazar seçimi', 'Siparişler', 'Stok', 'Kategoriler'],
     status: 'beta',
   },
 
