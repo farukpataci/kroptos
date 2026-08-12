@@ -2101,6 +2101,15 @@
           "clientSecret": "Client Secret (Cert ID)",
           "refreshToken": "Refresh Token",
           "refreshTokenHelp": "eBay geliştirici portalında kullanıcı izni verdikten sonra üretilen refresh token. Yaklaşık 18 ay geçerlidir; süresi dolunca yenisini alıp buraya yapıştırın."
+        },
+        "temu": {
+          "apiUrl": "API Adresi (Gateway)",
+          "apiUrlHelp": "Temu partner hesabınızdaki API bilgilerinde yer alan istek adresi. Bölgenize göre değişir; adresi olduğu gibi kopyalayın.",
+          "appKey": "App Key",
+          "appKeyHelp": "Temu Open Platform uygulamanızın anahtarı.",
+          "appSecret": "App Secret",
+          "accessToken": "Access Token",
+          "accessTokenHelp": "Satıcı hesabınızda uygulamaya yetki verdikten sonra üretilen erişim anahtarı."
         }
       },
       "mapping": {

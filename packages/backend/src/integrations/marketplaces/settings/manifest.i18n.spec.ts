@@ -1,7 +1,12 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import type { ProviderSettingsManifest, SettingsField } from '@kroptos/shared';
+import type {
+  ProviderSettingsManifest,
+  ProviderSettingsOverride,
+  SettingsField,
+} from '@kroptos/shared';
 import { MarketplaceSettingsRegistry } from './manifest.registry';
+import { temuOverride } from './providers/temu.settings';
 
 /**
  * A manifest references message keys; the dictionary supplies them. Nothing
@@ -82,6 +87,13 @@ function manifestKeys(manifest: ProviderSettingsManifest): string[] {
   return [...new Set(keys)];
 }
 
+/**
+ * Providers whose manifest exists but is deliberately not in the registry yet,
+ * paired with why. Keeping them here means their translations are covered
+ * before they are switched on.
+ */
+const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [['temu', temuOverride]];
+
 describe('provider manifests have translations', () => {
   const registry = new MarketplaceSettingsRegistry();
   const providers = registry.listProviders().map((p) => p.provider);
@@ -108,6 +120,19 @@ describe('provider manifests have translations', () => {
       );
 
       // Naming the keys matters: the fix is to add exactly these.
+      expect(missing).toEqual([]);
+    });
+
+    /**
+     * Written but not yet registered — the catalogue still shows them as coming
+     * soon. Their translations are checked anyway so that enabling one stays a
+     * one-line change instead of turning into a screen full of raw keys.
+     */
+    it.each(UNREGISTERED)('resolves every key the unregistered %s references', (_name, override) => {
+      const missing = (override.credentials ?? [])
+        .flatMap(fieldKeys)
+        .filter((key) => !resolves(dictionary, key));
+
       expect(missing).toEqual([]);
     });
   });
