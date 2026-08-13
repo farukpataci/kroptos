@@ -19,6 +19,10 @@ export class TenantMiddleware implements NestMiddleware {
       '/api/auth/refresh-token',
       '/api/docs',
       '/api-json',
+      // Which build is serving: has to answer when something is already wrong,
+      // including when authentication is what is broken. It returns a commit id
+      // and process uptime — nothing a repository reader cannot already see.
+      '/api/health',
       '/auth/register',
       '/auth/login',
       '/auth/refresh',
