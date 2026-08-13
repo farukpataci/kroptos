@@ -54,20 +54,20 @@ describe('MarketplaceConnectorFactory / registry agreement', () => {
    * "tightening" that would turn an intentional state into a failure.
    */
   it('allows a connector to exist without a registry entry', () => {
-    for (const provider of ['temu', 'zalando', 'aliexpress']) {
+    for (const provider of ['temu', 'zalando', 'aliexpress', 'woocommerce', 'shopify']) {
       expect(registry.isSupported(provider)).toBe(false);
       // The connector is reachable, so enabling the provider stays a one-line
       // registry change rather than a rewrite.
-      expect(() => factory.create(provider, { apiUrl: 'https://x.example/r' })).not.toThrow();
+      expect(() => factory.create(provider, { apiUrl: 'https://x.example/r', consumerKey: 'k', consumerSecret: 's', accessToken: 't' })).not.toThrow();
     }
   });
 
   it('rejects a provider the registry does not know', () => {
-    expect(() => factory.create('shopify', {})).toThrow(/Unsupported marketplace provider/i);
+    expect(() => factory.create('unknown_provider_xyz', {})).toThrow(/Unsupported marketplace provider/i);
   });
 
   it('reports the same provider as unsupported on both sides', () => {
-    expect(registry.isSupported('shopify')).toBe(false);
-    expect(() => factory.create('shopify', {})).toThrow();
+    expect(registry.isSupported('unknown_provider_xyz')).toBe(false);
+    expect(() => factory.create('unknown_provider_xyz', {})).toThrow();
   });
 });

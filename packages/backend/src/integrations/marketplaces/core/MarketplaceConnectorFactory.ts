@@ -17,6 +17,8 @@ import { TemuConnector } from '../temu/TemuConnector';
 import { ZalandoConnector } from '../zalando/ZalandoConnector';
 import { AllegroConnector } from '../allegro/AllegroConnector';
 import { AliExpressConnector } from '../aliexpress/AliExpressConnector';
+import { WooCommerceConnector } from '../../ecommerce/woocommerce/WooCommerceConnector';
+import { ShopifyConnector } from '../../ecommerce/shopify/ShopifyConnector';
 
 @Injectable()
 export class MarketplaceConnectorFactory {
@@ -67,6 +69,10 @@ export class MarketplaceConnectorFactory {
         return new AllegroConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'ALIEXPRESS':
         return new AliExpressConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'WOOCOMMERCE':
+        return new WooCommerceConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'SHOPIFY':
+        return new ShopifyConnector(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }
