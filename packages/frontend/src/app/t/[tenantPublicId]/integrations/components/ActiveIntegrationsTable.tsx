@@ -42,8 +42,16 @@ function getTypeInfo(providerType: string, provider: string) {
   if (type.includes('erp') || type.includes('accounting') || ['logo', 'mikro', 'netsis', 'nebim', 'parasut', 'bizimhesap', 'kolaybi'].includes(type)) {
     return { label: 'Muhasebe Entegrasyonu', icon: DocumentTextIcon, className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
   }
-  if (type.includes('shipping') || ['yurtici', 'aras', 'mng', 'sendeo'].includes(type)) {
-    return { label: 'Kargo', icon: TruckIcon, className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' };
+  if (
+    type.includes('shipping') ||
+    type.includes('carrier') ||
+    [
+      'yurtici', 'aras', 'mng', 'sendeo', 'hepsijet', 'dhl', 'dpd', 'gls',
+      'ups', 'inpost', 'postnl', 'royal_mail', 'evri', 'colissimo',
+      'chronopost', 'sameday', 'fan_courier', 'cargus', 'packeta', 'pocztex',
+    ].includes(type)
+  ) {
+    return { label: 'Kargo & Lojistik', icon: TruckIcon, className: 'bg-orange-500/10 text-orange-600 border-orange-500/20' };
   }
   return { label: 'E-Ticaret', icon: ShoppingBagIcon, className: 'bg-purple-500/10 text-purple-600 border-purple-500/20' };
 }
