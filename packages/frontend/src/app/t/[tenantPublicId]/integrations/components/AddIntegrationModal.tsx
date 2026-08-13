@@ -193,8 +193,13 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-slate-800/10 border-slate-800/20 text-slate-800 dark:text-slate-200',
     badgeText: 'Zalando',
-    description: 'Avrupa moda pazaryeri. Zalando Partner Programme entegrasyonu planlanıyor.',
-    capabilities: ['Siparişler', 'Stok', 'Varyantlar'],
+    description:
+      'Avrupa moda pazaryeri (zDirect Partner Programme). Sipariş çekme ve stok gönderimi yazıldı; gerçek bir satıcı hesabında doğrulanmadığı için henüz etkinleştirilmedi.',
+    // No "Varyantlar": there is no product or variant support at all — Zalando
+    // publishes no article spec, so getProducts refuses. Listing a capability
+    // the integration does not have is how a seller ends up trusting a sync
+    // that never happens.
+    capabilities: ['Siparişler', 'Stok'],
     status: 'coming_soon',
   },
   {

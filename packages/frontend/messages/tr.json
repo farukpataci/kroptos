@@ -2115,8 +2115,10 @@
           "clientId": "Client ID",
           "clientIdHelp": "zDirect portalında oluşturduğunuz uygulamanın Client ID değeri.",
           "clientSecret": "Client Secret",
-          "merchantId": "Satıcı ID (Merchant ID)",
-          "merchantIdHelp": "zDirect hesabınızın satıcı kimliği. Sipariş uç noktalarında adresin bir parçası olarak kullanılır."
+          "merchantId": "Satıcı ID (Merchant ID / bpid)",
+          "merchantIdHelp": "zDirect hesabınızın satıcı kimliği; Zalando bunu \"bpid\" olarak da adlandırır. Sipariş ve stok adreslerinin bir parçasıdır. Bağlantı testi, girdiğiniz değeri uygulamanın yetkili olduğu satıcı listesiyle karşılaştırır.",
+          "salesChannelId": "Satış Kanalı ID (Sales Channel ID)",
+          "salesChannelIdHelp": "Sattığınız Zalando ülke mağazasının kimliği (UUID). Stok her zaman bir satış kanalına gönderilir. Birden fazla ülkede satıyorsanız her biri için ayrı bir entegrasyon kurun."
         },
         "allegro": {
           "clientId": "Client ID",

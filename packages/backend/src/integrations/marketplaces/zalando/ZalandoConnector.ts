@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { MarketplaceConnector } from '../core/MarketplaceConnector';
 import {
   ConnectionTestResult,
@@ -10,36 +11,37 @@ import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
 import { ZalandoMapper } from './ZalandoMapper';
 import {
   ZalandoIdentity,
-  ZalandoOrder,
-  ZalandoOrderPage,
+  ZalandoOrdersDocument,
+  ZalandoStockUpdatesRequest,
+  ZalandoStockUpdatesResponse,
   ZalandoTokenResponse,
 } from './ZalandoTypes';
 
 /**
  * Zalando zDirect (the partner platform, formerly the Merchant Platform).
  *
- * WHAT IS VERIFIED, from Zalando's own published Authentication OpenAPI spec:
- *  - hosts: api.merchants.zalando.com and api-sandbox.merchants.zalando.com
- *  - `POST /auth/token`, form encoded, Basic auth over client id and secret,
- *    `grant_type=client_credentials`, response carries access_token/expires_in
- *  - `GET /auth/me`, which reports the caller's identity and granted scopes
- *
- * That is enough for a connection test that genuinely proves the credentials,
- * which is why `testConnection` deliberately uses `/auth/me` rather than a
- * business endpoint: the seller gets a truthful answer even where the rest is
- * still unconfirmed.
- *
- * WHAT IS NOT VERIFIED: the business paths. Zalando serves only the
- * authentication spec publicly; the orders, stock and price specs answer 403.
- * The orders path below is derived from the operation id Zalando publishes
- * (`get-merchants-by-id-orders`) together with their RESTful guidelines, and is
- * marked accordingly. Stock and price are left unset and refuse loudly.
- *
  * ⚠️ TWO DIFFERENT ZALANDO MODELS EXIST. This connector targets the zDirect
  * partner programme. Zalando Connected Retail is a separate product with a
  * different, file-based protocol (PUT of a stock file to a connector-importer
  * host with an `x-api-key` header). They are not interchangeable — see
  * docs/plans/zalando-integration.md before extending this class.
+ *
+ * PROVENANCE of what is implemented here — the detail is in ZalandoTypes.ts:
+ *
+ *  - Authentication is first-party verified. Zalando serves its Authentication
+ *    OpenAPI spec publicly and it was fetched directly: the hosts, the form
+ *    encoded `POST /auth/token` under Basic auth, and `GET /auth/me` reporting
+ *    `bpids` / `groups` / `scopes`.
+ *
+ *  - Orders and stocks come from the zDirect OpenAPI documents for those APIs,
+ *    obtained from a public mirror rather than from Zalando, whose own host
+ *    answers 403 for every spec but authentication. Strongly corroborated,
+ *    not first-party proof, and NOT yet exercised against a live account.
+ *
+ *  - Products, categories and attributes have no spec at all and still refuse.
+ *
+ * The registry deliberately does not list this provider yet, so none of this is
+ * reachable from the catalogue until a real account confirms it.
  */
 
 const HOSTS: Record<string, string> = {
@@ -51,29 +53,43 @@ const PATHS = {
   /** Verified against the published Authentication OpenAPI spec. */
   token: () => '/auth/token',
   identity: () => '/auth/me',
-  /**
-   * DOĞRULANAMADI. Derived from the published operation id
-   * `get-merchants-by-id-orders` plus Zalando's RESTful guidelines. Correct it
-   * here if the ISV documentation says otherwise — it is the only place it
-   * appears.
-   */
+  /** From the mirrored Orders spec; matches the operation id Zalando publishes. */
   orders: (merchantId: string) => `/merchants/${merchantId}/orders`,
+  /** From the mirrored Stocks spec. */
+  stocks: (merchantId: string) => `/merchants/${merchantId}/stocks`,
 };
 
-/** No confirmed path; calling these refuses instead of guessing. */
+/** Still no spec of any kind; calling these refuses instead of guessing. */
 const UNCONFIRMED_PATHS = {
   products: null as string | null,
-  stock: null as string | null,
   categories: null as string | null,
 };
+
+/** The Orders API is JSON:API, so it neither sends nor accepts plain JSON. */
+const JSON_API = 'application/vnd.api+json';
+
+/**
+ * Prices, order items and order lines are separate resources. Without pulling
+ * them in, an order comes back with no line detail and no money on it at all.
+ */
+const ORDER_INCLUDES = 'order_items,order_lines';
 
 /** Refresh a minute early so a token cannot expire mid-request. */
 const TOKEN_SAFETY_MARGIN_MS = 60_000;
 
-const PAGE_SIZE = 100;
-const MAX_PAGES = 50;
+/**
+ * The spec states a default page size of 50 and never states a maximum, so the
+ * documented default is used rather than a guessed ceiling. Costs requests, but
+ * a rejected page size would cost the whole sync.
+ */
+const PAGE_SIZE = 50;
+const MAX_PAGES = 200;
+
+/** Zalando keys stock and prices on GTIN-13, never on a merchant SKU. */
+const GTIN_13 = /^[0-9]{13}$/;
 
 export class ZalandoConnector extends MarketplaceConnector {
+  /** DOĞRULANAMADI: Zalando publishes no quota figure. */
   protected readonly defaultRateLimit = 60;
 
   private accessToken?: { value: string; expiresAt: number };
@@ -161,12 +177,22 @@ export class ZalandoConnector extends MarketplaceConnector {
   }
 
   protected async authHeaders(): Promise<Record<string, string>> {
-    return { Authorization: `Bearer ${await this.bearer()}` };
+    return {
+      Authorization: `Bearer ${await this.bearer()}`,
+      // Zalando's documented troubleshooting handle. Sending one per request
+      // means a failure can be quoted back to their support verbatim.
+      'X-Flow-Id': randomUUID(),
+    };
   }
 
   private call<T>(
     path: string,
-    options: { method?: string; query?: Record<string, string | number | undefined>; body?: unknown } = {},
+    options: {
+      method?: string;
+      query?: Record<string, string | number | boolean | undefined>;
+      body?: unknown;
+      headers?: Record<string, string>;
+    } = {},
   ): Promise<T> {
     return this.send<T>(`${this.host}${path}`, options);
   }
@@ -185,9 +211,14 @@ export class ZalandoConnector extends MarketplaceConnector {
   // --------------------------------------------------------------------------
 
   /**
-   * Uses the identity endpoint rather than a business call: it is the one path
-   * confirmed from Zalando's published spec, so a pass here really does mean
-   * the credentials, the environment and the scopes line up.
+   * Uses the identity endpoint rather than a business call: it is the path
+   * verified first-hand from Zalando's published spec, so a pass here really
+   * does mean the credentials, the environment and the scopes line up.
+   *
+   * It also cross-checks the configured merchant id against the `bpids` the
+   * token actually carries. A merchant id that is merely mistyped otherwise
+   * surfaces much later as a 403 or 404 on the first sync, which reads like a
+   * permissions problem rather than a typo.
    */
   async testConnection(): Promise<ConnectionTestResult> {
     return this.probe(async () => {
@@ -196,12 +227,21 @@ export class ZalandoConnector extends MarketplaceConnector {
       const identity = await this.call<ZalandoIdentity>(PATHS.identity());
 
       const where = this.environment === 'sandbox' ? 'sandbox' : 'production';
-      const scopes = identity?.scopes ?? (identity?.scope ? identity.scope.split(' ') : []);
-      const merchant = identity?.merchant_id ?? identity?.merchantId;
+      const scopes = identity?.scopes ?? [];
+      const bpids = identity?.bpids ?? [];
+      const configured = String(this.credentials.merchantId ?? '').trim();
+
+      if (configured && bpids.length > 0 && !bpids.includes(configured)) {
+        throw new Error(
+          `Zalando kimlik doğrulaması başarılı, ancak girilen Satıcı ID (${configured}) ` +
+            `bu uygulamanın yetkili olduğu satıcılar arasında değil. ` +
+            `Yetkili satıcı kimlikleri: ${bpids.join(', ')}.`,
+        );
+      }
 
       return [
         `Zalando bağlantısı doğrulandı (${where}).`,
-        merchant ? `Satıcı: ${merchant}.` : null,
+        bpids.length > 0 ? `Satıcı: ${bpids.join(', ')}.` : null,
         scopes.length > 0 ? `${scopes.length} yetki tanımlı.` : null,
       ]
         .filter(Boolean)
@@ -214,18 +254,29 @@ export class ZalandoConnector extends MarketplaceConnector {
 
     const backfillDays = Number(this.setting<number>('orders.backfillDays', 7));
     const since = new Date(Date.now() - Math.max(0, backfillDays) * 86_400_000).toISOString();
+    const salesChannelId = String(this.credentials.salesChannelId ?? '').trim();
 
     const collected: MarketplaceOrder[] = [];
 
     for (let page = 0; page < MAX_PAGES; page++) {
-      const result = await this.call<ZalandoOrderPage>(PATHS.orders(merchantId), {
-        query: { limit: PAGE_SIZE, offset: page * PAGE_SIZE, created_after: since },
+      const document = await this.call<ZalandoOrdersDocument>(PATHS.orders(merchantId), {
+        headers: { Accept: JSON_API },
+        query: {
+          // JSON:API bracket parameters, not the limit/offset pair a REST API
+          // would use. URLSearchParams percent-encodes the brackets, which is
+          // what the spec's own examples show.
+          'page[number]': page,
+          'page[size]': PAGE_SIZE,
+          include: ORDER_INCLUDES,
+          created_after: since,
+          sales_channel_id: salesChannelId || undefined,
+        },
       });
 
-      const orders: ZalandoOrder[] = result?.items ?? result?.content ?? [];
-      collected.push(...orders.map((order) => ZalandoMapper.toUnifiedOrder(order, this.fallbackCurrency)));
+      const returned = document?.data?.length ?? 0;
+      collected.push(...ZalandoMapper.toUnifiedOrders(document, this.fallbackCurrency));
 
-      if (orders.length < PAGE_SIZE) break;
+      if (returned < PAGE_SIZE) break;
     }
 
     const wanted = this.setting<string[]>('orders.importStatuses', []);
@@ -240,20 +291,71 @@ export class ZalandoConnector extends MarketplaceConnector {
     return [];
   }
 
+  /**
+   * Zalando identifies stock by **EAN plus sales channel**, never by a merchant
+   * SKU — so this cannot simply forward what the sync worker passes in.
+   *
+   * Failures are reported rather than thrown: the sync walks SKUs one at a
+   * time, and a single unmappable article must not abort the whole run.
+   */
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    if (!UNCONFIRMED_PATHS.stock) {
-      // Reported rather than thrown: the sync walks SKUs and one unsupported
-      // operation must not abort the whole run.
+    const merchantId = String(this.credentials.merchantId ?? '').trim();
+    const salesChannelId = String(this.credentials.salesChannelId ?? '').trim();
+
+    if (!merchantId || !salesChannelId) {
       return {
         sku,
         quantity,
         success: false,
         error:
-          'Zalando stok güncelleme yolu doğrulanmadı. UNCONFIRMED_PATHS.stock doldurulmadan ' +
-          'stok gönderilmez. Ayrıca zDirect ile Connected Retail stok protokolleri farklıdır.',
+          'Zalando stok gönderimi için Satıcı ID ve Satış Kanalı ID gereklidir. ' +
+          'Entegrasyon kimlik bilgilerinde eksik olan alanı doldurun.',
       };
     }
-    return { sku, quantity, success: false, error: 'unreachable' };
+
+    if (!GTIN_13.test(sku)) {
+      return {
+        sku,
+        quantity,
+        success: false,
+        error:
+          `Zalando stoğu EAN (GTIN-13) ile eşler, SKU ile değil; '${sku}' 13 haneli bir EAN değil. ` +
+          'Ürünün barkod alanına GTIN-13 girin veya ürün eşleştirmesinde EAN tanımlayın.',
+      };
+    }
+
+    const body: ZalandoStockUpdatesRequest = {
+      items: [{ sales_channel_id: salesChannelId, ean: sku, quantity }],
+    };
+
+    try {
+      const response = await this.call<ZalandoStockUpdatesResponse>(PATHS.stocks(merchantId), {
+        method: 'POST',
+        body,
+      });
+
+      // A 207 means the call succeeded and each item carries its own verdict,
+      // so the outcome has to be read out of the body. An empty results array
+      // is treated as a failure: nothing confirmed the update.
+      const result = response?.results?.[0]?.result;
+      const status = String(result?.status ?? '').toUpperCase();
+
+      if (status === 'ACCEPTED') {
+        return { sku, quantity, success: true };
+      }
+
+      return {
+        sku,
+        quantity,
+        success: false,
+        error:
+          result?.description ||
+          `Zalando stok güncellemesini kabul etmedi (durum: ${status || 'bilinmiyor'}` +
+            `${result?.code !== undefined ? `, kod: ${result.code}` : ''}).`,
+      };
+    } catch (error: any) {
+      return { sku, quantity, success: false, error: error?.message ?? 'Zalando stok isteği başarısız' };
+    }
   }
 
   async getCategories(): Promise<any[]> {

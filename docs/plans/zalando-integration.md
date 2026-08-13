@@ -1,8 +1,9 @@
 # Zalando entegrasyonu — durum ve açık kalanlar
 
-**Durum:** connector yazıldı, sağlayıcı registry'ye KAYDEDİLMEDİ.
-Katalog kartı "Çok yakında" olarak duruyor.
-**Tarih:** 2026-08-12
+**Durum:** connector yazıldı, sipariş ve stok yolları spec'e göre gerçeklendi,
+sağlayıcı registry'ye **KAYDEDİLMEDİ**. Katalog kartı "Çok yakında" duruyor.
+**Satıcı modeli:** zDirect (kullanıcı tarafından teyit edildi, 2026-08-13).
+**Tarih:** 2026-08-13
 
 ---
 
@@ -26,16 +27,15 @@ Fiziksel mağazaların stoğunu Zalando'ya açması için. **Dosya tabanlı**:
 - Kimlik doğrulama: `x-api-key` başlığı — OAuth **değil**
 - POS/ERP'den periyodik dosya gönderimi bekleniyor
 
-**Hangi modelde olduğunuz teyit edilmeden stok/fiyat tarafı yazılmamalı.** İkisi
-farklı host, farklı kimlik doğrulama, farklı veri biçimi kullanıyor. Connector'ın
-`updateStock` hata mesajı da bu uyarıyı taşıyor.
-
 ---
 
-## Doğrulanan — Zalando'nun yayımladığı Authentication OpenAPI spec'inden
+## Kanıt seviyeleri
+
+Bu dosyadaki her iddia üç kovadan birine düşer. Kod da aynı ayrımı taşıyor.
+
+### A. Birinci elden doğrulanmış — Zalando'nun kendi sunucusundan çekildi
 
 Kaynak: `https://developers.merchants.zalando.com/docs/openapi/specs/authentication.json`
-(kamuya açık, çekilebildi)
 
 | | Değer |
 |---|---|
@@ -46,77 +46,134 @@ Kaynak: `https://developers.merchants.zalando.com/docs/openapi/specs/authenticat
 | Token isteği | `application/x-www-form-urlencoded` |
 | Kimlik doğrulama | **Basic** (`merchant_client`) — client id : client secret |
 | Grant | `client_credentials` |
-| Scope | `access_token_only` — **2021-07-21'den beri gerekli değil**, standart yetkilendirme bu |
-| Yanıt alanları | `access_token`, `token_type`, `expires_in`, `scope` |
+| `/auth/token` yanıtı | `access_token`, `token_type`, `expires_in`, `scope` |
+| `/auth/me` yanıtı | `client_id`, `user_id`, `username`, **`bpids`**, `groups`, `scopes` |
+| 429 başlıkları | `X-Flow-Id`, `Retry-After`, `X-Rate-Limit` |
+
+**Satıcı kimliği `bpids` dizisinden gelir.** `/auth/me` yanıtında `merchant_id`
+diye bir alan **yok**; spec'in kendi ifadesi: *"a bpid is also known as a
+Merchant Identifier"*. Connector'ın önceki sürümü `merchant_id` okuyordu ve
+gerçek her hesapta "satıcı bulunamadı" derdi. Bağlantı testi artık girilen
+Satıcı ID'yi `bpids` listesiyle karşılaştırıp uyuşmazsa reddediyor.
 
 Ayrıca doğrulandı: **zDirect'te yeni oluşturulan uygulamalar varsayılan olarak
 sandbox modundadır.** Doğru görünen bir client id'nin production'da başarısız
-olmasının en yaygın sebebi budur; connector'ın hata mesajı bunu söylüyor.
+olmasının en yaygın sebebi budur.
 
-**Bu, bağlantı testinin gerçekten çalışması için yeterli.** `testConnection`
-bilerek `/auth/me` kullanıyor — iş uç noktalarından hiçbirine bağımlı değil,
-yani doğrulanmamış bir yol yüzünden yanlış negatif vermez.
+### B. Aynadan alınmış — güçlü destekleyici kanıt var, birinci el yok
+
+Zalando yalnızca authentication spec'ini kendi sunucusundan servis ediyor.
+Diğer bütün spec yolları **403** dönüyor; `developers.merchants.zalando.com/openapi/*.json`
+ise hangi dosya istenirse istensin aynı 76 KB'lık dokümantasyon SPA kabuğunu
+200 ile döndürüyor — yani orada da spec yok.
+
+Orders / stocks / prices spec'leri şu kamuya açık aynadan alındı:
+`https://github.com/api-evangelist/zalando` (`openapi/zalando-*-api-openapi.yml`).
+
+Destekleyen deliller:
+- Zalando'nun yayımladığı operation id `get-merchants-by-id-orders` ile yol örtüşüyor
+- `/merchants/{merchant-id}/…` kalıbı authentication spec'iyle aynı
+- JSON:API zarfı Zalando'nun kendi RESTful API Guidelines'ının dayattığı biçim
+- `bpids` ↔ merchant-id eşleşmesi birinci elden doğrulanmış spec'le tutarlı
+
+**Bu kanıt "yazmaya yeter" seviyesindedir, "çalışıyor demeye" yetmez.**
+
+#### Siparişler — `GET /merchants/{merchant-id}/orders`
+
+- Yanıt **JSON:API**: `application/vnd.api+json`, `data` / `included` / `meta`
+- Sayfalama **`page[number]` ve `page[size]`** — `limit`/`offset` değil.
+  `page[size]` varsayılanı 50, üst sınırı spec'te yazmıyor; kod bu yüzden
+  tahmini bir tavan yerine belgelenmiş varsayılanı kullanıyor.
+- Filtreler: `created_after`, `created_before`, `last_updated_after`,
+  `last_updated_before`, `order_status`, `order_number`, `locale`, `exported`,
+  `order_type`, `sales_channel_id`
+- `include`: `order_transitions`, `order_items`, `order_lines`,
+  `order_lines.order_line_transitions`, `shipments`
+- **Para sipariş üstünde değil, sipariş satırlarında.** `OrderItemAttributes`
+  hiç fiyat taşımıyor; `include=order_items,order_lines` olmadan sipariş
+  parasız gelir.
+- `OrderStatus` yalnızca `initial` / `approved` / `fulfilled` — **iptal durumu
+  yok**. İptal sadece satır seviyesinde (`OrderLineStatus`: `initial`,
+  `reserved`, `shipped`, `returned`, `canceled`). Mapper bu yüzden tüm
+  satırları iptalse siparişi `cancelled` sayıyor.
+- **Tutar birimi: major unit.** `Money.amount` spec'te "Amount with 2 digits
+  after the decimal separator", örnek `99.95`. Temu'nun tam tersi. Tek
+  fonksiyonda izole, kendi testi var.
+- Sipariş toplamı = `order_lines_price_amount` + `shipping_costs.amount`.
+
+#### Stok — `POST /merchants/{merchant-id}/stocks`
+
+- Gövde: `{ items: [{ sales_channel_id, ean, quantity }] }`, tek istekte 1000'e kadar
+- Scope: `products/stock/write`
+- Yanıt **207**: HTTP çağrısı başarılı olsa bile her kalem kendi sonucunu
+  taşır (`ACCEPTED` / `REJECTED` / `FAILED` + kod 0/101/102/104). Sadece
+  durum koduna bakmak her reddi başarı sayardı.
+- **Stok EAN (GTIN-13) + satış kanalı ile eşlenir, SKU ile değil.** Connector
+  13 haneli olmayan bir tanımlayıcıyı çağrı yapmadan reddediyor.
+
+#### Fiyat — `POST /merchants/{merchant-id}/prices`
+
+Spec elde ve anlaşıldı (`{ product_prices: [{ ean, sales_channel_id,
+regular_price, promotional_price?, scheduled_prices? }] }`, major unit).
+**Gerçeklenmedi:** bu sistemde bir connector'a fiyat gönderten hiçbir yol yok —
+`MarketplaceConnector` üzerinde `updatePrice` yok, `integration-sync.worker`
+içinde buna varan bir olay yok. Yazılsa çağrılmayan kod olurdu. Manifest de bu
+yüzden `price.push` yeteneğini **istemiyor**; istese hiçbir şey yapmayan bir
+fiyat sekmesi açılırdı.
+
+### C. Hâlâ hiç bilinmiyor
+
+- **Ürün / makale listeleme.** Spec yok. `getProducts` reddediyor.
+- **Kategori / özellik ağacı.** Spec yok. `getCategories` reddediyor.
+- Rate limit değerleri. Manifest 60/dk varsayıyor — DOĞRULANAMADI.
+- Her satış kanalının hangi para biriminde kapandığı. Yük bunu söylediği yerde
+  okunuyor; tahmini bir ülke→para tablosu **yok**.
 
 ---
 
-## Doğrulanamayan
+## Kimlik bilgileri
 
-Zalando yalnızca authentication spec'ini kamuya açık servis ediyor; `orders.json`
-ve `stocks.json` denemeleri **403** döndü.
+| Alan | Neden credential (settings değil) |
+|---|---|
+| `clientId` / `clientSecret` | OAuth |
+| `merchantId` | İş uç noktalarında yol parametresi — ilk çağrıda lazım |
+| `salesChannelId` | Stok her zaman bir satış kanalına gider — ilk çağrıda lazım |
 
-### Sipariş yolu — türetildi, teyit edilmedi
+Settings kaydı entegrasyon oluştuktan *sonra* yazılır; connector ise ilk
+çağrısında bu değerlere ihtiyaç duyar. Credential olarak toplanınca
+`MarketplaceCredentialService.validate()` eksik bir create'i hiçbir şey
+kalıcılaşmadan reddediyor.
 
-Zalando'nun yayımladığı operation id: `get-merchants-by-id-orders`
-(oluşturma ve değiştirme tarihine göre filtrelenebiliyor).
-
-Bu ad + Zalando'nun kendi RESTful API Guidelines'ı → `GET /merchants/{merchantId}/orders`
-şeklinde türetildi ve kodda **tek bir yerde** duruyor (`PATHS.orders`). Farklıysa
-oradan düzeltilir.
-
-Teyit edilecekler:
-1. Yolun kendisi
-2. Sayfalama parametre adları — kod `limit` / `offset` varsayıyor
-3. Tarih filtresi adı — kod `created_after` varsayıyor
-4. Yanıt zarfı — kod hem `items` hem `content` deniyor
-5. `ZalandoTypes.ts` içindeki tüm alan adları (hepsi tahmin)
-
-### Stok / fiyat / ürün / kategori yolları — hiç bilinmiyor
-
-`UNCONFIRMED_PATHS` içinde `null`. Çağrılırsa doldurulacak sabitin adını söyleyen
-hata veriyor. `updateStock` throw etmiyor, başarısız **sonuç** dönüyor —
-senkronizasyon SKU'ları dolaşıyor, desteklenmeyen tek işlem tüm koşuyu
-durdurmamalı.
-
-### Diğer
-
-- **Tutar birimi:** kod tutarları **major unit** (ör. 49.90 EUR) olarak okuyor —
-  Temu'nun tam tersi. Yanlışsa her sipariş 100 kat sapar. Tek fonksiyonda izole,
-  kendi testi var.
-- `merchantId`'nin nereden alınacağı (panelde mi, `/auth/me` yanıtında mı).
-  Connector `/auth/me` yanıtındaki `merchant_id`'yi bağlantı testinde gösteriyor;
-  oradan otomatik doldurulabilir mi, teyit edilmeli.
-- Token ömrü: spec `expires_in` alanını tanımlıyor ama sabit değer vermiyor.
-  Kod yanıttaki değere güveniyor, yalnızca hiç yoksa 3600'e düşüyor.
-- Rate limit değerleri.
-- Sipariş durumu sözlüğü — yalnızca tutarlı görülen eşleme çevriliyor, gerisi
-  `pending`.
+**Satış kanalı başına bir entegrasyon kaydı** — Trendyol Global'in `country`'si
+ve eBay'in marketplace'i ile aynı kural. Satış kanalı, Zalando'nun fiyat, stok
+ve siparişi ilişkilendirdiği birim; ikisi tek kayıtta duramaz.
 
 ---
 
 ## Açmak için
 
-1. Satıcı modelini teyit et (zDirect / Connected Retail).
-2. Sipariş yolunu ve parametrelerini doğrula → `PATHS.orders`.
-3. Stok/fiyat yollarını al → `UNCONFIRMED_PATHS`.
-4. `manifest.registry.ts` içindeki `OVERRIDES` dizisine `zalandoOverride` ekle —
-   tek satır. Çeviriler zaten hazır ve kaydedilmemiş-manifest testi onları
-   koruyor.
+1. Gerçek bir zDirect hesabıyla **`testConnection`**. Kimlik doğrulama birinci
+   elden doğrulanmış olduğu için bu bugün çalışmalı. Çalışmıyorsa sorun kimlik
+   bilgilerinde veya sandbox modundadır, kodda değil.
+2. `/auth/me` yanıtındaki `scopes` listesine bak — hangi iş uç noktalarına
+   yetki verildiğini o söyler. `orders/read` ve `products/stock/write` var mı?
+3. **Sipariş çek.** Doğrulanacaklar, önem sırasıyla:
+   - Yol ve JSON:API zarfı gerçekten aynadaki gibi mi (`PATHS.orders`)
+   - `page[number]` / `page[size]` kabul ediliyor mu
+   - **Tutar birimi gerçek bir siparişle** — yanlışsa her sipariş 100 kat sapar
+   - `include=order_items,order_lines` satırları ve fiyatları getiriyor mu
+4. **Tek bir EAN'a stok gönder** ve 207 gövdesindeki `status` alanını gör.
+5. Yalnız bunlar geçtikten sonra: `manifest.registry.ts` içindeki `OVERRIDES`
+   dizisine `zalandoOverride` ekle — tek satır. Çeviriler hazır ve
+   kaydedilmemiş-manifest testi onları koruyor.
 
-## Doğrulama sırası (öneri)
+Ölçüm sonuçları commit mesajının gövdesine yazılır (CLAUDE.md §7).
 
-1. **Önce `testConnection`.** Kimlik doğrulama tamamen doğrulanmış olduğu için
-   bu bugün çalışmalı. Çalışmıyorsa sorun kimlik bilgilerinde veya sandbox
-   modundadır, kodda değil.
-2. `/auth/me` yanıtındaki scope listesine bak — hangi iş uç noktalarına yetki
-   verildiğini o söyler ve hangi API'lerin isteneceğini belirler.
-3. Sipariş yolunu dene; tutar birimini **gerçek bir siparişle** doğrula.
+---
+
+## Kayıtlı olmayan sağlayıcı nasıl korunuyor
+
+`manifest.i18n.spec.ts` içindeki `UNREGISTERED` listesi zalando'yu da geziyor,
+yani sağlayıcı registry'de olmasa bile çevirileri her locale için test ediliyor.
+Kaydetmek gerçekten tek satır kalıyor; ekranı ham anahtarlarla dolduran bir
+sürprize dönüşmüyor.
