@@ -12,7 +12,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write src"
+    "format": "prettier --write src",
+    "postbuild": "node scripts/write-build-info.js"
   },
   "dependencies": {
     "@kroptos/shared": "workspace:*",

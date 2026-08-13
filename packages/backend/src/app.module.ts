@@ -21,6 +21,7 @@ import { WarehouseSettingsModule } from './modules/warehouse-settings/warehouse-
 import { ProfileModule } from './modules/profile/profile.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { FilesController } from './modules/files/files.controller';
+import { HealthController } from './modules/health/health.controller';
 
 @Module({
   imports: [
@@ -48,7 +49,7 @@ import { FilesController } from './modules/files/files.controller';
     ProfileModule,
     InventoryModule,
   ],
-  controllers: [FilesController],
+  controllers: [FilesController, HealthController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
