@@ -2104,7 +2104,7 @@
         },
         "temu": {
           "apiUrl": "API Adresi (Gateway)",
-          "apiUrlHelp": "Temu ISV panelinde API Reference sayfasında yer alan istek (gateway) adresi. Bölgenize göre değişir; adresi olduğu gibi kopyalayın. Bu alan boş bırakılamaz.",
+          "apiUrlHelp": "Temu ISV panelinde API Reference sayfasında yer alan istek (gateway) adresi. Bölgenize göre değişir (ör. ABD için openapi-b-us.temu.com); adresi olduğu gibi kopyalayın. Yalnızca sunucu adını yapıştırmanız yeterlidir, /openapi/router yolu gerekiyorsa otomatik eklenir. Bu alan boş bırakılamaz.",
           "appKey": "App Key",
           "appKeyHelp": "Temu Open Platform uygulamanızın anahtarı.",
           "appSecret": "App Secret",
