@@ -8,52 +8,88 @@ import {
 import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
 import { buildTemuPayload } from './TemuSignature';
-import { TemuEnvelope } from './TemuTypes';
+import { TemuEnvelope, TemuOrder, TemuSku } from './TemuTypes';
+import { TemuMapper } from './TemuMapper';
 
 /**
  * Temu Open Platform.
  *
- * WHAT IS VERIFIED: the transport. Every call is a POST carrying one common
- * envelope (`type`, `app_key`, `access_token`, `timestamp`, `data_type`, `sign`)
- * whose signature is an MD5 over the sorted parameters wrapped in the app
- * secret. Operations are named RPC-style rather than addressed by path.
+ * Every call is a POST to one router endpoint carrying a common envelope
+ * (`type`, `app_key`, `access_token`, `timestamp`, `data_type`, `sign`) whose
+ * signature is an MD5 over the sorted parameters wrapped in the app secret.
+ * Operations are named RPC-style in `type` rather than addressed by path.
  *
- * WHAT IS NOT VERIFIED, and is therefore not invented here:
+ * EVIDENCE TIERS — read before trusting anything here.
  *
- *  - **The gateway host.** Temu's documentation sits behind an ISV login and
- *    the host could not be confirmed from any public source. It is a required
- *    credential (`apiUrl`) the seller copies from their own partner account
- *    instead of a value guessed in this file. A wrong host fails every call.
+ *  TIER 1, corroborated by two independent unofficial SDKs that implement the
+ *  protocol (a Python and a TypeScript one), agreeing with each other and with
+ *  this file's pre-existing transport:
+ *    - the signing algorithm and the envelope field names,
+ *    - the request path `/openapi/router`,
+ *    - the operation names in METHODS below, each with its full request
+ *      parameter list.
  *
- *  - **Every operation name.** Not one has been confirmed, so every operation
- *    refuses with a message naming the constant to fill in. A guessed RPC name
- *    would come back as an opaque error code on every sync, which is far harder
- *    to diagnose than an explicit refusal.
+ *  TIER 2, still unverified — nobody has run one live call:
+ *    - every RESPONSE field name (see TemuTypes), including which key holds the
+ *      page of results,
+ *    - the minor-unit (cents) assumption on amounts (TemuMapper),
+ *    - the numeric order status codes,
+ *    - whether this account is a `local` seller at all (see below),
+ *    - the gateway host for regions other than the US.
  *
- * So this class currently makes no outbound request at all. The transport is
- * built and covered by tests through `call`, ready for the day a name is
- * confirmed; nothing about it is speculative.
+ * Because response shapes are Tier 2, the list readers below REFUSE rather than
+ * return an empty page when they cannot find the array they expect. A sync that
+ * silently imports nothing looks like "the seller has no orders" and can go
+ * unnoticed for weeks; a loud failure naming the keys actually received cannot.
+ *
+ * SELLER MODEL WARNING: three of the four names are `bg.local.*`, which belongs
+ * to Temu's local-to-local seller model (the seller holds and ships their own
+ * stock). A fully-managed account may not have these operations at all, in
+ * which case Temu answers with its own error and it surfaces verbatim. Confirm
+ * the account's model before reading a failure here as a bug in this file.
  */
 
 /**
- * Every entry is `null`: not one Temu operation name has been verified.
+ * Operation names, Tier 1 (see above).
  *
- * An orders name (`bg.order.list.v2.get`) sat here for a while, taken from a
- * documentation page *title* in a search index — its parameters and response
- * were never seen. Four further names arrived later from exactly the same kind
- * of source and were deliberately kept out of this file. Holding one to a
- * weaker standard than the others is how a guess acquires the appearance of a
- * fact, so it was removed too.
+ * These sat at `null` for a while, and deliberately so: they had come from
+ * documentation page *titles* in a search index, with their parameters and
+ * responses never seen. That objection no longer holds — each name below now
+ * comes with the full request parameter list from working SDK source, and two
+ * independent implementations agree. The names are the verified part; the
+ * response shapes are not (Tier 2).
  *
- * The candidates are recorded in docs/plans/temu-integration.md. Confirming one
- * against the ISV documentation and writing it here is a one-line change.
+ * `getCategoryAttributes` has no entry: `bg.local.goods.property.get` exists in
+ * the same method tree but its parameters were not established, so it is not
+ * written here on a weaker standard than its neighbours.
  */
-const METHODS: Record<'orders' | 'products' | 'stock' | 'categories', string | null> = {
-  orders: null,
-  products: null,
-  stock: null,
-  categories: null,
-};
+const METHODS = {
+  /** Params: page_number, page_size, parent_order_status, create_after, create_before, … */
+  orders: 'bg.order.list.v2.get',
+  /** Params: page_no, page_size, sku_search_type, search_text, sku_id_list, … */
+  products: 'bg.local.goods.sku.list.query',
+  /** Params: goods_id (required), sku_stock_change_list | sku_stock_target_list, request_unique_key */
+  stock: 'bg.local.goods.stock.edit',
+  /** Params: parent_cat_id (0 = root), language */
+  categories: 'bg.local.goods.cats.get',
+} as const;
+
+/**
+ * Note the pagination fields differ per family and are NOT interchangeable:
+ * orders page with `page_number`, goods with `page_no`. Both take `page_size`.
+ * Sending the wrong one silently returns page 1 forever.
+ */
+const ORDER_PAGE_PARAM = 'page_number';
+const GOODS_PAGE_PARAM = 'page_no';
+
+/** DOĞRULANAMADI: the maximum Temu accepts. Conservative until measured. */
+const PAGE_SIZE = 50;
+
+/** Stops a mis-read response shape from paging forever. */
+const MAX_PAGES = 20;
+
+/** Every Temu operation is POSTed to this path on the seller's gateway host. */
+const TEMU_ROUTER_PATH = '/openapi/router';
 
 export class TemuConnector extends MarketplaceConnector {
   protected readonly defaultRateLimit = 60;
@@ -81,7 +117,16 @@ export class TemuConnector extends MarketplaceConnector {
     return host ? `TEMU:${host}` : 'TEMU';
   }
 
-  /** Normalised gateway origin, without a trailing slash or a path. */
+  /**
+   * Normalised gateway URL.
+   *
+   * The host is the seller's (it varies by region and is not guessed in this
+   * file), but the path is not: every Temu call goes to `/openapi/router` on
+   * that host. A seller who pastes the bare host used to have their requests
+   * POSTed to `/`, which answers with an HTML error page rather than the
+   * envelope — so the router path is appended when the pasted value carries no
+   * path of its own. A pasted path is left alone.
+   */
   private get gateway(): string {
     const { apiUrl } = this.requireCredentials('apiUrl');
 
@@ -95,7 +140,8 @@ export class TemuConnector extends MarketplaceConnector {
       );
     }
 
-    return `${parsed.protocol}//${parsed.host}${parsed.pathname === '/' ? '' : parsed.pathname}`;
+    const path = parsed.pathname === '/' ? TEMU_ROUTER_PATH : parsed.pathname.replace(/\/$/, '');
+    return `${parsed.protocol}//${parsed.host}${path}`;
   }
 
   /**
@@ -128,83 +174,143 @@ export class TemuConnector extends MarketplaceConnector {
   }
 
   /**
-   * Raised for an operation whose RPC name was never confirmed. Naming the
-   * exact constant to fill in means whoever has the documentation can act on
-   * the message without reading this file first.
+   * Finds the page of rows inside a result whose exact shape is unverified.
+   *
+   * Returning `[]` on an unrecognised shape would report "no orders" for what is
+   * really a parsing failure, so this throws and names the keys that actually
+   * came back — that message is what turns a silent no-op into a five-minute
+   * fix once someone sees a real payload.
    */
-  private unconfirmed(operation: keyof typeof METHODS): never {
+  private readPage<T>(result: unknown, operation: string): T[] {
+    if (Array.isArray(result)) return result as T[];
+
+    if (result && typeof result === 'object') {
+      const record = result as Record<string, unknown>;
+      // `pageItems` is what the shape in TemuTypes expects; the others are the
+      // spellings used elsewhere in the same API family.
+      for (const key of ['pageItems', 'pageItemList', 'list', 'dataList', 'subOrderList']) {
+        if (Array.isArray(record[key])) return record[key] as T[];
+      }
+
+      throw new Error(
+        `Temu '${operation}' yanıtında liste alanı bulunamadı. ` +
+          `Gelen alanlar: ${Object.keys(record).join(', ') || '(boş)'}. ` +
+          'Yanıt gövdesinin şekli doğrulanmadı; TemuTypes.ts içindeki alan adlarını ' +
+          'gerçek yanıta göre düzeltin.',
+      );
+    }
+
     throw new Error(
-      `Temu '${operation}' işlemi için API metot adı doğrulanmadı. ` +
-        `Temu ISV dokümanındaki metot adını TemuConnector içindeki METHODS.${operation} ` +
-        'sabitine yazın; connector bu bilgi olmadan tahmini bir çağrı yapmaz.',
+      `Temu '${operation}' yanıtı beklenen nesne değil (${typeof result}).`,
     );
   }
 
-  /**
-   * Checks everything that can be checked without contacting Temu: that the
-   * credentials are present and that the gateway is a usable URL. Separated so
-   * `testConnection` can tell "your details are malformed" apart from "there is
-   * nothing we are able to call".
-   */
-  private assertConfigured(): void {
-    this.requireCredentials('apiUrl', 'appKey', 'appSecret', 'accessToken');
-    // Getter; throws when the pasted address is not a URL.
-    void this.gateway;
+  /** Walks pages until a short page arrives, with a hard cap. */
+  private async paginate<T>(
+    method: string,
+    pageParam: string,
+    operation: string,
+    extraParams: Record<string, unknown> = {},
+  ): Promise<T[]> {
+    const collected: T[] = [];
+
+    for (let page = 1; page <= MAX_PAGES; page += 1) {
+      const result = await this.call<unknown>(method, {
+        ...extraParams,
+        [pageParam]: page,
+        page_size: PAGE_SIZE,
+      });
+
+      const rows = this.readPage<T>(result, operation);
+      collected.push(...rows);
+
+      if (rows.length < PAGE_SIZE) break;
+    }
+
+    return collected;
   }
 
   /**
-   * Cannot reach Temu: every request is addressed by an RPC name in `type`, and
-   * none is confirmed. Rather than sending a guessed method and reporting the
-   * marketplace's rejection as a connection problem, this says plainly what is
-   * missing — and only after confirming the credentials themselves are sound,
-   * so the seller is not sent looking for a mistake they did not make.
+   * Checks the credentials and the gateway shape first, then makes the cheapest
+   * real call there is — one order page of size 1. Anything wrong with the
+   * secret, the host or the seller model surfaces here as Temu's own message
+   * rather than as a silent success.
    */
   async testConnection(): Promise<ConnectionTestResult> {
     return this.probe(async () => {
-      this.assertConfigured();
+      this.requireCredentials('apiUrl', 'appKey', 'appSecret', 'accessToken');
+      const gateway = this.gateway;
 
-      throw new Error(
-        'Temu kimlik bilgileri ve API adresi biçimsel olarak geçerli, ancak bağlantı ' +
-          'test edilemedi: doğrulanmış hiçbir Temu API metot adı yok. ' +
-          'Metot adlarını TemuConnector içindeki METHODS sabitine yazın ' +
-          '(adaylar: docs/plans/temu-integration.md).',
-      );
+      await this.call<unknown>(METHODS.orders, { [ORDER_PAGE_PARAM]: 1, page_size: 1 });
+
+      return `Temu bağlantısı doğrulandı (${gateway}).`;
     });
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
-    if (!METHODS.orders) this.unconfirmed('orders');
-    return [];
+    const orders = await this.paginate<TemuOrder>(METHODS.orders, ORDER_PAGE_PARAM, 'siparişler');
+    const fallbackCurrency = this.setting<string>('orders.currency', 'USD');
+
+    return orders.map((order) => TemuMapper.toUnifiedOrder(order, fallbackCurrency));
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
-    if (!METHODS.products) this.unconfirmed('products');
-    return [];
+    const skus = await this.paginate<TemuSku>(METHODS.products, GOODS_PAGE_PARAM, 'ürünler');
+
+    return skus.map((sku) => TemuMapper.toUnifiedProduct(sku));
   }
 
+  /**
+   * Refused on purpose, and this one is not a missing method name.
+   *
+   * `bg.local.goods.stock.edit` is confirmed, and so are its top-level
+   * parameters — `goods_id` plus one of `sku_stock_change_list` (delta) or
+   * `sku_stock_target_list` (absolute). What is NOT established is the shape of
+   * the elements inside those lists, and there is no safe way to guess it: a
+   * list Temu cannot parse the way we intended is how a whole catalogue gets
+   * written to zero stock. Overselling is recoverable; a silent stock-out
+   * across every listing is not.
+   *
+   * Two things are needed before this can send, both from one real payload:
+   *   1. the element keys (sku id field and quantity field) of either list, and
+   *   2. the `goods_id` for a SKU — Temu keys stock by goods, not by the
+   *      seller's SKU code, so a lookup through METHODS.products has to resolve
+   *      it first, which in turn needs that response shape confirmed.
+   *
+   * Reported rather than thrown: a sync walks SKUs and one unsupported
+   * operation must not abort the whole run.
+   */
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
-    if (!METHODS.stock) {
-      // Reported rather than thrown: the sync walks SKUs and one unsupported
-      // operation must not abort the whole run.
-      return {
-        sku,
-        quantity,
-        success: false,
-        error:
-          "Temu stok güncelleme metodu doğrulanmadı; TemuConnector içindeki METHODS.stock " +
-          'sabitini doldurmadan stok gönderilmez.',
-      };
-    }
-    return { sku, quantity, success: false, error: 'unreachable' };
+    return {
+      sku,
+      quantity,
+      success: false,
+      error:
+        `Temu stok güncellemesi gönderilmedi: '${METHODS.stock}' metodu doğrulandı, ancak ` +
+        'sku_stock_change_list / sku_stock_target_list öğelerinin alan adları ve SKU→goods_id ' +
+        'eşlemesi doğrulanmadı. Yanlış biçimli bir liste tüm katalogun stoğunu sıfırlayabilir, ' +
+        'bu yüzden tahminle gönderilmiyor (ayrıntı: docs/plans/temu-integration.md).',
+    };
   }
 
   async getCategories(): Promise<any[]> {
-    if (!METHODS.categories) this.unconfirmed('categories');
-    return [];
+    // parent_cat_id 0 is the root of the tree; deeper levels are fetched by
+    // passing a category's own id.
+    const result = await this.call<unknown>(METHODS.categories, { parent_cat_id: 0 });
+
+    return this.readPage<any>(result, 'kategoriler');
   }
 
+  /**
+   * No verified method. `bg.local.goods.property.get` sits in the same tree but
+   * its parameters were not established, and writing it here would hold it to a
+   * weaker standard than every other name in METHODS.
+   */
   async getCategoryAttributes(_categoryId: string): Promise<any> {
-    if (!METHODS.categories) this.unconfirmed('categories');
-    return {};
+    throw new Error(
+      'Temu kategori özellikleri için doğrulanmış bir API metodu yok. ' +
+        'Aday: bg.local.goods.property.get — parametreleri ISV dokümanından teyit edilip ' +
+        'TemuConnector içindeki METHODS sabitine eklenmeli.',
+    );
   }
 }

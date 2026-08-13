@@ -47,3 +47,30 @@ export interface TemuOrderListResult {
   pageItems?: TemuOrder[];
   totalCount?: number;
 }
+
+/**
+ * One row of `bg.local.goods.sku.list.query`.
+ *
+ * DOĞRULANAMADI, like the order shapes above: the request parameters of that
+ * operation are established, its response is not. Every field is optional and
+ * the mapper falls back rather than trusting any single spelling.
+ *
+ * `goodsId` matters beyond display: Temu keys stock by goods, not by the
+ * seller's SKU code, so this is the field a future `updateStock` has to resolve
+ * before it can send anything.
+ */
+export interface TemuSku {
+  skuId?: string | number;
+  goodsId?: string | number;
+  /** The seller's own code, where one was set on the listing. */
+  outSkuSn?: string;
+  skuCode?: string;
+  goodsName?: string;
+  skuName?: string;
+  thumbUrl?: string;
+  /** Minor units, on the same assumption as the order endpoints. */
+  price?: number;
+  salePrice?: number;
+  stockQuantity?: number;
+  quantity?: number;
+}

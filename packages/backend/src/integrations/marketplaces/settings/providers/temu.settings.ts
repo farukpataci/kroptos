@@ -9,14 +9,19 @@ const cred = (key: string) => `${I}.credentials.temu.${key}`;
  * NOT REGISTERED YET. This override is deliberately absent from `OVERRIDES` in
  * manifest.registry.ts, which is what keeps the catalogue card showing "coming
  * soon" and its button disabled. Registering it is the single line that turns
- * Temu on — and it should only be added once the two unverified pieces are
- * settled:
+ * Temu on.
  *
- *   1. the gateway host (collected here as `apiUrl`, so this one is ready), and
- *   2. the RPC method names for products, stock and categories, which live in
- *      METHODS inside TemuConnector and are currently null.
+ * The method names are no longer what is holding it back — those are filled in
+ * and the connector makes real calls (see METHODS in TemuConnector). What is
+ * still missing is a single LIVE call: no response body has ever been read, so
+ * the field names in TemuTypes, the minor-unit assumption on amounts and the
+ * numeric order statuses all remain inferred.
  *
- * Registering it earlier would offer sellers a connection that cannot complete.
+ * Note the circularity this creates, recorded so it is decided rather than
+ * stumbled into: with the card disabled there is no way to enter credentials,
+ * so the live verification that would justify enabling it cannot happen through
+ * the UI. Closing it needs either this one-line registration or a throwaway
+ * script run against real credentials. See docs/plans/temu-integration.md.
  *
  * `apiUrl` is a credential rather than a settings field for the same reason the
  * eBay marketplace is: settings are saved after the integration exists, but the

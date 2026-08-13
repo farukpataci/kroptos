@@ -1,127 +1,147 @@
 # Temu entegrasyonu — açık kalan bilgiler
 
-**Durum:** connector yazıldı, sağlayıcı registry'ye KAYDEDİLMEDİ.
-Katalog kartı "Çok yakında" olarak duruyor.
-**Tarih:** 2026-08-12
-
-Bu not, ISV paneline girildiğinde neyin aranacağını önden yazar. Amaç, o an
-sıfırdan araştırma yapmak yerine doğrudan doğrulanacak maddelere gitmek.
+**Durum:** connector gerçek çağrı yapıyor; sağlayıcı registry'ye **KAYDEDİLMEDİ**.
+Katalog kartı "Çok yakında" olarak duruyor — bu bir karar, eksiklik değil.
+**Son güncelleme:** 2026-08-13
 
 ---
 
-## Kod bugün nerede
+## 2026-08-13'te ne değişti
+
+Metot adları `null` iken dolduruldu ve connector artık gerçekten istek yapıyor.
+Gerekçe: adların reddedilme sebebi ortadan kalktı.
+
+Önceki ölçüt şuydu — *"adlar doküman sayfa **başlıklarından** geldi,
+parametreleri ve yanıtları hiç görülmedi."* Bu doğruydu. Şimdi elimizde protokolü
+uygulayan **iki bağımsız gayrı-resmî SDK** var (biri Python, biri TypeScript);
+ikisi birbiriyle ve bizim mevcut taşıma katmanımızla uyuşuyor, ve her metodun
+**tam istek parametre listesini** içeriyor.
+
+Kanıt hâlâ resmî ISV dokümanı değil ve **canlı çağrı hiç yapılmadı.** Aşağıdaki
+kademe ayrımı bu yüzden var; koddaki yorumlar da aynı ayrımı kullanıyor.
+
+---
+
+## Kanıt kademeleri
+
+### Kademe 1 — iki bağımsız uygulama tarafından teyitli
+
+| Ne | Değer |
+|---|---|
+| İmza | `MD5(app_secret + sıralı k1v1k2v2… + app_secret)`, hex, **büyük harf** |
+| Zarf | `type`, `app_key`, `access_token`, `timestamp` (saniye), `data_type: 'JSON'`, `sign` |
+| İstek yolu | `/openapi/router` — host bölgeye göre değişir, yol değişmez |
+| ABD gateway | `https://openapi-b-us.temu.com` (yalnızca ABD teyitli) |
+| Siparişler | `bg.order.list.v2.get` — `page_number`, `page_size`, `parent_order_status`, `create_after`, `create_before`, `parent_order_sn_list`, `region_id`, `sortby`… |
+| Ürünler | `bg.local.goods.sku.list.query` — `page_no`, `page_size`, `sku_search_type`, `search_text`, `sku_id_list`, `cat_id_list`… |
+| Stok | `bg.local.goods.stock.edit` — `goods_id` (zorunlu), `sku_stock_change_list` (fark), `sku_stock_target_list` (mutlak), `request_unique_key` |
+| Kategoriler | `bg.local.goods.cats.get` — `parent_cat_id` (0 = kök), `language` |
+
+> **Sayfalama tuzağı:** siparişler `page_number`, ürünler `page_no` kullanıyor.
+> Aynı sanıp tek alan kullanmak, her seferinde 1. sayfayı döndürür ve
+> senkronizasyon **çalışıyormuş gibi görünür.** Kodda iki ayrı sabit ve bunu
+> pinleyen bir test var.
+
+### Kademe 2 — HÂLÂ DOĞRULANMADI
+
+Hiç canlı çağrı yapılmadı. Bunlar ancak gerçek kimlik bilgisiyle kapanır:
+
+1. **Yanıt gövdelerinin alan adları.** `TemuTypes.ts` içindeki her alan
+   çıkarımdır. Sayfanın hangi anahtarda geldiği de dahil.
+2. **Tutar birimi.** Kod kuruş (minor unit) varsayıp 100'e bölüyor. Yanlışsa her
+   sipariş yüz kat şişer. Buradaki en pahalı varsayım hâlâ bu.
+3. **Sipariş durum kodları.** Yalnızca 1–5 eşlenmiş, gerisi `pending`.
+4. **Satıcı modeli.** Aşağıdaki uyarıya bakın.
+5. **ABD dışı gateway host'ları.**
+6. **`page_size` üst sınırı.** Kod 50 kullanıyor, ölçülmedi.
+
+**Yanıt şekli yanlışsa ne olur:** liste okuyucu boş dizi döndürmez, **hata
+fırlatır** ve gelen anahtar adlarını mesaja yazar. Sessizce "hiç sipariş yok"
+demek haftalarca fark edilmeyebilir; gürültülü hata edilemez.
+
+---
+
+## ⚠️ `local` uyarısı — hâlâ geçerli
+
+Dört metottan üçü `bg.local.*` öneki taşıyor; bu Temu'nun **yerel satıcı**
+(local-to-local: stoğu satıcı tutar, satıcı gönderir) modeline ait.
+
+**Tam yönetimli (fully managed)** bir hesapta bu metotlar ya yetki hatası verir
+ya hiç yoktur. Böyle bir hata bu dosyadaki bir bug değildir — önce hesabın
+modelini panelden teyit edin.
+
+Hesap iki modelde birden olabiliyorsa entegrasyon başına model seçimi gerekir
+(Trendyol Global'de ülke, eBay'de pazar seçimi gibi): `temu.settings.ts`'e
+zorunlu bir `sellerModel` alanı eklenir, connector metot kümesini ona göre seçer.
+
+---
+
+## Stok neden hâlâ gönderilmiyor
+
+`updateStock` bilerek başarısız sonuç döndürüyor — ve bu **eksik metot adı
+değil.** `bg.local.goods.stock.edit` ve üst düzey parametreleri teyitli. Eksik
+olan iki şey:
+
+1. `sku_stock_change_list` / `sku_stock_target_list` **öğelerinin alan adları**
+   (sku kimliği ve miktar alanı).
+2. **SKU → `goods_id` eşlemesi.** Temu stoğu goods bazında tutuyor, satıcının SKU
+   koduyla değil. Çözüm `METHODS.products` üzerinden bir arama gerektiriyor, o da
+   Kademe 2'deki yanıt şekline bağlı.
+
+Tahminle göndermenin bedeli asimetrik: Temu'nun bizim niyet ettiğimiz gibi
+ayrıştıramadığı bir liste **tüm katalogun stoğunu sıfıra çekebilir.** Fazla satış
+telafi edilebilir, her listede stok tükenmesi edilemez. O yüzden bu ikisi gerçek
+bir payload'dan teyit edilmeden gönderim açılmayacak.
+
+---
+
+## Kategori özellikleri
+
+`getCategoryAttributes` reddediyor. Aday: `bg.local.goods.property.get` — aynı
+metot ağacında duruyor ama parametreleri tespit edilemedi. `METHODS` içindeki
+diğer adlardan **daha zayıf bir ölçütle** yazılmaması için dışarıda bırakıldı.
+
+---
+
+## Kart neden hâlâ "Çok yakında"
+
+`temuOverride`, `manifest.registry.ts` içindeki `OVERRIDES` dizisine
+**eklenmedi**. Bu bilinçli: canlı bir doğrulama yapılmadan satıcıya vitrinde
+tamamlanabilir bir bağlantı vaat edilmiyor.
+
+**Bunun bir bedeli var ve bilinerek kabul edildi:** kart bağlanabilir olmadığı
+için arayüzde kimlik bilgisi girilecek bir yer yok, dolayısıyla **canlı doğrulama
+da yapılamıyor.** Kademe 2 ancak şu iki yoldan biriyle kapanır:
+
+- kayıt tek satırla açılır (`OVERRIDES`'a `temuOverride` eklenir), ya da
+- gerçek kimlik bilgileriyle geçici bir script/entegrasyon testi çalıştırılır.
+
+---
+
+## Doğrulama sırası (gerçek kimlik bilgileri geldiğinde)
+
+1. **Önce imza.** `testConnection` artık en ucuz gerçek çağrıyı yapıyor
+   (`bg.order.list.v2.get`, `page_size: 1`). İmza hatası toptan kimlik doğrulama
+   hatası olarak döner; başka hiçbir şey test edilemez.
+2. **Yanıt gövdesini kaydet.** Liste hangi anahtarda geliyor? `TemuTypes.ts`'i ona
+   göre düzelt. Şekil tanınmazsa kod zaten gelen anahtarları hataya yazıyor.
+3. **Tutar birimini gerçek bir siparişle doğrula.** Kuruş mu, değil mi.
+4. **Durum kodlarını** gerçek siparişlerden çıkar, `TemuMapper.toStatus`'u tamamla.
+5. **Satıcı modelini teyit et**, sonra `bg.local.*` metotlarını sırayla dene.
+6. **Stok için** yukarıdaki iki eksiği bir payload'dan al, `updateStock`'u aç.
+
+---
+
+## Kodun bugünkü hâli
 
 | Parça | Durum |
 |---|---|
-| İmza algoritması | Yazıldı, 13 test. `TemuSignature.ts` |
-| POST zarfı (`type`, `app_key`, `access_token`, `timestamp`, `data_type`, `sign`) | Yazıldı |
-| İş hatası çözümleme (`success:false` → hata) | Yazıldı |
-| Gateway host'u | **Koda yazılmadı** — `apiUrl` credential'ı olarak satıcıdan alınıyor |
-| **Tüm metot adları** | `METHODS` içinde **dördü de `null`**; her işlem doldurulacak sabitin adını söyleyerek reddediyor |
+| İmza algoritması | Yazıldı; imzalanan küme = gönderilen küme değişmezi testle pinli |
+| POST zarfı | Yazıldı, Kademe 1 |
+| Gateway yolu | Host satıcıdan; yol yoksa `/openapi/router` ekleniyor |
+| İş hatası çözümleme (`success:false`) | Yazıldı |
+| Siparişler / Ürünler / Kategoriler | **Gerçek çağrı yapıyor**, sayfalama dahil |
+| Stok | Bilerek reddediyor (yukarıya bakın) |
+| Kategori özellikleri | Bilerek reddediyor |
 | Manifest | `temu.settings.ts` yazıldı, `OVERRIDES`'a **eklenmedi** |
-| Çeviriler | `tr.json`'a eklendi, kaydedilmemiş manifest testi bunları koruyor |
-
-Açmak için gereken: aşağıdaki metot adları doğrulanır → `METHODS` doldurulur →
-`manifest.registry.ts` içindeki `OVERRIDES` dizisine `temuOverride` eklenir.
-Bu son adım tek satır.
-
----
-
-## Aday metot adları — DOĞRULANMADI
-
-Aşağıdaki adlar `partner.temu.com` doküman sayfalarının **indekslenmiş
-başlıklarından** geldi. Sayfa içerikleri JavaScript ile render edildiği için
-**parametreleri, istek/yanıt gövdeleri ve hangi sürümün geçerli olduğu
-görülemedi.**
-
-Bu yüzden **koda yazılmadılar.** Yanlış bir RPC adı, her senkronizasyonda opak
-bir hata kodu olarak döner ve hatanın kaynağını bulmak günler alır.
-
-| Aday ad | Muhtemel karşılığı | Bizdeki yeri |
-|---|---|---|
-| `bg.open.accesstoken.create` | Access token üretimi / yenileme | Bugün token elle yapıştırılıyor; bu metot varsa yenileme otomatikleşebilir |
-| `bg.local.goods.sku.list.query` | SKU / ürün listeleme | `METHODS.products` |
-| `bg.local.goods.stock.edit` | Stok güncelleme | `METHODS.stock` |
-| `bg.local.goods.priceorder.change.sku.price` | Fiyat güncelleme | Şu an karşılığı yok — connector fiyat göndermiyor |
-
-Beşinci aday, aynı listeye taşındı:
-
-| `bg.order.list.v2.get` | Sipariş listeleme | `METHODS.orders` — **artık `null`** |
-
-> **2026-08-12'de kaldırıldı.** Bu ad bir süre `METHODS.orders`'ta duruyordu ve
-> `testConnection` onun üzerine kuruluydu. Kaynağı diğer dördüyle aynıydı: bir
-> doküman sayfa başlığı; parametreleri ve yanıtı hiç görülmedi. Bir adı
-> diğerlerinden daha zayıf bir ölçütle kabul etmek, tahminin zamanla olgu
-> görünümü kazanmasının yoludur. Sonuç: connector artık **hiçbir dış istek
-> yapmıyor**; `testConnection` kimlik bilgilerini ve gateway adresini biçimsel
-> olarak doğruluyor, sonra "doğrulanmış metot adı yok" diyerek başarısız oluyor.
-
-### Panelde bunlarla ne yapılacak
-
-Her ad için şunlar alınmalı:
-
-1. **Tam istek parametreleri** (adlar ve zorunluluk durumu) — özellikle sayfalama
-   alanlarının adları (`page_number`/`page_size` varsayımı doğrulanmalı).
-2. **Yanıt gövdesinin şekli** — `TemuTypes.ts` içindeki alan adları tahminle
-   yazıldı, hepsi doğrulanmalı.
-3. **Tutar birimi** — kod şu an tutarların **minor unit (kuruş)** geldiğini
-   varsayıyor ve 100'e bölüyor. Yanlışsa her sipariş yüz kat şişer. En pahalı
-   varsayım bu.
-4. **Sipariş durumu kodları** — sayısal; kodda yalnızca 1–5 eşlemesi var,
-   gerisi `pending`'e düşüyor.
-
----
-
-## ⚠️ `local` uyarısı — önce satıcı modelini teyit et
-
-Metot ağacındaki üç adda **`local`** geçiyor:
-
-```
-bg.local.goods.sku.list.query
-bg.local.goods.stock.edit
-bg.local.goods.priceorder.change.sku.price
-```
-
-Temu'nun iki farklı satıcı modeli var ve **metot kümeleri farklı olabilir**:
-
-- **Local-to-local (yerel satıcı)** — satıcı stoğu kendi tutar, kendi gönderir.
-  `bg.local.*` adlandırması buna işaret ediyor.
-- **Tam yönetimli (fully managed)** — Temu envanteri ve lojistiği üstlenir;
-  satıcının stok/fiyat üzerindeki kontrolü farklıdır.
-
-**Panelde hangi modelde olunduğu teyit edilmeden bu adlar koda yazılmamalı.**
-Yanlış modelin metotları ya yetki hatası verir ya da hiç var olmaz.
-
-Teyit edilecek:
-
-1. Hesap hangi modelde? (Partner panelinde satıcı tipi olarak görünür.)
-2. Model başına metot ağacı farklı mı — `bg.local.*` dışında bir önek var mı?
-3. Bir hesap iki modelde birden olabilir mi? Olabiliyorsa bu, **entegrasyon
-   başına model seçimi** gerektirir; tıpkı Trendyol Global'de ülke ve eBay'de
-   pazar seçimi gibi. O durumda `temu.settings.ts`'e zorunlu bir `sellerModel`
-   alanı eklenir ve connector ona göre metot seçer.
-
----
-
-## Gateway host'u
-
-Hâlâ doğrulanmadı ve **koda yazılmayacak** — `apiUrl` olarak satıcıdan alınıyor.
-Panelde API bilgileri sayfasında istek adresi olarak görünmeli. Bölgeye göre
-değiştiği için (US / EU / global) farklı bölge = farklı entegrasyon kaydı;
-rate limit kovası da host bazlı ayrılıyor.
-
-> Not: bir aramada aday bir host doğrulanmış gibi döndü, ancak o sonuç sorguya
-> konulan adayları geri okuyordu. Kanıt sayılmadı ve koda girmedi.
-
----
-
-## Doğrulama sırası (öneri)
-
-Gerçek kimlik bilgileri geldiğinde:
-
-1. **Önce imza.** Tek bir çağrı yapıp `success` dönüp dönmediğine bak. İmza
-   hatası toptan kimlik doğrulama hatası olarak döner, yani başka hiçbir şey
-   test edilemez. `TemuSignature.ts` doğrulanacak ilk şey.
-2. Gateway host'u ve `bg.order.list.v2.get` ile bir sipariş çek.
-3. Tutar biriminin kuruş olduğunu **gerçek bir siparişle** doğrula.
-4. Satıcı modelini teyit et, sonra `local` metotlarını sırayla dene.
+| Testler | 54 (connector 30, imza 16, mapper 20 civarı) |

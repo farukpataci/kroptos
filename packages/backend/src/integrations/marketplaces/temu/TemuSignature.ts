@@ -54,6 +54,18 @@ export function signTemuRequest(
  * Builds the full parameter set for one call: the common envelope every Temu
  * request carries, plus the operation's own parameters, plus the signature
  * computed over both.
+ *
+ * Empty parameters are removed from the payload entirely, and that is a
+ * correctness fix rather than tidiness. `signTemuRequest` drops empty values
+ * from the string it hashes; the payload used to keep them, so a single blank
+ * parameter meant the signature covered a DIFFERENT set of fields than the body
+ * carried. Temu signs what it receives, so the two would not match and every
+ * call would come back as an authentication failure — the hardest kind to
+ * diagnose, because nothing about the credentials is actually wrong. Neither
+ * reference implementation of this protocol sends empty parameters at all.
+ *
+ * Dropping them here keeps one invariant true: what is signed is exactly what
+ * is sent.
  */
 export function buildTemuPayload(options: {
   method: string;
@@ -64,7 +76,7 @@ export function buildTemuPayload(options: {
   /** Injectable so tests do not depend on the clock. */
   timestamp?: number;
 }): Record<string, unknown> {
-  const payload: Record<string, unknown> = {
+  const merged: Record<string, unknown> = {
     type: options.method,
     app_key: options.appKey,
     access_token: options.accessToken,
@@ -73,6 +85,14 @@ export function buildTemuPayload(options: {
     data_type: 'JSON',
     ...(options.params ?? {}),
   };
+
+  const payload: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(merged)) {
+    // Matches what signTemuRequest excludes, so the signed set and the sent set
+    // cannot drift apart.
+    if (value === null || value === undefined || value === '') continue;
+    payload[key] = value;
+  }
 
   payload.sign = signTemuRequest(payload, options.appSecret);
   return payload;

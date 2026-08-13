@@ -95,4 +95,40 @@ describe('buildTemuPayload', () => {
     const payload = buildTemuPayload(base);
     expect(JSON.stringify(payload)).not.toContain('secret');
   });
+
+  /**
+   * The one invariant that decides whether any call can authenticate at all:
+   * Temu signs what it receives, so the field set the signature covers has to be
+   * the field set the body carries. These two used to diverge — the signature
+   * dropped empty parameters while the payload still sent them, which turns a
+   * perfectly good secret into a blanket authentication failure.
+   */
+  describe('what is signed is exactly what is sent', () => {
+    it('omits empty parameters from the payload, not just from the signature', () => {
+      const payload = buildTemuPayload({
+        ...base,
+        params: { page_number: 1, search_text: '', parent_order_status: null, region_id: undefined },
+      });
+
+      expect(payload).not.toHaveProperty('search_text');
+      expect(payload).not.toHaveProperty('parent_order_status');
+      expect(payload).not.toHaveProperty('region_id');
+      expect(payload).toHaveProperty('page_number', 1);
+    });
+
+    it('signs precisely the keys that remain in the payload', () => {
+      const payload = buildTemuPayload({ ...base, params: { page_number: 1, search_text: '' } });
+
+      const { sign, ...sent } = payload;
+      expect(sign).toBe(signTemuRequest(sent, base.appSecret));
+    });
+
+    it('keeps a zero, which is a value rather than an absent parameter', () => {
+      // parent_cat_id 0 is the root of the category tree; dropping it as
+      // "empty" would silently ask for something else entirely.
+      const payload = buildTemuPayload({ ...base, params: { parent_cat_id: 0 } });
+
+      expect(payload).toHaveProperty('parent_cat_id', 0);
+    });
+  });
 });

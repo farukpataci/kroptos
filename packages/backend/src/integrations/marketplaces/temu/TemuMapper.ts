@@ -1,5 +1,5 @@
-import { MarketplaceOrder, MarketplaceOrderItem } from '../core/MarketplaceTypes';
-import { TemuOrder } from './TemuTypes';
+import { MarketplaceOrder, MarketplaceOrderItem, MarketplaceProduct } from '../core/MarketplaceTypes';
+import { TemuOrder, TemuSku } from './TemuTypes';
 
 /**
  * Temu returns money in minor units (cents) on the order endpoints documented
@@ -70,6 +70,32 @@ export class TemuMapper {
       currency: order.currency || fallbackCurrency,
       source: 'temu',
       items,
+    };
+  }
+
+  /**
+   * One SKU row from `bg.local.goods.sku.list.query`.
+   *
+   * The seller's own code is preferred over Temu's numeric ids: it is what the
+   * rest of the system matches inventory on, and a numeric Temu id would create
+   * a second, unmatchable product. The ids are kept only as a last-resort handle
+   * so a row never arrives with a blank SKU.
+   *
+   * Prices go through the same minor-unit conversion as orders — the assumption
+   * is shared, so it stays in one function rather than being re-derived here.
+   */
+  static toUnifiedProduct(sku: TemuSku): MarketplaceProduct {
+    const price = sku.salePrice ?? sku.price;
+
+    return {
+      sku: sku.outSkuSn || sku.skuCode || String(sku.skuId ?? sku.goodsId ?? ''),
+      name: sku.skuName || sku.goodsName || 'Temu Product',
+      price: price === undefined ? 0 : fromMinorUnits(price),
+      // `stockQuantity` and `quantity` are both plausible spellings and neither
+      // is confirmed; 0 is the safe default because it under-reports rather
+      // than inventing stock the seller does not have.
+      stockQuantity: Number(sku.stockQuantity ?? sku.quantity ?? 0) || 0,
+      image: sku.thumbUrl,
     };
   }
 }
