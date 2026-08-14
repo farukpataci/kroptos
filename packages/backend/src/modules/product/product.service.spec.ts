@@ -60,42 +60,51 @@ describe('ProductService', () => {
     });
 
     it('should return products belonging to storeId context', async () => {
-      const mockProducts = [{ id: 'prod-1', name: 'Product 1' }];
-      mockPrismaService.product.findMany.mockResolvedValue(mockProducts);
+      const row = {
+        id: 'prod-1',
+        name: 'Product 1',
+        price: new Prisma.Decimal(1500),
+        basePrice: new Prisma.Decimal(1200),
+        location: {
+          id: 'loc-1',
+          code: 'A-01',
+          barcode: 'LOC-A-01',
+          warehouse: { id: 'wh-1', name: 'Ana Depo', code: 'WH1' },
+          zone: { id: 'zone-1', name: 'Raf Bolgesi', code: 'Z1', type: 'shelf' },
+        },
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([row]);
 
       const result = await service.list('agency-1', 'client-1', 'store-1', false);
 
-      expect(result).toEqual(mockProducts);
-      expect(mockPrismaService.product.findMany).toHaveBeenCalledWith({
-        where: {
-          deletedAt: null,
-          storeId: 'store-1',
-          clientId: 'client-1',
-          agencyId: 'agency-1',
-        },
-        include: {
-          category: {
-            select: { id: true, name: true, slug: true },
-          },
-          bundleItems: {
-            include: {
-              childProduct: {
-                select: { id: true, publicId: true, name: true, sku: true, price: true }
-              }
-            }
-          },
-          crossSellSources: {
-            include: {
-              targetProduct: {
-                select: { id: true, publicId: true, name: true, sku: true, price: true }
-              }
-            }
-          },
-          variants: {
-            where: { deletedAt: null }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
+      // The point of this test: the query is scoped on all three tenant
+      // levels. Asserted exactly rather than with objectContaining, because a
+      // key going missing here is a cross-tenant leak, not a cosmetic change.
+      const [args] = mockPrismaService.product.findMany.mock.calls[0];
+      expect(args.where).toEqual({
+        deletedAt: null,
+        storeId: 'store-1',
+        clientId: 'client-1',
+        agencyId: 'agency-1',
+      });
+      // Soft-deleted variants must not ride along on an included relation.
+      expect(args.include.variants).toEqual({ where: { deletedAt: null } });
+
+      // Rows come back mapped, not raw: Decimal money is narrowed to a number
+      // and the location is flattened. The whole include tree is deliberately
+      // not pinned here — it changes for display reasons and pinning it is
+      // what left this test stale through several unrelated commits.
+      expect(result).toHaveLength(1);
+      expect(result[0]).toMatchObject({
+        id: 'prod-1',
+        name: 'Product 1',
+        price: 1500,
+        basePrice: 1200,
+        locationId: 'loc-1',
+        locationCode: 'A-01',
+        locationBarcode: 'LOC-A-01',
+        warehouseName: 'Ana Depo',
+        zoneName: 'Raf Bolgesi',
       });
     });
   });

@@ -34,6 +34,12 @@ describe('AuthService', () => {
     store: {
       findFirst: jest.fn(),
     },
+    // `getMe` reads these to work out whether the user is pinned to specific
+    // stores; an empty list means "no store restriction", which is what the
+    // login cases below assume.
+    storeUser: {
+      findMany: jest.fn().mockResolvedValue([]),
+    },
     session: {
       create: jest.fn(),
       findFirst: jest.fn(),
