@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   MagnifyingGlassIcon,
   PlusIcon,
@@ -9,9 +9,15 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   BuildingOfficeIcon,
-  AdjustmentsHorizontalIcon
+  AdjustmentsHorizontalIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/Toast';
+import { useAuth } from '@/lib/auth-context';
+import { apiFetch } from '@/lib/api';
 
 interface Warehouse {
   id: string;
@@ -70,8 +76,15 @@ const INITIAL_WAREHOUSES: Warehouse[] = [
 const WAREHOUSE_TYPES = ['Ana Depo', 'İade Deposu', 'Transit Depo', 'Bölge Deposu'];
 
 export function WarehousesTable() {
+  const t = useTranslations('warehouses.table');
+  const tc = useTranslations('common');
   const toast = useToast();
-  const [warehouses, setWarehouses] = useState<Warehouse[]>(INITIAL_WAREHOUSES);
+  const { tenantContext } = useAuth();
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('All');
 
@@ -87,6 +100,38 @@ export function WarehousesTable() {
     usedCapacity: 0,
     status: 'active' as 'active' | 'inactive',
   });
+  const [warehouseToDelete, setWarehouseToDelete] = useState<Warehouse | null>(null);
+
+  const fetchWarehouses = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const data = await apiFetch<any[]>('/warehouses');
+      const mapped = data.map((w: any) => ({
+        id: w.id,
+        name: w.name,
+        code: w.code,
+        type: w.type,
+        address: w.address || '',
+        capacity: w.capacity || 5000,
+        usedCapacity: w.usedCapacity || 0,
+        status: w.isActive ? 'active' as const : 'inactive' as const,
+      }));
+      setWarehouses(mapped);
+    } catch (err: any) {
+      setError(err.message || t('loadFailed'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (tenantContext.agencyId) {
+      fetchWarehouses();
+    } else {
+      setIsLoading(false);
+    }
+  }, [tenantContext.agencyId]);
 
   const handleOpenAddModal = () => {
     setEditingWarehouse(null);
@@ -116,57 +161,107 @@ export function WarehousesTable() {
     setIsModalOpen(true);
   };
 
-  const handleDeleteWarehouse = (id: string) => {
-    if (confirm('Bu depoyu sistemden silmek istediğinize emin misiniz? Depo ile eşleşen lokasyonlar ve envanterler etkilenebilir.')) {
-      setWarehouses((prev) => prev.filter((w) => w.id !== id));
+  const handleDeleteWarehouse = (wh: Warehouse) => {
+    setWarehouseToDelete(wh);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (warehouseToDelete) {
+      setIsDeleting(true);
+      try {
+        await apiFetch(`/warehouses/${warehouseToDelete.id}`, {
+          method: 'DELETE',
+        });
+        setWarehouses((prev) => prev.filter((w) => w.id !== warehouseToDelete.id));
+        setWarehouseToDelete(null);
+        toast.success(t('deleteSuccess'));
+      } catch (err: any) {
+        toast.error(err.message || t('deleteFailed'));
+      } finally {
+        setIsDeleting(false);
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.code) {
-      toast.warning('Lütfen depo adı ve kodunu doldurun.');
+      toast.warning(t('fillNameCode'));
       return;
     }
 
     if (formData.usedCapacity > formData.capacity) {
-      toast.warning('Kullanılan kapasite toplam kapasiteden büyük olamaz.');
+      toast.warning(t('capacityExceeded'));
       return;
     }
 
-    if (editingWarehouse) {
-      // Edit mode
-      setUsers(
-        warehouses.map((w) =>
-          w.id === editingWarehouse.id
-            ? {
-                ...w,
-                name: formData.name,
-                code: formData.code,
-                type: formData.type,
-                address: formData.address,
-                capacity: formData.capacity,
-                usedCapacity: formData.usedCapacity,
-                status: formData.status,
-              }
-            : w
-        )
-      );
-    } else {
-      // Create mode
-      const newWh: Warehouse = {
-        id: `wh_${Date.now()}`,
-        name: formData.name,
-        code: formData.code,
-        type: formData.type,
-        address: formData.address,
-        capacity: formData.capacity,
-        usedCapacity: formData.usedCapacity,
-        status: formData.status,
-      };
-      setWarehouses((prev) => [...prev, newWh]);
+    setIsSubmitting(true);
+    try {
+      if (editingWarehouse) {
+        // Edit mode
+        const updated = await apiFetch<any>(`/warehouses/${editingWarehouse.id}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            name: formData.name,
+            code: formData.code,
+            type: formData.type,
+            address: formData.address,
+            capacity: formData.capacity,
+            usedCapacity: formData.usedCapacity,
+            status: formData.status,
+          }),
+        });
+
+        const mappedUpdated: Warehouse = {
+          id: updated.id,
+          name: updated.name,
+          code: updated.code,
+          type: updated.type,
+          address: updated.address || '',
+          capacity: updated.capacity || 5000,
+          usedCapacity: updated.usedCapacity || 0,
+          status: updated.isActive ? 'active' : 'inactive',
+        };
+
+        setWarehouses((prev) =>
+          prev.map((w) => (w.id === editingWarehouse.id ? mappedUpdated : w))
+        );
+        toast.success(t('updateSuccess'));
+      } else {
+        // Create mode
+        const created = await apiFetch<any>('/warehouses', {
+          method: 'POST',
+          body: JSON.stringify({
+            name: formData.name,
+            code: formData.code,
+            type: formData.type,
+            address: formData.address,
+            capacity: formData.capacity,
+            usedCapacity: formData.usedCapacity,
+            status: formData.status,
+          }),
+        });
+
+        const mappedCreated: Warehouse = {
+          id: created.id,
+          name: created.name,
+          code: created.code,
+          type: created.type,
+          address: created.address || '',
+          capacity: created.capacity || 5000,
+          usedCapacity: created.usedCapacity || 0,
+          status: created.isActive ? 'active' : 'inactive',
+        };
+
+        setWarehouses((prev) => [...prev, mappedCreated]);
+        toast.success(t('createSuccess'));
+      }
+      setIsModalOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || t('saveFailed'));
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsModalOpen(false);
   };
 
   // Helper alias to bypass setUsers typo
@@ -188,15 +283,15 @@ export function WarehousesTable() {
       {/* Header & Add Button */}
       <div className="flex items-center justify-between pb-2 border-b border-kp-border">
         <div>
-          <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">Depolar</h3>
-          <p className="text-[11px] text-kp-text-tertiary">Envanter lokasyonlarını ve stok toplama merkezlerini yönetin</p>
+          <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
+          <p className="text-[0.6875rem] text-kp-text-tertiary">{t('subtitle')}</p>
         </div>
         <button
           onClick={handleOpenAddModal}
           className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
         >
           <PlusIcon className="h-4 w-4" />
-          Depo Ekle
+          {t('addWarehouse')}
         </button>
       </div>
 
@@ -207,20 +302,20 @@ export function WarehousesTable() {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Depo adı veya kodu ile ara..."
+            placeholder={t('searchPlaceholder')}
             className="w-full bg-kp-bg-secondary border border-kp-border rounded-kp-md pl-9 pr-3.5 py-1.5 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-hidden focus:border-kp-accent transition-colors"
           />
           <MagnifyingGlassIcon className="absolute left-3 top-2.5 h-3.5 w-3.5 text-kp-text-tertiary" />
         </div>
         
         <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-          <span className="text-[11px] text-kp-text-tertiary">Depo Tipi Filtresi:</span>
+          <span className="text-[0.6875rem] text-kp-text-tertiary">{t('typeFilter')}</span>
           <select
             value={selectedTypeFilter}
             onChange={(e) => setSelectedTypeFilter(e.target.value)}
             className="bg-kp-bg-secondary border border-kp-border rounded-kp-md text-xs px-2.5 py-1.5 focus:outline-hidden"
           >
-            <option value="All">Tüm Depolar</option>
+            <option value="All">{t('allWarehouses')}</option>
             {WAREHOUSE_TYPES.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -232,21 +327,36 @@ export function WarehousesTable() {
 
       {/* Warehouses Table Grid */}
       <div className="border border-kp-border rounded-kp-md overflow-hidden bg-kp-bg-primary/10">
-        <table className="w-full text-left border-collapse text-xs">
+        <table className="kp-table w-full text-left border-collapse text-xs">
           <thead>
-            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase text-kp-text-tertiary">
-              <th className="py-3 px-4">Depo Bilgileri</th>
-              <th className="py-3 px-4">Depo Tipi</th>
-              <th className="py-3 px-4">Doluluk Oranı</th>
-              <th className="py-3 px-4">Durum</th>
-              <th className="py-3 px-4 text-right">İşlemler</th>
+            <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase text-kp-text-tertiary">
+              <th className="py-3 px-4">{t('colInfo')}</th>
+              <th className="py-3 px-4">{t('colType')}</th>
+              <th className="py-3 px-4">{t('colFill')}</th>
+              <th className="py-3 px-4">{t('colStatus')}</th>
+              <th className="py-3 px-4 text-right">{t('colActions')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-kp-border text-kp-text-secondary">
-            {filteredWarehouses.length === 0 ? (
+            {isLoading ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-kp-text-tertiary">
+                  <div className="flex items-center justify-center gap-2">
+                    <ArrowPathIcon className="h-4 w-4 animate-spin text-kp-accent" />
+                    <span>{t('loading')}</span>
+                  </div>
+                </td>
+              </tr>
+            ) : error ? (
+              <tr>
+                <td colSpan={5} className="py-8 text-center text-kp-danger">
+                  {tc('status.error')}: {error}
+                </td>
+              </tr>
+            ) : filteredWarehouses.length === 0 ? (
               <tr>
                 <td colSpan={5} className="py-8 text-center text-kp-text-tertiary italic">
-                  Eşleşen depo bulunamadı.
+                  {t('empty')}
                 </td>
               </tr>
             ) : (
@@ -268,15 +378,15 @@ export function WarehousesTable() {
                         </div>
                         <div>
                           <div className="font-semibold text-kp-text-primary">{wh.name}</div>
-                          <div className="text-[10px] text-kp-text-tertiary font-mono">{wh.code}</div>
+                          <div className="text-[0.625rem] text-kp-text-tertiary font-mono">{wh.code}</div>
                         </div>
                       </div>
                     </td>
                     <td className="py-3 px-4 font-medium text-kp-text-secondary">{wh.type}</td>
                     <td className="py-3 px-4 w-52">
                       <div className="space-y-1">
-                        <div className="flex items-center justify-between text-[10px]">
-                          <span className="font-medium text-kp-text-secondary">% {fillPercent} Dolu</span>
+                        <div className="flex items-center justify-between text-[0.625rem]">
+                          <span className="font-medium text-kp-text-secondary">{t('fillPercent', { percent: fillPercent })}</span>
                           <span className="text-kp-text-tertiary">
                             {wh.usedCapacity.toLocaleString()} / {wh.capacity.toLocaleString()} Desi
                           </span>
@@ -291,7 +401,7 @@ export function WarehousesTable() {
                     </td>
                     <td className="py-3 px-4">
                       <span
-                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                        className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.625rem] font-bold ${
                           wh.status === 'active'
                             ? 'bg-emerald-500/10 text-emerald-400'
                             : 'bg-kp-text-tertiary/10 text-kp-text-tertiary'
@@ -300,12 +410,12 @@ export function WarehousesTable() {
                         {wh.status === 'active' ? (
                           <>
                             <CheckCircleIcon className="h-3 w-3" />
-                            Aktif
+                            {tc('status.active')}
                           </>
                         ) : (
                           <>
                             <XCircleIcon className="h-3 w-3" />
-                            Pasif
+                            {tc('status.passive')}
                           </>
                         )}
                       </span>
@@ -315,14 +425,14 @@ export function WarehousesTable() {
                         <button
                           onClick={() => handleOpenEditModal(wh)}
                           className="p-1 text-kp-text-tertiary hover:text-kp-accent rounded-kp-md hover:bg-kp-bg-hover transition-colors"
-                          title="Düzenle"
+                          title={tc('actions.edit')}
                         >
                           <PencilIcon className="h-4 w-4" />
                         </button>
                         <button
-                          onClick={() => handleDeleteWarehouse(wh.id)}
+                          onClick={() => handleDeleteWarehouse(wh)}
                           className="p-1 text-kp-text-tertiary hover:text-kp-danger rounded-kp-md hover:bg-kp-bg-hover transition-colors"
-                          title="Sil"
+                          title={tc('actions.delete')}
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
@@ -342,7 +452,7 @@ export function WarehousesTable() {
           <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
             <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
               <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">
-                {editingWarehouse ? 'Depo Düzenle' : 'Yeni Depo Ekle'}
+                {editingWarehouse ? t('modal.editTitle') : t('modal.createTitle')}
               </h3>
               <button
                 onClick={() => setIsModalOpen(false)}
@@ -355,20 +465,20 @@ export function WarehousesTable() {
             <form onSubmit={handleSubmit}>
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Adı *</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.nameLabel')}</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData((prev) => ({ ...prev, name: e.target.value }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
-                    placeholder="Örn: Tuzla E-Ticaret Deposu"
+                    placeholder={t('modal.namePlaceholder')}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Kodu *</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.codeLabel')}</label>
                     <input
                       type="text"
                       required
@@ -380,7 +490,7 @@ export function WarehousesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Tipi *</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.typeLabel')}</label>
                     <select
                       value={formData.type}
                       onChange={(e) => setFormData((prev) => ({ ...prev, type: e.target.value }))}
@@ -397,7 +507,7 @@ export function WarehousesTable() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Toplam Kapasite (Desi) *</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.capacityLabel')}</label>
                     <input
                       type="number"
                       required
@@ -409,7 +519,7 @@ export function WarehousesTable() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Kullanılan Hacim (Desi)</label>
+                    <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.usedCapacityLabel')}</label>
                     <input
                       type="number"
                       min={0}
@@ -421,24 +531,24 @@ export function WarehousesTable() {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Depo Adresi</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.addressLabel')}</label>
                   <textarea
                     value={formData.address}
                     onChange={(e) => setFormData((prev) => ({ ...prev, address: e.target.value }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors h-16 resize-none"
-                    placeholder="Adres detayları..."
+                    placeholder={t('modal.addressPlaceholder')}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1">Durumu</label>
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1">{t('modal.statusLabel')}</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData((prev) => ({ ...prev, status: e.target.value as 'active' | 'inactive' }))}
                     className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-hidden focus:border-kp-accent transition-colors"
                   >
-                    <option value="active">Aktif</option>
-                    <option value="inactive">Pasif</option>
+                    <option value="active">{tc('status.active')}</option>
+                    <option value="inactive">{tc('status.passive')}</option>
                   </select>
                 </div>
               </div>
@@ -447,18 +557,67 @@ export function WarehousesTable() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="rounded-kp-md border border-kp-border px-3.5 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
+                  disabled={isSubmitting}
+                  className="rounded-kp-md border border-kp-border px-3.5 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
                 >
-                  Vazgeç
+                  {t('modal.discard')}
                 </button>
                 <button
                   type="submit"
-                  className="rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold transition-colors"
+                  disabled={isSubmitting}
+                  className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50"
                 >
-                  {editingWarehouse ? 'Değişiklikleri Kaydet' : 'Depo Oluştur'}
+                  {isSubmitting && <ArrowPathIcon className="h-3 w-3 animate-spin" />}
+                  {editingWarehouse ? t('modal.saveChanges') : t('modal.createWarehouse')}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {warehouseToDelete && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="w-full max-w-md bg-kp-bg-secondary border border-kp-border rounded-kp-lg shadow-kp-elevated overflow-hidden animate-scale-in">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-kp-border">
+              <h3 className="text-sm font-semibold text-kp-text-primary flex items-center gap-2">
+                <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger" /> {t('deleteModal.title')}
+              </h3>
+              <button
+                onClick={() => setWarehouseToDelete(null)}
+                className="text-kp-text-tertiary hover:text-kp-text-primary transition-colors"
+              >
+                <XMarkIcon className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-kp-text-secondary leading-relaxed">
+                {t.rich('deleteModal.desc', {
+                  name: warehouseToDelete.name,
+                  b: (chunks) => <span className="font-semibold text-kp-text-primary">{chunks}</span>,
+                })}
+              </p>
+            </div>
+            <div className="flex items-center justify-end gap-3 px-6 py-4 bg-kp-bg-primary/50 border-t border-kp-border">
+              <button
+                type="button"
+                onClick={() => setWarehouseToDelete(null)}
+                disabled={isDeleting}
+                className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors disabled:opacity-50"
+              >
+                {tc('actions.cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                disabled={isDeleting}
+                className="flex items-center gap-1.5 rounded-kp-md bg-kp-danger hover:bg-red-600 text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
+              >
+                {isDeleting && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
+                {tc('actions.delete')}
+              </button>
+            </div>
           </div>
         </div>
       )}

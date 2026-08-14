@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Navbar from '@/components/layout/Navbar/Navbar';
 import Footer from '@/components/layout/Footer/Footer';
 import { useAuth } from '@/lib/auth-context';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { CheckCircleIcon } from '@heroicons/react/20/solid';
 
 // SSS Accordion Item Component
@@ -81,7 +81,7 @@ const IconTruck = () => (
 export default function Home() {
   const { isAuthenticated } = useAuth();
   const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.landing');
 
   // Contact Form State
   const [formData, setFormData] = useState({
@@ -115,15 +115,15 @@ export default function Home() {
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
-    if (!formData.name.trim()) newErrors.name = isTr ? 'Ad soyad alanı zorunludur' : 'Name and surname is required';
+    if (!formData.name.trim()) newErrors.name = t('contact.errors.nameRequired');
     if (!formData.email.trim()) {
-      newErrors.email = isTr ? 'E-posta alanı zorunludur' : 'Email address is required';
+      newErrors.email = t('contact.errors.emailRequired');
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = isTr ? 'Geçersiz e-posta formatı' : 'Invalid email format';
+      newErrors.email = t('contact.errors.emailInvalid');
     }
-    if (!formData.phone.trim()) newErrors.phone = isTr ? 'Telefon alanı zorunludur' : 'Phone number is required';
-    if (!formData.orderVolume) newErrors.orderVolume = isTr ? 'Aylık sipariş hacmi seçilmelidir' : 'Please select monthly order volume';
-    if (!formData.agreeKvkk) newErrors.agreeKvkk = isTr ? 'KVKK metnini onaylamanız gerekmektedir' : 'You must accept the KVKK consent checkbox';
+    if (!formData.phone.trim()) newErrors.phone = t('contact.errors.phoneRequired');
+    if (!formData.orderVolume) newErrors.orderVolume = t('contact.errors.volumeRequired');
+    if (!formData.agreeKvkk) newErrors.agreeKvkk = t('contact.errors.kvkkRequired');
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -146,57 +146,11 @@ export default function Home() {
     }, 1500);
   };
 
-  // General WMS FAQ Items
-  const sssItems = [
-    {
-      qTr: 'Alqora hangi pazaryeri ve sistemlerle entegre çalışır?',
-      qEn: 'Which marketplaces and systems does Alqora integrate with?',
-      aTr: 'Alqora; Trendyol, Hepsiburada, Amazon, N11 ve ÇiçekSepeti gibi Türkiye’nin popüler pazaryerleriyle tam uyumlu stok, sipariş ve fiyat entegrasyonu sunar. Küresel entegrasyon altyapımız ise Shopify, WooCommerce, Pazarama ve çeşitli ERP/Muhasebe sistemleri için planlama aşamasındadır.',
-      aEn: 'Alqora offers full stock, order, and pricing integrations with major local marketplaces including Trendyol, Hepsiburada, Amazon, N11, and CicekSepeti. Our global integration architecture is currently in planning for Shopify, WooCommerce, Pazarama, and various ERP/Accounting systems.'
-    },
-    {
-      qTr: 'Birden fazla depoyu aynı panelden yönetebilir miyim?',
-      qEn: 'Can I manage multiple warehouses from a single panel?',
-      aTr: 'Evet, Alqora çoklu depo ve WMS operasyonlarını destekler. Fiziksel veya sanal depolarınızı sisteme tanımlayabilir, stoklarınızı depo bazlı ayırabilir ve siparişlerinizi belirlediğiniz akıllı depo kurallarına göre otomatik olarak ilgili lokasyonlara dağıtabilirsiniz.',
-      aEn: 'Yes, Alqora supports multi-warehouse and WMS operations. You can define physical or virtual warehouses, segregate stock levels by location, and auto-route orders based on smart routing rules you establish.'
-    },
-    {
-      qTr: 'Siparişler için kargo kuralları oluşturabilir miyim?',
-      qEn: 'Can I set custom shipping rules for my orders?',
-      aTr: 'Evet, Alqora kural tabanlı kargo atama motorunu kullanarak lojistik süreçlerinizi otomatik yönetebilirsiniz. Ürün ölçüsü, ağırlığı, desisi veya teslimat bölgesine göre lojistik firmasını otomatik seçen kurallar tanımlayabilirsiniz.',
-      aEn: 'Yes, you can configure rule-based shipping assignments specifically to automate logistics. Set rules to auto-select cargo carriers or freight partners based on weight, dimensions, desi, or shipping zones.'
-    },
-    {
-      qTr: 'Stoklar satış kanalları arasında nasıl güncellenir?',
-      qEn: 'How are inventory levels synchronized across sales channels?',
-      aTr: 'Alqora, e-ticaret siteniz ve bağlı pazaryerleriniz arasında stokları gerçek zamanlı olarak senkronize eder. Bir kanaldan sipariş geldiğinde ilgili miktar anında bloke edilerek tüm mağazalarda stok seviyesi güncellenir ve çift satış (over-selling) riski önlenir.',
-      aEn: 'Alqora synchronizes inventory levels across your e-commerce website and integrated marketplaces in real time. When an order is received on any channel, stock is instantly reserved and levels updated globally, eliminating overselling.'
-    },
-    {
-      qTr: 'Barkodlu toplama ve paketleme doğrulaması destekleniyor mu?',
-      qEn: 'Is barcoded picking and packing verification supported?',
-      aTr: 'Evet, depo personelinizin el terminalleri veya mobil cihazlarla barkod okutarak ürün toplamasını sağlayan süreçleri yönetebilirsiniz. Paketleme aşamasında barkod doğrulaması ve talimat listesi sunarak yanlış ürün gönderim oranını sıfıra indirebilirsiniz.',
-      aEn: 'Yes, you can manage workflows that enable warehouse staff to scan barcodes via handheld terminals or mobile devices during picking. Barcode packing validation and packing checklists help reduce shipping errors to zero.'
-    },
-    {
-      qTr: 'ERP veya muhasebe programımı Alqora’ya bağlayabilir miyim?',
-      qEn: 'Can I connect my ERP or accounting software to Alqora?',
-      aTr: 'Evet, Alqora üzerinde siparişlerinizi, faturalarınızı ve cari bilgilerinizi popüler ERP (Logo GO, Logo Tiger, Mikro, Zirve vb.) ve ön muhasebe sistemlerinizle senkronize edecek entegrasyon altyapısı mevcuttur. Detaylı teknik bilgi için ekibimizle görüşebilirsiniz.',
-      aEn: 'Yes, Alqora features integration architectures to synchronize orders, invoices, and ledger details with popular ERP systems (such as Logo GO, Logo Tiger, Mikro, Zirve) and local accounting software. Contact our team for detailed technical layouts.'
-    },
-    {
-      qTr: 'Mevcut ürün ve sipariş verilerim Alqora’ya aktarılabilir mi?',
-      qEn: 'Can my existing products and orders be migrated to Alqora?',
-      aTr: 'Evet, Excel şablonları, pazaryeri API entegrasyonları veya XML veri aktarım araçlarıyla mevcut ürün kataloglarınızı, geçmiş siparişlerinizi alet çantanızdaki Alqora paneline dakikalar içerisinde güvenle aktarabilirsiniz.',
-      aEn: 'Yes, using Excel templates, marketplace API synchronizers, or XML data tools, you can easily migrate your product catalog, historical orders, and customer databases into the Alqora dashboard in minutes.'
-    },
-    {
-      qTr: 'Kurulum ve entegrasyon süreci ne kadar sürer?',
-      qEn: 'How long does the setup and integration process take?',
-      aTr: 'Temel pazaryeri entegrasyonları ve ürün katalog kurulumu genellikle aynı gün içinde tamamlanmaktadır. Çoklu depo yapılandırmaları ve özel ERP/Muhasebe veri akışı entegrasyonlarının devreye alınma süresi operasyonel ölçeğinize göre planlanır.',
-      aEn: 'Basic marketplace integrations and catalog setups are generally completed within the same day. Complex multi-warehouse layouts and customized ERP data flows are planned and activated depending on your operational scale.'
-    }
-  ];
+  // General WMS FAQ Items — questions/answers resolved from the message catalog
+  const sssItems = Array.from({ length: 8 }, (_, i) => ({
+    q: t(`faq.items.q${i + 1}`),
+    a: t(`faq.items.a${i + 1}`)
+  }));
 
   return (
     <div className="relative min-h-screen w-full bg-kp-bg-primary text-kp-text-primary font-outfit overflow-hidden transition-colors duration-300">
@@ -212,28 +166,26 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-6 text-left">
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-kp-accent-muted text-kp-accent border border-kp-accent/20 tracking-wider uppercase">
-              {isTr ? 'ALQORA TİCARET OPERASYON SİSTEMİ' : 'ALQORA COMMERCE OPERATING SYSTEM'}
+              {t('badge')}
             </span>
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-kp-text-primary leading-tight">
-              {isTr ? 'E-Ticaret Operasyonlarınızı Tek Merkezden Yönetin' : 'Manage Your E-Commerce Operations from a Single Center'}
+              {t('heroTitle')}
             </h1>
             <p className="text-base sm:text-lg text-kp-text-secondary leading-relaxed max-w-2xl">
-              {isTr
-                ? 'Sipariş yönetimi, WMS depo otomasyonu, kargo entegrasyonları ve yapay zeka asistanı ile çok kanallı ticaret süreçlerinizi Alqora ile ölçekleyin. Tekrarlayan görevleri otomatikleştirin, operasyon hatalarını azaltın ve satış kanallarınızı kontrollü biçimde büyütün.'
-                : 'Scale your omnichannel commerce processes with order management, WMS warehouse automation, shipping integrations, and AI assistant using Alqora. Automate repetitive tasks, minimize errors, and scale your sales channels.'}
+              {t('heroDesc')}
             </p>
             <div className="flex flex-wrap items-center gap-4 pt-2">
               <Link
                 href={isAuthenticated ? '/select-tenant' : '/auth/login'}
                 className="px-6 py-3 text-sm font-bold rounded-kp-sm bg-kp-accent hover:bg-kp-accent-hover text-white shadow-kp-card hover:shadow-kp-glow transition-all duration-200"
               >
-                {isTr ? 'Ücretsiz Başlayın' : 'Start Free Trial'}
+                {t('ctaStart')}
               </Link>
               <a
                 href="#contact"
                 className="px-6 py-3 text-sm font-bold rounded-kp-sm bg-kp-bg-secondary border border-kp-border text-kp-text-primary hover:bg-kp-bg-hover transition-colors"
               >
-                {isTr ? 'Demo Talep Edin' : 'Request Demo'}
+                {t('ctaDemo')}
               </a>
             </div>
           </div>
@@ -250,30 +202,30 @@ export default function Home() {
                 <span className="w-3 h-3 rounded-full bg-green-500/80" />
                 <span className="text-xs text-kp-text-tertiary ml-2 font-mono font-medium">alqora-dashboard.wms</span>
               </div>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">LIVE</span>
+              <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-green-500/10 text-green-500 border border-green-500/20">LIVE</span>
             </div>
 
             {/* Metrics cards grid */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-4">
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 space-y-1">
-                <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{isTr ? 'Bugünkü Siparişler' : 'Today\'s Orders'}</p>
+                <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.todaysOrders')}</p>
                 <div className="flex items-baseline gap-1.5">
                   <p className="text-lg font-bold text-kp-text-primary">1,482</p>
-                  <span className="text-[10px] font-bold text-green-500">+14%</span>
+                  <span className="text-[0.625rem] font-bold text-green-500">+14%</span>
                 </div>
               </div>
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 space-y-1">
-                <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{isTr ? 'Kritik Stok Uyarısı' : 'Critical Stock Alert'}</p>
+                <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.criticalStock')}</p>
                 <div className="flex items-baseline gap-1.5">
                   <p className="text-lg font-bold text-red-500">12</p>
-                  <span className="text-[10px] font-semibold text-red-500/70">{isTr ? 'Ürün' : 'SKU'}</span>
+                  <span className="text-[0.625rem] font-semibold text-red-500/70">{t('mockup.sku')}</span>
                 </div>
               </div>
               <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 col-span-2 sm:col-span-1 space-y-1">
-                <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-wider">{isTr ? 'Sevkiyat Durumu' : 'Shipping Status'}</p>
+                <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('mockup.shippingStatus')}</p>
                 <div className="flex items-baseline gap-1.5">
                   <p className="text-lg font-bold text-kp-accent">98.4%</p>
-                  <span className="text-[10px] font-semibold text-kp-text-tertiary">{isTr ? 'Başarı' : 'Ontime'}</span>
+                  <span className="text-[0.625rem] font-semibold text-kp-text-tertiary">{t('mockup.ontime')}</span>
                 </div>
               </div>
             </div>
@@ -281,8 +233,8 @@ export default function Home() {
             {/* Sales Chart Mockup SVG */}
             <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-4 mb-4">
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-kp-text-primary">{isTr ? 'Son 7 Günlük Satış Hacmi' : 'Last 7 Days Sales Volume'}</h4>
-                <span className="text-[10px] font-semibold text-kp-text-tertiary">10-17 July</span>
+                <h4 className="text-xs font-bold text-kp-text-primary">{t('mockup.salesVolume')}</h4>
+                <span className="text-[0.625rem] font-semibold text-kp-text-tertiary">10-17 July</span>
               </div>
               <svg className="w-full h-32 text-kp-accent" viewBox="0 0 300 100" fill="none">
                 <defs>
@@ -301,12 +253,12 @@ export default function Home() {
             {/* Activity/Channel lists */}
             <div className="bg-kp-bg-primary border border-kp-border-subtle rounded p-3 flex flex-col gap-2">
               <div className="flex items-center justify-between text-xs border-b border-kp-border-subtle pb-2">
-                <span className="font-bold text-kp-text-primary">{isTr ? 'Bağlı Pazaryerleri' : 'Connected Channels'}</span>
-                <span className="text-kp-text-tertiary font-medium">5 {isTr ? 'Aktif' : 'Active'}</span>
+                <span className="font-bold text-kp-text-primary">{t('mockup.connectedChannels')}</span>
+                <span className="text-kp-text-tertiary font-medium">5 {t('mockup.active')}</span>
               </div>
               <div className="flex flex-wrap gap-2 pt-1">
                 {['Trendyol', 'Hepsiburada', 'Amazon', 'N11', 'ÇiçekSepeti'].map((channel) => (
-                  <span key={channel} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border-subtle text-[10px] font-bold text-kp-text-secondary">
+                  <span key={channel} className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border-subtle text-[0.625rem] font-bold text-kp-text-secondary">
                     <span className="w-1.5 h-1.5 rounded-full bg-green-500" />
                     {channel}
                   </span>
@@ -324,29 +276,29 @@ export default function Home() {
             <div className="flex items-start gap-3.5">
               <div className="mt-1 flex-shrink-0"><IconShop /></div>
               <div>
-                <h4 className="text-sm font-bold text-kp-text-primary">{isTr ? 'Tek Panelde Yönetim' : 'Unified Sales Channels'}</h4>
-                <p className="text-xs text-kp-text-secondary mt-1">{isTr ? 'Tüm e-ticaret mağazaları ve pazaryerleri tek bir panelde birleşir.' : 'All e-commerce sites and marketplace accounts in one dashboard.'}</p>
+                <h4 className="text-sm font-bold text-kp-text-primary">{t('ribbon.unified.title')}</h4>
+                <p className="text-xs text-kp-text-secondary mt-1">{t('ribbon.unified.desc')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3.5">
               <div className="mt-1 flex-shrink-0"><IconSync /></div>
               <div>
-                <h4 className="text-sm font-bold text-kp-text-primary">{isTr ? 'Anlık Stok Senkronu' : 'Real-time Stock Sync'}</h4>
-                <p className="text-xs text-kp-text-secondary mt-1">{isTr ? 'Bir kanaldan satılan ürün tüm kanallardan otomatik düşer.' : 'Stock is updated globally instantly as soon as a purchase happens.'}</p>
+                <h4 className="text-sm font-bold text-kp-text-primary">{t('ribbon.sync.title')}</h4>
+                <p className="text-xs text-kp-text-secondary mt-1">{t('ribbon.sync.desc')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3.5">
               <div className="mt-1 flex-shrink-0"><IconBarcode /></div>
               <div>
-                <h4 className="text-sm font-bold text-kp-text-primary">{isTr ? 'Depo & Barkod Desteği' : 'Warehouse & Barcode'}</h4>
-                <p className="text-xs text-kp-text-secondary mt-1">{isTr ? 'Çoklu depo altyapısı ve barkodlu el terminali toplama süreçleri.' : 'Support for multiple warehouse allocations and scanner terminals.'}</p>
+                <h4 className="text-sm font-bold text-kp-text-primary">{t('ribbon.barcode.title')}</h4>
+                <p className="text-xs text-kp-text-secondary mt-1">{t('ribbon.barcode.desc')}</p>
               </div>
             </div>
             <div className="flex items-start gap-3.5">
               <div className="mt-1 flex-shrink-0"><IconTruck /></div>
               <div>
-                <h4 className="text-sm font-bold text-kp-text-primary">{isTr ? 'Akıllı Otomasyonlar' : 'Automated Shipping'}</h4>
-                <p className="text-xs text-kp-text-secondary mt-1">{isTr ? 'Desi, kargo entegrasyonu ve paketleme talimatları otomatikleşir.' : 'Autopilot rules for carrier matching, packaging types, and shipping.'}</p>
+                <h4 className="text-sm font-bold text-kp-text-primary">{t('ribbon.automation.title')}</h4>
+                <p className="text-xs text-kp-text-secondary mt-1">{t('ribbon.automation.desc')}</p>
               </div>
             </div>
           </div>
@@ -357,27 +309,23 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 space-y-24">
         <div className="text-center max-w-3xl mx-auto space-y-4">
           <h2 className="text-3xl font-extrabold text-kp-text-primary tracking-tight">
-            {isTr ? 'Operasyonel Karmaşıklığı Ortadan Kaldırın' : 'Eliminate Operational Complexity'}
+            {t('sections.header.title')}
           </h2>
           <p className="text-base text-kp-text-secondary leading-relaxed">
-            {isTr 
-              ? 'Çok kanallı satış, karmaşık stok takipleri, depo yerleşimleri ve kargo gönderim süreçlerinizi merkezi otomasyonlarla sadeleştirin.'
-              : 'Simplify your multi-channel sales, inventory levels, warehouse layouts, and packaging pipelines with unified automation.'}
+            {t('sections.header.desc')}
           </p>
         </div>
 
         {/* 1. Çok Kanallı Sipariş Yönetimi */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">01 / {isTr ? 'Sipariş Entegrasyonu' : 'Order Integration'}</span>
-            <h3 className="text-2xl font-bold text-kp-text-primary">{isTr ? 'Çok Kanallı Sipariş Yönetimi' : 'Omnichannel Order Management'}</h3>
+            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">01 / {t('sections.orders.tag')}</span>
+            <h3 className="text-2xl font-bold text-kp-text-primary">{t('sections.orders.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'E-Ticaret mağazalarınızdan ve pazaryerlerinden gelen siparişleri anında tek bir ekrana indirin. Toplu faturalandırma ve durum güncellemelerini tek tıkla yapın.'
-                : 'Unify incoming transactions from your custom shop and multiple retail marketplaces in one screen. Perform bulk invoicing and order status sync actions in seconds.'}
+              {t('sections.orders.desc')}
             </p>
             <ul className="grid grid-cols-2 gap-3 pt-2">
-              {['Pazaryeri sipariş çekimi', 'Toplu fatura oluşturma', 'Otomatik kargo fişi', 'Müşteri bilgilendirme', 'Sipariş durum senkronu', 'İptal ve iade takipleri'].map((f, i) => (
+              {[1, 2, 3, 4, 5, 6].map((n) => t(`sections.orders.f${n}`)).map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs font-semibold text-kp-text-secondary">
                   <CheckCircleIcon className="h-4 w-4 text-kp-accent flex-shrink-0" />
                   {f}
@@ -386,19 +334,19 @@ export default function Home() {
             </ul>
           </div>
           <div className="lg:col-span-6 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
-            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{isTr ? 'Sipariş İşleme Paneli' : 'Order Processing Pipeline'}</h4>
-            <div className="space-y-2 text-[11px] font-mono text-kp-text-secondary">
+            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.orders.panelTitle')}</h4>
+            <div className="space-y-2 text-[0.6875rem] font-mono text-kp-text-secondary">
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
                 <span>Trendyol #294029:</span>
-                <span className="font-bold text-green-500">{isTr ? 'Çekildi & Faturalandı' : 'Pulled & Invoiced'}</span>
+                <span className="font-bold text-green-500">{t('sections.orders.statusPulled')}</span>
               </div>
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
                 <span>Amazon #849202:</span>
-                <span className="font-bold text-kp-accent">{isTr ? 'Paketleniyor' : 'Packing'}</span>
+                <span className="font-bold text-kp-accent">{t('sections.orders.statusPacking')}</span>
               </div>
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
                 <span>Shopify #1092:</span>
-                <span className="font-bold text-kp-text-primary">{isTr ? 'Kargoya Verildi' : 'Shipped'}</span>
+                <span className="font-bold text-kp-text-primary">{t('sections.orders.statusShipped')}</span>
               </div>
             </div>
           </div>
@@ -407,15 +355,13 @@ export default function Home() {
         {/* 2. Akıllı WMS Depo Otomasyonu */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center lg:flex-row-reverse">
           <div className="lg:col-span-6 lg:order-2 space-y-5">
-            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">02 / {isTr ? 'Depo Yönetimi' : 'Warehouse WMS'}</span>
-            <h3 className="text-2xl font-bold text-kp-text-primary">{isTr ? 'Akıllı WMS ve Depo Otomasyonu' : 'Smart WMS & Depot Automation'}</h3>
+            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">02 / {t('sections.wms.tag')}</span>
+            <h3 className="text-2xl font-bold text-kp-text-primary">{t('sections.wms.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Raf ve lokasyon yerleşimi yaparak ürünlerinizi kolayca bulun. Personelinizin el terminalleriyle en kısa rotada, barkod okutarak sipariş toplamasına imkan tanıyın.'
-                : 'Define precise shelves and racking locations. Assist warehouse personnel to pick items along optimized picking routes scanning barcodes with handheld devices.'}
+              {t('sections.wms.desc')}
             </p>
             <ul className="grid grid-cols-2 gap-3 pt-2">
-              {['Barkodlu ürün toplama', 'Toplama rotaları', 'Raf ve lokasyon yönetimi', 'Ekipler arası iş atama', 'Konsolide toplama listeleri', 'Çoklu depo transferleri'].map((f, i) => (
+              {[1, 2, 3, 4, 5, 6].map((n) => t(`sections.wms.f${n}`)).map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs font-semibold text-kp-text-secondary">
                   <CheckCircleIcon className="h-4 w-4 text-kp-accent flex-shrink-0" />
                   {f}
@@ -424,18 +370,18 @@ export default function Home() {
             </ul>
           </div>
           <div className="lg:col-span-6 lg:order-1 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
-            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{isTr ? 'Depo Yerleşim Planlaması' : 'Warehouse Shelf Layout Plan'}</h4>
+            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.wms.panelTitle')}</h4>
             <div className="grid grid-cols-2 gap-3 text-xs">
               <div className="bg-kp-bg-primary border border-kp-border-subtle p-3 rounded text-center space-y-1">
-                <span className="font-bold text-kp-text-primary">Zone A (Small Shelves)</span>
-                <p className="text-[10px] text-kp-text-tertiary">Cosmetics, Decor, Cushions</p>
+                <span className="font-bold text-kp-text-primary">{t('sections.wms.zoneA')}</span>
+                <p className="text-[0.625rem] text-kp-text-tertiary">{t('sections.wms.zoneAItems')}</p>
               </div>
               <div className="bg-kp-bg-primary border border-kp-border-subtle p-3 rounded text-center space-y-1">
-                <span className="font-bold text-kp-text-primary">Zone B (Heavy Pallets)</span>
-                <p className="text-[10px] text-kp-text-tertiary">Sofas, Wardrobes, Garden Sets</p>
+                <span className="font-bold text-kp-text-primary">{t('sections.wms.zoneB')}</span>
+                <p className="text-[0.625rem] text-kp-text-tertiary">{t('sections.wms.zoneBItems')}</p>
               </div>
-              <div className="col-span-2 bg-kp-bg-primary border border-kp-border-subtle p-2 text-center text-[10px] font-mono text-kp-text-secondary">
-                Auto-Routing active: Toplama rotaları optimize edilmektedir.
+              <div className="col-span-2 bg-kp-bg-primary border border-kp-border-subtle p-2 text-center text-[0.625rem] font-mono text-kp-text-secondary">
+                {t('sections.wms.autoRouting')}
               </div>
             </div>
           </div>
@@ -444,15 +390,13 @@ export default function Home() {
         {/* 3. Gerçek Zamanlı Stok Senkronizasyonu */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">03 / {isTr ? 'Stok Kontrolü' : 'Stock Control'}</span>
-            <h3 className="text-2xl font-bold text-kp-text-primary">{isTr ? 'Gerçek Zamanlı Stok Senkronizasyonu' : 'Real-time Inventory Synchronization'}</h3>
+            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">03 / {t('sections.stock.tag')}</span>
+            <h3 className="text-2xl font-bold text-kp-text-primary">{t('sections.stock.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Tüm mağazalarınızın stoklarını tek merkezde birleştirin. Çift satış riskini sıfıra indirirken kritik stok sınırındaki ürünler için otomatik uyarılar alın.'
-                : 'Consolidate inventory levels in one center. Prevent overselling and get automatic low-stock notifications for critical products.'}
+              {t('sections.stock.desc')}
             </p>
             <ul className="grid grid-cols-2 gap-3 pt-2">
-              {['Çoklu depo takipleri', 'Kanal bazlı stok tahsisi', 'Güvenli stok rezervi', 'Minimum stok uyarıları', 'Tedarikçi sipariş önerisi', 'Ürün varyant eşleşmesi'].map((f, i) => (
+              {[1, 2, 3, 4, 5, 6].map((n) => t(`sections.stock.f${n}`)).map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs font-semibold text-kp-text-secondary">
                   <CheckCircleIcon className="h-4 w-4 text-kp-accent flex-shrink-0" />
                   {f}
@@ -462,25 +406,25 @@ export default function Home() {
           </div>
           <div className="lg:col-span-6 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
             <div className="flex items-center justify-between mb-3 text-xs border-b border-kp-border-subtle pb-2">
-              <span className="font-bold text-kp-text-primary">{isTr ? 'Stok Seviyeleri (Merkezi)' : 'Real-time SKU Allocations'}</span>
+              <span className="font-bold text-kp-text-primary">{t('sections.stock.panelTitle')}</span>
               <span className="text-kp-text-tertiary">SKU: OUT-LOUNGE-04</span>
             </div>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between">
-                <span className="text-kp-text-secondary">Depo 1 (Ana Depo):</span>
-                <span className="font-bold text-kp-text-primary">140 adet</span>
+                <span className="text-kp-text-secondary">{t('sections.stock.warehouse1')}</span>
+                <span className="font-bold text-kp-text-primary">{t('sections.stock.units', { count: 140 })}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-kp-text-secondary">Depo 2 (Yedek Depo):</span>
-                <span className="font-bold text-kp-text-primary">45 adet</span>
+                <span className="text-kp-text-secondary">{t('sections.stock.warehouse2')}</span>
+                <span className="font-bold text-kp-text-primary">{t('sections.stock.units', { count: 45 })}</span>
               </div>
               <div className="flex justify-between text-kp-accent font-semibold pt-1 border-t border-kp-border-subtle">
-                <span>Rezerv / Güvenli Stok:</span>
-                <span>-15 adet</span>
+                <span>{t('sections.stock.reserve')}</span>
+                <span>{t('sections.stock.units', { count: -15 })}</span>
               </div>
               <div className="flex justify-between font-bold text-green-500">
-                <span>Pazaryerlerinde Satışa Sunulan:</span>
-                <span>170 adet</span>
+                <span>{t('sections.stock.listed')}</span>
+                <span>{t('sections.stock.units', { count: 170 })}</span>
               </div>
             </div>
           </div>
@@ -489,15 +433,13 @@ export default function Home() {
         {/* 4. Gelişmiş Paketleme ve Kalite Kontrol */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center lg:flex-row-reverse">
           <div className="lg:col-span-6 lg:order-2 space-y-5">
-            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">04 / {isTr ? 'Doğrulama' : 'Verification'}</span>
-            <h3 className="text-2xl font-bold text-kp-text-primary">{isTr ? 'Gelişmiş Paketleme ve Kalite Kontrol' : 'Advanced Packaging & Quality Control'}</h3>
+            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">04 / {t('sections.packing.tag')}</span>
+            <h3 className="text-2xl font-bold text-kp-text-primary">{t('sections.packing.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Paketleme istasyonunda barkod okutarak sipariş içeriğini doğrulayın. Yanlış veya eksik ürün gönderim oranını sıfıra indirin.'
-                : 'Scan barcodes at the packing stations to verify target orders. Decrease shipping errors and wrong deliveries to absolute zero.'}
+              {t('sections.packing.desc')}
             </p>
             <ul className="grid grid-cols-2 gap-3 pt-2">
-              {['Kutu doğrulamaları', 'Paketleme talimatları', 'Hassas ürün uyarıları', 'Fotoğraflı paket kanıtı', 'Paket ağırlık kontrolleri', 'Zaman ve kullanıcı kaydı'].map((f, i) => (
+              {[1, 2, 3, 4, 5, 6].map((n) => t(`sections.packing.f${n}`)).map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs font-semibold text-kp-text-secondary">
                   <CheckCircleIcon className="h-4 w-4 text-kp-accent flex-shrink-0" />
                   {f}
@@ -506,15 +448,13 @@ export default function Home() {
             </ul>
           </div>
           <div className="lg:col-span-6 lg:order-1 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
-            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{isTr ? 'Paketleme İstasyonu Ekrani' : 'Packager Station Visual Prompt'}</h4>
-            <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded text-[11px] font-bold mb-3 flex items-center gap-2">
+            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.packing.panelTitle')}</h4>
+            <div className="bg-red-500/10 border border-red-500/30 text-red-500 p-3 rounded text-[0.6875rem] font-bold mb-3 flex items-center gap-2">
               <span className="animate-ping w-2 h-2 rounded-full bg-red-500 flex-shrink-0" />
-              {isTr ? '⚠️ DIKKAT: HASSAS URUN' : '⚠️ WARNING: FRAGILE ITEM'}
+              {t('sections.packing.fragileAlert')}
             </div>
-            <p className="text-[11px] text-kp-text-secondary font-mono border-l-2 border-kp-accent pl-3 italic">
-              {isTr 
-                ? 'Bu sipariş hassas ürün içerir. Çift kat pıt-pıt naylona sarın ve kutu içi köpük dolgu ile destekleyin.' 
-                : 'This package contains a fragile item. Double bubble-wrap and insert foam packaging chips.'}
+            <p className="text-[0.6875rem] text-kp-text-secondary font-mono border-l-2 border-kp-accent pl-3 italic">
+              {t('sections.packing.fragileNote')}
             </p>
           </div>
         </div>
@@ -522,15 +462,13 @@ export default function Home() {
         {/* 5. Kargo ve Taşıyıcı Entegrasyonları */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           <div className="lg:col-span-6 space-y-5">
-            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">05 / {isTr ? 'Lojistik' : 'Logistics'}</span>
-            <h3 className="text-2xl font-bold text-kp-text-primary">{isTr ? 'Kargo ve Taşıyıcı Entegrasyonları' : 'Carrier & Shipping Integrations'}</h3>
+            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">05 / {t('sections.shipping.tag')}</span>
+            <h3 className="text-2xl font-bold text-kp-text-primary">{t('sections.shipping.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'MNG, Yurtiçi, Sürat gibi kargo firmalarını sisteme bağlayın. Otomatik kargo barkodu oluşturup, takip kodunu pazaryerine geri bildirin.'
-                : 'Connect major local and global logistics networks. Print shipping labels instantly and push tracking details back to integrated shops.'}
+              {t('sections.shipping.desc')}
             </p>
             <ul className="grid grid-cols-2 gap-3 pt-2">
-              {['Kargo barkodu basma', 'Desi hesaplama aracı', 'Otomatik taşıyıcı seçimi', 'Takip numarası senkronu', 'Müşteri SMS bildirimleri', 'Kargo fiyat kıyaslama'].map((f, i) => (
+              {[1, 2, 3, 4, 5, 6].map((n) => t(`sections.shipping.f${n}`)).map((f, i) => (
                 <li key={i} className="flex items-center gap-2 text-xs font-semibold text-kp-text-secondary">
                   <CheckCircleIcon className="h-4 w-4 text-kp-accent flex-shrink-0" />
                   {f}
@@ -539,19 +477,19 @@ export default function Home() {
             </ul>
           </div>
           <div className="lg:col-span-6 bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card">
-            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{isTr ? 'Sevkiyat Planlama Otomasyonu' : 'Carrier Allocation Matrix'}</h4>
-            <div className="space-y-2 text-[11px] font-mono text-kp-text-secondary">
+            <h4 className="text-xs font-bold text-kp-text-primary mb-3">{t('sections.shipping.panelTitle')}</h4>
+            <div className="space-y-2 text-[0.6875rem] font-mono text-kp-text-secondary">
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
-                <span>{isTr ? 'Kargo Firması:' : 'Carrier Assigned:'}</span>
+                <span>{t('sections.shipping.carrierLabel')}</span>
                 <span className="font-bold text-kp-text-primary">MNG Kargo</span>
               </div>
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
-                <span>{isTr ? 'Sevkiyat Tarihi:' : 'Target Dispatch:'}</span>
-                <span className="font-bold text-green-500">17.07.2026 (Bugün)</span>
+                <span>{t('sections.shipping.dispatchLabel')}</span>
+                <span className="font-bold text-green-500">{t('sections.shipping.dispatchValue')}</span>
               </div>
               <div className="flex justify-between p-2 bg-kp-bg-primary rounded">
-                <span>{isTr ? 'Müşteri Bildirimi:' : 'Customer Alert:'}</span>
-                <span className="font-bold text-kp-accent">SMS & E-mail gönderildi</span>
+                <span>{t('sections.shipping.notifyLabel')}</span>
+                <span className="font-bold text-kp-accent">{t('sections.shipping.notifyValue')}</span>
               </div>
             </div>
           </div>
@@ -560,16 +498,14 @@ export default function Home() {
         {/* 6. Çok Kanallı ve Sınır Ötesi Satış */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center lg:flex-row-reverse">
           <div className="lg:col-span-6 lg:order-2 space-y-5">
-            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">06 / {isTr ? 'Büyüme' : 'Growth'}</span>
-            <h3 className="text-2xl font-bold text-kp-text-primary">{isTr ? 'Çok Kanallı ve Sınır Ötesi Satış' : 'Cross-border & Omnichannel Sales'}</h3>
+            <span className="text-xs font-bold text-kp-accent uppercase tracking-wider">06 / {t('sections.growth.tag')}</span>
+            <h3 className="text-2xl font-bold text-kp-text-primary">{t('sections.growth.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Hem yerel pazaryerlerinde hem de global e-ticaret sitelerinizde satış yapın. Ürün, fiyat, stok ve durumların kanallar arasında tutarlı kalmasını sağlayın.'
-                : 'Scale operations by selling on both local marketplaces and global web channels. Ensure catalog data, price ranges, and inventory counts stay synced.'}
+              {t('sections.growth.desc')}
             </p>
             <div className="space-y-4 pt-2">
               <div>
-                <p className="text-xs font-bold text-kp-text-primary uppercase tracking-wider mb-2">{isTr ? 'Aktif Entegrasyonlar' : 'Active Integrations'}</p>
+                <p className="text-xs font-bold text-kp-text-primary uppercase tracking-wider mb-2">{t('sections.growth.activeIntegrations')}</p>
                 <div className="flex flex-wrap gap-2">
                   {['Trendyol', 'Hepsiburada', 'Amazon', 'N11', 'ÇiçekSepeti'].map((c) => (
                     <span key={c} className="px-2 py-1 rounded bg-kp-accent-muted/20 border border-kp-accent/20 text-xs font-semibold text-kp-accent">
@@ -579,7 +515,7 @@ export default function Home() {
                 </div>
               </div>
               <div>
-                <p className="text-xs font-bold text-kp-text-tertiary uppercase tracking-wider mb-2">{isTr ? 'Yakında / Planlanan Entegrasyonlar' : 'Planned Integrations'}</p>
+                <p className="text-xs font-bold text-kp-text-tertiary uppercase tracking-wider mb-2">{t('sections.growth.plannedIntegrations')}</p>
                 <div className="flex flex-wrap gap-2">
                   {['Shopify', 'WooCommerce', 'Pazarama'].map((c) => (
                     <span key={c} className="px-2 py-1 rounded bg-kp-bg-secondary border border-kp-border text-xs font-medium text-kp-text-tertiary">
@@ -595,7 +531,7 @@ export default function Home() {
             <div className="flex flex-col items-center gap-4 py-6 w-full">
               <div className="px-4 py-2 bg-kp-accent text-white font-extrabold rounded shadow-md">ALQORA HUB</div>
               <div className="h-8 w-0.5 bg-kp-border-accent" />
-              <div className="grid grid-cols-3 gap-4 w-full max-w-sm text-center text-[10px] font-bold">
+              <div className="grid grid-cols-3 gap-4 w-full max-w-sm text-center text-[0.625rem] font-bold">
                 <div className="p-2 border border-kp-border bg-kp-bg-primary rounded text-kp-text-primary">Trendyol</div>
                 <div className="p-2 border border-kp-border bg-kp-bg-primary rounded text-kp-text-primary">Hepsiburada</div>
                 <div className="p-2 border border-kp-border bg-kp-bg-primary rounded text-kp-text-primary">Amazon</div>
@@ -610,27 +546,29 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
           <div className="max-w-3xl mx-auto space-y-4">
             <h2 className="text-3xl font-extrabold text-kp-text-primary tracking-tight">
-              {isTr ? 'Müşterileriniz Nerede Satın Alıyorsa Orada Olun' : 'Sell Everywhere Your Customers Are Buying'}
+              {t('integrations.title')}
             </h2>
             <p className="text-base text-kp-text-secondary">
-              {isTr 
-                ? 'Mağazanızı ve pazaryeri hesaplarınızı Alqora’ya bağlayarak ürün, sipariş, stok ve fiyat operasyonlarını tek panelde yönetin.'
-                : 'Connect your store and marketplace accounts to Alqora to govern products, orders, stock levels, and pricing from a single workspace.'}
+              {t('integrations.desc')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
-              { name: 'Trendyol', status: isTr ? 'Aktif' : 'Active', features: ['Stok Senkronizasyonu', 'Sipariş İçe Aktarma', 'Fiyat Yönetimi'] },
-              { name: 'Hepsiburada', status: isTr ? 'Aktif' : 'Active', features: ['Sipariş Çekme', 'Stok Eşleme', 'Sevkiyat Onayı'] },
-              { name: 'Amazon', status: isTr ? 'Aktif' : 'Active', features: ['Çok Kanallı Envanter', 'Sipariş Akışı', 'Fiyat Senkronu'] },
-              { name: 'Shopify', status: isTr ? 'Planlanan' : 'Soon', features: ['Mağaza Entegrasyonu', 'Katalog Aktarımı', 'Müşteri Kartları'] }
-            ].map((p, idx) => (
+              { name: 'Trendyol', key: 'trendyol', active: true },
+              { name: 'Hepsiburada', key: 'hepsiburada', active: true },
+              { name: 'Amazon', key: 'amazon', active: true },
+              { name: 'Shopify', key: 'shopify', active: false }
+            ].map((card) => ({
+              ...card,
+              status: card.active ? t('integrations.statusActive') : t('integrations.statusPlanned'),
+              features: [1, 2, 3].map((n) => t(`integrations.cards.${card.key}.f${n}`))
+            })).map((p, idx) => (
               <div key={idx} className="bg-kp-bg-primary border border-kp-border rounded-kp-lg p-6 text-left space-y-4 shadow-kp-card hover:border-kp-accent/40 transition-colors">
                 <div className="flex items-center justify-between border-b border-kp-border-subtle pb-3">
                   <h4 className="text-sm font-bold text-kp-text-primary">{p.name}</h4>
-                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                    p.status.startsWith('Ak') || p.status === 'Active'
+                  <span className={`px-2 py-0.5 rounded text-[0.625rem] font-bold ${
+                    p.active
                       ? 'bg-green-500/10 text-green-500 border border-green-500/20'
                       : 'bg-kp-text-tertiary/10 text-kp-text-tertiary border border-kp-text-tertiary/20'
                   }`}>
@@ -646,7 +584,7 @@ export default function Home() {
                   ))}
                 </ul>
                 <Link href={`/${locale}`} className="text-xs font-bold text-kp-accent hover:text-kp-accent-hover inline-flex items-center gap-1 transition-colors">
-                  {isTr ? 'Entegrasyonu İncele' : 'Review Integration'}
+                  {t('integrations.review')}
                   <span>→</span>
                 </Link>
               </div>
@@ -659,51 +597,41 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center space-y-12">
         <div className="max-w-3xl mx-auto space-y-4">
           <h2 className="text-3xl font-extrabold text-kp-text-primary tracking-tight">
-            {isTr ? 'Güçlü ve Gelişmiş Operasyon Yetenekleri' : 'Advanced Operations Infrastructure'}
+            {t('capabilities.title')}
           </h2>
           <p className="text-base text-kp-text-secondary">
-            {isTr
-              ? 'Tekrarlayan işleri otomatize edin, tedarikçilerinizle entegre çalışın ve tüm iade/fiyat operasyonlarını tek merkezden yönetin.'
-              : 'Automate manual processes, integrate with suppliers, and run pricing or return workflows under a unified hub.'}
+            {t('capabilities.desc')}
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
           <div className="bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card space-y-3">
-            <h3 className="text-lg font-bold text-kp-text-primary">{isTr ? 'Otomatik Fiyat ve Kampanya Yönetimi' : 'Automated Price & Campaign Control'}</h3>
+            <h3 className="text-lg font-bold text-kp-text-primary">{t('capabilities.pricing.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Kanal bazlı komisyon, maliyet, kâr marjı ve kampanya koşullarına göre satış fiyatlarını merkezi olarak yönetin. Farklı pazaryerlerine özel fiyat kuralları atayın.'
-                : 'Unify price controls factoring in marketplace commission ratios, operational costs, profit margins, and seasonal sales. Distribute target pricing configurations globally.'}
+              {t('capabilities.pricing.desc')}
             </p>
           </div>
           <div className="bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card space-y-3">
-            <h3 className="text-lg font-bold text-kp-text-primary">{isTr ? 'Merkezi İade Yönetimi' : 'Centralized Return Management'}</h3>
+            <h3 className="text-lg font-bold text-kp-text-primary">{t('capabilities.returns.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Farklı kanallardan gelen iadeleri tek panelde takip edin; ürün kalite kontrolü, stok girişi, ücret iadesi ve muhasebe adımlarını kayıt altına alın.'
-                : 'Track incoming customer returns from various marketplaces in one panel. Monitor quality control logs, return stock injections, and automated customer refunds.'}
+              {t('capabilities.returns.desc')}
             </p>
           </div>
           <div className="bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card space-y-3">
-            <h3 className="text-lg font-bold text-kp-text-primary">{isTr ? 'Tedarikçi ve ERP Entegrasyon Altyapısı' : 'Supplier & ERP Sync Layout'}</h3>
+            <h3 className="text-lg font-bold text-kp-text-primary">{t('capabilities.erp.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Ürün, stok, sipariş ve fatura verilerini Logo GO, Logo Tiger veya diğer popüler ön muhasebe ve ERP sistemleriyle eşitleyecek entegrasyon altyapısını kullanın.'
-                : 'Leverage data synchronizers to feed order details, invoices, and product SKUs into popular ERP systems (such as Logo GO or Logo Tiger) and accounting ledgers.'}
+              {t('capabilities.erp.desc')}
             </p>
           </div>
           <div className="bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-6 shadow-kp-card space-y-4">
-            <h3 className="text-lg font-bold text-kp-text-primary">{isTr ? 'Kural Tabanlı İş Akışı Otomasyonu' : 'Rule-Based Workflow Automation'}</h3>
+            <h3 className="text-lg font-bold text-kp-text-primary">{t('capabilities.workflow.title')}</h3>
             <p className="text-sm text-kp-text-secondary leading-relaxed">
-              {isTr
-                ? 'Sipariş durumu, ürün tipi, depo, stok seviyesi veya teslimat bölgesine göre otomatik aksiyonlar tanımlayın. Personel hatalarını tamamen ortadan kaldırın.'
-                : 'Define logic macros triggering events based on order values, channel parameters, stock levels, or weight categories to eliminate human errors.'}
+              {t('capabilities.workflow.desc')}
             </p>
-            <div className="space-y-1.5 font-mono text-[10px] text-kp-text-tertiary">
-              <p>✔ {isTr ? 'Sipariş geldiğinde stok ayır' : 'Block stock when order drops'}</p>
-              <p>✔ {isTr ? 'Sipariş durumunu anlık eşitle' : 'Sync order status instantly'}</p>
-              <p>✔ {isTr ? 'Hassas ürün siparişlerine uyarı notu ekle' : 'Add visual alert labels dynamically'}</p>
+            <div className="space-y-1.5 font-mono text-[0.625rem] text-kp-text-tertiary">
+              <p>✔ {t('capabilities.workflow.rule1')}</p>
+              <p>✔ {t('capabilities.workflow.rule2')}</p>
+              <p>✔ {t('capabilities.workflow.rule3')}</p>
             </div>
           </div>
         </div>
@@ -714,22 +642,19 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
           <div className="max-w-3xl mx-auto space-y-4">
             <h2 className="text-3xl font-extrabold text-kp-text-primary tracking-tight">
-              {isTr ? 'Alqora ile Operasyon Nasıl Çalışır?' : 'How Operations Work with Alqora'}
+              {t('howItWorks.title')}
             </h2>
             <p className="text-base text-kp-text-secondary">
-              {isTr 
-                ? '4 basit adımda sistem kurulumunuzu tamamlayın ve operasyonlarınızı otomatize edin.' 
-                : 'Get configured in 4 straightforward phases to streamline your logistics and order sync.'}
+              {t('howItWorks.desc')}
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
-            {[
-              { step: '01', title: isTr ? 'Kanalları Bağlayın' : 'Connect Channels', desc: isTr ? 'Pazaryeri API anahtarlarınızı girerek satış mağazalarınızı dakikalar içinde entegre edin.' : 'Paste API keys to connect your retail marketplace storefronts in minutes.' },
-              { step: '02', title: isTr ? 'Verileri Merkezileştirin' : 'Centralize Catalog', desc: isTr ? 'Tüm ürün, fiyat ve stok kataloğunuzu merkezi tek bir envantere aktarın.' : 'Consolidate all SKU listings, pricing tiers, and inventories in one place.' },
-              { step: '03', title: isTr ? 'Kurallarınızı Belirleyin' : 'Establish Rules', desc: isTr ? 'Depo dağıtım, kırılabilir paketleme ve kargo kurallarınızı tanımlayın.' : 'Define depot routing rules, fragile warnings, and volumetric desi bounds.' },
-              { step: '04', title: isTr ? 'Tek Panelden Takip Edin' : 'Track Operations', desc: isTr ? 'Sipariş toplama, paketleme, faturalama ve sevkiyatları anlık panelle yönetin.' : 'Monitor picks, packing lines, invoices, and shipping dates from a single screen.' }
-            ].map((s, idx) => (
+            {[1, 2, 3, 4].map((n) => ({
+              step: `0${n}`,
+              title: t(`howItWorks.steps.s${n}.title`),
+              desc: t(`howItWorks.steps.s${n}.desc`)
+            })).map((s, idx) => (
               <div key={idx} className="space-y-3 text-center md:text-left relative z-10 bg-kp-bg-primary border border-kp-border p-5 rounded-kp-lg shadow-kp-card">
                 <span className="text-3xl font-extrabold text-kp-accent/20 block">{s.step}</span>
                 <h4 className="text-base font-bold text-kp-text-primary">{s.title}</h4>
@@ -746,36 +671,34 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12 relative z-10">
           <div className="max-w-3xl mx-auto space-y-4">
             <h2 className="text-3xl font-extrabold text-white tracking-tight">
-              {isTr ? 'Siparişten Teslimata Kadar Tam Görünürlük' : 'Full Operational Visibility from Click to Carrier'}
+              {t('stats.title')}
             </h2>
             <p className="text-base text-slate-400">
-              {isTr 
-                ? 'Satış, stok, depo ve sevkiyat performansınızı gerçek zamanlı paneller üzerinden takip edin. Darboğazları erkenden görün ve kararlarınızı veriye dayalı alın.'
-                : 'Track daily sales margins, picker tasks, stock turns, and delivery metrics in real time. Eliminate operational blockages proactively.'}
+              {t('stats.desc')}
             </p>
           </div>
 
           <div className="bg-slate-900 border border-white/10 rounded-kp-lg p-6 max-w-4xl mx-auto shadow-2xl text-left space-y-6">
             <div className="flex items-center justify-between border-b border-white/5 pb-4">
               <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">ALQORA WMS // LIVE STATISTICS</span>
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-green-500 border border-green-500/20">SYSTEM HEALTHY</span>
+              <span className="px-2 py-0.5 rounded text-[0.625rem] font-bold bg-green-500/10 text-green-500 border border-green-500/20">SYSTEM HEALTHY</span>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{isTr ? 'Bugünkü Siparişler' : 'Today\'s Orders'}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('mockup.todaysOrders')}</p>
                 <p className="text-xl font-bold text-white mt-1">2,840</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{isTr ? 'Hazırlanmayı Bekleyen' : 'Pending Picking'}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('stats.pendingPicking')}</p>
                 <p className="text-xl font-bold text-yellow-500 mt-1">114</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{isTr ? 'Kritik Stoktaki SKU' : 'Critical Stock SKU'}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('stats.criticalSku')}</p>
                 <p className="text-xl font-bold text-red-500 mt-1">12</p>
               </div>
               <div className="bg-slate-950 p-4 border border-white/5 rounded">
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">{isTr ? 'Geciken Sevkiyat' : 'Delayed Shipments'}</p>
+                <p className="text-[0.625rem] text-slate-500 font-bold uppercase tracking-wider">{t('stats.delayedShipments')}</p>
                 <p className="text-xl font-bold text-white mt-1">0</p>
               </div>
             </div>
@@ -783,13 +706,13 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="bg-slate-950 p-4 border border-white/5 rounded space-y-2 col-span-2">
                 <div className="flex justify-between text-xs text-slate-400 pb-2 border-b border-white/5">
-                  <span className="font-bold">{isTr ? 'Depo Verimliliği' : 'Depot Efficiencies'}</span>
+                  <span className="font-bold">{t('stats.depotEfficiency')}</span>
                   <span>July 2026</span>
                 </div>
-                <div className="space-y-3 pt-1 text-[11px]">
+                <div className="space-y-3 pt-1 text-[0.6875rem]">
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span>{isTr ? 'Toplama Başarı Oranı' : 'Picking Accuracy'}</span>
+                      <span>{t('stats.pickingAccuracy')}</span>
                       <span className="font-bold text-green-500">99.9%</span>
                     </div>
                     <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -798,7 +721,7 @@ export default function Home() {
                   </div>
                   <div>
                     <div className="flex justify-between mb-1">
-                      <span>{isTr ? 'Kutulama Hızı' : 'Packing Speeds'}</span>
+                      <span>{t('stats.packingSpeed')}</span>
                       <span className="font-bold text-kp-accent">94.8%</span>
                     </div>
                     <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -809,14 +732,14 @@ export default function Home() {
               </div>
               
               <div className="bg-slate-950 p-4 border border-white/5 rounded space-y-3 text-xs">
-                <div className="text-slate-400 font-bold border-b border-white/5 pb-2">{isTr ? 'İade Oranı & Süresi' : 'Returns & Times'}</div>
+                <div className="text-slate-400 font-bold border-b border-white/5 pb-2">{t('stats.returnsTimes')}</div>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-slate-500">{isTr ? 'Ortalama Hazırlama Süresi:' : 'Avg. Picking Time:'}</span>
+                    <span className="text-slate-500">{t('stats.avgPickingTime')}</span>
                     <span className="font-bold text-white">4.2 min</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-500">{isTr ? 'Genel İade Oranı:' : 'Overall Return Rate:'}</span>
+                    <span className="text-slate-500">{t('stats.returnRate')}</span>
                     <span className="font-bold text-white">1.8%</span>
                   </div>
                 </div>
@@ -831,23 +754,19 @@ export default function Home() {
         <div className="bg-kp-bg-secondary border border-kp-border rounded-kp-lg p-8 shadow-kp-dropdown space-y-8 relative">
           <div className="text-center max-w-2xl mx-auto space-y-3">
             <h2 className="text-2xl font-extrabold text-kp-text-primary tracking-tight">
-              {isTr ? 'Operasyonlarınızı Alqora ile Ölçekleyin' : 'Scale Your Operations With Alqora'}
+              {t('contact.title')}
             </h2>
             <p className="text-sm text-kp-text-secondary">
-              {isTr 
-                ? 'Sipariş, stok, depo ve satış kanallarınızı tek bir operasyon merkezinde birleştirin. Ekibiniz manuel işlemler yerine büyümeye odaklansın.'
-                : 'Consolidate stock levels, orders, and sales integrations in one hub. Let your staff focus on scaling instead of copy-pasting.'}
+              {t('contact.desc')}
             </p>
           </div>
 
           {isSuccess ? (
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-6 rounded-kp-md text-center space-y-3 animate-scale-in">
               <CheckCircleIcon className="h-10 w-10 text-green-500 mx-auto" />
-              <h4 className="text-lg font-bold">{isTr ? 'Talebiniz Alındı!' : 'Request Received!'}</h4>
+              <h4 className="text-lg font-bold">{t('contact.successTitle')}</h4>
               <p className="text-sm text-kp-text-secondary max-w-md mx-auto">
-                {isTr 
-                  ? 'Göstermiş olduğunuz ilgi için teşekkür ederiz. Sektör uzmanımız en kısa sürede sizinle iletişime geçecektir.' 
-                  : 'Thank you for your interest. An integration specialist will reach out to you shortly.'}
+                {t('contact.successDesc')}
               </p>
             </div>
           ) : (
@@ -855,7 +774,7 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="name" className="block text-xs font-bold text-kp-text-secondary uppercase tracking-wider mb-2">
-                    {isTr ? 'Ad Soyad' : 'Name Surname'}
+                    {t('contact.nameLabel')}
                   </label>
                   <input
                     type="text"
@@ -872,7 +791,7 @@ export default function Home() {
                 </div>
                 <div>
                   <label htmlFor="email" className="block text-xs font-bold text-kp-text-secondary uppercase tracking-wider mb-2">
-                    {isTr ? 'İş E-postası' : 'Work Email'}
+                    {t('contact.emailLabel')}
                   </label>
                   <input
                     type="email"
@@ -892,7 +811,7 @@ export default function Home() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
                   <label htmlFor="phone" className="block text-xs font-bold text-kp-text-secondary uppercase tracking-wider mb-2">
-                    {isTr ? 'Telefon Numarası' : 'Phone Number'}
+                    {t('contact.phoneLabel')}
                   </label>
                   <input
                     type="tel"
@@ -909,7 +828,7 @@ export default function Home() {
                 </div>
                 <div>
                   <label htmlFor="orderVolume" className="block text-xs font-bold text-kp-text-secondary uppercase tracking-wider mb-2">
-                    {isTr ? 'Aylık Sipariş Hacmi' : 'Monthly Order Volume'}
+                    {t('contact.volumeLabel')}
                   </label>
                   <select
                     name="orderVolume"
@@ -920,7 +839,7 @@ export default function Home() {
                       errors.orderVolume ? 'border-red-500' : 'border-kp-border'
                     }`}
                   >
-                    <option value="">{isTr ? 'Seçiniz...' : 'Select range...'}</option>
+                    <option value="">{t('contact.volumePlaceholder')}</option>
                     <option value="0-500">0 - 500</option>
                     <option value="500-2000">500 - 2,000</option>
                     <option value="2000-5000">2,000 - 5,000</option>
@@ -932,7 +851,7 @@ export default function Home() {
 
               <div>
                 <label htmlFor="channels" className="block text-xs font-bold text-kp-text-secondary uppercase tracking-wider mb-2">
-                  {isTr ? 'Kullanılan Satış Kanalları' : 'Active Sales Channels'}
+                  {t('contact.channelsLabel')}
                 </label>
                 <input
                   type="text"
@@ -956,9 +875,7 @@ export default function Home() {
                     className="h-4.5 w-4.5 rounded border-kp-border text-kp-accent focus:ring-kp-accent mt-0.5"
                   />
                   <label htmlFor="agreeKvkk" className="text-xs text-kp-text-secondary leading-relaxed">
-                    {isTr 
-                      ? 'Kişisel verilerimin işlenmesine ilişkin KVKK Bilgilendirme metnini okudum ve Alqora tarafından pazarlama faaliyetleri amacıyla benimle iletişime geçilmesini onaylıyorum.'
-                      : 'I have read the KVKK Privacy Agreement and consent to Alqora contacting me regarding operational services and marketing notifications.'}
+                    {t('contact.kvkkLabel')}
                   </label>
                 </div>
                 {errors.agreeKvkk && <p className="text-red-500 text-xs mt-1.5 font-semibold">{errors.agreeKvkk}</p>}
@@ -975,10 +892,10 @@ export default function Home() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
-                    {isTr ? 'Talep Gönderiliyor...' : 'Sending Request...'}
+                    {t('contact.submitting')}
                   </>
                 ) : (
-                  isTr ? 'Demoyu Başlatın' : 'Request Demo Activation'
+                  t('contact.submit')
                 )}
               </button>
             </form>
@@ -990,19 +907,17 @@ export default function Home() {
       <section className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-t border-kp-border">
         <div className="text-center max-w-2xl mx-auto space-y-3 mb-12">
           <h2 className="text-2xl font-extrabold text-kp-text-primary tracking-tight">
-            {isTr ? 'Sıkça Sorulan Sorular' : 'Frequently Asked Questions'}
+            {t('faq.title')}
           </h2>
           <p className="text-sm text-kp-text-secondary">
-            {isTr 
-              ? 'Alqora e-ticaret operasyon yönetim sistemiyle ilgili merak ettiğiniz tüm soruların cevapları.'
-              : 'Answers to help you optimize and set up your Alqora dashboard integration.'}
+            {t('faq.desc')}
           </p>
         </div>
 
         <div className="space-y-1">
           {sssItems.map((item, idx) => {
-            const q = isTr ? item.qTr : item.qEn;
-            const a = isTr ? item.aTr : item.aEn;
+            const q = item.q;
+            const a = item.a;
             return (
               <AccordionItem
                 key={idx}

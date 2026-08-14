@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { ShoppingCartIcon, ArrowPathIcon, ExclamationTriangleIcon, MagnifyingGlassIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import { useOrders } from './hooks/useOrders';
 import OrdersTable from './components/OrdersTable';
@@ -9,13 +10,15 @@ import OrderDetailDrawer from './components/OrderDetailDrawer';
 import CreateOrderModal from './components/CreateOrderModal';
 
 const DATE_OPTIONS = [
-  { value: 'all', label: 'Tüm Zamanlar' },
-  { value: '7', label: 'Son 7 Gün' },
-  { value: '30', label: 'Son 30 Gün' },
-  { value: '90', label: 'Son 90 Gün' },
+  { value: 'all', labelKey: 'dateOptions.all' },
+  { value: '7', labelKey: 'dateOptions.last7' },
+  { value: '30', labelKey: 'dateOptions.last30' },
+  { value: '90', labelKey: 'dateOptions.last90' },
 ];
 
 export default function OrdersPage() {
+  const t = useTranslations('orders');
+  const tc = useTranslations('common');
   const {
     orders,
     products,
@@ -58,9 +61,9 @@ export default function OrdersPage() {
             <ShoppingCartIcon className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-kp-text-primary">Siparişler</h1>
-            <p className="text-[13px] text-kp-text-tertiary">
-              Müşteri siparişlerini takip edin ve yönetin
+            <h1 className="page-title">{t('title')}</h1>
+            <p className="page-subtitle">
+              {t('subtitle')}
             </p>
           </div>
         </div>
@@ -73,7 +76,7 @@ export default function OrdersPage() {
               type="text"
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="Sipariş no veya müşteri adı..."
+              placeholder={t('searchPlaceholder')}
               className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md pl-8 pr-4 py-2 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-none focus:border-kp-accent transition-colors"
             />
           </div>
@@ -88,7 +91,7 @@ export default function OrdersPage() {
             >
               {DATE_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {t(opt.labelKey)}
                 </option>
               ))}
             </select>
@@ -100,7 +103,7 @@ export default function OrdersPage() {
             className="flex items-center gap-2 rounded-kp-md border border-kp-border px-3 py-2 text-xs font-medium text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover transition-colors"
           >
             <ArrowPathIcon className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            Yenile
+            {tc('actions.refresh')}
           </button>
         </div>
       </div>
@@ -111,14 +114,14 @@ export default function OrdersPage() {
         <div className="flex items-center gap-3 rounded-kp-md border border-kp-danger/20 bg-kp-danger/10 px-4 py-3">
           <ExclamationTriangleIcon className="h-5 w-5 text-kp-danger flex-shrink-0" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-kp-danger">Siparişler yüklenemedi</p>
+            <p className="text-sm font-medium text-kp-danger">{t('loadFailed')}</p>
             <p className="text-xs text-kp-danger/80 mt-0.5">{error}</p>
           </div>
           <button
             onClick={fetchOrders}
             className="text-xs font-medium text-kp-danger hover:underline"
           >
-            Tekrar dene
+            {tc('actions.retry')}
           </button>
         </div>
       )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import {
@@ -64,6 +65,8 @@ export default function CategoryMappingModal({
   integrationId,
   integrationName,
 }: CategoryMappingModalProps) {
+  const t = useTranslations('integrations.categoryMapping');
+  const tc = useTranslations('common');
   const toast = useToast();
   const [localCategories, setLocalCategories] = useState<LocalCategory[]>([]);
   const [trendyolCategories, setTrendyolCategories] = useState<TrendyolCategory[]>([]);
@@ -191,7 +194,7 @@ export default function CategoryMappingModal({
   const handleSaveMapping = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedLocalCategoryId || !selectedTrendyolCategoryId) {
-      toast.warning('Lütfen yerel ve Trendyol kategorilerini seçiniz.');
+      toast.warning(t('selectBothWarning'));
       return;
     }
 
@@ -223,14 +226,14 @@ export default function CategoryMappingModal({
       setCategoryAttributes([]);
       setAttributeMappings({});
     } catch (err: any) {
-      toast.error(err.message || 'Eşleştirme kaydedilirken hata oluştu.');
+      toast.error(err.message || t('saveFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleDeleteMapping = async (mappingId: string) => {
-    if (!confirm('Bu kategori eşleştirmesini silmek istediğinize emin misiniz?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     setIsDeletingId(mappingId);
     try {
       await apiFetch(`/integrations/${integrationId}/categories/mappings/${mappingId}`, {
@@ -238,7 +241,7 @@ export default function CategoryMappingModal({
       });
       setMappings((prev) => prev.filter((m) => m.id !== mappingId));
     } catch (err: any) {
-      toast.error(err.message || 'Eşleştirme silinemedi.');
+      toast.error(err.message || t('deleteFailed'));
     } finally {
       setIsDeletingId(null);
     }
@@ -262,8 +265,8 @@ export default function CategoryMappingModal({
           <div className="flex items-center gap-2.5">
             <FolderIcon className="h-5 w-5 text-kp-accent" />
             <div>
-              <h2 className="text-base font-semibold text-kp-text-primary">{integrationName} - Kategori Eşleştirme</h2>
-              <p className="text-[11px] text-kp-text-tertiary">Ürünleri Trendyol'a göndermeden önce yerel kategorileri eşleştirin</p>
+              <h2 className="text-base font-semibold text-kp-text-primary">{integrationName} - {t('title')}</h2>
+              <p className="text-[0.6875rem] text-kp-text-tertiary">{t('subtitle')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded-kp-md hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
@@ -276,20 +279,20 @@ export default function CategoryMappingModal({
           {isLoadingList ? (
             <div className="flex flex-col items-center justify-center h-48">
               <ArrowPathIcon className="h-7 w-7 text-kp-accent animate-spin" />
-              <p className="mt-2 text-xs text-kp-text-tertiary">Kategori verileri yükleniyor...</p>
+              <p className="mt-2 text-xs text-kp-text-tertiary">{t('loadingCategories')}</p>
             </div>
           ) : (
             <>
               {/* Toggle Form / List Actions */}
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-wider text-kp-text-tertiary">
-                  {showAddForm ? 'Yeni Kategori Eşleştirmesi Ekle' : 'Aktif Kategori Eşleştirmeleri'}
+                  {showAddForm ? t('addFormTitle') : t('activeListTitle')}
                 </h3>
                 <button
                   onClick={() => setShowAddForm(!showAddForm)}
                   className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3.5 py-2 text-xs font-semibold transition-all"
                 >
-                  {showAddForm ? 'Eşleştirmelere Geri Dön' : <><PlusIcon className="h-3.5 w-3.5" /> Yeni Eşleştirme Ekle</>}
+                  {showAddForm ? t('backToMappings') : <><PlusIcon className="h-3.5 w-3.5" /> {t('addNewMapping')}</>}
                 </button>
               </div>
 
@@ -300,8 +303,8 @@ export default function CategoryMappingModal({
                     
                     {/* Local Category Select */}
                     <div>
-                      <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
-                        Yerel Kategori *
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
+                        {t('localCategoryLabel')}
                       </label>
                       <select
                         required
@@ -309,7 +312,7 @@ export default function CategoryMappingModal({
                         onChange={(e) => setSelectedLocalCategoryId(e.target.value)}
                         className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                       >
-                        <option value="">-- Seçiniz --</option>
+                        <option value="">{t('selectPlaceholder')}</option>
                         {localCategories.map((c) => (
                           <option key={c.id} value={c.id}>
                             {c.name}
@@ -320,8 +323,8 @@ export default function CategoryMappingModal({
 
                     {/* Trendyol Category Search/Select */}
                     <div className="relative">
-                      <label className="block text-[11px] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
-                        Trendyol Kategori Arama *
+                      <label className="block text-[0.6875rem] font-semibold text-kp-text-tertiary uppercase tracking-wider mb-2">
+                        {t('trendyolSearchLabel')}
                       </label>
                       
                       {selectedTrendyolCategoryId ? (
@@ -341,7 +344,7 @@ export default function CategoryMappingModal({
                             type="text"
                             value={trendyolSearchQuery}
                             onChange={(e) => setTrendyolSearchQuery(e.target.value)}
-                            placeholder="Kategori adı ara (örn: tişört, ayakkabı...)"
+                            placeholder={t('trendyolSearchPlaceholder')}
                             className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-theme-sm text-kp-text-primary focus:outline-hidden focus:border-kp-accent"
                           />
                           {filteredTrendyolCats.length > 0 && (
@@ -368,25 +371,25 @@ export default function CategoryMappingModal({
                     <div className="space-y-4 border-t border-kp-border pt-5">
                       <div className="flex items-center gap-2">
                         <Cog6ToothIcon className="h-4 w-4 text-kp-accent" />
-                        <h4 className="text-xs font-semibold text-kp-text-primary">Trendyol Kategori Özellik Haritası</h4>
+                        <h4 className="text-xs font-semibold text-kp-text-primary">{t('attributeMapTitle')}</h4>
                       </div>
 
                       {isLoadingAttributes ? (
                         <div className="flex items-center justify-center py-8">
                           <ArrowPathIcon className="h-5 w-5 text-kp-accent animate-spin" />
-                          <span className="ml-2 text-xs text-kp-text-tertiary">Özellikler çekiliyor...</span>
+                          <span className="ml-2 text-xs text-kp-text-tertiary">{t('loadingAttributes')}</span>
                         </div>
                       ) : categoryAttributes.length === 0 ? (
-                        <p className="text-xs text-kp-text-tertiary italic">Bu kategori için özel bir nitelik gerekmiyor.</p>
+                        <p className="text-xs text-kp-text-tertiary italic">{t('noAttributes')}</p>
                       ) : (
                         <div className="overflow-hidden border border-kp-border rounded-kp-md bg-kp-bg-primary/10">
                           <table className="w-full text-left border-collapse text-xs text-kp-text-secondary">
                             <thead>
-                              <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary">
-                                <th className="py-2.5 px-4">Trendyol Niteliği</th>
-                                <th className="py-2.5 px-4">Zorunluluk</th>
-                                <th className="py-2.5 px-4">Eşleştirme Türü</th>
-                                <th className="py-2.5 px-4">Eşleşen Alan / Sabit Değer</th>
+                              <tr className="border-b border-kp-border bg-kp-bg-primary/20 text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary">
+                                <th className="py-2.5 px-4">{t('colAttribute')}</th>
+                                <th className="py-2.5 px-4">{t('colRequired')}</th>
+                                <th className="py-2.5 px-4">{t('colMappingType')}</th>
+                                <th className="py-2.5 px-4">{t('colValue')}</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-kp-border">
@@ -399,9 +402,9 @@ export default function CategoryMappingModal({
                                     <td className="py-3 px-4 font-medium text-kp-text-primary">{attr.attribute.name}</td>
                                     <td className="py-3 px-4">
                                       {attr.required ? (
-                                        <span className="text-[10px] bg-kp-danger/10 text-kp-danger px-1.5 py-0.5 rounded-sm font-semibold">ZORUNLU</span>
+                                        <span className="text-[0.625rem] bg-kp-danger/10 text-kp-danger px-1.5 py-0.5 rounded-sm font-semibold">{t('required')}</span>
                                       ) : (
-                                        <span className="text-[10px] text-kp-text-tertiary">Opsiyonel</span>
+                                        <span className="text-[0.625rem] text-kp-text-tertiary">{t('optional')}</span>
                                       )}
                                     </td>
                                     <td className="py-3 px-4">
@@ -410,9 +413,9 @@ export default function CategoryMappingModal({
                                         onChange={(e) => handleAttributeMapChange(idStr, 'type', e.target.value as any)}
                                         className="bg-kp-bg-primary border border-kp-border rounded-kp-md px-2 py-1 text-xs focus:outline-hidden"
                                       >
-                                        <option value="static">Sabit Değer</option>
-                                        <option value="variant">Varyant Özelliği</option>
-                                        <option value="field">Ürün Standart Alanı</option>
+                                        <option value="static">{t('typeStatic')}</option>
+                                        <option value="variant">{t('typeVariant')}</option>
+                                        <option value="field">{t('typeField')}</option>
                                       </select>
                                     </td>
                                     <td className="py-3 px-4">
@@ -423,7 +426,7 @@ export default function CategoryMappingModal({
                                             onChange={(e) => handleAttributeMapChange(idStr, 'value', e.target.value)}
                                             className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-2 py-1 text-xs focus:outline-hidden"
                                           >
-                                            <option value="">-- Seçiniz --</option>
+                                            <option value="">{t('selectPlaceholder')}</option>
                                             {attr.attributeValues.map((v) => (
                                               <option key={v.id} value={v.name}>{v.name}</option>
                                             ))}
@@ -433,7 +436,7 @@ export default function CategoryMappingModal({
                                             type="text"
                                             value={mapConfig.value}
                                             onChange={(e) => handleAttributeMapChange(idStr, 'value', e.target.value)}
-                                            placeholder="Sabit değer giriniz"
+                                            placeholder={t('staticValuePlaceholder')}
                                             className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-2 py-1 text-xs focus:outline-hidden"
                                           />
                                         )
@@ -443,10 +446,10 @@ export default function CategoryMappingModal({
                                           onChange={(e) => handleAttributeMapChange(idStr, 'value', e.target.value)}
                                           className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-2 py-1 text-xs focus:outline-hidden"
                                         >
-                                          <option value="">-- Eşleşecek Varyant --</option>
-                                          <option value="Beden">Beden (Size)</option>
-                                          <option value="Renk">Renk (Color)</option>
-                                          <option value="Boy">Boy (Length)</option>
+                                          <option value="">{t('selectVariantPlaceholder')}</option>
+                                          <option value="Beden">{t('variantSize')}</option>
+                                          <option value="Renk">{t('variantColor')}</option>
+                                          <option value="Boy">{t('variantLength')}</option>
                                         </select>
                                       ) : (
                                         <select
@@ -454,12 +457,12 @@ export default function CategoryMappingModal({
                                           onChange={(e) => handleAttributeMapChange(idStr, 'value', e.target.value)}
                                           className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-2 py-1 text-xs focus:outline-hidden"
                                         >
-                                          <option value="">-- Eşleşecek Alan --</option>
-                                          <option value="name">Ürün Başlığı</option>
-                                          <option value="description">Ürün Açıklaması</option>
-                                          <option value="sku">Stok Kodu (SKU)</option>
-                                          <option value="barcode">Barkod</option>
-                                          <option value="weight">Ağırlık</option>
+                                          <option value="">{t('selectFieldPlaceholder')}</option>
+                                          <option value="name">{t('fieldName')}</option>
+                                          <option value="description">{t('fieldDescription')}</option>
+                                          <option value="sku">{t('fieldSku')}</option>
+                                          <option value="barcode">{t('fieldBarcode')}</option>
+                                          <option value="weight">{t('fieldWeight')}</option>
                                         </select>
                                       )}
                                     </td>
@@ -480,14 +483,14 @@ export default function CategoryMappingModal({
                       onClick={() => setShowAddForm(false)}
                       className="rounded-kp-md border border-kp-border text-kp-text-secondary hover:bg-kp-bg-hover px-4 py-2 text-xs font-semibold"
                     >
-                      Vazgeç
+                      {t('discard')}
                     </button>
                     <button
                       type="submit"
                       disabled={isSubmitting || !selectedLocalCategoryId || !selectedTrendyolCategoryId}
                       className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2 text-xs font-semibold disabled:opacity-50"
                     >
-                      {isSubmitting ? <ArrowPathIcon className="h-4.5 w-4.5 animate-spin" /> : 'Kaydet ve Eşleştir'}
+                      {isSubmitting ? <ArrowPathIcon className="h-4.5 w-4.5 animate-spin" /> : t('saveAndMap')}
                     </button>
                   </div>
                 </form>
@@ -496,24 +499,24 @@ export default function CategoryMappingModal({
                 <div className="border border-kp-border rounded-kp-md overflow-hidden">
                   <table className="w-full text-left border-collapse text-theme-sm text-kp-text-secondary">
                     <thead>
-                      <tr className="border-b border-kp-border text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/20">
-                        <th className="py-3 px-4">Yerel Kategori</th>
-                        <th className="py-3 px-4">Eşleşen Trendyol Kategorisi</th>
-                        <th className="py-3 px-4">Nitelik Mappings (JSON)</th>
-                        <th className="py-3 px-4 text-right">İşlemler</th>
+                      <tr className="border-b border-kp-border text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/20">
+                        <th className="py-3 px-4">{t('colLocalCategory')}</th>
+                        <th className="py-3 px-4">{t('colTrendyolCategory')}</th>
+                        <th className="py-3 px-4">{t('colAttrMappings')}</th>
+                        <th className="py-3 px-4 text-right">{t('colActions')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-kp-border">
                       {mappings.length === 0 ? (
                         <tr>
                           <td colSpan={4} className="py-12 text-center text-xs text-kp-text-tertiary">
-                            Henüz eşleştirilmiş bir kategori bulunmuyor. Başlamak için sağ üstteki butonla eşleştirme yapabilirsiniz.
+                            {t('emptyMappings')}
                           </td>
                         </tr>
                       ) : (
                         mappings.map((m) => (
                           <tr key={m.id} className="hover:bg-kp-bg-hover/20 transition-colors">
-                            <td className="py-3.5 px-4 font-semibold text-kp-text-primary">{m.category?.name || 'Bilinmeyen'}</td>
+                            <td className="py-3.5 px-4 font-semibold text-kp-text-primary">{m.category?.name || t('unknown')}</td>
                             <td className="py-3.5 px-4 text-kp-text-primary">
                               <span className="bg-kp-accent/10 text-kp-accent px-2 py-0.5 rounded-kp-md text-xs font-medium mr-1.5">
                                 {m.marketplaceCategoryId}
@@ -522,11 +525,11 @@ export default function CategoryMappingModal({
                             </td>
                             <td className="py-3.5 px-4 text-xs">
                               {m.attributesMapping ? (
-                                <code className="block max-w-[250px] truncate bg-kp-bg-primary/50 text-[10px] text-kp-text-tertiary px-1.5 py-0.5 rounded-sm">
+                                <code className="block max-w-[250px] truncate bg-kp-bg-primary/50 text-[0.625rem] text-kp-text-tertiary px-1.5 py-0.5 rounded-sm">
                                   {JSON.stringify(m.attributesMapping)}
                                 </code>
                               ) : (
-                                <span className="text-kp-text-tertiary italic">Yok</span>
+                                <span className="text-kp-text-tertiary italic">{t('none')}</span>
                               )}
                             </td>
                             <td className="py-3.5 px-4 text-right">
@@ -534,7 +537,7 @@ export default function CategoryMappingModal({
                                 onClick={() => handleDeleteMapping(m.id)}
                                 disabled={isDeletingId === m.id}
                                 className="p-1 rounded-kp-md hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-danger transition-colors disabled:opacity-50"
-                                title="Eşleştirmeyi Sil"
+                                title={t('deleteMapping')}
                               >
                                 {isDeletingId === m.id ? (
                                   <ArrowPathIcon className="h-4 w-4 animate-spin" />

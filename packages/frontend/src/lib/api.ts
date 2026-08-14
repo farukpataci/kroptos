@@ -1,7 +1,6 @@
 'use client';
 
 export interface RequestOptions extends RequestInit {
-  useTenantHeaders?: boolean;
   params?: Record<string, any>;
 }
 
@@ -45,17 +44,15 @@ export async function apiFetch<T>(path: string, options: RequestOptions = {}): P
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  // Inject tenant context headers if enabled
-  if (options.useTenantHeaders !== false) {
-    const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selected_tenant') : null;
-    if (selectedTenant) {
-      try {
-        const { agencyId, clientId, storeId } = JSON.parse(selectedTenant);
-        if (agencyId) headers.set('x-agency-id', agencyId);
-        if (clientId) headers.set('x-client-id', clientId);
-        if (storeId) headers.set('x-store-id', storeId);
-      } catch (_) {}
-    }
+  // Inject tenant context headers
+  const selectedTenant = typeof window !== 'undefined' ? localStorage.getItem('selected_tenant') : null;
+  if (selectedTenant) {
+    try {
+      const { agencyId, clientId, storeId } = JSON.parse(selectedTenant);
+      if (agencyId) headers.set('x-agency-id', agencyId);
+      if (clientId) headers.set('x-client-id', clientId);
+      if (storeId) headers.set('x-store-id', storeId);
+    } catch (_) {}
   }
 
   const response = await fetch(url, {

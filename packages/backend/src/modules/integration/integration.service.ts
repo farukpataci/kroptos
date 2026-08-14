@@ -1,11 +1,22 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  Inject,
+  forwardRef,
+  NotFoundException,
+  BadRequestException,
+  ForbiddenException,
+} from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateIntegrationDto, UpdateIntegrationDto } from './dto/integration.dto';
+import { Prisma } from '@prisma/client';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
+import { stripMaskedCredentials } from '@kroptos/shared';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
+import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 
 @Injectable()
 export class IntegrationService {
@@ -13,11 +24,14 @@ export class IntegrationService {
     private prisma: PrismaService,
     private credentialService: MarketplaceCredentialService,
     private connectorFactory: MarketplaceConnectorFactory,
+    private erpConnectorFactory: ErpConnectorFactory,
     private queueService: IntegrationQueueService,
+    @Inject(forwardRef(() => IntegrationSettingsService))
+    private settingsService: IntegrationSettingsService,
   ) {}
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
@@ -72,6 +86,18 @@ export class IntegrationService {
     return this.prisma.integration.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
+      include: {
+        // The list needs each row's configuration state to show the badge and
+        // to disable sync; pulling it here avoids a settings request per row.
+        setting: {
+          select: { isConfigured: true, completedSteps: true, deletedAt: true },
+        },
+        // The row shows which store an integration belongs to; storeId is null
+        // for agency-wide integrations, so the relation may come back null.
+        store: {
+          select: { id: true, name: true },
+        },
+      },
     });
   }
 
@@ -82,6 +108,10 @@ export class IntegrationService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
+    if (!activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency context is required (x-agency-id header)');
+    }
+
     const integration = await this.prisma.integration.findFirst({
       where: {
         OR: [
@@ -97,7 +127,7 @@ export class IntegrationService {
     }
 
     if (!isSuperAdmin) {
-      if (activeAgencyId && integration.agencyId !== activeAgencyId) {
+      if (integration.agencyId !== activeAgencyId) {
         throw new ForbiddenException('Access denied. Integration belongs to a different agency.');
       }
       // If scoped to store or client specifically
@@ -128,9 +158,18 @@ export class IntegrationService {
       throw new BadRequestException('Agency ID context is required');
     }
 
-    const credentialsEncrypted = encrypt(JSON.stringify(dto.credentials));
+    // A create has no stored secret to fall back on, so a masked or blank secret
+    // can only be a client bug — reject it rather than persisting an empty one.
+    const { credentials: newCredentials, placeholders } = stripMaskedCredentials(dto.credentials);
+    if (placeholders.length > 0) {
+      throw new BadRequestException(
+        `Credentials must carry a real value, not a masked or blank placeholder: ${placeholders.join(', ')}`,
+      );
+    }
 
-    return this.prisma.$transaction(async (tx) => {
+    const credentialsEncrypted = encrypt(JSON.stringify(newCredentials));
+
+    const integration = await this.prisma.$transaction(async (tx) => {
       const integration = await tx.integration.create({
         data: {
           agencyId,
@@ -158,6 +197,13 @@ export class IntegrationService {
 
       return integration;
     });
+
+    // Opens the settings record straight away, so the integration reports
+    // "awaiting configuration" from creation instead of looking ready until
+    // someone opens the settings drawer for the first time.
+    await this.settingsService.ensureForIntegration(integration);
+
+    return integration;
   }
 
   async update(
@@ -173,13 +219,18 @@ export class IntegrationService {
 
     let credentialsEncrypted = integration.credentialsEncrypted;
     if (dto.credentials) {
+      // Values the client echoed back masked carry no new secret; dropping them
+      // here lets the merge below keep the stored value instead of overwriting
+      // the real credential with a string of bullets.
+      const { credentials: incomingCreds } = stripMaskedCredentials(dto.credentials);
+
       // Decrypt old keys, merge new keys, re-encrypt
       try {
         const oldCreds = JSON.parse(decrypt(integration.credentialsEncrypted));
-        const mergedCreds = { ...oldCreds, ...dto.credentials };
+        const mergedCreds = { ...oldCreds, ...incomingCreds };
         credentialsEncrypted = encrypt(JSON.stringify(mergedCreds));
       } catch (err) {
-        credentialsEncrypted = encrypt(JSON.stringify(dto.credentials));
+        credentialsEncrypted = encrypt(JSON.stringify(incomingCreds));
       }
     }
 
@@ -220,6 +271,8 @@ export class IntegrationService {
     ipAddress?: string,
   ) {
     const integration = await this.get(id, activeAgencyId, activeClientId, activeStoreId);
+
+    await this.settingsService.softDeleteForIntegration(integration.id);
 
     return this.prisma.$transaction(async (tx) => {
       const now = new Date();
@@ -271,8 +324,22 @@ export class IntegrationService {
         const testResult = await connector.testConnection();
         success = testResult.success;
         message = testResult.message;
+
+        // An OAuth marketplace may have handed back a replacement refresh token
+        // while authenticating. Persisting it here is what stops the next
+        // process restart from finding a token the marketplace no longer honours.
+        const rotated = connector.consumeRotatedCredentials();
+        if (rotated) {
+          await this.credentialService.persistRotatedCredentials(integration.id, rotated);
+        }
+      } else if (integration.providerType === 'erp') {
+        const creds = JSON.parse(decrypt(integration.credentialsEncrypted));
+        const connector = this.erpConnectorFactory.create(integration.provider, creds);
+        const testResult = await connector.testConnection();
+        success = testResult.success;
+        message = testResult.message;
       } else {
-        // Fallback for non-marketplace integrations (e.g. ERP, payment, cargo)
+        // Fallback for non-marketplace integrations (e.g. payment, cargo)
         const creds = JSON.parse(decrypt(integration.credentialsEncrypted));
         const checkKeys = Object.values(creds);
         const containsInvalid = checkKeys.some((val: any) => typeof val === 'string' && val.toLowerCase().includes('invalid'));
@@ -326,9 +393,25 @@ export class IntegrationService {
   ) {
     const integration = await this.get(id, activeAgencyId, activeClientId, activeStoreId);
 
+    // A paused integration must stay paused: the status switch is the user's
+    // explicit "do not talk to this marketplace", so it gates the manual button
+    // too, not only the scheduled runs.
+    if (integration.status === 'inactive') {
+      throw new BadRequestException(
+        'Pasif entegrasyon senkronize edilemez. Önce entegrasyonu aktifleştirin.',
+      );
+    }
+
+    // The UI disables this button for an unconfigured integration, but the UI
+    // is not the boundary: syncing without a stock source or price rule would
+    // push wrong quantities and prices to a live marketplace.
+    if (integration.providerType === 'marketplace') {
+      await this.settingsService.assertConfigured(integration.id, integration.provider);
+    }
+
     // Create sync_products and sync_orders jobs
-    const productsJob = await this.queueService.addSyncJob(id, 'sync_products', {});
-    const ordersJob = await this.queueService.addSyncJob(id, 'sync_orders', {});
+    const productsJob = await this.queueService.addSyncJob(integration.id, 'sync_products', {});
+    const ordersJob = await this.queueService.addSyncJob(integration.id, 'sync_orders', {});
 
     return {
       success: true,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { XMarkIcon, ArrowPathIcon, ExclamationTriangleIcon, PhotoIcon, InformationCircleIcon, BanknotesIcon, TruckIcon, LinkIcon, ArrowsRightLeftIcon } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { Product, Category, ProductPayload } from '../hooks/useProducts';
 import { apiFetch } from '@/lib/api';
 import ProductMarketplaceSettings from './ProductMarketplaceSettings';
@@ -16,17 +17,16 @@ interface ProductFormModalProps {
 
 type FormTab = 'url_import' | 'basic' | 'pricing' | 'dimensions' | 'images' | 'variants' | 'bundle' | 'cross_sell' | 'accounting' | 'integrations';
 
-const TABS: { value: FormTab; label: string }[] = [
-  { value: 'url_import', label: 'Link ile Yükle' },
-  { value: 'basic', label: 'Temel Bilgiler' },
-  { value: 'pricing', label: 'Fiyatlandırma' },
-  { value: 'dimensions', label: 'Boyut & Ağırlık' },
-  { value: 'images', label: 'Görseller' },
-  { value: 'variants', label: 'Varyasyonlar (Beden)' },
-  { value: 'bundle', label: 'Paket İçeriği (Bundle)' },
-  { value: 'cross_sell', label: 'Çapraz Satış' },
-  { value: 'accounting', label: 'Muhasebe Eşleştirme' },
-  { value: 'integrations', label: 'Pazaryeri Entegrasyonu' },
+const TABS: { value: FormTab; labelKey: string }[] = [
+  { value: 'url_import', labelKey: 'tabs.urlImport' },
+  { value: 'basic', labelKey: 'tabs.basic' },
+  { value: 'pricing', labelKey: 'tabs.pricing' },
+  { value: 'dimensions', labelKey: 'tabs.dimensions' },
+  { value: 'images', labelKey: 'tabs.images' },
+  { value: 'variants', labelKey: 'tabs.variants' },
+  { value: 'bundle', labelKey: 'tabs.bundle' },
+  { value: 'accounting', labelKey: 'tabs.accounting' },
+  { value: 'integrations', labelKey: 'tabs.integrations' },
 ];
 
 const DEFAULT_FORM = {
@@ -49,6 +49,7 @@ const DEFAULT_FORM = {
   erpId: '',
   taxRate: '20',
   type: 'SIMPLE',
+  locationCode: '',
 };
 
 function calcMargin(price: string, costPrice: string): string | null {
@@ -60,6 +61,8 @@ function calcMargin(price: string, costPrice: string): string | null {
 }
 
 export default function ProductFormModal({ product, categories, onClose, onSubmit }: ProductFormModalProps) {
+  const t = useTranslations('products.form');
+  const tc = useTranslations('common');
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
@@ -118,6 +121,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
         erpId: product.erpId || '',
         taxRate: product.taxRate?.toString() || '20',
         type: (product as any).type || 'SIMPLE',
+        locationCode: product.locationCode || '',
       });
 
       // Populate variantList:
@@ -140,7 +144,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
         setBundleItemsList(
           (product as any).bundleItems.map((item: any) => ({
             childProductId: item.childProductId,
-            name: item.childProduct?.name || 'Ürün',
+            name: item.childProduct?.name || t('fallbackProductName'),
             sku: item.childProduct?.sku || '',
             price: item.childProduct?.price?.toString() || '0.00',
             quantity: item.quantity,
@@ -156,7 +160,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
         setCrossSellList(
           (product as any).crossSellSources.map((item: any) => ({
             targetProductId: item.targetProductId,
-            name: item.targetProduct?.name || 'Ürün',
+            name: item.targetProduct?.name || t('fallbackProductName'),
             sku: item.targetProduct?.sku || '',
             price: item.targetProduct?.price?.toString() || '0.00',
             displayOrder: item.displayOrder,
@@ -270,7 +274,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
       setScrapingUrl('');
       setActiveTab('basic');
     } catch (err: any) {
-      setError(err.message || 'Ürün bilgileri URL\'den alınamadı. Lütfen geçerli bir URL girin.');
+      setError(err.message || t('scrapeFailed'));
     } finally {
       setIsScraping(false);
     }
@@ -281,12 +285,12 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Lütfen geçerli bir görsel dosyası seçin.');
+      setError(t('invalidImageFile'));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      setError('Görsel boyutu en fazla 5MB olabilir.');
+      setError(t('imageTooLarge'));
       return;
     }
 
@@ -337,10 +341,10 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) { setError('Ürün adı zorunludur.'); setActiveTab('basic'); return; }
-    if (!form.sku.trim()) { setError('SKU kodu zorunludur.'); setActiveTab('basic'); return; }
-    if (!form.price || parseFloat(form.price) <= 0) { setError('Geçerli bir satış fiyatı giriniz.'); setActiveTab('pricing'); return; }
-    if (!form.basePrice || parseFloat(form.basePrice) <= 0) { setError('Geçerli bir taban fiyat giriniz.'); setActiveTab('pricing'); return; }
+    if (!form.name.trim()) { setError(t('errors.nameRequired')); setActiveTab('basic'); return; }
+    if (!form.sku.trim()) { setError(t('errors.skuRequired')); setActiveTab('basic'); return; }
+    if (!form.price || parseFloat(form.price) <= 0) { setError(t('errors.priceInvalid')); setActiveTab('pricing'); return; }
+    if (!form.basePrice || parseFloat(form.basePrice) <= 0) { setError(t('errors.basePriceInvalid')); setActiveTab('pricing'); return; }
 
     setError(null);
     setIsSubmitting(true);
@@ -366,6 +370,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
       erpId: form.erpId || undefined,
       taxRate: form.taxRate ? parseInt(form.taxRate, 10) : 20,
       type: form.type,
+      locationCode: form.locationCode || undefined,
       bundleItems: form.type === 'BUNDLE' ? bundleItemsList.map((item) => ({
         childProductId: item.childProductId,
         quantity: item.quantity,
@@ -387,14 +392,14 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
       await onSubmit(payload);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'İşlem başarısız oldu.');
+      setError(err.message || t('errors.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const inputCls = 'w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-none focus:border-kp-accent transition-colors';
-  const labelCls = 'block text-[11px] font-medium text-kp-text-secondary mb-1';
+  const labelCls = 'block text-[0.6875rem] font-medium text-kp-text-secondary mb-1';
 
   if (!mounted) return null;
 
@@ -412,10 +417,10 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
       <div className="flex items-center justify-between px-8 py-5 border-b border-kp-border bg-kp-bg-primary/20 flex-shrink-0">
         <div>
           <h3 className="text-base font-bold text-kp-text-primary">
-            {isEdit ? 'Ürün Düzenle' : 'Yeni Ürün Ekle'}
+            {isEdit ? t('editTitle') : t('createTitle')}
           </h3>
           <p className="text-xs text-kp-text-tertiary mt-0.5">
-            {isEdit ? `SKU: ${product?.sku}` : 'Ürün kataloğuna yeni kayıt ekle'}
+            {isEdit ? `SKU: ${product?.sku}` : t('createSubtitle')}
           </p>
         </div>
         <button onClick={onClose} className="rounded-kp-md p-1.5 hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
@@ -425,7 +430,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
       {/* Horizontal Tabs at the top */}
       <div className="flex border-b border-kp-border px-8 bg-kp-bg-primary/10 flex-shrink-0">
-        {tabsToRender.map(({ value, label }) => {
+        {tabsToRender.map(({ value, labelKey }) => {
           const isActive = activeTab === value;
           const Icon =
             value === 'url_import' ? LinkIcon :
@@ -447,7 +452,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
               }`}
             >
               <Icon className={`h-4 w-4 ${isActive ? 'text-kp-accent' : 'text-kp-text-tertiary'}`} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </button>
           );
         })}
@@ -470,15 +475,15 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                   <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-kp-accent/10 text-kp-accent">
                     <LinkIcon className="h-6 w-6" />
                   </div>
-                  <h4 className="text-sm font-semibold text-kp-text-primary">URL ile Ürün Bilgilerini Doldur</h4>
+                  <h4 className="text-sm font-semibold text-kp-text-primary">{t('urlImport.title')}</h4>
                   <p className="text-xs text-kp-text-tertiary max-w-md mx-auto">
-                    Desteklenen e-ticaret sitelerinden veya herhangi bir ürün sayfasından bağlantı yapıştırarak tüm alanları (ürün adı, açıklaması, fiyatı ve görselleri) saniyeler içinde otomatik olarak doldurabilirsiniz.
+                    {t('urlImport.desc')}
                   </p>
                 </div>
 
                 <div className="bg-kp-bg-primary/30 border border-kp-border rounded-kp-lg p-6 space-y-4">
                   <div>
-                    <label className={labelCls}>Ürün Bağlantısı (URL)</label>
+                    <label className={labelCls}>{t('urlImport.urlLabel')}</label>
                     <input
                       type="url"
                       placeholder="https://example.com/product/..."
@@ -497,10 +502,10 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                     {isScraping ? (
                       <>
                         <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                        <span>Ürün Bilgileri Çekiliyor...</span>
+                        <span>{t('urlImport.scraping')}</span>
                       </>
                     ) : (
-                      <span>Bilgileri Çek ve Formu Doldur</span>
+                      <span>{t('urlImport.scrapeButton')}</span>
                     )}
                   </button>
                 </div>
@@ -512,14 +517,15 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
               <div className="space-y-6 max-w-2xl mx-auto py-4">
                 <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 p-4 flex items-center justify-between">
                   <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">Aktif Eşleştirme Durumu</h4>
-                    <p className="text-[11px] text-kp-text-tertiary">
+                    <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('accounting.statusTitle')}</h4>
+                    <p className="text-[0.6875rem] text-kp-text-tertiary">
                       {form.erpCode ? (
-                        <>
-                          Bu ürün şu anda Muhasebe/ERP kartı <span className="font-semibold text-kp-accent">{form.erpCode}</span> ile bağlıdır.
-                        </>
+                        t.rich('accounting.linkedTo', {
+                          code: form.erpCode,
+                          b: (chunks) => <span className="font-semibold text-kp-accent">{chunks}</span>,
+                        })
                       ) : (
-                        'Bu ürün henüz herhangi bir Muhasebe/ERP kartı ile eşleştirilmemiştir.'
+                        t('accounting.notLinked')
                       )}
                     </p>
                   </div>
@@ -532,18 +538,18 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                       }}
                       className="rounded-kp-md bg-kp-danger/10 hover:bg-kp-danger text-kp-danger hover:text-white px-3 py-1.5 text-xs font-semibold transition-all"
                     >
-                      Eşleştirmeyi Kaldır
+                      {t('accounting.unlink')}
                     </button>
                   )}
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className={labelCls}>Muhasebe / ERP'de Ürün Ara</label>
+                    <label className={labelCls}>{t('accounting.searchLabel')}</label>
                     <div className="relative">
                       <input
                         type="text"
-                        placeholder="Ürün adı, Stok Kodu veya Barkod ile arayın..."
+                        placeholder={t('accounting.searchPlaceholder')}
                         value={erpSearchQuery}
                         onChange={(e) => setErpSearchQuery(e.target.value)}
                         className={inputCls}
@@ -557,13 +563,13 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                   </div>
 
                   <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
-                    <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest">
-                      Bulunan Muhasebe Kartları ({erpSearchResults.length})
+                    <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest">
+                      {t('accounting.resultsTitle', { count: erpSearchResults.length })}
                     </p>
 
                     {erpSearchResults.length === 0 ? (
                       <div className="text-center py-8 bg-kp-bg-primary/20 border border-dashed border-kp-border rounded-kp-md">
-                        <p className="text-xs text-kp-text-tertiary">Arama kriterine uygun muhasebe kartı bulunamadı.</p>
+                        <p className="text-xs text-kp-text-tertiary">{t('accounting.noResults')}</p>
                       </div>
                     ) : (
                       <div className="grid gap-2">
@@ -581,14 +587,14 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                               <div>
                                 <div className="flex items-center gap-2">
                                   <span className="text-xs font-semibold text-kp-text-primary">{item.name}</span>
-                                  <span className="text-[10px] font-mono bg-kp-bg-secondary px-1.5 py-0.5 rounded text-kp-text-secondary">
+                                  <span className="text-[0.625rem] font-mono bg-kp-bg-secondary px-1.5 py-0.5 rounded text-kp-text-secondary">
                                     {item.code}
                                   </span>
                                 </div>
-                                <div className="flex items-center gap-4 mt-1 text-[10px] text-kp-text-tertiary">
-                                  <span>Barkod: {item.barcode}</span>
-                                  <span>Mevcut Stok: <strong className="text-kp-text-secondary">{item.stock} ad.</strong></span>
-                                  <span>Muhasebe Fiyatı: <strong className="text-kp-text-secondary">{item.price.toLocaleString('tr-TR')} ₺</strong></span>
+                                <div className="flex items-center gap-4 mt-1 text-[0.625rem] text-kp-text-tertiary">
+                                  <span>{t('accounting.barcode')}: {item.barcode}</span>
+                                  <span>{t('accounting.currentStock')}: <strong className="text-kp-text-secondary">{item.stock}</strong></span>
+                                  <span>{t('accounting.erpPrice')}: <strong className="text-kp-text-secondary">{item.price.toLocaleString('tr-TR')} ₺</strong></span>
                                 </div>
                               </div>
 
@@ -607,10 +613,10 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                                         erpId: item.id,
                                       }));
                                     }}
-                                    className="rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary px-2.5 py-1 text-[11px] font-semibold transition-all"
-                                    title="Tüm form alanlarını bu muhasebe kartı bilgileriyle doldurur."
+                                    className="rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary px-2.5 py-1 text-[0.6875rem] font-semibold transition-all"
+                                    title={t('accounting.pullInfoTitle')}
                                   >
-                                    Bilgileri Çek
+                                    {t('accounting.pullInfo')}
                                   </button>
                                 )}
                                 <button
@@ -619,13 +625,13 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                                     set('erpCode', item.code);
                                     set('erpId', item.id);
                                   }}
-                                  className={`rounded px-3 py-1 text-[11px] font-semibold transition-all ${
+                                  className={`rounded px-3 py-1 text-[0.6875rem] font-semibold transition-all ${
                                     isMatched
                                       ? 'bg-kp-accent text-white'
                                       : 'bg-kp-accent/15 text-kp-accent hover:bg-kp-accent/25'
                                   }`}
                                 >
-                                  {isMatched ? 'Eşleştirildi' : 'Eşleştir'}
+                                  {isMatched ? t('accounting.matched') : t('accounting.match')}
                                 </button>
                               </div>
                             </div>
@@ -642,49 +648,53 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
             {activeTab === 'basic' && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className={labelCls}>Ürün Adı <span className="text-kp-danger">*</span></label>
-                  <input type="text" required value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="örn. Koşu Ayakkabısı" className={inputCls} />
+                  <label className={labelCls}>{t('basic.nameLabel')} <span className="text-kp-danger">*</span></label>
+                  <input type="text" required value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('basic.namePlaceholder')} className={inputCls} />
                 </div>
                 <div>
-                  <label className={labelCls}>SKU Kodu <span className="text-kp-danger">*</span></label>
-                  <input type="text" required value={form.sku} onChange={(e) => set('sku', e.target.value)} placeholder="örn. SHOE-001" className={`${inputCls} font-mono`} />
+                  <label className={labelCls}>{t('basic.skuLabel')} <span className="text-kp-danger">*</span></label>
+                  <input type="text" required value={form.sku} onChange={(e) => set('sku', e.target.value)} placeholder={t('basic.skuPlaceholder')} className={`${inputCls} font-mono`} />
                 </div>
                 <div className="col-span-2">
-                  <label className={labelCls}>Açıklama</label>
-                  <textarea rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} placeholder="Ürün detayları, özellikler..." className={`${inputCls} resize-none`} />
+                  <label className={labelCls}>{t('basic.descriptionLabel')}</label>
+                  <textarea rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} placeholder={t('basic.descriptionPlaceholder')} className={`${inputCls} resize-none`} />
                 </div>
                 <div>
-                  <label className={labelCls}>Kategori</label>
+                  <label className={labelCls}>{t('basic.categoryLabel')}</label>
                   <select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} className={inputCls}>
-                    <option value="">Kategori seçin...</option>
+                    <option value="">{t('basic.categoryPlaceholder')}</option>
                     {categories.map((c) => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Durum</label>
+                  <label className={labelCls}>{t('basic.statusLabel')}</label>
                   <select value={form.status} onChange={(e) => set('status', e.target.value)} className={inputCls}>
-                    <option value="active">Aktif</option>
-                    <option value="draft">Taslak</option>
-                    <option value="suspended">Askıda</option>
+                    <option value="active">{t('basic.statusActive')}</option>
+                    <option value="draft">{t('basic.statusDraft')}</option>
+                    <option value="suspended">{t('basic.statusSuspended')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Ürün Tipi</label>
+                  <label className={labelCls}>{t('basic.typeLabel')}</label>
                   <select value={form.type} onChange={(e) => set('type', e.target.value)} className={inputCls}>
-                    <option value="SIMPLE">Basit Ürün (SIMPLE)</option>
-                    <option value="BUNDLE">Ürün Paketi (BUNDLE)</option>
-                    <option value="VARIANT_PARENT">Varyantlı Ana Ürün (VARIANT_PARENT)</option>
-                    <option value="VARIANT_CHILD">Varyant Alt Ürünü (VARIANT_CHILD)</option>
+                    <option value="SIMPLE">{t('basic.typeSimple')}</option>
+                    <option value="BUNDLE">{t('basic.typeBundle')}</option>
+                    <option value="VARIANT_PARENT">{t('basic.typeVariantParent')}</option>
+                    <option value="VARIANT_CHILD">{t('basic.typeVariantChild')}</option>
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Barkod (EAN/UPC)</label>
+                  <label className={labelCls}>{t('basic.barcodeLabel')}</label>
                   <input type="text" value={form.barcode} onChange={(e) => set('barcode', e.target.value)} placeholder="8680000000000" className={`${inputCls} font-mono`} />
                 </div>
                 <div>
-                  <label className={labelCls}>Para Birimi</label>
+                  <label className={labelCls}>{t('basic.locationLabel')}</label>
+                  <input type="text" value={form.locationCode} onChange={(e) => set('locationCode', e.target.value.toUpperCase())} placeholder={t('basic.locationPlaceholder')} className={`${inputCls} font-mono`} />
+                </div>
+                <div>
+                  <label className={labelCls}>{t('basic.currencyLabel')}</label>
                   <select value={form.currency} onChange={(e) => set('currency', e.target.value)} className={inputCls}>
                     <option value="TRY">₺ TRY</option>
                     <option value="USD">$ USD</option>
@@ -692,7 +702,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>KDV Oranı (%)</label>
+                  <label className={labelCls}>{t('basic.taxRateLabel')}</label>
                   <select value={form.taxRate} onChange={(e) => set('taxRate', e.target.value)} className={inputCls}>
                     <option value="20">%20</option>
                     <option value="10">%10</option>
@@ -708,33 +718,33 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
               <div className="space-y-4 animate-fade-in">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">Ürün Varyasyonları (Beden & Renk)</h4>
-                    <p className="text-[11px] text-kp-text-tertiary">Farklı beden, renk veya numara seçeneklerine sahip varyantlar ekleyin.</p>
+                    <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('variants.title')}</h4>
+                    <p className="text-[0.6875rem] text-kp-text-tertiary">{t('variants.desc')}</p>
                   </div>
                   <button
                     type="button"
                     onClick={handleAddVariantRow}
                     className="rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-xs font-semibold transition-all shadow-sm"
                   >
-                    + Varyant Ekle
+                    + {t('variants.addVariant')}
                   </button>
                 </div>
 
                 {variantList.length === 0 ? (
                   <div className="text-center py-12 bg-kp-bg-primary/20 border border-dashed border-kp-border rounded-kp-md">
-                    <p className="text-xs text-kp-text-tertiary">Henüz varyasyon eklenmedi. Üstteki butondan yeni bir beden/renk varyantı ekleyin.</p>
+                    <p className="text-xs text-kp-text-tertiary">{t('variants.empty')}</p>
                   </div>
                 ) : (
                   <div className="border border-kp-border rounded-kp-md overflow-hidden bg-kp-bg-primary/40">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
                         <tr className="bg-kp-bg-primary border-b border-kp-border text-kp-text-secondary font-semibold">
-                          <th className="p-3">Beden (Size)</th>
-                          <th className="p-3">Renk (Color)</th>
-                          <th className="p-3">SKU Kodu</th>
-                          <th className="p-3">Fiyat</th>
-                          <th className="p-3">Stok</th>
-                          <th className="p-3 text-right">İşlem</th>
+                          <th className="p-3">{t('variants.size')}</th>
+                          <th className="p-3">{t('variants.color')}</th>
+                          <th className="p-3">{t('variants.sku')}</th>
+                          <th className="p-3">{t('variants.price')}</th>
+                          <th className="p-3">{t('variants.stock')}</th>
+                          <th className="p-3 text-right">{t('variants.actions')}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -743,7 +753,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                             <td className="p-2">
                               <input
                                 type="text"
-                                placeholder="örn. M, L"
+                                placeholder={t('variants.sizePlaceholder')}
                                 value={variant.size}
                                 onChange={(e) => {
                                   const updated = [...variantList];
@@ -756,7 +766,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                             <td className="p-2">
                               <input
                                 type="text"
-                                placeholder="örn. Siyah"
+                                placeholder={t('variants.colorPlaceholder')}
                                 value={variant.color}
                                 onChange={(e) => {
                                   const updated = [...variantList];
@@ -812,7 +822,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                                 onClick={() => setVariantList(variantList.filter((_, i) => i !== idx))}
                                 className="text-kp-danger hover:underline text-xs px-2"
                               >
-                                Sil
+                                {tc('actions.delete')}
                               </button>
                             </td>
                           </tr>
@@ -828,13 +838,13 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
             {activeTab === 'bundle' && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">Paket (Bundle) İçeriği</h4>
-                  <p className="text-[11px] text-kp-text-tertiary">Bu paket satıldığında stoktan düşecek alt bileşen ürünleri ekleyin.</p>
+                  <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('bundle.title')}</h4>
+                  <p className="text-[0.6875rem] text-kp-text-tertiary">{t('bundle.desc')}</p>
                 </div>
 
                 <div className="bg-kp-bg-primary/20 border border-kp-border rounded-kp-md p-4 space-y-4">
                   <div>
-                    <label className={labelCls}>Pakete Ürün Ekle</label>
+                    <label className={labelCls}>{t('bundle.addLabel')}</label>
                     <select
                       onChange={(e) => {
                         handleAddBundleItem(e.target.value);
@@ -842,7 +852,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                       }}
                       className={inputCls}
                     >
-                      <option value="">Katalogdan ürün seçin...</option>
+                      <option value="">{t('selectFromCatalog')}</option>
                       {allProductsList
                         .filter((p) => p.id !== product?.id && p.type !== 'BUNDLE')
                         .map((p) => (
@@ -855,7 +865,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
                   {bundleItemsList.length === 0 ? (
                     <div className="text-center py-8 text-xs text-kp-text-tertiary">
-                      Pakette henüz hiçbir ürün yok. Yukarıdaki listeden ürün ekleyin.
+                      {t('bundle.empty')}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -863,11 +873,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                         <div key={idx} className="flex items-center justify-between p-3 border border-kp-border rounded-kp-md bg-kp-bg-primary">
                           <div className="space-y-0.5">
                             <p className="text-xs font-semibold text-kp-text-primary">{item.name}</p>
-                            <p className="text-[10px] text-kp-text-tertiary font-mono">SKU: {item.sku} | Fiyat: {item.price} ₺</p>
+                            <p className="text-[0.625rem] text-kp-text-tertiary font-mono">SKU: {item.sku} | {t('priceLabel')}: {item.price} ₺</p>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="w-24">
-                              <label className="text-[9px] font-medium text-kp-text-tertiary block mb-0.5">Adet</label>
+                              <label className="text-[0.5625rem] font-medium text-kp-text-tertiary block mb-0.5">{t('bundle.quantity')}</label>
                               <input
                                 type="number"
                                 min="1"
@@ -881,7 +891,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                               />
                             </div>
                             <div className="w-24">
-                              <label className="text-[9px] font-medium text-kp-text-tertiary block mb-0.5">İndirim (%)</label>
+                              <label className="text-[0.5625rem] font-medium text-kp-text-tertiary block mb-0.5">{t('bundle.discount')}</label>
                               <input
                                 type="number"
                                 min="0"
@@ -900,7 +910,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                               onClick={() => setBundleItemsList(bundleItemsList.filter((_, i) => i !== idx))}
                               className="text-kp-danger hover:underline text-xs mt-3.5"
                             >
-                              Kaldır
+                              {t('remove')}
                             </button>
                           </div>
                         </div>
@@ -915,13 +925,13 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
             {activeTab === 'cross_sell' && (
               <div className="space-y-4 animate-fade-in">
                 <div>
-                  <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">Çapraz Satış & İlişkili Ürünler</h4>
-                  <p className="text-[11px] text-kp-text-tertiary">Bu ürünle birlikte satın alınabilecek tamamlayıcı veya alternatif ürünleri belirleyin.</p>
+                  <h4 className="text-xs font-bold text-kp-text-primary uppercase tracking-wider">{t('crossSell.title')}</h4>
+                  <p className="text-[0.6875rem] text-kp-text-tertiary">{t('crossSell.desc')}</p>
                 </div>
 
                 <div className="bg-kp-bg-primary/20 border border-kp-border rounded-kp-md p-4 space-y-4">
                   <div>
-                    <label className={labelCls}>İlişkili Ürün Ekle</label>
+                    <label className={labelCls}>{t('crossSell.addLabel')}</label>
                     <select
                       onChange={(e) => {
                         handleAddCrossSellItem(e.target.value);
@@ -929,7 +939,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                       }}
                       className={inputCls}
                     >
-                      <option value="">Katalogdan ürün seçin...</option>
+                      <option value="">{t('selectFromCatalog')}</option>
                       {allProductsList
                         .filter((p) => p.id !== product?.id)
                         .map((p) => (
@@ -942,7 +952,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
                   {crossSellList.length === 0 ? (
                     <div className="text-center py-8 text-xs text-kp-text-tertiary">
-                      Seçilmiş çapraz satış ürünü bulunmuyor. Yukarıdaki listeden ürün ekleyin.
+                      {t('crossSell.empty')}
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -950,11 +960,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                         <div key={idx} className="flex items-center justify-between p-3 border border-kp-border rounded-kp-md bg-kp-bg-primary">
                           <div className="space-y-0.5">
                             <p className="text-xs font-semibold text-kp-text-primary">{item.name}</p>
-                            <p className="text-[10px] text-kp-text-tertiary font-mono">SKU: {item.sku} | Fiyat: {item.price} ₺</p>
+                            <p className="text-[0.625rem] text-kp-text-tertiary font-mono">SKU: {item.sku} | {t('priceLabel')}: {item.price} ₺</p>
                           </div>
                           <div className="flex items-center gap-4">
                             <div className="w-24">
-                              <label className="text-[9px] font-medium text-kp-text-tertiary block mb-0.5">Görüntü Sırası</label>
+                              <label className="text-[0.5625rem] font-medium text-kp-text-tertiary block mb-0.5">{t('crossSell.displayOrder')}</label>
                               <input
                                 type="number"
                                 value={item.displayOrder}
@@ -971,7 +981,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                               onClick={() => setCrossSellList(crossSellList.filter((_, i) => i !== idx))}
                               className="text-kp-danger hover:underline text-xs mt-3.5"
                             >
-                              Kaldır
+                              {t('remove')}
                             </button>
                           </div>
                         </div>
@@ -987,7 +997,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Satış Fiyatı <span className="text-kp-danger">*</span></label>
+                    <label className={labelCls}>{t('pricing.priceLabel')} <span className="text-kp-danger">*</span></label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-kp-text-tertiary font-semibold">
                         {form.currency === 'TRY' ? '₺' : form.currency === 'USD' ? '$' : '€'}
@@ -996,7 +1006,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                     </div>
                   </div>
                   <div>
-                    <label className={labelCls}>Taban Fiyat (MSRP) <span className="text-kp-danger">*</span></label>
+                    <label className={labelCls}>{t('pricing.basePriceLabel')} <span className="text-kp-danger">*</span></label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-kp-text-tertiary font-semibold">
                         {form.currency === 'TRY' ? '₺' : form.currency === 'USD' ? '$' : '€'}
@@ -1005,7 +1015,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                     </div>
                   </div>
                   <div>
-                    <label className={labelCls}>Maliyet Fiyatı</label>
+                    <label className={labelCls}>{t('pricing.costPriceLabel')}</label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-kp-text-tertiary font-semibold">
                         {form.currency === 'TRY' ? '₺' : form.currency === 'USD' ? '$' : '€'}
@@ -1014,29 +1024,29 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                     </div>
                   </div>
                   <div>
-                    <label className={labelCls}>Başlangıç Stok</label>
+                    <label className={labelCls}>{t('pricing.initialStockLabel')}</label>
                     <input type="number" min="0" value={form.stockQuantity} onChange={(e) => set('stockQuantity', e.target.value)} placeholder="0" className={inputCls} />
                   </div>
                 </div>
 
                 {/* Margin preview */}
                 <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 p-4">
-                  <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">Kar Marjı Hesabı</p>
+                  <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-3">{t('pricing.marginCalc')}</p>
                   <div className="grid grid-cols-3 gap-4">
                     <div className="text-center">
-                      <p className="text-[10px] text-kp-text-tertiary">Satış</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary">{t('pricing.sale')}</p>
                       <p className="font-bold text-kp-text-primary text-sm">
                         {form.price ? `${form.currency === 'TRY' ? '₺' : '$'}${parseFloat(form.price).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-kp-text-tertiary">Maliyet</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary">{t('pricing.cost')}</p>
                       <p className="font-bold text-kp-text-primary text-sm">
                         {form.costPrice ? `${form.currency === 'TRY' ? '₺' : '$'}${parseFloat(form.costPrice).toLocaleString('tr-TR', { minimumFractionDigits: 2 })}` : '—'}
                       </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-[10px] text-kp-text-tertiary">Marj</p>
+                      <p className="text-[0.625rem] text-kp-text-tertiary">{t('pricing.margin')}</p>
                       <p className={`font-bold text-lg ${margin ? (parseFloat(margin) >= 30 ? 'text-emerald-400' : parseFloat(margin) >= 15 ? 'text-amber-400' : 'text-red-400') : 'text-kp-text-tertiary'}`}>
                         {margin ? `%${margin}` : '—'}
                       </p>
@@ -1050,26 +1060,26 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
             {activeTab === 'dimensions' && (
               <div className="space-y-4">
                 <p className="text-xs text-kp-text-tertiary">
-                  Kargo hesaplamaları için boyut ve ağırlık bilgilerini girin.
+                  {t('dimensions.desc')}
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Ağırlık (kg)</label>
-                    <input type="number" step="0.001" value={form.weight} onChange={(e) => set('weight', e.target.value)} placeholder="örn. 1.25" className={inputCls} />
+                    <label className={labelCls}>{t('dimensions.weightLabel')}</label>
+                    <input type="number" step="0.001" value={form.weight} onChange={(e) => set('weight', e.target.value)} placeholder={t('dimensions.weightPlaceholder')} className={inputCls} />
                   </div>
                   <div />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className={labelCls}>Genişlik (cm)</label>
+                    <label className={labelCls}>{t('dimensions.widthLabel')}</label>
                     <input type="number" step="0.1" value={form.width} onChange={(e) => set('width', e.target.value)} placeholder="0.0" className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls}>Yükseklik (cm)</label>
+                    <label className={labelCls}>{t('dimensions.heightLabel')}</label>
                     <input type="number" step="0.1" value={form.height} onChange={(e) => set('height', e.target.value)} placeholder="0.0" className={inputCls} />
                   </div>
                   <div>
-                    <label className={labelCls}>Derinlik (cm)</label>
+                    <label className={labelCls}>{t('dimensions.depthLabel')}</label>
                     <input type="number" step="0.1" value={form.depth} onChange={(e) => set('depth', e.target.value)} placeholder="0.0" className={inputCls} />
                   </div>
                 </div>
@@ -1077,11 +1087,11 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                 {/* Desi preview */}
                 {form.width && form.height && form.depth && (
                   <div className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 p-4">
-                    <p className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest mb-2">Kargo Desi Hesabı</p>
+                    <p className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest mb-2">{t('dimensions.desiCalc')}</p>
                     <p className="text-sm font-bold text-kp-text-primary">
                       {((parseFloat(form.width) * parseFloat(form.height) * parseFloat(form.depth)) / 3000).toFixed(2)} desi
                     </p>
-                    <p className="text-[10px] text-kp-text-tertiary mt-0.5">(En × Boy × Yükseklik) / 3000</p>
+                    <p className="text-[0.625rem] text-kp-text-tertiary mt-0.5">{t('dimensions.desiFormula')}</p>
                   </div>
                 )}
               </div>
@@ -1091,7 +1101,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
             {activeTab === 'images' && (
               <div className="space-y-4">
                 <p className="text-xs text-kp-text-tertiary">
-                  Ürün görsellerini yükleyin veya harici bağlantı ekleyin. İlk görsel ana görsel olacaktır.
+                  {t('images.desc')}
                 </p>
 
                 <div className="grid grid-cols-4 gap-4">
@@ -1114,14 +1124,14 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                         type="button"
                         onClick={() => handleRemoveImage(idx)}
                         className="absolute top-1.5 right-1.5 z-10 p-1 rounded bg-black/10 hover:bg-kp-danger text-kp-text-tertiary hover:text-white transition-colors"
-                        title="Görsel Slotunu Sil"
+                        title={t('images.deleteSlot')}
                       >
                         <XMarkIcon className="h-3.5 w-3.5" />
                       </button>
 
                       {idx === 0 && (
-                        <span className="absolute top-1.5 left-1.5 z-10 px-2 py-0.5 rounded-kp-sm text-[9px] font-bold bg-kp-accent text-white uppercase tracking-wider shadow-sm flex items-center gap-1 select-none">
-                          ★ Ana Görsel
+                        <span className="absolute top-1.5 left-1.5 z-10 px-2 py-0.5 rounded-kp-sm text-[0.5625rem] font-bold bg-kp-accent text-white uppercase tracking-wider shadow-sm flex items-center gap-1 select-none">
+                          ★ {t('images.mainImage')}
                         </span>
                       )}
 
@@ -1132,8 +1142,8 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                       ) : (
                         <div className="flex flex-col items-center gap-1.5 text-center w-full select-none">
                           <PhotoIcon className="h-5 w-5 text-kp-text-tertiary" />
-                          <label className="text-[10px] font-semibold text-kp-accent hover:text-kp-accent-hover cursor-pointer bg-kp-accent/15 px-2 py-0.5 rounded-kp-sm">
-                            Seç
+                          <label className="text-[0.625rem] font-semibold text-kp-accent hover:text-kp-accent-hover cursor-pointer bg-kp-accent/15 px-2 py-0.5 rounded-kp-sm">
+                            {t('images.choose')}
                             <input
                               type="file"
                               accept="image/*"
@@ -1143,8 +1153,8 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                           </label>
                           <input
                             type="text"
-                            placeholder="URL yapıştır..."
-                            className="w-full bg-kp-bg-secondary border border-kp-border rounded px-1.5 py-0.5 text-[9px] text-center text-kp-text-primary focus:outline-none focus:border-kp-accent"
+                            placeholder={t('images.pasteUrl')}
+                            className="w-full bg-kp-bg-secondary border border-kp-border rounded px-1.5 py-0.5 text-[0.5625rem] text-center text-kp-text-primary focus:outline-none focus:border-kp-accent"
                             onBlur={(e) => handleImageURLAt(e.target.value, idx)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') {
@@ -1165,7 +1175,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                     className="aspect-square rounded-kp-md border border-dashed border-kp-border bg-kp-bg-primary/20 hover:bg-kp-bg-primary/50 flex flex-col items-center justify-center gap-1 text-kp-text-tertiary hover:text-kp-text-primary transition-colors"
                   >
                     <span className="text-xl font-bold">+</span>
-                    <span className="text-[10px] font-medium">Görsel Ekle</span>
+                    <span className="text-[0.625rem] font-medium">{t('images.addImage')}</span>
                   </button>
                 </div>
               </div>
@@ -1185,7 +1195,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
           <div className="border-t border-kp-border bg-kp-bg-primary/30 flex-shrink-0">
             <div className="max-w-4xl mx-auto w-full flex items-center justify-end gap-3 px-8 py-4">
               <button type="button" onClick={onClose} className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors">
-                İptal
+                {tc('actions.cancel')}
               </button>
               <button
                 type="submit"
@@ -1193,7 +1203,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                 className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2 text-xs font-semibold shadow-sm transition-all disabled:opacity-50"
               >
                 {isSubmitting && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
-                {isEdit ? 'Değişiklikleri Kaydet' : 'Ürün Oluştur'}
+                {isEdit ? t('saveChanges') : t('createProduct')}
               </button>
             </div>
           </div>

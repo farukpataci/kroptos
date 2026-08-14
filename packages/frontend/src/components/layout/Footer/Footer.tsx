@@ -1,51 +1,49 @@
 'use client';
 
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 
 export default function Footer() {
   const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.footer');
 
   const data = {
-    bio: isTr
-      ? 'Çok kanallı e-ticaret, WMS depo otomasyonu ve lojistik entegrasyon süreçlerini tek platformda birleştiren yeni nesil ticaret işletim sistemi.'
-      : 'A next-generation commerce operating system consolidating multi-channel e-commerce, WMS warehouse automation, and shipping pipelines in one platform.',
+    bio: t('bio'),
     columns: [
       {
-        title: isTr ? 'Ürün' : 'Product',
+        title: t('columns.product.title'),
         links: [
-          { label: isTr ? 'Özellikler' : 'Features', href: `/${locale}#features` },
-          { label: isTr ? 'Entegrasyonlar' : 'Integrations', href: `/${locale}#integrations` },
-          { label: isTr ? 'Fiyatlandırma' : 'Pricing', href: `/${locale}#pricing` },
-          { label: isTr ? 'İş Akışı Otomasyonu' : 'Workflow Automation', href: `/${locale}#features` }
+          { label: t('columns.product.features'), href: `/${locale}#features` },
+          { label: t('columns.product.integrations'), href: `/${locale}#integrations` },
+          { label: t('columns.product.pricing'), href: `/${locale}#pricing` },
+          { label: t('columns.product.workflowAutomation'), href: `/${locale}#features` }
         ]
       },
       {
-        title: isTr ? 'Sektörler' : 'Industries',
+        title: t('columns.industries.title'),
         links: [
-          { label: isTr ? 'Ev & Yaşam / Bahçe' : 'Home & Garden', href: `/${locale}/industry/home-and-garden` },
-          { label: isTr ? 'Moda & Tekstil' : 'Fashion & Apparel', href: `/${locale}/industry/fashion-and-apparel` },
-          { label: isTr ? 'Kozmetik & Bakım' : 'Cosmetics & Personal Care', href: `/${locale}/industry/cosmetics-and-personal-care` },
-          { label: isTr ? 'Elektronik' : 'Electronics', href: `/${locale}/industry/electronics` }
+          { label: t('columns.industries.homeAndGarden'), href: `/${locale}/industry/home-and-garden` },
+          { label: t('columns.industries.fashionAndApparel'), href: `/${locale}/industry/fashion-and-apparel` },
+          { label: t('columns.industries.cosmetics'), href: `/${locale}/industry/cosmetics-and-personal-care` },
+          { label: t('columns.industries.electronics'), href: `/${locale}/industry/electronics` }
         ]
       },
       {
-        title: isTr ? 'Kurumsal' : 'Company',
+        title: t('columns.company.title'),
         links: [
-          { label: isTr ? 'Hakkımızda' : 'About Us', href: `/${locale}` },
-          { label: isTr ? 'İletişim & Destek' : 'Contact & Support', href: `/${locale}#contact` },
-          { label: isTr ? 'Kariyer' : 'Careers', href: `/${locale}` },
-          { label: isTr ? 'İş Ortaklığı' : 'Partnership', href: `/${locale}` }
+          { label: t('columns.company.about'), href: `/${locale}` },
+          { label: t('columns.company.contact'), href: `/${locale}#contact` },
+          { label: t('columns.company.careers'), href: `/${locale}` },
+          { label: t('columns.company.partnership'), href: `/${locale}` }
         ]
       },
       {
-        title: isTr ? 'Yasal' : 'Legal',
+        title: t('columns.legal.title'),
         links: [
-          { label: isTr ? 'Kullanım Koşulları' : 'Terms of Service', href: `/${locale}` },
-          { label: isTr ? 'Gizlilik Politikası' : 'Privacy Policy', href: `/${locale}` },
-          { label: isTr ? 'KVKK Aydınlatma Metni' : 'KVKK Consent', href: `/${locale}` },
-          { label: isTr ? 'Çerez Politikası' : 'Cookie Settings', href: `/${locale}` }
+          { label: t('columns.legal.terms'), href: `/${locale}` },
+          { label: t('columns.legal.privacy'), href: `/${locale}` },
+          { label: t('columns.legal.kvkk'), href: `/${locale}` },
+          { label: t('columns.legal.cookies'), href: `/${locale}` }
         ]
       }
     ]
@@ -116,10 +114,10 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="border-t border-kp-border-subtle pt-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-kp-text-tertiary">
           <p>
-            © {new Date().getFullYear()} Alqora Technologies. {isTr ? 'Tüm Hakları Saklıdır.' : 'All Rights Reserved.'}
+            © {new Date().getFullYear()} Alqora Technologies. {t('allRightsReserved')}
           </p>
           <div className="flex items-center gap-6">
-            <span>{isTr ? 'Güvenli Altyapı' : 'Secure Infrastructure'} SSL</span>
+            <span>{t('secureInfrastructure')} SSL</span>
             <span>WMS v2.0.4</span>
           </div>
         </div>

@@ -23,13 +23,13 @@ export default function AuditLogsPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/audit-logs', {
+      const res = await api.get<{ items: any[]; total: number }>('/audit-logs', {
         params: {
           module: moduleFilter || undefined,
           severity: severityFilter || undefined,
         },
       });
-      setLogs(data.items || []);
+      setLogs(res.items || []);
     } catch (err) {
       console.error('Failed to fetch audit logs', err);
     } finally {
@@ -113,7 +113,7 @@ export default function AuditLogsPage() {
       {/* Data Table */}
       <div className="flex-1 overflow-hidden rounded-kp-lg border border-kp-border bg-kp-bg-secondary flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[13px]">
+          <table className="kp-table w-full text-left text-[0.8125rem]">
             <thead className="bg-kp-bg-tertiary/50">
               <tr className="border-b border-kp-border text-kp-text-tertiary">
                 <th className="px-4 py-3 font-medium">Date</th>
@@ -145,12 +145,12 @@ export default function AuditLogsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-kp-text-primary">{log.userName || 'System'}</div>
-                      <div className="text-[11px] text-kp-text-tertiary">{log.userEmail || '-'}</div>
+                      <div className="text-[0.6875rem] text-kp-text-tertiary">{log.userEmail || '-'}</div>
                     </td>
                     <td className="px-4 py-3 text-kp-text-primary font-medium">{log.action}</td>
                     <td className="px-4 py-3">
                       <span className="text-kp-text-secondary">{log.entityType}</span>
-                      <span className="ml-2 text-[11px] text-kp-text-tertiary">#{log.entityId}</span>
+                      <span className="ml-2 text-[0.6875rem] text-kp-text-tertiary">#{log.entityId}</span>
                     </td>
                     <td className="px-4 py-3">
                       <span className={`badge ${severityColors[log.severity] || 'badge--info'}`}>
@@ -194,19 +194,19 @@ export default function AuditLogsPage() {
               {/* General Info */}
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">User</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">User</span>
                   <span className="block text-kp-text-primary mt-1">{selectedLog.userName || 'System'} ({selectedLog.userEmail})</span>
                 </div>
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Action</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Action</span>
                   <span className="block text-kp-text-primary mt-1">{selectedLog.action}</span>
                 </div>
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Entity</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Entity</span>
                   <span className="block text-kp-text-primary mt-1">{selectedLog.entityType} - {selectedLog.entityId}</span>
                 </div>
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Date</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Date</span>
                   <span className="block text-kp-text-primary mt-1">{new Date(selectedLog.createdAt).toLocaleString()}</span>
                 </div>
               </div>

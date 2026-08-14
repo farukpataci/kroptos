@@ -28,6 +28,9 @@ describe('AgencyService', () => {
       updateMany: jest.fn(),
     },
     store: {
+      // `get` falls back to resolving the id as a store, to return its owning
+      // agency; `delete` cascades the soft delete. Both are needed.
+      findFirst: jest.fn(),
       updateMany: jest.fn(),
     },
     auditLog: {
@@ -93,6 +96,9 @@ describe('AgencyService', () => {
   describe('get', () => {
     it('should throw NotFoundException if agency is deleted or not found', async () => {
       mockPrismaService.agency.findFirst.mockResolvedValue(null);
+      // The id is then tried as a store id, so that lookup has to miss too —
+      // otherwise this would assert nothing about the agency being absent.
+      mockPrismaService.store.findFirst.mockResolvedValue(null);
 
       await expect(service.get('invalid-id', 'user-id', false)).rejects.toThrow(NotFoundException);
     });

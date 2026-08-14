@@ -6,7 +6,9 @@ build/
 .env.*.local
 
 # Dependencies
-pnpm-lock.yaml
+# pnpm-lock.yaml is tracked on purpose: deploy.bat runs
+# `pnpm install --frozen-lockfile`, which needs the lockfile to exist and to
+# match package.json. Without it a fresh clone cannot install at all.
 package-lock.json
 yarn.lock
 
@@ -26,6 +28,7 @@ npm-debug.log*
 # Build outputs
 .next/
 out/
+*.tsbuildinfo
 
 # Database
 *.db
@@ -48,3 +51,4 @@ Thumbs.db
 tmp/
 temp/
 *.tmp
+scratch/

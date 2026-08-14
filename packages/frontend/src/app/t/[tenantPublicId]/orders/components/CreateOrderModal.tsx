@@ -12,6 +12,7 @@ import {
   ShoppingBagIcon,
   Cog6ToothIcon
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { Product, CreateOrderPayload } from '../hooks/useOrders';
 
 interface CreateOrderModalProps {
@@ -27,14 +28,14 @@ interface LineItem {
 
 type OrderTab = 'customer' | 'items' | 'settings';
 
-const TABS: { value: OrderTab; label: string; icon: any }[] = [
-  { value: 'customer', label: 'Müşteri Bilgileri', icon: UserIcon },
-  { value: 'items', label: 'Ürün Satırları', icon: ShoppingBagIcon },
-  { value: 'settings', label: 'Sipariş Ayarları', icon: Cog6ToothIcon },
+const TABS: { value: OrderTab; labelKey: string; icon: any }[] = [
+  { value: 'customer', labelKey: 'tabCustomer', icon: UserIcon },
+  { value: 'items', labelKey: 'tabItems', icon: ShoppingBagIcon },
+  { value: 'settings', labelKey: 'tabSettings', icon: Cog6ToothIcon },
 ];
 
 const SOURCES = [
-  { value: 'manual', label: 'Manuel' },
+  { value: 'manual', labelKey: 'sourceManual' },
   { value: 'trendyol', label: 'Trendyol' },
   { value: 'hepsiburada', label: 'Hepsiburada' },
   { value: 'shopify', label: 'Shopify' },
@@ -48,6 +49,8 @@ const CURRENCIES = [
 ];
 
 export default function CreateOrderModal({ products, onClose, onSubmit }: CreateOrderModalProps) {
+  const t = useTranslations('orders.createModal');
+  const tc = useTranslations('common');
   const [activeTab, setActiveTab] = useState<OrderTab>('customer');
   const [mounted, setMounted] = useState(false);
 
@@ -92,17 +95,17 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.customerName.trim()) {
-      setError('Müşteri adı zorunludur.');
+      setError(t('errors.customerNameRequired'));
       setActiveTab('customer');
       return;
     }
     if (items.some((i) => !i.productId)) {
-      setError('Lütfen tüm satırlar için ürün seçin.');
+      setError(t('errors.productRequired'));
       setActiveTab('items');
       return;
     }
     if (items.some((i) => i.quantity < 1)) {
-      setError('Miktar en az 1 olmalıdır.');
+      setError(t('errors.quantityInvalid'));
       setActiveTab('items');
       return;
     }
@@ -121,7 +124,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
       });
       onClose();
     } catch (err: any) {
-      setError(err.message || 'Sipariş oluşturulamadı.');
+      setError(err.message || t('errors.createFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -129,7 +132,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
 
   if (!mounted) return null;
 
-  const labelCls = 'block text-[11px] font-medium text-kp-text-secondary mb-1';
+  const labelCls = 'block text-[0.6875rem] font-medium text-kp-text-secondary mb-1';
   const inputCls = 'w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-none focus:border-kp-accent transition-colors';
 
   return createPortal(
@@ -137,8 +140,8 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-kp-border bg-kp-bg-primary/20 flex-shrink-0">
         <div>
-          <h3 className="text-base font-bold text-kp-text-primary">Yeni Sipariş Oluştur</h3>
-          <p className="text-xs text-kp-text-tertiary mt-0.5">Manuel sipariş girişi</p>
+          <h3 className="text-base font-bold text-kp-text-primary">{t('title')}</h3>
+          <p className="text-xs text-kp-text-tertiary mt-0.5">{t('subtitle')}</p>
         </div>
         <button onClick={onClose} className="rounded-kp-md p-1.5 hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
           <XMarkIcon className="h-5 w-5" />
@@ -147,7 +150,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
 
       {/* Horizontal Tabs */}
       <div className="flex border-b border-kp-border px-8 bg-kp-bg-primary/10 flex-shrink-0">
-        {TABS.map(({ value, label, icon: Icon }) => {
+        {TABS.map(({ value, labelKey, icon: Icon }) => {
           const isActive = activeTab === value;
           return (
             <button
@@ -161,7 +164,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
               }`}
             >
               <Icon className={`h-4 w-4 ${isActive ? 'text-kp-accent' : 'text-kp-text-tertiary'}`} />
-              <span>{label}</span>
+              <span>{t(labelKey)}</span>
             </button>
           );
         })}
@@ -184,19 +187,19 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
                     <label className={labelCls}>
-                      Müşteri Adı <span className="text-kp-danger">*</span>
+                      {t('customerName')} <span className="text-kp-danger">*</span>
                     </label>
                     <input
                       type="text"
                       required
                       value={form.customerName}
                       onChange={(e) => setForm({ ...form, customerName: e.target.value })}
-                      placeholder="örn. Ahmet Yılmaz"
+                      placeholder={t('customerNamePlaceholder')}
                       className={inputCls}
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>E-posta</label>
+                    <label className={labelCls}>{t('email')}</label>
                     <input
                       type="email"
                       value={form.customerEmail}
@@ -206,7 +209,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>Telefon</label>
+                    <label className={labelCls}>{t('phone')}</label>
                     <input
                       type="text"
                       value={form.customerPhone}
@@ -216,12 +219,12 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
                     />
                   </div>
                   <div className="col-span-2">
-                    <label className={labelCls}>Teslimat Adresi</label>
+                    <label className={labelCls}>{t('shippingAddress')}</label>
                     <input
                       type="text"
                       value={form.shippingAddress}
                       onChange={(e) => setForm({ ...form, shippingAddress: e.target.value })}
-                      placeholder="örn. Kadıköy, İstanbul"
+                      placeholder={t('shippingAddressPlaceholder')}
                       className={inputCls}
                     />
                   </div>
@@ -233,30 +236,30 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
             {activeTab === 'items' && (
               <div className="space-y-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="text-[10px] font-bold text-kp-text-tertiary uppercase tracking-widest">
-                    Sipariş Ürünleri
+                  <h4 className="text-[0.625rem] font-bold text-kp-text-tertiary uppercase tracking-widest">
+                    {t('orderItems')}
                   </h4>
                   <button
                     type="button"
                     onClick={addItem}
                     disabled={products.length === 0}
-                    className="flex items-center gap-1 text-[11px] font-semibold text-kp-accent hover:text-kp-accent-hover disabled:opacity-40 transition-colors"
+                    className="flex items-center gap-1 text-[0.6875rem] font-semibold text-kp-accent hover:text-kp-accent-hover disabled:opacity-40 transition-colors"
                   >
                     <PlusIcon className="h-3.5 w-3.5" />
-                    Satır Ekle
+                    {t('addRow')}
                   </button>
                 </div>
 
                 {products.length === 0 ? (
                   <div className="rounded-kp-md border border-kp-danger/20 bg-kp-danger/5 p-4 text-xs text-kp-danger">
-                    Bu store'da ürün bulunamadı. Lütfen önce bir ürün oluşturun.
+                    {t('noProducts')}
                   </div>
                 ) : (
                   <div className="space-y-3">
                     <div className="grid grid-cols-12 gap-2 px-1">
-                      <span className="col-span-7 text-[9px] font-semibold uppercase tracking-wider text-kp-text-tertiary">Ürün</span>
-                      <span className="col-span-2 text-[9px] font-semibold uppercase tracking-wider text-kp-text-tertiary text-center">Adet</span>
-                      <span className="col-span-2 text-[9px] font-semibold uppercase tracking-wider text-kp-text-tertiary text-right">Fiyat</span>
+                      <span className="col-span-7 text-[0.5625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary">{t('colProduct')}</span>
+                      <span className="col-span-2 text-[0.5625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary text-center">{t('colQuantity')}</span>
+                      <span className="col-span-2 text-[0.5625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary text-right">{t('colPrice')}</span>
                       <span className="col-span-1" />
                     </div>
 
@@ -270,7 +273,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
                               onChange={(e) => updateItem(idx, 'productId', e.target.value)}
                               className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3 py-2 text-xs text-kp-text-primary focus:outline-none focus:border-kp-accent"
                             >
-                              <option value="" disabled>Ürün seç...</option>
+                              <option value="" disabled>{t('selectProduct')}</option>
                               {products.map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.name} ({p.sku})
@@ -310,7 +313,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
 
                     <div className="flex justify-end pt-2 border-t border-kp-border mt-4">
                       <div className="text-right">
-                        <span className="text-[10px] text-kp-text-tertiary block uppercase tracking-wider mb-0.5">Toplam Sipariş Tutarı</span>
+                        <span className="text-[0.625rem] text-kp-text-tertiary block uppercase tracking-wider mb-0.5">{t('totalAmount')}</span>
                         <span className="text-base font-extrabold text-kp-text-primary">
                           {currencySymbol}{totalPreview.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}
                         </span>
@@ -326,19 +329,19 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className={labelCls}>Kaynak</label>
+                    <label className={labelCls}>{t('source')}</label>
                     <select
                       value={form.source}
                       onChange={(e) => setForm({ ...form, source: e.target.value })}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary focus:outline-none focus:border-kp-accent"
                     >
                       {SOURCES.map((s) => (
-                        <option key={s.value} value={s.value}>{s.label}</option>
+                        <option key={s.value} value={s.value}>{'labelKey' in s && s.labelKey ? t(s.labelKey) : s.label}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className={labelCls}>Para Birimi</label>
+                    <label className={labelCls}>{t('currency')}</label>
                     <select
                       value={form.currency}
                       onChange={(e) => setForm({ ...form, currency: e.target.value })}
@@ -350,12 +353,12 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <label className={labelCls}>Notlar (opsiyonel)</label>
+                    <label className={labelCls}>{t('notes')}</label>
                     <textarea
                       rows={4}
                       value={form.notes}
                       onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                      placeholder="Sipariş ile ilgili ek notlar..."
+                      placeholder={t('notesPlaceholder')}
                       className="w-full bg-kp-bg-primary border border-kp-border rounded-kp-md px-3.5 py-2 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:outline-none focus:border-kp-accent resize-none transition-colors"
                     />
                   </div>
@@ -368,7 +371,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
         {/* Footer */}
         <div className="flex items-center justify-between px-8 py-4 border-t border-kp-border bg-kp-bg-primary/40 flex-shrink-0">
           <span className="text-xs text-kp-text-tertiary font-medium">
-            {items.length} ürün satırı
+            {t('rowCount', { count: items.length })}
           </span>
           <div className="flex items-center gap-3">
             <button
@@ -376,7 +379,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
               onClick={onClose}
               className="rounded-kp-md border border-kp-border px-5 py-2.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary hover:bg-kp-bg-hover transition-colors"
             >
-              İptal
+              {tc('actions.cancel')}
             </button>
             <button
               type="submit"
@@ -384,7 +387,7 @@ export default function CreateOrderModal({ products, onClose, onSubmit }: Create
               className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-5 py-2.5 text-xs font-semibold shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isSubmitting && <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />}
-              Siparişi Oluştur
+              {t('submit')}
             </button>
           </div>
         </div>

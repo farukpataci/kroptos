@@ -4,6 +4,8 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
+import { isPlatformAdmin } from '../../common/constants/platform-admin';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +27,7 @@ export class AuthService {
   }
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityType: string,
     entityId: string,
@@ -318,14 +320,7 @@ export class AuthService {
       { email: user.email },
     );
 
-    const agenciesMap = userRoles.map((ur) => ({
-      id: ur.agency.id,
-      publicId: ur.agency.publicId,
-      name: ur.agency.name,
-      role: ur.role.name,
-      clientId: ur.clientId,
-      storeId: ur.storeId,
-    }));
+    const { accessibleTenants } = await this.getMe(user.id);
 
     return {
       accessToken: tokens.accessToken,
@@ -338,7 +333,7 @@ export class AuthService {
         isActive: user.isActive,
         twoFactorEnabled: user.twoFactorEnabled,
       },
-      agencies: agenciesMap,
+      agencies: accessibleTenants,
     };
   }
 
@@ -451,13 +446,55 @@ export class AuthService {
   }
 
   async switchTenant(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
-    const userRole = await this.prisma.userRole.findFirst({
+    // İstenen bağlamı DB'den çöz; istemcinin gönderdiği clientId'ye güvenme.
+    // Mağaza verilmişse gerçek clientId mağaza kaydından gelir ve mağazanın
+    // hedef ajansa ait olduğu da böylece doğrulanmış olur.
+    const requestedStoreId = dto.storeId || null;
+    let requestedClientId = dto.clientId || null;
+
+    if (requestedStoreId) {
+      const store = await this.prisma.store.findFirst({
+        where: { id: requestedStoreId, agencyId: dto.agencyId, deletedAt: null },
+        select: { clientId: true },
+      });
+      if (!store) {
+        throw new ForbiddenException('Access to the requested tenant context is denied');
+      }
+      requestedClientId = store.clientId ?? null;
+    } else if (requestedClientId) {
+      const client = await this.prisma.client.findFirst({
+        where: { id: requestedClientId, agencyId: dto.agencyId, deletedAt: null },
+        select: { id: true },
+      });
+      if (!client) {
+        throw new ForbiddenException('Access to the requested tenant context is denied');
+      }
+    }
+
+    // Bir rol istenen bağlamı KAPSIYORSA geçiş yetkilidir. Kapsama semantiği
+    // TenantMiddleware ile aynı olmak zorunda (oradaki store dalının OR bloğu):
+    // ajans geneli rol altındaki her şeyi, client kapsamlı rol o client'ın
+    // mağazalarını, mağaza kapsamlı rol yalnızca kendi mağazasını kapsar.
+    //
+    // Önceki sorgu `clientId/storeId: dto.X || undefined` yazıyordu ve bu iki
+    // yönde birden yanlıştı: değer verilince TAM eşleşme arayıp ajans geneli
+    // rolü eliyordu (marka geçişi 403), verilmeyince de filtreyi tamamen
+    // kaldırıp mağaza kapsamlı bir rolün ajans geneli token almasına izin
+    // veriyordu. Aşağıdaki OR ikisini birden kapatıyor.
+    const coverage: Prisma.UserRoleWhereInput[] = [{ clientId: null, storeId: null }];
+    if (requestedClientId) {
+      coverage.push({ clientId: requestedClientId, storeId: null });
+    }
+    if (requestedStoreId) {
+      coverage.push({ storeId: requestedStoreId });
+    }
+
+    const candidates = await this.prisma.userRole.findMany({
       where: {
         userId,
         agencyId: dto.agencyId,
-        clientId: dto.clientId || undefined,
-        storeId: dto.storeId || undefined,
         deletedAt: null,
+        OR: coverage,
       },
       include: {
         role: {
@@ -468,9 +505,15 @@ export class AuthService {
       },
     });
 
-    if (!userRole) {
+    if (candidates.length === 0) {
       throw new ForbiddenException('Access to the requested tenant context is denied');
     }
+
+    // Birden fazla rol aynı bağlamı kapsayabilir (ör. hem ajans geneli hem
+    // mağaza kapsamlı). En özel olan kazanır; aksi halde token'ın izin kümesi
+    // findFirst'in döndürdüğü rastgele satıra bağlı kalırdı.
+    const specificity = (ur: (typeof candidates)[number]) => (ur.storeId ? 3 : ur.clientId ? 2 : 1);
+    const userRole = candidates.reduce((best, cur) => (specificity(cur) > specificity(best) ? cur : best));
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -481,8 +524,8 @@ export class AuthService {
       userId,
       user.email,
       dto.agencyId,
-      dto.clientId || null,
-      dto.storeId || null,
+      requestedClientId,
+      requestedStoreId,
       userRole.role.name,
       userRole.role.permissions.map((p) => p.name),
     );
@@ -505,7 +548,8 @@ export class AuthService {
       userId,
       dto.agencyId,
       ipAddress,
-      { switchTarget: dto },
+      // Çözülmüş bağlamı logla, istemcinin gönderdiğini değil: token bununla üretildi.
+      { switchTarget: { agencyId: dto.agencyId, clientId: requestedClientId, storeId: requestedStoreId } },
     );
 
     return tokens;
@@ -533,21 +577,72 @@ export class AuthService {
     const userRoles = await this.prisma.userRole.findMany({
       where: { userId, deletedAt: null },
       include: {
-        agency: true,
+        agency: {
+          include: {
+            stores: {
+              where: { deletedAt: null },
+            },
+          },
+        },
         role: true,
       },
     });
 
+    const storeUsers = await this.prisma.storeUser.findMany({
+      where: { userId, deletedAt: null },
+      select: { storeId: true },
+    });
+    const allowedStoreIds = new Set(storeUsers.map((su) => su.storeId));
+    const hasSpecificStoreRestrictions = allowedStoreIds.size > 0;
+
+    const accessibleTenants: any[] = [];
+    const addedIds = new Set<string>();
+
+    for (const ur of userRoles) {
+      if (ur.agency && !addedIds.has(ur.agency.id)) {
+        addedIds.add(ur.agency.id);
+        accessibleTenants.push({
+          id: ur.agency.id,
+          publicId: ur.agency.publicId || `tn_${ur.agency.id}`,
+          name: ur.agency.name,
+          type: 'agency',
+          agencyId: ur.agency.id,
+          clientId: null,
+          storeId: null,
+        });
+
+        for (const store of ur.agency.stores || []) {
+          if (hasSpecificStoreRestrictions && !allowedStoreIds.has(store.id)) {
+            continue;
+          }
+
+          if (!addedIds.has(store.id)) {
+            addedIds.add(store.id);
+            accessibleTenants.push({
+              id: store.id,
+              publicId: store.publicId || `tn_${store.id}`,
+              name: store.name,
+              type: 'brand',
+              agencyId: ur.agency.id,
+              clientId: store.clientId || null,
+              storeId: store.id,
+            });
+          }
+        }
+      }
+    }
+
+    // The UI needs the role to decide what to show; it is advisory only, every
+    // protected route re-checks it server-side.
+    const role = userRoles[0]?.role?.name ?? null;
+
     return {
-      user,
-      accessibleTenants: userRoles.map((ur) => ({
-        id: ur.agency.id,
-        publicId: ur.agency.publicId,
-        name: ur.agency.name,
-        role: ur.role.name,
-        clientId: ur.clientId,
-        storeId: ur.storeId,
-      })),
+      user: {
+        ...user,
+        role,
+        isPlatformAdmin: isPlatformAdmin({ email: user.email, role }),
+      },
+      accessibleTenants,
     };
   }
 }

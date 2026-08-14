@@ -43,17 +43,17 @@ export default function WmsShipmentsPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-semibold text-kp-text-primary">Shipment Dispatch</h1>
-        <p className="mt-1 text-[13px] text-kp-text-tertiary">Packed orders ready for courier pickup and dispatch tracking.</p>
+        <p className="mt-1 text-[0.8125rem] text-kp-text-tertiary">Packed orders ready for courier pickup and dispatch tracking.</p>
       </div>
 
       <div className="card p-5">
         <div className="flex justify-between items-center mb-5 border-b border-kp-border pb-4">
           <input type="text" placeholder="Search by tracking number or customer…"
-            className="w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[13px] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
+            className="w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[0.8125rem] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12px]">
+          <table className="w-full text-left text-[0.75rem]">
             <thead>
               <tr className="border-b border-kp-border text-kp-text-tertiary">
                 <th className="pb-2 font-medium">Shipment ID</th>
@@ -67,7 +67,7 @@ export default function WmsShipmentsPage() {
             <tbody className="divide-y divide-kp-border">
               {shipments.map((ship) => (
                 <tr key={ship.id}>
-                  <td className="py-3 font-mono text-[10px] text-kp-text-tertiary">{ship.id.substring(0, 15)}…</td>
+                  <td className="py-3 font-mono text-[0.625rem] text-kp-text-tertiary">{ship.id.substring(0, 15)}…</td>
                   <td className="py-3 font-semibold text-kp-text-primary">{ship.orderNumber}</td>
                   <td className="py-3 text-kp-text-secondary">{ship.customerName}</td>
                   <td className="py-3 text-kp-text-secondary">{ship.carrier}</td>

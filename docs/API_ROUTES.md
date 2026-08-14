@@ -1,9 +1,80 @@
 # API_ROUTES.md - RESTful Endpoints & OpenAPI Specification
 
+
+> ⚠️ **BU DOSYA TASARIM BELGESİDİR, SÖZLEŞME DEĞİLDİR.**
+> Gerçek API sözleşmesi: **[`API_CONTRACT.md`](./API_CONTRACT.md)** — 35 controller,
+> 165 endpoint, doğrudan `packages/backend/src/modules/**/*.controller.ts` okunarak
+> üretildi (`c23ce7c`). Kod üretirken **o dosyayı** kaynak al.
+>
+> Bu dosyadaki yollar, response şekilleri ve sayfalama örnekleri sistematik olarak koddan
+> sapıyor. Sapmalar aşağıda toplu halde düzeltildi; gövdedeki tek tek bölümler **henüz
+> tek tek düzeltilmedi** ve eski hallerini koruyor. Silinmediler çünkü bir kısmı
+> planlanmış-ama-uygulanmamış tasarımı temsil ediyor olabilir.
+
+---
+
+## ⚠️ P0 DÜZELTMESİ — Bu dosyadaki sistematik sapmalar
+
+Aşağıdaki üç sapma dosyanın **tamamı** için geçerlidir. Gövdedeki her bölümü okurken bunları
+uygulayın.
+
+### 1. Yol kalıbı — iç içe kaynak yolları kodda YOK
+
+Bu dosya `\/stores\/:storeId\/products` gibi iç içe yollar gösteriyor. Kodda böyle bir yol yok;
+controller'lar düz kaynak yolları kullanıyor ve kiracı bağlamını **HTTP başlıklarından** alıyor.
+
+| Bu dosyadaki yol | Gerçek yol | Durum |
+|---|---|---|
+| `POST /stores/:storeId/products` | `POST /api/products` | PLANLANMIŞ — kodda yok |
+| `GET /stores/:storeId/products` | `GET /api/products` | PLANLANMIŞ — kodda yok |
+| `GET /stores/:storeId/products/:productId` | `GET /api/products/:id` | PLANLANMIŞ — kodda yok |
+| `PUT /stores/:storeId/products/:productId` | `PATCH /api/products/:id` | PLANLANMIŞ — kodda yok |
+| `DELETE /stores/:storeId/products/:productId` | `DELETE /api/products/:id` | PLANLANMIŞ — kodda yok |
+| `GET /stores/:storeId/inventory` | `GET /api/inventory` | PLANLANMIŞ — kodda yok |
+| `GET /agencies/:agencyId/clients/:clientId/stores/:storeId` | `GET /api/stores/:id` | PLANLANMIŞ — kodda yok |
+| `PUT /agencies/:agencyId/clients/:clientId/stores/:storeId` | `PATCH /api/stores/:id` | PLANLANMIŞ — kodda yok |
+
+**Kiracı bağlamı yolda değil, başlıkta taşınır:** `x-agency-id`, `x-client-id`, `x-store-id`
+(`packages/frontend/src/lib/api.ts`). Sunucuda `TenantMiddleware` bunları
+`req.activeAgency` / `req.activeClient` / `req.activeStore` olarak çözer.
+
+**İki istisna** — gerçekten yolda kiracı taşıyan iki endpoint var:
+`GET /api/tenants/:tenantPublicId` (`AgencyController`) ve
+`GET /api/tenants/:tenantPublicId/orders` (`OrderController`).
+
+### 2. Response zarfı — `{data, pagination}` hiçbir endpoint'te YOK
+
+Bu dosya listeler için `{ "data": [...], "pagination": {...} }` gösteriyor. Kodda bu zarf
+**hiç kullanılmıyor.** Gerçek durum:
+
+| Gerçek şekil | Kapsam |
+|---|---|
+| **Düz dizi** `[...]` | Liste endpoint'lerinin ezici çoğunluğu — `/api/products`, `/api/orders`, `/api/categories`, `/api/inventory`, `/api/integrations`, `/api/agencies`, `/api/clients`, `/api/stores`, tüm `warehouse-settings` listeleri |
+| **`{ items, total }`** | Yalnızca 2 endpoint: `/api/audit-logs`, `/api/integration-logs` (canlı doğrulandı) |
+| `{ data, pagination }` | **Yok** |
+
+Yani `GET /agencies` yanıtı `{data: [...], pagination: {...}}` değil, doğrudan `[...]`.
+
+### 3. Sayfalama — sunucu tarafında YOK
+
+Bu dosya `?page=1&limit=10&search=...&sortBy=...&sortOrder=...` query parametreleri
+gösteriyor. Hiçbir liste endpoint'i böyle bir query DTO'su **almıyor**; sayfalama, filtreleme
+ve arama şu an tamamen istemci tarafında yapılıyor. Sunucu tarafına taşınması **P3**'ün
+görevidir; o iş bitene kadar bu bölümlerdeki query parametreleri PLANLANMIŞ sayılmalıdır.
+
+### 4. API sürümü — `/api/v1` diye bir prefix YOK
+
+`app.setGlobalPrefix()` çağrısı hiç yok (`packages/backend/src/main.ts`). Gerçek yol,
+controller'ın `@Controller(...)` içinde yazdığı yoldur. Sürüm segmenti hiçbir yerde
+kullanılmıyor.
+
+---
+
 ## API Base URLs
 - **Backend API**: `http://localhost:3001/api` (development)
 - **API Documentation**: `http://localhost:3001/api/docs` (Swagger/OpenAPI)
-- **API Version**: `v1` (prefix: `/api/v1`)
+- ~~**API Version**: `v1` (prefix: `/api/v1`)~~ → **PLANLANMIŞ — kodda yok.** Sürüm prefix'i
+  uygulanmadı; bkz. yukarıdaki düzeltme §4.
 
 ---
 

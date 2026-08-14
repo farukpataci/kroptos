@@ -5,6 +5,7 @@ import { Request } from 'express';
 import { AgencyService } from './agency.service';
 import { CreateAgencyDto, UpdateAgencyDto, AgencyResponseDto } from './dto/agency.dto';
 import { RbacGuard } from '../../common/guards/rbac.guard';
+import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 
 @ApiTags('Agencies')
@@ -51,7 +52,8 @@ export class AgencyController {
 
   @Post('/api/agencies')
   @HttpCode(201)
-  @RequirePermission('agency:create')
+  @UseGuards(PlatformAdminGuard)
+  @RequirePermission('agencies.create')
   @ApiOperation({ summary: 'Create new agency and assign creator as Agency Owner' })
   @ApiResponse({ status: 201, type: AgencyResponseDto })
   async create(@Body() dto: CreateAgencyDto, @Req() req: Request) {
@@ -62,7 +64,8 @@ export class AgencyController {
 
   @Patch('/api/agencies/:id')
   @HttpCode(200)
-  @RequirePermission('agency:write')
+  @UseGuards(PlatformAdminGuard)
+  @RequirePermission('agencies.write')
   @ApiOperation({ summary: 'Update agency details' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
   async update(
@@ -78,7 +81,8 @@ export class AgencyController {
 
   @Delete('/api/agencies/:id')
   @HttpCode(204)
-  @RequirePermission('agency:write')
+  @UseGuards(PlatformAdminGuard)
+  @RequirePermission('agencies.write')
   @ApiOperation({ summary: 'Soft delete agency and its nested relations' })
   @ApiResponse({ status: 204, description: 'Agency soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {

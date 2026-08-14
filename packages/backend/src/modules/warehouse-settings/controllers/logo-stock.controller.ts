@@ -13,6 +13,20 @@ import { RequirePermission } from '@common/decorators/require-permission.decorat
 export class LogoStockIntegrationController {
   constructor(private readonly service: LogoStockIntegrationService) {}
 
+  @Get('/settings')
+  @RequirePermission('warehouse.settings.read')
+  async getSettings(@Req() req: Request) {
+    const user = req.user as any;
+    return this.service.getSettings(user.agencyId);
+  }
+
+  @Put('/settings')
+  @RequirePermission('warehouse.settings.manage')
+  async updateSettings(@Body() data: any, @Req() req: Request) {
+    const user = req.user as any;
+    return this.service.updateSettings(data, user.agencyId);
+  }
+
   @Get()
   @RequirePermission('warehouse.settings.read')
   async findAll(@Req() req: Request) {

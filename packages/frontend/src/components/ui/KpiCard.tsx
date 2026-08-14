@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import Link from 'next/link';
 
 interface KpiCardProps {
   title: string;
@@ -9,6 +10,7 @@ interface KpiCardProps {
   trendDirection?: 'up' | 'down' | 'neutral';
   icon: ReactNode;
   color?: 'accent' | 'success' | 'warning' | 'danger' | 'info';
+  href?: string;
 }
 
 const colorMap = {
@@ -41,23 +43,24 @@ export default function KpiCard({
   trendDirection = 'neutral',
   icon,
   color = 'accent',
+  href,
 }: KpiCardProps) {
   const colors = colorMap[color];
 
-  return (
-    <div className="card card-interactive group cursor-default animate-fade-in-up">
+  const content = (
+    <div className={`card card-interactive group transition-all duration-200 block ${href ? 'cursor-pointer hover:border-kp-accent hover:shadow-kp-elevated' : 'cursor-default'}`}>
       <div className="flex items-start justify-between">
         <div className="space-y-3">
-          <p className="text-[12px] font-medium uppercase tracking-wider text-kp-text-tertiary">
+          <p className="text-[0.75rem] font-medium uppercase tracking-wider text-kp-text-tertiary">
             {title}
           </p>
-          <p className="text-[28px] font-bold leading-none tracking-tight text-kp-text-primary">
+          <p className="text-[1.75rem] font-bold leading-none tracking-tight text-kp-text-primary">
             {value}
           </p>
           {trend && (
             <div className="flex items-center gap-1.5">
               <span
-                className={`text-[12px] font-semibold ${
+                className={`text-[0.75rem] font-semibold ${
                   trendDirection === 'up'
                     ? 'text-kp-success'
                     : trendDirection === 'down'
@@ -67,7 +70,7 @@ export default function KpiCard({
               >
                 {trendDirection === 'up' ? '↑' : trendDirection === 'down' ? '↓' : '→'} {trend}
               </span>
-              <span className="text-[11px] text-kp-text-tertiary">vs yesterday</span>
+              <span className="text-[0.6875rem] text-kp-text-tertiary">vs yesterday</span>
             </div>
           )}
         </div>
@@ -78,4 +81,14 @@ export default function KpiCard({
       </div>
     </div>
   );
+
+  if (href) {
+    return (
+      <Link href={href} className="block no-underline">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

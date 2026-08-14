@@ -9,6 +9,7 @@ import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
 import { IntegrationModule } from './modules/integration/integration.module';
+import { IntegrationSettingsModule } from './modules/integration-settings/integration-settings.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { WmsModule } from './modules/wms/wms.module';
@@ -20,6 +21,7 @@ import { WarehouseSettingsModule } from './modules/warehouse-settings/warehouse-
 import { ProfileModule } from './modules/profile/profile.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { FilesController } from './modules/files/files.controller';
+import { HealthController } from './modules/health/health.controller';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { FilesController } from './modules/files/files.controller';
     CategoryModule,
     OrderModule,
     IntegrationModule,
+    IntegrationSettingsModule,
     WmsModule,
     AuditModule,
     IntegrationLogModule,
@@ -46,7 +49,7 @@ import { FilesController } from './modules/files/files.controller';
     ProfileModule,
     InventoryModule,
   ],
-  controllers: [FilesController],
+  controllers: [FilesController, HealthController],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {

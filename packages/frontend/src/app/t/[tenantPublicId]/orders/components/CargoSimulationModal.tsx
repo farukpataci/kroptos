@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { XMarkIcon, TruckIcon, ArrowPathIcon, CheckCircleIcon } from '@heroicons/react/24/outline';
 import { Order } from '../hooks/useOrders';
 
@@ -28,6 +29,8 @@ const PROVIDERS = [
 ];
 
 export default function CargoSimulationModal({ order, onClose, onConfirm }: CargoSimulationModalProps) {
+  const t = useTranslations('orders.cargoModal');
+  const tc = useTranslations('common');
   const [form, setForm] = useState({
     provider: 'yurtici',
     weight: '1.0',
@@ -71,8 +74,8 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
               <TruckIcon className="h-4 w-4 text-kp-accent" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-kp-text-primary">Kargo Simülasyonu</h3>
-              <p className="text-[10px] text-kp-text-tertiary">{order.orderNumber}</p>
+              <h3 className="text-sm font-semibold text-kp-text-primary">{t('title')}</h3>
+              <p className="text-[0.625rem] text-kp-text-tertiary">{order.orderNumber}</p>
             </div>
           </div>
           <button onClick={onClose} className="text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
@@ -87,33 +90,32 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
               <CheckCircleIcon className="h-8 w-8 text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-kp-text-primary">Kargo Oluşturuldu!</p>
+              <p className="text-sm font-semibold text-kp-text-primary">{t('createdTitle')}</p>
               <p className="text-xs text-kp-text-tertiary mt-1">
-                Sipariş durumu <strong className="text-violet-400">Kargoda</strong> olarak güncellendi.
+                {t.rich('createdDesc', { b: (chunks) => <strong className="text-violet-400">{chunks}</strong> })}
               </p>
             </div>
             <div className="bg-kp-bg-primary/60 border border-kp-border rounded-kp-md p-4">
-              <p className="text-[10px] text-kp-text-tertiary uppercase tracking-widest mb-1">Takip Numarası</p>
+              <p className="text-[0.625rem] text-kp-text-tertiary uppercase tracking-widest mb-1">{t('trackingNumber')}</p>
               <p className="font-mono text-sm font-bold text-kp-accent">{trackingResult}</p>
             </div>
             <button
               onClick={onClose}
               className="w-full rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white py-2.5 text-xs font-semibold transition-all"
             >
-              Kapat
+              {tc('actions.close')}
             </button>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
             <div className="p-6 space-y-4">
               <p className="text-xs text-kp-text-secondary bg-kp-bg-primary/40 border border-kp-border rounded-kp-md p-3">
-                Bu işlem sipariş durumunu{' '}
-                <span className="font-semibold text-violet-400">Kargoda</span>'ya güncelleyecek ve bir takip numarası oluşturacaktır.
+                {t.rich('confirmDesc', { b: (chunks) => <span className="font-semibold text-violet-400">{chunks}</span> })}
               </p>
 
               <div>
-                <label className="block text-[11px] font-medium text-kp-text-secondary mb-1.5">
-                  Kargo Firması
+                <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1.5">
+                  {t('carrier')}
                 </label>
                 <select
                   value={form.provider}
@@ -128,8 +130,8 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1.5">
-                    Ağırlık (kg)
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1.5">
+                    {t('weight')}
                   </label>
                   <input
                     type="number"
@@ -142,8 +144,8 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] font-medium text-kp-text-secondary mb-1.5">
-                    Paket Sayısı
+                  <label className="block text-[0.6875rem] font-medium text-kp-text-secondary mb-1.5">
+                    {t('packageCount')}
                   </label>
                   <input
                     type="number"
@@ -163,7 +165,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
                 onClick={onClose}
                 className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors"
               >
-                İptal
+                {tc('actions.cancel')}
               </button>
               <button
                 type="submit"
@@ -175,7 +177,7 @@ export default function CargoSimulationModal({ order, onClose, onConfirm }: Carg
                 ) : (
                   <TruckIcon className="h-3.5 w-3.5" />
                 )}
-                Kargo Oluştur
+                {t('submit')}
               </button>
             </div>
           </form>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
@@ -34,6 +35,8 @@ export interface Order {
   paymentStatus: string;
   fulfillmentStatus: string;
   source: string;
+  isPoolOrder?: boolean;
+  logoSyncStatus?: string;
   totalAmount: string | number;
   currency: string;
   createdAt: string;
@@ -72,6 +75,7 @@ export interface OrderFilters {
 }
 
 export function useOrders() {
+  const t = useTranslations('orders');
   const { tenantContext } = useAuth();
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -99,7 +103,7 @@ export function useOrders() {
       const data = await apiFetch<Order[]>('/orders');
       setOrders(data || []);
     } catch (err: any) {
-      setError(err.message || 'Siparişler yüklenemedi');
+      setError(err.message || t('loadFailed'));
     } finally {
       setIsLoading(false);
     }

@@ -88,13 +88,13 @@ export default function WmsDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold text-kp-text-primary">WMS Dashboard</h1>
-          <p className="mt-1 text-[13px] text-kp-text-tertiary">
+          <p className="mt-1 text-[0.8125rem] text-kp-text-tertiary">
             Real-time warehouse status, active printers, and label processing overview.
           </p>
         </div>
         <button
           onClick={fetchDashboardData}
-          className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[12px] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
+          className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[0.75rem] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
         >
           <ArrowPathIcon className="h-3.5 w-3.5" />
           Refresh
@@ -109,12 +109,12 @@ export default function WmsDashboard() {
             className="card p-5 animate-fade-in-up"
             style={{ animationDelay: `${idx * 60}ms`, animationFillMode: 'both' }}
           >
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-kp-text-tertiary">{kpi.title}</p>
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-wider text-kp-text-tertiary">{kpi.title}</p>
             <div className="flex items-baseline gap-2 mt-2">
               <span className="text-2xl font-bold text-kp-text-primary">{kpi.value}</span>
-              <span className="text-[10px] text-kp-text-tertiary">{kpi.unit}</span>
+              <span className="text-[0.625rem] text-kp-text-tertiary">{kpi.unit}</span>
             </div>
-            <p className={`mt-1 text-[10px] font-medium text-kp-${kpi.color}`}>{kpi.note}</p>
+            <p className={`mt-1 text-[0.625rem] font-medium text-kp-${kpi.color}`}>{kpi.note}</p>
           </div>
         ))}
       </div>
@@ -127,16 +127,16 @@ export default function WmsDashboard() {
             <div>
               <div className="flex items-center gap-2 border-b border-kp-border pb-3 mb-4">
                 <PrinterIcon className="h-4 w-4 text-kp-text-tertiary" />
-                <h2 className="text-[15px] font-semibold text-kp-text-primary">Active Printer</h2>
+                <h2 className="text-[0.9375rem] font-semibold text-kp-text-primary">Active Printer</h2>
               </div>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-[12px] text-kp-text-tertiary">Printer Name</span>
-                  <span className="text-[12px] font-medium text-kp-text-primary">{status.activePrinter}</span>
+                  <span className="text-[0.75rem] text-kp-text-tertiary">Printer Name</span>
+                  <span className="text-[0.75rem] font-medium text-kp-text-primary">{status.activePrinter}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[12px] text-kp-text-tertiary">Connection</span>
-                  <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${
+                  <span className="text-[0.75rem] text-kp-text-tertiary">Connection</span>
+                  <span className={`inline-flex items-center gap-1.5 text-[0.6875rem] font-semibold ${
                     status.printerStatus === 'connected' ? 'text-kp-success' : 'text-kp-danger'
                   }`}>
                     <span className={`status-dot status-dot--${status.printerStatus === 'connected' ? 'active' : 'error'}`} />
@@ -144,8 +144,8 @@ export default function WmsDashboard() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-[12px] text-kp-text-tertiary">Driver Status</span>
-                  <span className={`text-[12px] font-medium ${status.driverInstalled ? 'text-kp-success' : 'text-kp-text-tertiary'}`}>
+                  <span className="text-[0.75rem] text-kp-text-tertiary">Driver Status</span>
+                  <span className={`text-[0.75rem] font-medium ${status.driverInstalled ? 'text-kp-success' : 'text-kp-text-tertiary'}`}>
                     {status.driverInstalled ? 'Installed' : 'Not Installed'}
                   </span>
                 </div>
@@ -154,7 +154,7 @@ export default function WmsDashboard() {
 
             <Link
               href="/app/wms/settings"
-              className="mt-5 flex items-center justify-center rounded-kp-md border border-kp-border bg-kp-bg-primary/50 py-2 text-[12px] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
+              className="mt-5 flex items-center justify-center rounded-kp-md border border-kp-border bg-kp-bg-primary/50 py-2 text-[0.75rem] font-medium text-kp-text-secondary transition-all hover:border-kp-border-accent hover:text-kp-text-primary"
             >
               Manage Printer Settings
             </Link>
@@ -164,8 +164,8 @@ export default function WmsDashboard() {
         {/* Recent Print Jobs */}
         <div className="card p-5 lg:col-span-2">
           <div className="border-b border-kp-border pb-3 mb-4">
-            <h2 className="text-[15px] font-semibold text-kp-text-primary">Recent Print Jobs</h2>
-            <p className="text-[11px] text-kp-text-tertiary">Latest label print operations</p>
+            <h2 className="text-[0.9375rem] font-semibold text-kp-text-primary">Recent Print Jobs</h2>
+            <p className="text-[0.6875rem] text-kp-text-tertiary">Latest label print operations</p>
           </div>
           {printJobs.length === 0 ? (
             <div className="flex h-32 items-center justify-center text-xs text-kp-text-tertiary">
@@ -173,7 +173,7 @@ export default function WmsDashboard() {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-[12px]">
+              <table className="w-full text-left text-[0.75rem]">
                 <thead>
                   <tr className="border-b border-kp-border text-kp-text-tertiary">
                     <th className="pb-2 font-medium">Job ID</th>
@@ -186,7 +186,7 @@ export default function WmsDashboard() {
                 <tbody className="divide-y divide-kp-border">
                   {printJobs.map((job) => (
                     <tr key={job.id}>
-                      <td className="py-2.5 font-mono text-[10px] text-kp-text-tertiary">{job.id.substring(0, 10)}…</td>
+                      <td className="py-2.5 font-mono text-[0.625rem] text-kp-text-tertiary">{job.id.substring(0, 10)}…</td>
                       <td className="py-2.5 text-kp-text-secondary">{job.printerName}</td>
                       <td className="py-2.5">
                         <span className={`badge ${job.status === 'printed' ? 'badge--success' : 'badge--warning'}`}>

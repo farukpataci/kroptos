@@ -4,43 +4,96 @@ import { NextIntlClientProvider } from 'next-intl';
 import useSWR from 'swr';
 import { apiFetch } from '@/lib/api';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 const fetcher = (url: string) => apiFetch<any>(url);
 
-// Import translation messages
+// Import translation messages (15 regional dictionaries)
 import tr from '../../messages/tr.json';
-import en from '../../messages/en.json';
 import pl from '../../messages/pl.json';
 import cs from '../../messages/cs.json';
 import de from '../../messages/de.json';
 import el from '../../messages/el.json';
-import es from '../../messages/es.json';
 import fr from '../../messages/fr.json';
 import it from '../../messages/it.json';
-import pt from '../../messages/pt.json';
 import ro from '../../messages/ro.json';
 import zh from '../../messages/zh.json';
+import enUS from '../../messages/en-US.json';
+import enGB from '../../messages/en-GB.json';
+import enIN from '../../messages/en-IN.json';
+import esAR from '../../messages/es-AR.json';
+import esMX from '../../messages/es-MX.json';
+import ptBR from '../../messages/pt-BR.json';
+
+/**
+ * Only `tr` is fully populated; the other dictionaries carry a handful of
+ * sections each. next-intl is handed one dictionary and errors on anything it
+ * cannot resolve, so a locale is layered over `tr` and then `en-US` rather than
+ * used on its own. A key missing from, say, `de` resolves to the English string
+ * if one exists and to Turkish otherwise — which is what those screens already
+ * rendered before they were migrated to message keys.
+ */
+function deepMerge(base: any, override: any): any {
+  if (!override) return base;
+  const merged: Record<string, any> = { ...base };
+  for (const [key, value] of Object.entries(override)) {
+    const existing = merged[key];
+    const bothPlainObjects =
+      value && typeof value === 'object' && !Array.isArray(value) &&
+      existing && typeof existing === 'object' && !Array.isArray(existing);
+    merged[key] = bothPlainObjects ? deepMerge(existing, value) : value;
+  }
+  return merged;
+}
 
 const messagesMap: Record<string, any> = {
   tr,
-  en,
   pl,
   cs,
   de,
   el,
-  es,
   fr,
   it,
-  pt,
   ro,
   zh,
+  'en-US': enUS,
+  'en-GB': enGB,
+  'en-IN': enIN,
+  'es-AR': esAR,
+  'es-MX': esMX,
+  'pt-BR': ptBR,
 };
+
+// Bare base codes coming from storage/backend map to a default regional variant
+const baseLocaleDefaults: Record<string, string> = {
+  en: 'en-US',
+  es: 'es-MX',
+  pt: 'pt-BR',
+};
+
+/**
+ * Resolve a raw locale value (e.g. 'en-GB', 'en', 'es-ar', 'tr') to one of
+ * the 15 dictionary keys. Falls back to 'en-US' when nothing matches.
+ */
+function resolveLocale(rawLocale: string): string {
+  if (!rawLocale) return 'en-US';
+  // 1) Exact match (normalize casing: 'en-gb' -> 'en-GB')
+  const [base, region] = rawLocale.split('-');
+  const normalized = region ? `${base.toLowerCase()}-${region.toUpperCase()}` : base.toLowerCase();
+  if (messagesMap[normalized]) return normalized;
+  // 2) Bare base code -> default regional variant (en -> en-US)
+  const baseCode = base.toLowerCase();
+  if (baseLocaleDefaults[baseCode]) return baseLocaleDefaults[baseCode];
+  // 3) Base dictionary exists (e.g. 'de-AT' -> 'de')
+  if (messagesMap[baseCode]) return baseCode;
+  // 4) Ultimate fallback
+  return 'en-US';
+}
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const isAuthPage = pathname ? pathname.startsWith('/auth') : false;
-  
+
   const [fallbackLocale, setFallbackLocale] = useState('tr');
 
   useEffect(() => {
@@ -75,16 +128,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   // Extract the language, defaulting to URL path parameter, system settings or fallback
   const rawLocale = urlLocale || settings?.defaultLanguage || fallbackLocale;
-  
-  // Normalize locale: if 'en-GB', 'en-US' etc., map to 'en'. If 'tr', map to 'tr'.
-  const baseLocale = rawLocale.split('-')[0];
-  const activeLocale = messagesMap[baseLocale] ? baseLocale : 'en';
-  
-  // Fallback to English messages if not found
-  const messages = messagesMap[activeLocale] || en;
+
+  // Resolve to one of the 15 dictionaries (exact variant first, then defaults)
+  const activeLocale = resolveLocale(rawLocale);
+  const messages = useMemo(
+    () => deepMerge(deepMerge(tr, enUS), messagesMap[activeLocale]),
+    [activeLocale]
+  );
 
   return (
-    <NextIntlClientProvider locale={rawLocale} messages={messages} timeZone="UTC">
+    <NextIntlClientProvider locale={activeLocale} messages={messages} timeZone="UTC">
       {children}
     </NextIntlClientProvider>
   );

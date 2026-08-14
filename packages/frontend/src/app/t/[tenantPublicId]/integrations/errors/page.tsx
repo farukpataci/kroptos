@@ -27,13 +27,13 @@ export default function IntegrationErrorsPage() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/integration-logs', {
+      const res = await api.get<{ items: any[]; total: number }>('/integration-logs', {
         params: {
           provider: providerFilter || undefined,
           status: statusFilter || undefined,
         },
       });
-      setLogs(data.items || []);
+      setLogs(res.items || []);
     } catch (err) {
       console.error('Failed to fetch integration logs', err);
     } finally {
@@ -151,7 +151,7 @@ export default function IntegrationErrorsPage() {
       {/* Data Table */}
       <div className="flex-1 overflow-hidden rounded-kp-lg border border-kp-border bg-kp-bg-secondary flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[13px]">
+          <table className="kp-table w-full text-left text-[0.8125rem]">
             <thead className="bg-kp-bg-tertiary/50">
               <tr className="border-b border-kp-border text-kp-text-tertiary">
                 <th className="px-4 py-3 font-medium">Date</th>
@@ -183,11 +183,11 @@ export default function IntegrationErrorsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-medium text-kp-text-primary capitalize">{log.provider}</div>
-                      <div className="text-[11px] text-kp-text-tertiary">{log.operation}</div>
+                      <div className="text-[0.6875rem] text-kp-text-tertiary">{log.operation}</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-kp-text-primary">{log.entityType}</div>
-                      <div className="text-[11px] text-kp-text-tertiary">#{log.entityId || log.sourceReference}</div>
+                      <div className="text-[0.6875rem] text-kp-text-tertiary">#{log.entityId || log.sourceReference}</div>
                     </td>
                     <td className="px-4 py-3">
                       <div className="text-kp-text-secondary truncate max-w-xs">{log.errorStep || 'Unknown Step'}</div>
@@ -248,21 +248,21 @@ export default function IntegrationErrorsPage() {
               {/* General Info */}
               <div className="grid grid-cols-2 gap-4 text-sm bg-black/20 p-4 rounded-kp-md border border-kp-border-subtle">
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Provider / Operation</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Provider / Operation</span>
                   <span className="block text-kp-text-primary mt-1 font-medium capitalize">{selectedError.provider} - {selectedError.operation}</span>
                 </div>
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Status</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Status</span>
                   <span className={`inline-block mt-1 badge ${statusColors[selectedError.status] || 'badge--info'}`}>
                     {selectedError.status.toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Source Ref</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Source Ref</span>
                   <span className="block text-kp-text-primary mt-1">{selectedError.sourceReference || '-'}</span>
                 </div>
                 <div>
-                  <span className="block text-kp-text-tertiary text-[11px] uppercase tracking-wider font-semibold">Retries</span>
+                  <span className="block text-kp-text-tertiary text-[0.6875rem] uppercase tracking-wider font-semibold">Retries</span>
                   <span className="block text-kp-text-primary mt-1">{selectedError.retryCount} / {selectedError.maxRetryCount}</span>
                 </div>
               </div>
@@ -271,7 +271,7 @@ export default function IntegrationErrorsPage() {
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-kp-text-secondary uppercase tracking-widest border-b border-kp-border pb-2">Error Message</h3>
                 <div className="rounded-kp-md bg-kp-danger-muted border border-kp-danger-muted p-4">
-                  <span className="block text-[13px] font-semibold text-kp-danger mb-1">Step: {selectedError.errorStep || 'Execution'}</span>
+                  <span className="block text-[0.8125rem] font-semibold text-kp-danger mb-1">Step: {selectedError.errorStep || 'Execution'}</span>
                   <p className="text-sm text-white/90 font-medium">
                     {selectedError.errorMessage || 'An unknown error occurred during sync.'}
                   </p>
@@ -329,7 +329,7 @@ export default function IntegrationErrorsPage() {
                       Show Technical Stack Trace
                     </summary>
                     <div className="mt-3 rounded-kp-md bg-black border border-kp-border p-3 overflow-x-auto">
-                      <pre className="text-[10px] text-kp-danger/70 whitespace-pre-wrap">
+                      <pre className="text-[0.625rem] text-kp-danger/70 whitespace-pre-wrap">
                         {selectedError.errorStack}
                       </pre>
                     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
@@ -34,6 +35,13 @@ export interface Product {
   erpCode?: string;
   erpId?: string;
   taxRate?: number;
+  locationId?: string;
+  locationCode?: string;
+  locationBarcode?: string;
+  warehouseName?: string;
+  zoneName?: string;
+  isBundle?: boolean;
+  bundleItems?: any[];
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -51,6 +59,8 @@ export interface ProductPayload {
   currency: string;
   stockQuantity: number;
   status: string;
+  isBundle?: boolean;
+  bundleItems?: any[];
   weight?: number;
   width?: number;
   height?: number;
@@ -62,9 +72,10 @@ export interface ProductPayload {
   type?: string;
   variantAttributes?: any;
   parentId?: string;
-  bundleItems?: any[];
   crossSellProducts?: any[];
   variants?: any[];
+  locationId?: string;
+  locationCode?: string;
 }
 
 export interface ProductFilters {
@@ -77,6 +88,7 @@ export interface ProductFilters {
 const LOW_STOCK_THRESHOLD = 10;
 
 export function useProducts() {
+  const t = useTranslations('products');
   const { tenantContext } = useAuth();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -105,7 +117,7 @@ export function useProducts() {
       const data = await apiFetch<Product[]>('/products');
       setProducts(data || []);
     } catch (err: any) {
-      setError(err.message || 'Ürünler yüklenemedi');
+      setError(err.message || t('loadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -193,6 +205,18 @@ export function useProducts() {
     }
   };
 
+  const bulkAction = async (
+    action: 'update_status' | 'update_location' | 'delete',
+    productIds: string[],
+    data?: any,
+  ): Promise<void> => {
+    await apiFetch('/products/bulk-action', {
+      method: 'POST',
+      body: JSON.stringify({ action, productIds, data }),
+    });
+    await fetchProducts();
+  };
+
   return {
     products: paginatedProducts,
     allProducts: products,
@@ -215,5 +239,6 @@ export function useProducts() {
     updateProduct,
     deleteProduct,
     getIntegrationLogs,
+    bulkAction,
   };
 }

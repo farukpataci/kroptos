@@ -6,6 +6,8 @@ import { encrypt, decrypt } from '../../common/utils/encryption.util';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
+import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 
 describe('IntegrationService', () => {
   let service: IntegrationService;
@@ -30,11 +32,15 @@ describe('IntegrationService', () => {
   const mockCredentialService: any = {
     decrypt: jest.fn((val) => JSON.parse(decrypt(val))),
     validate: jest.fn(),
+    persistRotatedCredentials: jest.fn(),
   };
 
   const mockConnectorFactory: any = {
     create: jest.fn().mockImplementation((provider, credentials) => {
       return {
+        // Every connector exposes this; an OAuth one may return a replacement
+        // refresh token here after authenticating.
+        consumeRotatedCredentials: jest.fn().mockReturnValue(undefined),
         testConnection: jest.fn().mockImplementation(() => {
           const containsInvalid = Object.values(credentials || {}).some(
             (val: any) => typeof val === 'string' && val.toLowerCase().includes('invalid')
@@ -52,6 +58,17 @@ describe('IntegrationService', () => {
     addSyncJob: jest.fn().mockResolvedValue({ id: 'job-123' }),
   };
 
+  const mockErpConnectorFactory: any = {
+    create: jest.fn(),
+  };
+
+  const mockSettingsService: any = {
+    ensureForIntegration: jest.fn(),
+    softDeleteForIntegration: jest.fn(),
+    assertConfigured: jest.fn(),
+    resolveForRuntime: jest.fn().mockResolvedValue({}),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -59,7 +76,9 @@ describe('IntegrationService', () => {
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: MarketplaceCredentialService, useValue: mockCredentialService },
         { provide: MarketplaceConnectorFactory, useValue: mockConnectorFactory },
+        { provide: ErpConnectorFactory, useValue: mockErpConnectorFactory },
         { provide: IntegrationQueueService, useValue: mockIntegrationQueueService },
+        { provide: IntegrationSettingsService, useValue: mockSettingsService },
       ],
     }).compile();
 
@@ -97,6 +116,14 @@ describe('IntegrationService', () => {
           ],
         },
         orderBy: { createdAt: 'desc' },
+        include: {
+          setting: {
+            select: { isConfigured: true, completedSteps: true, deletedAt: true },
+          },
+          store: {
+            select: { id: true, name: true },
+          },
+        },
       });
     });
   });
@@ -249,6 +276,48 @@ describe('IntegrationService', () => {
       });
     });
 
+    it('persists a refresh token the marketplace rotated while authenticating', async () => {
+      // Without this the new token lives only in memory: the integration keeps
+      // working until the process restarts and then cannot authenticate at all.
+      const existing = {
+        id: 'int-123',
+        agencyId: 'agency-1',
+        name: 'Etsy',
+        provider: 'etsy',
+        providerType: 'marketplace',
+        status: 'active',
+        credentialsEncrypted: encrypt(JSON.stringify({ keystring: 'k', refreshToken: 'old' })),
+      };
+      mockPrismaService.integration.findFirst.mockResolvedValue(existing);
+      mockConnectorFactory.create.mockReturnValueOnce({
+        consumeRotatedCredentials: jest.fn().mockReturnValue({ refreshToken: 'rotated' }),
+        testConnection: jest.fn().mockResolvedValue({ success: true, message: 'ok', durationMs: 1 }),
+      });
+
+      await service.testConnection('int-123', 'user-1', 'agency-1', 'client-1', 'store-1', false);
+
+      expect(mockCredentialService.persistRotatedCredentials).toHaveBeenCalledWith('int-123', {
+        refreshToken: 'rotated',
+      });
+    });
+
+    it('does not write credentials when nothing rotated', async () => {
+      const existing = {
+        id: 'int-123',
+        agencyId: 'agency-1',
+        name: 'Trendyol',
+        provider: 'trendyol',
+        providerType: 'marketplace',
+        status: 'active',
+        credentialsEncrypted: encrypt(JSON.stringify({ apiKey: 'valid', apiSecret: 's', sellerId: '1' })),
+      };
+      mockPrismaService.integration.findFirst.mockResolvedValue(existing);
+
+      await service.testConnection('int-123', 'user-1', 'agency-1', 'client-1', 'store-1', false);
+
+      expect(mockCredentialService.persistRotatedCredentials).not.toHaveBeenCalled();
+    });
+
     it('should fail connection test if credentials contain invalid text and updates status to error', async () => {
       const oldCreds = encrypt(JSON.stringify({ apiKey: 'invalid-key', apiSecret: 'secret', sellerId: '123' }));
       const existing = {
@@ -276,6 +345,52 @@ describe('IntegrationService', () => {
         where: { id: 'int-123' },
         data: { status: 'error' },
       });
+    });
+  });
+
+  describe('triggerSync', () => {
+    const marketplaceIntegration = {
+      id: 'int-123',
+      agencyId: 'agency-1',
+      clientId: 'client-1',
+      storeId: 'store-1',
+      name: 'Trendyol',
+      provider: 'trendyol',
+      providerType: 'marketplace',
+      status: 'active',
+      credentialsEncrypted: encrypt(JSON.stringify({ apiKey: 'key' })),
+    };
+
+    it('should refuse to queue jobs while the integration is not configured', async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue(marketplaceIntegration);
+      mockSettingsService.assertConfigured.mockRejectedValueOnce(
+        new BadRequestException('integration.settings.notConfigured'),
+      );
+
+      await expect(
+        service.triggerSync('int-123', 'agency-1', 'client-1', 'store-1'),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(mockIntegrationQueueService.addSyncJob).not.toHaveBeenCalled();
+    });
+
+    it('should queue product and order jobs once configured', async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue(marketplaceIntegration);
+      mockSettingsService.assertConfigured.mockResolvedValueOnce(undefined);
+
+      const result = await service.triggerSync('int-123', 'agency-1', 'client-1', 'store-1');
+
+      expect(result.success).toBe(true);
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledWith(
+        'int-123',
+        'sync_products',
+        {},
+      );
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledWith(
+        'int-123',
+        'sync_orders',
+        {},
+      );
     });
   });
 });

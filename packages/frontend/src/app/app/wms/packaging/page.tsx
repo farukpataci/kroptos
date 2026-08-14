@@ -62,15 +62,15 @@ export default function WmsPackagingPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-semibold text-kp-text-primary">Packaging Station</h1>
-        <p className="mt-1 text-[13px] text-kp-text-tertiary">List pending orders, verify items, and print shipping labels.</p>
+        <p className="mt-1 text-[0.8125rem] text-kp-text-tertiary">List pending orders, verify items, and print shipping labels.</p>
       </div>
 
       <div className="card p-5">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5 border-b border-kp-border pb-4">
           <input type="text" placeholder="Scan order barcode or tracking number…"
-            className="w-full sm:w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[13px] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
+            className="w-full sm:w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[0.8125rem] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
           <button onClick={fetchOrders}
-            className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[12px] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
+            className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[0.75rem] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
             <ArrowPathIcon className="h-3.5 w-3.5" /> Refresh
           </button>
         </div>
@@ -79,7 +79,7 @@ export default function WmsPackagingPage() {
           <p className="py-8 text-center text-xs text-kp-text-tertiary">No orders awaiting packaging.</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-[12px]">
+            <table className="w-full text-left text-[0.75rem]">
               <thead>
                 <tr className="border-b border-kp-border text-kp-text-tertiary">
                   <th className="pb-2 font-medium">Order #</th>
@@ -108,12 +108,12 @@ export default function WmsPackagingPage() {
                     <td className="py-3 text-right space-x-2">
                       {order.packagingStatus !== 'packed' && (
                         <button onClick={() => handleStartPacking(order.orderNumber)}
-                          className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-1.5 text-[11px] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
+                          className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-1.5 text-[0.6875rem] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
                           Pack
                         </button>
                       )}
                       <button onClick={() => handleGenerateLabel(order.orderId)}
-                        className="rounded-kp-md bg-kp-accent px-3 py-1.5 text-[11px] font-semibold text-white shadow-kp-glow transition-colors hover:bg-kp-accent-hover">
+                        className="rounded-kp-md bg-kp-accent px-3 py-1.5 text-[0.6875rem] font-semibold text-white shadow-kp-glow transition-colors hover:bg-kp-accent-hover">
                         Print Label
                       </button>
                     </td>

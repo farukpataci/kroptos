@@ -1,0 +1,353 @@
+import { MarketplaceConnector } from '../core/MarketplaceConnector';
+import {
+  ConnectionTestResult,
+  MarketplaceOrder,
+  MarketplaceProduct,
+  StockUpdateResult,
+} from '../core/MarketplaceTypes';
+import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
+import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
+import { PazaramaMapper } from './PazaramaMapper';
+import { PazaramaOrder, PazaramaOrderItem, PazaramaProduct } from './PazaramaTypes';
+
+/**
+ * Pazarama issues access tokens from a separate identity host and serves the
+ * merchant API from another. There is no public sandbox, so both environments
+ * resolve to the same pair.
+ *
+ * DOĞRULANAMADI: hosts, paths and payload keys are written from Pazarama's
+ * merchant API documentation and have not been exercised against a real
+ * seller account.
+ */
+const TOKEN_URL = 'https://isortagimgiris.pazarama.com/connect/token';
+const BASE_URL = 'https://isortagimapi.pazarama.com';
+
+/** The only scope Pazarama grants to merchant integrations. */
+const TOKEN_SCOPE = 'merchantgatewayapi.fullaccess';
+
+const PATHS = {
+  orders: () => '/order/getOrdersForApi',
+  products: () => '/product/products',
+  stockUpdate: () => '/product/updateStock',
+  categories: () => '/category/getCategoryTree',
+  categoryAttributes: () => '/category/getCategoryWithAttributes',
+};
+
+const PAGE_SIZE = 100;
+const MAX_PAGES = 50;
+
+/** Refresh a minute early so a token cannot expire mid-request. */
+const TOKEN_SAFETY_MARGIN_MS = 60_000;
+
+interface PazaramaTokenResponse {
+  data?: { accessToken?: string; expiresIn?: number };
+  access_token?: string;
+  expires_in?: number;
+}
+
+interface PazaramaEnvelope<T> {
+  data?: T[] | { items?: T[]; totalCount?: number };
+  totalCount?: number;
+  success?: boolean;
+  message?: string;
+}
+
+export class PazaramaConnector extends MarketplaceConnector {
+  protected readonly defaultRateLimit = 60;
+
+  protected get displayName(): string {
+    return 'Pazarama';
+  }
+
+  /** Cached per connector instance, like the other token-based marketplaces. */
+  private accessToken?: { value: string; expiresAt: number };
+
+  constructor(
+    credentials: Record<string, any>,
+    httpClient: MarketplaceHttpClient,
+    rateLimiter: MarketplaceRateLimiter,
+    settings: Record<string, unknown> = {},
+  ) {
+    super('PAZARAMA', credentials, httpClient, rateLimiter, settings);
+  }
+
+  // --------------------------------------------------------------------------
+  // OAuth2 client credentials
+  // --------------------------------------------------------------------------
+
+  /**
+   * Not routed through `send()`: the token call is form encoded, authenticates
+   * with Basic rather than the bearer we are about to build, and lives on a
+   * different host.
+   */
+  private async fetchAccessToken(): Promise<string> {
+    const { apiKey, secretKey } = this.requireCredentials('apiKey', 'secretKey');
+
+    const basic = Buffer.from(`${apiKey}:${secretKey}`).toString('base64');
+    const body = new URLSearchParams({ grant_type: 'client_credentials', scope: TOKEN_SCOPE });
+
+    let response: PazaramaTokenResponse;
+    try {
+      response = await this.httpClient.request<PazaramaTokenResponse>(TOKEN_URL, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basic}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: body.toString(),
+      });
+    } catch (error: any) {
+      throw new Error(
+        `Pazarama oturum anahtarı alınamadı. API Key veya Secret Key hatalı olabilir. ${error?.message ?? ''}`.trim(),
+      );
+    }
+
+    const token = response?.data?.accessToken ?? response?.access_token;
+    if (!token) {
+      throw new Error('Pazarama oturum anahtarı alınamadı: yanıt access token içermiyor.');
+    }
+
+    const lifetimeMs = (Number(response?.data?.expiresIn ?? response?.expires_in) || 3600) * 1000;
+    this.accessToken = { value: token, expiresAt: Date.now() + lifetimeMs - TOKEN_SAFETY_MARGIN_MS };
+
+    return token;
+  }
+
+  protected async authHeaders(): Promise<Record<string, string>> {
+    const cached = this.accessToken;
+    const token = cached && cached.expiresAt > Date.now() ? cached.value : await this.fetchAccessToken();
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  private call<T>(
+    path: string,
+    options: {
+      method?: string;
+      query?: Record<string, string | number | boolean | undefined>;
+      body?: unknown;
+    } = {},
+  ): Promise<T> {
+    return this.send<T>(`${BASE_URL}${path}`, options);
+  }
+
+  /** Pazarama wraps every payload in `data`, sometimes with a nested `items`. */
+  private rows<T>(envelope: PazaramaEnvelope<T> | undefined): T[] {
+    const data = envelope?.data;
+    if (Array.isArray(data)) return data;
+    return data?.items ?? [];
+  }
+
+  private total(envelope: PazaramaEnvelope<unknown> | undefined): number | undefined {
+    const data = envelope?.data;
+    const nested = Array.isArray(data) ? undefined : data?.totalCount;
+    const value = Number(nested ?? envelope?.totalCount);
+    return Number.isFinite(value) ? value : undefined;
+  }
+
+  private async fetchAllPages<T>(
+    path: string,
+    options: {
+      method?: string;
+      query?: Record<string, string | number | boolean | undefined>;
+      body?: Record<string, unknown>;
+    },
+  ): Promise<T[]> {
+    const collected: T[] = [];
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const envelope = await this.call<PazaramaEnvelope<T>>(path, {
+        method: options.method,
+        query: options.query ? { ...options.query, Page: page, Size: PAGE_SIZE } : undefined,
+        body: options.body ? { ...options.body, page, size: PAGE_SIZE } : undefined,
+      });
+
+      const rows = this.rows(envelope);
+      collected.push(...rows);
+
+      // A short page ends the walk; totalCount is advisory and sometimes absent.
+      if (rows.length < PAGE_SIZE) break;
+
+      const total = this.total(envelope);
+      if (total !== undefined && collected.length >= total) break;
+    }
+
+    return collected;
+  }
+
+  // --------------------------------------------------------------------------
+  // Connector surface
+  // --------------------------------------------------------------------------
+
+  async testConnection(): Promise<ConnectionTestResult> {
+    return this.probe(async () => {
+      this.requireCredentials('apiKey', 'secretKey');
+      const envelope = await this.call<PazaramaEnvelope<unknown>>(PATHS.products(), {
+        query: { Approved: true, Page: 0, Size: 1 },
+      });
+
+      const total = this.total(envelope);
+      return total !== undefined
+        ? `Pazarama bağlantısı doğrulandı. Satıcı hesabında ${total} ürün görüldü.`
+        : 'Pazarama bağlantısı doğrulandı.';
+    });
+  }
+
+  async getOrders(): Promise<MarketplaceOrder[]> {
+    this.requireCredentials('apiKey', 'secretKey');
+
+    const backfillDays = Number(this.setting<number>('orders.backfillDays', 7));
+    const startDate = new Date(Date.now() - Math.max(0, backfillDays) * 24 * 60 * 60 * 1000);
+
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.orders(), {
+      method: 'POST',
+      body: {
+        startDate: startDate.toISOString(),
+        endDate: new Date().toISOString(),
+      },
+    });
+
+    const wanted = this.setting<string[]>('orders.importStatuses', ['created', 'picking', 'shipped']);
+    const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
+
+    return raw
+      .map((order) => this.toPazaramaOrder(order))
+      .filter((order) => wantedSet.size === 0 || wantedSet.has(this.settingsStatus(order.status)))
+      .map((order) => PazaramaMapper.toUnifiedOrder(order));
+  }
+
+  async getProducts(): Promise<MarketplaceProduct[]> {
+    this.requireCredentials('apiKey', 'secretKey');
+
+    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(), {
+      query: { Approved: true },
+    });
+
+    return raw.map((product) => PazaramaMapper.toUnifiedProduct(this.toPazaramaProduct(product)));
+  }
+
+  /** Pazarama addresses inventory by the seller's stock code. */
+  async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
+    try {
+      this.requireCredentials('apiKey', 'secretKey');
+
+      await this.call<unknown>(PATHS.stockUpdate(), {
+        method: 'POST',
+        body: { items: [{ code: sku, stockCount: quantity }] },
+      });
+
+      return { sku, quantity, success: true };
+    } catch (error: any) {
+      return {
+        sku,
+        quantity,
+        success: false,
+        error: error?.message || 'Pazarama stok güncellemesi başarısız',
+      };
+    }
+  }
+
+  async getCategories(): Promise<any[]> {
+    const envelope = await this.call<PazaramaEnvelope<any>>(PATHS.categories());
+    return this.rows(envelope);
+  }
+
+  async getCategoryAttributes(categoryId: string): Promise<any> {
+    return this.call<any>(PATHS.categoryAttributes(), { query: { id: categoryId } });
+  }
+
+  // --------------------------------------------------------------------------
+  // Response normalisation
+  // --------------------------------------------------------------------------
+
+  /**
+   * PazaramaMapper compares against capitalised names, so incoming values are
+   * folded to that spelling rather than widening the mapper.
+   */
+  private toStatusName(raw: unknown): string {
+    switch (String(raw ?? '').toLowerCase()) {
+      case 'preparing':
+      case 'picking':
+        return 'Preparing';
+      case 'shipped':
+      case 'intransit':
+        return 'Shipped';
+      case 'delivered':
+      case 'completed':
+        return 'Delivered';
+      case 'cancelled':
+      case 'canceled':
+        return 'Cancelled';
+      default:
+        return 'New';
+    }
+  }
+
+  /** Inverse view used to match the settings vocabulary. */
+  private settingsStatus(status: string): string {
+    switch (status) {
+      case 'Preparing':
+        return 'picking';
+      case 'Shipped':
+        return 'shipped';
+      case 'Delivered':
+        return 'delivered';
+      case 'Cancelled':
+        return 'cancelled';
+      default:
+        return 'created';
+    }
+  }
+
+  private toPazaramaOrder(raw: Record<string, any>): PazaramaOrder {
+    const items: PazaramaOrderItem[] = (raw.items ?? raw.orderItems ?? raw.products ?? []).map(
+      (item: Record<string, any>) => ({
+        stockCode: item.stockCode ?? item.code ?? item.sku ?? '',
+        productName: item.productName ?? item.name ?? '',
+        quantity: Number(item.quantity) || 0,
+        price: Number(item.price ?? item.salePrice ?? 0),
+      }),
+    );
+
+    const address = raw.shippingAddress ?? raw.deliveryAddress ?? raw.address ?? {};
+    const addressLine = typeof address === 'string' ? address : address.address ?? address.fullAddress ?? '';
+
+    return {
+      id: String(raw.id ?? raw.orderId ?? ''),
+      orderNumber: raw.orderNumber ?? raw.orderCode ?? String(raw.id ?? ''),
+      customerName:
+        raw.customerName ??
+        [raw.customerFirstName, raw.customerLastName].filter(Boolean).join(' ') ??
+        '',
+      customerEmail: raw.customerEmail ?? raw.email,
+      customerPhone: raw.customerPhone ?? raw.phone,
+      address: addressLine,
+      city: typeof address === 'string' ? (raw.city ?? '') : address.city ?? raw.city ?? '',
+      district:
+        typeof address === 'string'
+          ? (raw.district ?? '')
+          : address.district ?? address.town ?? raw.district ?? '',
+      status: this.toStatusName(raw.status ?? raw.orderStatus),
+      totalPrice: Number(raw.totalPrice ?? raw.totalAmount ?? 0),
+      currency: raw.currency ?? 'TRY',
+      items,
+    };
+  }
+
+  private toPazaramaProduct(raw: Record<string, any>): PazaramaProduct {
+    const image = Array.isArray(raw.images)
+      ? typeof raw.images[0] === 'string'
+        ? raw.images[0]
+        : raw.images[0]?.url ?? raw.images[0]?.imageUrl
+      : raw.image ?? raw.imageUrl;
+
+    return {
+      code: raw.code ?? raw.stockCode ?? raw.sku ?? '',
+      name: raw.name ?? raw.displayName ?? raw.productName ?? '',
+      description: raw.description,
+      salePrice: Number(raw.salePrice ?? raw.price ?? 0),
+      stockCount: Number(raw.stockCount ?? raw.stock ?? raw.quantity) || 0,
+      image,
+      barcode: raw.barcode,
+    };
+  }
+}

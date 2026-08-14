@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import {
   ShoppingBagIcon,
   FolderOpenIcon,
@@ -31,103 +31,100 @@ import {
 // PLATFORM FEATURES MENU
 // ----------------------------------------------------
 export function PlatformFeaturesMenu() {
-  const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.megaMenu.features');
 
   const data = {
     col1: {
-      title: isTr ? 'Operasyon Yönetimi' : 'Operations Management',
+      title: t('operations.title'),
       items: [
         {
-          name: isTr ? 'Sipariş Yönetimi' : 'Order Management',
-          desc: isTr ? 'Tüm pazaryeri ve mağaza siparişlerini tek ekrandan yönetin.' : 'Manage all marketplace and store orders from a single screen.',
+          name: t('operations.orders.name'),
+          desc: t('operations.orders.desc'),
           icon: ShoppingBagIcon,
           href: '#orders'
         },
         {
-          name: isTr ? 'Ürün & Katalog Yönetimi' : 'Product & Catalog Management',
-          desc: isTr ? 'Ürün verilerini, varyantları ve içerikleri merkezi olarak yönetin.' : 'Manage product data, variants, and contents centrally.',
+          name: t('operations.catalog.name'),
+          desc: t('operations.catalog.desc'),
           icon: FolderOpenIcon,
           href: '#catalog'
         },
         {
-          name: isTr ? 'Stok Yönetimi' : 'Inventory Management',
-          desc: isTr ? 'Depo stoklarını kanallar arasında gerçek zamanlı senkronize edin.' : 'Synchronize warehouse stocks across channels in real-time.',
+          name: t('operations.stock.name'),
+          desc: t('operations.stock.desc'),
           icon: CircleStackIcon,
           href: '#stock'
         },
         {
-          name: isTr ? 'Fiyat Otomasyonu' : 'Price Automation',
-          desc: isTr ? 'Fiyat, marj ve rekabet kurallarını otomatik uygulayın.' : 'Apply pricing, margin, and competition rules automatically.',
+          name: t('operations.pricing.name'),
+          desc: t('operations.pricing.desc'),
           icon: BanknotesIcon,
           href: '#pricing-rules'
         }
       ]
     },
     col2: {
-      title: isTr ? 'Lojistik & Depo' : 'Logistics & Warehouse',
+      title: t('logistics.title'),
       items: [
         {
-          name: isTr ? 'WMS / Depo Yönetimi' : 'WMS / Warehouse Management',
-          desc: isTr ? 'Toplama, paketleme, raf ve depo operasyonlarını yönetin.' : 'Manage picking, packing, shelving, and warehouse operations.',
+          name: t('logistics.wms.name'),
+          desc: t('logistics.wms.desc'),
           icon: BuildingOfficeIcon,
           href: '#wms'
         },
         {
-          name: isTr ? 'Kargo Yönetimi' : 'Shipping Management',
-          desc: isTr ? 'Kargo oluşturma, etiket basma ve takip süreçlerini tek noktada yürütün.' : 'Run shipping creation, label printing, and tracking at a single point.',
+          name: t('logistics.shipping.name'),
+          desc: t('logistics.shipping.desc'),
           icon: TruckIcon,
           href: '#shipping'
         },
         {
-          name: isTr ? 'İade Yönetimi' : 'Return Management',
-          desc: isTr ? 'İade taleplerini, kalite kontrolü ve stok dönüşlerini takip edin.' : 'Track return requests, quality control, and inventory returns.',
+          name: t('logistics.returns.name'),
+          desc: t('logistics.returns.desc'),
           icon: ArrowPathIcon,
           href: '#returns'
         },
         {
-          name: isTr ? 'Etiket & Yazıcı Merkezi' : 'Label & Printer Hub',
-          desc: isTr ? 'Kargo etiketleri ve bağlı yazıcı yapılandırmalarını yönetin.' : 'Manage shipping labels and connected printer configurations.',
+          name: t('logistics.labels.name'),
+          desc: t('logistics.labels.desc'),
           icon: TagIcon,
           href: '#labels'
         }
       ]
     },
     col3: {
-      title: isTr ? 'Otomasyon & Zekâ' : 'Automation & Intelligence',
+      title: t('automation.title'),
       items: [
         {
-          name: isTr ? 'İş Akışı Otomasyonu' : 'Workflow Automation',
-          desc: isTr ? 'Tetikleyici ve koşullara bağlı tekrarlayan süreçleri otomatikleştirin.' : 'Automate repetitive processes based on triggers and conditions.',
+          name: t('automation.workflow.name'),
+          desc: t('automation.workflow.desc'),
           icon: CpuChipIcon,
           href: '#automation'
         },
         {
-          name: isTr ? 'Yapay Zekâ Asistanı' : 'AI Assistant',
-          desc: isTr ? 'Ürün içerikleri, açıklamalar ve operasyon önerilerini AI ile oluşturun.' : 'Create product descriptions, contents, and operational suggestions with AI.',
+          name: t('automation.ai.name'),
+          desc: t('automation.ai.desc'),
           icon: SparklesIcon,
           href: '#ai'
         },
         {
-          name: isTr ? 'Analitik & Raporlama' : 'Analytics & Reporting',
-          desc: isTr ? 'Sipariş, satış, kârlılık ve operasyon KPI’larını inceleyin.' : 'Inspect orders, sales, profitability, and operational KPIs.',
+          name: t('automation.analytics.name'),
+          desc: t('automation.analytics.desc'),
           icon: ChartBarIcon,
           href: '#analytics'
         },
         {
-          name: isTr ? 'B2B & Tedarikçi Ağı' : 'B2B & Supplier Network',
-          desc: isTr ? 'Tedarikçi, bayi ve iş ortaklarıyla veri akışını yönetin.' : 'Manage data flow with suppliers, dealers, and business partners.',
+          name: t('automation.b2b.name'),
+          desc: t('automation.b2b.desc'),
           icon: UserGroupIcon,
           href: '#b2b'
         }
       ]
     },
     banner: {
-      title: isTr ? 'Tüm operasyonlarınız tek platformda' : 'All your operations in one platform',
-      desc: isTr
-        ? 'Siparişten depoya, kargodan muhasebeye kadar tüm süreçleri Alqora ile yönetin.'
-        : 'Manage all processes from order to warehouse, shipping to accounting with Alqora.',
-      cta: isTr ? 'Tüm Özellikleri İncele' : 'Explore All Features'
+      title: t('banner.title'),
+      desc: t('banner.desc'),
+      cta: t('banner.cta')
     }
   };
 
@@ -197,46 +194,44 @@ export function PlatformFeaturesMenu() {
 // ----------------------------------------------------
 export function SolutionsMenu() {
   const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.megaMenu.solutions');
 
   const data = {
     col1: {
-      title: isTr ? 'Firma Ölçeğine Göre' : 'By Company Size',
+      title: t('bySize.title'),
       items: [
-        isTr ? 'Yeni Başlayan Markalar' : 'Startup Brands',
-        isTr ? 'Büyüyen E-Ticaret İşletmeleri' : 'Growing E-Commerce Businesses',
-        isTr ? 'Çok Kanallı Satış Yapan Markalar' : 'Omnichannel Retail Brands',
-        isTr ? 'Kurumsal / Enterprise Şirketler' : 'Enterprise Corporations'
+        t('bySize.startup'),
+        t('bySize.growing'),
+        t('bySize.omnichannel'),
+        t('bySize.enterprise')
       ]
     },
     col2: {
-      title: isTr ? 'İş Modeline Göre' : 'By Business Model',
+      title: t('byModel.title'),
       items: [
-        isTr ? 'Pazaryeri Satıcıları' : 'Marketplace Sellers',
-        isTr ? 'Kendi E-Ticaret Sitesi Olan Markalar' : 'Brands with Own E-Commerce Sites',
-        isTr ? 'B2B Toptan Satış' : 'B2B Wholesale Sales',
-        isTr ? 'Dropshipping ve Tedarikçi Yönetimi' : 'Dropshipping & Supplier Management',
-        isTr ? '3PL / Fulfillment Operasyonları' : '3PL / Fulfillment Operations'
+        t('byModel.marketplaceSellers'),
+        t('byModel.ownSite'),
+        t('byModel.b2bWholesale'),
+        t('byModel.dropshipping'),
+        t('byModel.fulfillment')
       ]
     },
     col3: {
-      title: isTr ? 'Sektöre Göre' : 'By Industry',
+      title: t('byIndustry.title'),
       items: [
-        isTr ? 'Moda & Tekstil' : 'Fashion & Apparel',
-        isTr ? 'Kozmetik & Kişisel Bakım' : 'Cosmetics & Personal Care',
-        isTr ? 'Elektronik' : 'Electronics',
-        isTr ? 'Ev & Yaşam' : 'Home & Living',
-        isTr ? 'Otomotiv Yedek Parça' : 'Automotive Spare Parts',
-        isTr ? 'Gıda & Hızlı Tüketim' : 'Food & FMCG'
+        t('byIndustry.fashion'),
+        t('byIndustry.cosmetics'),
+        t('byIndustry.electronics'),
+        t('byIndustry.homeAndLiving'),
+        t('byIndustry.automotive'),
+        t('byIndustry.foodAndFmcg')
       ]
     },
     promo: {
       tag: 'Alqora Enterprise',
-      title: isTr ? 'Karmaşık operasyonları sadeleştirin' : 'Simplify complex operations',
-      desc: isTr
-        ? 'Yüksek sipariş hacmi ve çoklu depo operasyonları için ölçeklenebilir altyapı.'
-        : 'Scalable infrastructure for high order volume and multi-warehouse operations.',
-      cta: isTr ? 'Uzmanla Görüş' : 'Talk to an Expert'
+      title: t('promo.title'),
+      desc: t('promo.desc'),
+      cta: t('promo.cta')
     }
   };
 
@@ -282,7 +277,7 @@ export function SolutionsMenu() {
       {/* Dynamic Theme Promo Card */}
       <div className="p-8 bg-gradient-to-br from-indigo-50 to-indigo-100/30 dark:from-[#0b0e22] dark:to-neutral-950 flex flex-col justify-between space-y-6">
         <div className="space-y-3">
-          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-kp-accent-muted text-kp-accent border border-kp-accent/20">
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[0.625rem] font-bold tracking-wider uppercase bg-kp-accent-muted text-kp-accent border border-kp-accent/20">
             {data.promo.tag}
           </span>
           <h4 className="text-base font-bold text-kp-text-primary leading-snug">
@@ -308,85 +303,82 @@ export function SolutionsMenu() {
 // RESOURCES MENU
 // ----------------------------------------------------
 export function ResourcesMenu() {
-  const locale = useLocale();
-  const isTr = locale === 'tr';
+  const t = useTranslations('marketing.megaMenu.resources');
 
   const data = {
     col1: {
-      title: isTr ? 'Öğren' : 'Learn',
+      title: t('learn.title'),
       items: [
         {
-          name: isTr ? 'Yardım Merkezi' : 'Help Center',
-          desc: isTr ? 'Sistem kullanımıyla ilgili kılavuzlara ve sıkça sorulan sorulara ulaşın.' : 'Access system usage guides and frequently asked questions.',
+          name: t('learn.helpCenter.name'),
+          desc: t('learn.helpCenter.desc'),
           icon: QuestionMarkCircleIcon,
           href: '#help'
         },
         {
-          name: isTr ? 'Alqora Akademi' : 'Alqora Academy',
-          desc: isTr ? 'Eğitimleri tamamlayın ve uzmanlık sertifikaları alın.' : 'Complete trainings and earn expertise certifications.',
+          name: t('learn.academy.name'),
+          desc: t('learn.academy.desc'),
           icon: AcademicCapIcon,
           href: '#academy'
         },
         {
-          name: isTr ? 'Blog' : 'Blog',
-          desc: isTr ? 'E-ticaret ve depo yönetimi alanındaki son gelişmeleri takip edin.' : 'Follow the latest developments in e-commerce and warehouse management.',
+          name: t('learn.blog.name'),
+          desc: t('learn.blog.desc'),
           icon: ChatBubbleLeftRightIcon,
           href: '#blog'
         },
         {
-          name: isTr ? 'API Dokümantasyonu' : 'API Documentation',
-          desc: isTr ? 'Geliştiriciler için teknik API ve entegrasyon dokümanları.' : 'Technical API and integration docs for developers.',
+          name: t('learn.apiDocs.name'),
+          desc: t('learn.apiDocs.desc'),
           icon: CommandLineIcon,
           href: '#api-docs'
         },
         {
-          name: isTr ? 'Entegrasyon Rehberleri' : 'Integration Guides',
-          desc: isTr ? 'Pazaryerleri ve kargo kurulum adımlarını adım adım öğrenin.' : 'Learn marketplace and shipping setup steps step-by-step.',
+          name: t('learn.integrationGuides.name'),
+          desc: t('learn.integrationGuides.desc'),
           icon: DocumentTextIcon,
           href: '#guides'
         }
       ]
     },
     col2: {
-      title: isTr ? 'Hizmetler' : 'Services',
+      title: t('services.title'),
       items: [
         {
-          name: isTr ? 'Sistem Kurulumu' : 'System Setup',
-          desc: isTr ? 'Hesap kurulumu ve başlangıç yapılandırma desteği alın.' : 'Get support for account setup and initial configuration.',
+          name: t('services.setup.name'),
+          desc: t('services.setup.desc'),
           icon: BriefcaseIcon,
           href: '#setup'
         },
         {
-          name: isTr ? 'Entegrasyon Danışmanlığı' : 'Integration Consultancy',
-          desc: isTr ? 'Özel ERP ve API entegrasyonları için uzman rehberliği.' : 'Expert guidance for custom ERP and API integrations.',
+          name: t('services.consulting.name'),
+          desc: t('services.consulting.desc'),
           icon: PresentationChartLineIcon,
           href: '#consulting'
         },
         {
-          name: isTr ? 'Operasyon Analizi' : 'Operation Analysis',
-          desc: isTr ? 'Depo ve lojistik süreçlerinizi optimize edecek analizler.' : 'Analyses to optimize your warehouse and logistics processes.',
+          name: t('services.analysis.name'),
+          desc: t('services.analysis.desc'),
           icon: WrenchScrewdriverIcon,
           href: '#analysis'
         },
         {
-          name: isTr ? 'Teknik Destek' : 'Technical Support',
-          desc: isTr ? 'Karşılaştığınız problemler için 7/24 teknik destek hattı.' : '24/7 technical support line for issues you encounter.',
+          name: t('services.support.name'),
+          desc: t('services.support.desc'),
           icon: LifebuoyIcon,
           href: '#support'
         },
         {
-          name: isTr ? 'İletişim' : 'Contact Us',
-          desc: isTr ? 'Satış ve ortaklık teklifleriniz için bizimle iletişime geçin.' : 'Reach out for your sales and partnership proposals.',
+          name: t('services.contact.name'),
+          desc: t('services.contact.desc'),
           icon: ChatBubbleLeftRightIcon,
           href: '#contact'
         }
       ]
     },
     footer: {
-      text: isTr
-        ? 'E-ticaret operasyonunuzu ne kadar iyileştirebileceğinizi hesaplayın.'
-        : 'Calculate how much you can improve your e-commerce operations.',
-      cta: isTr ? 'Verimlilik Analizi' : 'Efficiency Analysis'
+      text: t('footer.text'),
+      cta: t('footer.cta')
     }
   };
 

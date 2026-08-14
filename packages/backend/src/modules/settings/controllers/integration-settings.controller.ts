@@ -1,5 +1,5 @@
-import { Controller, Get, Put, Req, Body, Param, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Put, Req, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { IntegrationSettingsService } from '../services/integration-settings.service';
@@ -21,15 +21,19 @@ export class IntegrationSettingsController {
     return this.service.findAll(user.agencyId);
   }
 
+  /**
+   * @deprecated Kept mounted on purpose: an existing client that still writes
+   * here must get a clear 410 pointing at `/integrations`, not a 404 that reads
+   * like a routing accident or a 200 that silently changes nothing.
+   */
   @Put('/:provider')
   @RequirePermission('system.settings.manage')
-  @ApiOperation({ summary: 'Update integration settings for a provider' })
-  async update(
-    @Param('provider') provider: string,
-    @Body() data: any,
-    @Req() req: Request,
-  ) {
-    const user = req.user as any;
-    return this.service.update(user.agencyId, provider, data, user.userId || user.id);
+  @ApiOperation({
+    deprecated: true,
+    summary: 'Removed — integrations are managed through /integrations',
+  })
+  @ApiResponse({ status: 410, description: 'Endpoint retired; use POST/PATCH /integrations' })
+  async update() {
+    return this.service.update();
   }
 }

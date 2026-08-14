@@ -1,13 +1,16 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateClientDto, UpdateClientDto } from './dto/client.dto';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClientService {
   constructor(private prisma: PrismaService) {}
 
+  // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
+  // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
@@ -21,10 +24,10 @@ export class ClientService {
           action,
           entityType: 'Client',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {

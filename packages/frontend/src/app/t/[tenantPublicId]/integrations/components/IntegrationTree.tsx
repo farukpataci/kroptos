@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { 
   LinkIcon,
@@ -8,16 +9,18 @@ import {
   TruckIcon,
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import type { IntegrationStatus } from '@kroptos/shared';
 
 interface Integration {
   id: string;
   name: string;
   provider: string;
   providerType: string;
-  status: string;
+  status: IntegrationStatus;
 }
 
 export function IntegrationTree() {
+  const t = useTranslations('integrations.tree');
   const [integrations, setIntegrations] = useState<Integration[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -50,7 +53,7 @@ export function IntegrationTree() {
       <div className="w-full bg-white rounded-2xl p-8 border border-kp-border shadow-xs flex items-center justify-center min-h-[220px]">
         <div className="flex flex-col items-center gap-2">
           <ArrowPathIcon className="h-6 w-6 text-kp-accent animate-spin" />
-          <span className="text-xs text-kp-text-tertiary">Entegrasyon ağacı yükleniyor...</span>
+          <span className="text-xs text-kp-text-tertiary">{t('loading')}</span>
         </div>
       </div>
     );
@@ -102,16 +105,18 @@ export function IntegrationTree() {
   if (activeNodes.length === 0) {
     return (
       <div className="w-full select-none animate-fade-in">
-        <div className="bg-white rounded-2xl p-6 border border-kp-border shadow-xs relative overflow-hidden flex flex-col items-center">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:20px_20px] opacity-60 pointer-events-none" />
+        <div className="bg-white dark:bg-slate-900 rounded-2xl py-14 px-8 border border-kp-border shadow-xs relative overflow-hidden flex flex-col items-center justify-center min-h-[280px]">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-60 pointer-events-none" />
           
-          <div className="bg-kp-accent text-white px-6 py-2 rounded-xl font-bold font-mono shadow-kp-glow text-sm tracking-widest relative z-10">
+          <div className="bg-kp-accent text-white px-7 py-2.5 rounded-xl font-bold font-mono shadow-kp-glow text-base tracking-widest relative z-10">
             kroptos.
           </div>
-          <div className="h-6 w-0.5 border-l border-dashed border-slate-200 mt-1 relative z-10"></div>
-          <div className="bg-kp-bg-secondary border border-kp-border rounded-xl px-6 py-4 text-center max-w-sm relative z-10">
-            <p className="text-xs font-semibold text-kp-text-secondary">Bağlı Entegrasyon Yok</p>
-            <p className="text-[10px] text-kp-text-tertiary mt-1">Sisteme bağlı aktif entegrasyon bulunmamaktadır. Eklemek için aşağıdaki sekmeleri kullanabilirsiniz.</p>
+          <div className="h-10 w-0.5 border-l-2 border-dashed border-slate-300 dark:border-slate-700 mt-2 relative z-10"></div>
+          <div className="bg-kp-bg-secondary border border-kp-border rounded-xl px-8 py-5 text-center max-w-md relative z-10 shadow-xs">
+            <p className="text-xs font-bold text-kp-text-secondary">Bağlı Entegrasyon Yok</p>
+            <p className="text-xs text-kp-text-tertiary mt-1.5 leading-relaxed">
+              Sisteme bağlı aktif entegrasyon bulunmamaktadır. Eklemek için aşağıdaki "Entegrasyon Ekle" butonunu kullanabilirsiniz.
+            </p>
           </div>
         </div>
       </div>
@@ -126,23 +131,23 @@ export function IntegrationTree() {
 
   return (
     <div className="w-full overflow-x-auto pb-2 scrollbar-thin select-none animate-fade-in">
-      <div className="min-w-[800px] bg-white rounded-2xl p-6 border border-kp-border shadow-xs relative overflow-hidden select-none">
+      <div className="min-w-[800px] bg-white dark:bg-slate-900 rounded-2xl py-14 px-8 border border-kp-border shadow-xs relative overflow-hidden select-none min-h-[300px] flex flex-col justify-center">
         
         {/* Soft Decorative Grid Lines */}
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:20px_20px] opacity-60 pointer-events-none" />
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:24px_24px] opacity-60 pointer-events-none" />
 
         {/* Central Master Node */}
         <div className="flex flex-col items-center justify-center relative z-10">
-          <div className="bg-kp-accent text-white px-6 py-2 rounded-xl font-bold font-mono shadow-kp-glow text-sm tracking-widest relative group transition-all duration-300 hover:scale-105">
+          <div className="bg-kp-accent text-white px-7 py-2.5 rounded-xl font-bold font-mono shadow-kp-glow text-base tracking-widest relative group transition-all duration-300 hover:scale-105">
             kroptos.
-            <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
+            <span className="absolute -top-1 -right-1 flex h-3 w-3">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
             </span>
           </div>
           
           {/* Main Connector Line Down */}
-          <div className="h-6 w-0.5 border-l border-dashed border-slate-200 mt-1"></div>
+          <div className="h-10 w-0.5 border-l-2 border-dashed border-slate-300 dark:border-slate-700 mt-2"></div>
         </div>
 
         {/* Horizontal Connector Line (Spans only if N > 1) */}
@@ -179,13 +184,13 @@ export function IntegrationTree() {
                   <div className="flex h-9 w-9 items-center justify-center rounded-kp-md bg-kp-accent/5 text-kp-accent">
                     <LinkIcon className="h-4.5 w-4.5" />
                   </div>
-                  <div className="text-[12px] font-bold text-kp-text-primary uppercase tracking-wider font-mono">
+                  <div className="text-[0.75rem] font-bold text-kp-text-primary uppercase tracking-wider font-mono">
                     {node.provider}
                   </div>
                 </div>
                 
                 {/* Custom Name Capsule Badge */}
-                <div className={`mt-3 text-[10px] font-semibold border px-3.5 py-1 rounded-full whitespace-nowrap overflow-hidden text-ellipsis max-w-full transition-all duration-300 ${node.theme}`}>
+                <div className={`mt-3 text-[0.625rem] font-semibold border px-3.5 py-1 rounded-full whitespace-nowrap overflow-hidden text-ellipsis max-w-full transition-all duration-300 ${node.theme}`}>
                   {node.name}
                 </div>
               </div>

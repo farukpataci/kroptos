@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/store.dto';
+import { Prisma } from '@prisma/client';
+import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
 export class StoreService {
@@ -15,8 +17,10 @@ export class StoreService {
       .replace(/-+/g, '-');
   }
 
+  // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
+  // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
@@ -30,10 +34,10 @@ export class StoreService {
           action,
           entityType: 'Store',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
@@ -165,6 +169,8 @@ export class StoreService {
           locale: dto.locale || 'en-US',
           timezone: dto.timezone || 'UTC',
           type: dto.type || 'retail',
+          orderProcessingMode: dto.orderProcessingMode || 'LOGO_SYNC',
+          publicId: generatePublicId('tn', 12),
           isActive: true,
         },
       });
@@ -216,6 +222,7 @@ export class StoreService {
           locale: dto.locale,
           timezone: dto.timezone,
           type: dto.type,
+          orderProcessingMode: dto.orderProcessingMode,
           isActive: dto.isActive,
         },
       });

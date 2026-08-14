@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
+import { CreateProductDto, UpdateProductDto, BulkActionDto } from './dto/product.dto';
 import { Prisma } from '@prisma/client';
 import { IntegrationQueueService } from '../integration/integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
@@ -13,8 +13,13 @@ export class ProductService {
     private integrationQueueService: IntegrationQueueService,
   ) {}
 
+  // Alan adlari sema ile hizali olmak zorunda: AuditLog'da `performedBy`, `agencyId` ve
+  // `changes` alanlari YOK (schema.prisma › model AuditLog). Buraya once o adlar yaziliyordu;
+  // Prisma her cagriyi PrismaClientValidationError ile reddediyor, asagidaki catch da hatayi
+  // yutuyordu - yani urun create/update/delete kayitlarinin hicbiri hic yazilmadi. Dogru
+  // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
@@ -28,10 +33,10 @@ export class ProductService {
           action,
           entityType: 'Product',
           entityId,
-          performedBy,
-          agencyId,
+          userId: performedBy,
+          tenantId: agencyId,
           ipAddress: ipAddress || null,
-          changes: JSON.stringify(changes),
+          newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
         },
       });
     } catch (error) {
@@ -61,11 +66,21 @@ export class ProductService {
       whereClause.agencyId = activeAgencyId;
     }
 
-    return this.prisma.product.findMany({
+    const products = await this.prisma.product.findMany({
       where: whereClause,
       include: {
         category: {
           select: { id: true, name: true, slug: true },
+        },
+        location: {
+          include: {
+            warehouse: {
+              select: { id: true, name: true, code: true },
+            },
+            zone: {
+              select: { id: true, name: true, code: true, type: true },
+            },
+          },
         },
         bundleItems: {
           include: {
@@ -87,6 +102,8 @@ export class ProductService {
       },
       orderBy: { createdAt: 'desc' },
     });
+
+    return products.map((p) => this.mapProductResponse(p));
   }
 
   async get(
@@ -108,6 +125,16 @@ export class ProductService {
         category: {
           select: { id: true, name: true, slug: true },
         },
+        location: {
+          include: {
+            warehouse: {
+              select: { id: true, name: true, code: true },
+            },
+            zone: {
+              select: { id: true, name: true, code: true, type: true },
+            },
+          },
+        },
         bundleItems: {
           include: {
             childProduct: true
@@ -128,19 +155,17 @@ export class ProductService {
       throw new NotFoundException(`Product with ID '${id}' not found or soft-deleted`);
     }
 
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
     if (!isSuperAdmin) {
-      if (activeStoreId && product.storeId !== activeStoreId) {
+      if (product.storeId !== activeStoreId) {
         throw new ForbiddenException('Access denied. Product belongs to a different store context.');
-      }
-      if (activeClientId && product.clientId !== activeClientId) {
-        throw new ForbiddenException('Access denied. Product belongs to a different client context.');
-      }
-      if (activeAgencyId && product.agencyId !== activeAgencyId) {
-        throw new ForbiddenException('Access denied. Product belongs to a different agency context.');
       }
     }
 
-    return product;
+    return this.mapProductResponse(product);
   }
 
   async create(
@@ -194,6 +219,14 @@ export class ProductService {
       throw new BadRequestException(`Product with SKU '${dto.sku}' already exists in this store`);
     }
 
+    let defaultCurrency = 'TRY';
+    try {
+      const sysSettings = await this.prisma.systemSettings.findFirst();
+      if (sysSettings?.defaultCurrency) {
+        defaultCurrency = sysSettings.defaultCurrency;
+      }
+    } catch (_) {}
+
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
@@ -205,10 +238,10 @@ export class ProductService {
           name: dto.name,
           description: dto.description || null,
           price: new Prisma.Decimal(dto.price),
-          basePrice: new Prisma.Decimal(dto.basePrice),
+          basePrice: new Prisma.Decimal(dto.basePrice !== undefined && dto.basePrice !== null ? dto.basePrice : dto.price),
           costPrice: dto.costPrice !== undefined ? new Prisma.Decimal(dto.costPrice) : null,
           barcode: dto.barcode || null,
-          currency: dto.currency || 'USD',
+          currency: dto.currency || defaultCurrency,
           stockQuantity: dto.stockQuantity !== undefined ? dto.stockQuantity : 0,
           status: dto.status || 'active',
           weight: dto.weight !== undefined ? new Prisma.Decimal(dto.weight) : null,
@@ -224,6 +257,8 @@ export class ProductService {
           type: dto.type || 'SIMPLE',
           variantAttributes: dto.variantAttributes || undefined,
           parentId: dto.parentId || null,
+          locationId: dto.locationId || null,
+          locationCode: dto.locationCode || null,
         },
       });
 
@@ -359,6 +394,8 @@ export class ProductService {
           type: dto.type || undefined,
           variantAttributes: dto.variantAttributes || undefined,
           parentId: dto.parentId !== undefined ? dto.parentId : undefined,
+          locationId: dto.locationId !== undefined ? dto.locationId : undefined,
+          locationCode: dto.locationCode !== undefined ? dto.locationCode : undefined,
         },
       });
 
@@ -611,25 +648,164 @@ export class ProductService {
     }
   }
 
+  // TODO: gerçek ERP entegrasyonu; şimdilik boş dönüyor.
+  //
+  // Bu uç, controller'daki @Get(':id') gölgelemesi nedeniyle bugüne kadar hiç
+  // çalışmadı (istek ProductController.get'e düşüp 404 üretiyordu). Gölgeleme
+  // düzeltildi, ancak aşağıdaki mock katalog kullanıcıya gerçek muhasebe kalemi
+  // gibi görüneceği için yayına açılmadı. Beklenen yanıt şekli — gerçek
+  // entegrasyon yazılırken uyulacak sözleşme — korunsun diye burada bırakıldı:
+  //
+  // const mockErpItems = [
+  //   { id: 'erp-001', code: '150.01.001', name: 'Apple iPhone 13 128GB (Siyah)', stock: 42, price: 28999.00, barcode: '868000000123' },
+  //   { id: 'erp-002', code: '150.01.002', name: 'Samsung Galaxy S22 256GB', stock: 28, price: 24999.00, barcode: '868000000124' },
+  //   { id: 'erp-003', code: '150.02.015', name: 'Sony WH-1000XM4 Kablosuz Kulaklık', stock: 15, price: 8499.00, barcode: '868000000125' },
+  //   { id: 'erp-004', code: '150.03.004', name: 'Dell XPS 13 9310 Core i7', stock: 7, price: 45999.00, barcode: '868000000126' },
+  //   { id: 'erp-005', code: '150.04.088', name: 'Logitech MX Master 3S Mouse', stock: 65, price: 3299.00, barcode: '868000000127' },
+  //   { id: 'erp-006', code: '150.05.002', name: 'Xiaomi Mi Band 7 Akıllı Bileklik', stock: 120, price: 999.00, barcode: '868000000128' },
+  // ];
+  //
+  // if (!query) return mockErpItems;
+  //
+  // const q = query.toLowerCase();
+  // return mockErpItems.filter(
+  //   (item) =>
+  //     item.name.toLowerCase().includes(q) ||
+  //     item.code.toLowerCase().includes(q) ||
+  //     item.barcode.includes(q),
+  // );
   async searchErpItems(query?: string) {
-    const mockErpItems = [
-      { id: 'erp-001', code: '150.01.001', name: 'Apple iPhone 13 128GB (Siyah)', stock: 42, price: 28999.00, barcode: '868000000123' },
-      { id: 'erp-002', code: '150.01.002', name: 'Samsung Galaxy S22 256GB', stock: 28, price: 24999.00, barcode: '868000000124' },
-      { id: 'erp-003', code: '150.02.015', name: 'Sony WH-1000XM4 Kablosuz Kulaklık', stock: 15, price: 8499.00, barcode: '868000000125' },
-      { id: 'erp-004', code: '150.03.004', name: 'Dell XPS 13 9310 Core i7', stock: 7, price: 45999.00, barcode: '868000000126' },
-      { id: 'erp-005', code: '150.04.088', name: 'Logitech MX Master 3S Mouse', stock: 65, price: 3299.00, barcode: '868000000127' },
-      { id: 'erp-006', code: '150.05.002', name: 'Xiaomi Mi Band 7 Akıllı Bileklik', stock: 120, price: 999.00, barcode: '868000000128' },
-    ];
+    return [];
+  }
 
-    if (!query) return mockErpItems;
+  private mapProductResponse(product: any) {
+    if (!product) return product;
+    return {
+      ...product,
+      price: product.price ? Number(product.price) : 0,
+      basePrice: product.basePrice ? Number(product.basePrice) : 0,
+      costPrice: product.costPrice ? Number(product.costPrice) : undefined,
+      weight: product.weight ? Number(product.weight) : undefined,
+      width: product.width ? Number(product.width) : undefined,
+      height: product.height ? Number(product.height) : undefined,
+      depth: product.depth ? Number(product.depth) : undefined,
+      locationId: product.locationId || product.location?.id,
+      locationCode: product.locationCode || product.location?.code,
+      locationBarcode: product.location?.barcode,
+      warehouseName: product.location?.warehouse?.name,
+      zoneName: product.location?.zone?.name,
+    };
+  }
 
-    const q = query.toLowerCase();
-    return mockErpItems.filter(
-      (item) =>
-        item.name.toLowerCase().includes(q) ||
-        item.code.toLowerCase().includes(q) ||
-        item.barcode.includes(q),
-    );
+  async bulkAction(
+    dto: BulkActionDto,
+    userId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+    ipAddress?: string,
+  ) {
+    if (!dto.productIds || dto.productIds.length === 0) {
+      throw new BadRequestException('No products selected for bulk action.');
+    }
+
+    // Baglam zorunlu. Onceden tenant filtresi kosullu kuruluyordu; ucu de bos gelirse
+    // where yalnizca { id: { in: … } } kaliyor ve toplu islem butun kiracilarin
+    // urunlerine dokunuyordu. Tenant header'i gondermemek istemcide erisilebilir bir
+    // durum (lib/api.ts, selected_tenant bos olabilir), dolayisiyla "baglam yok" asla
+    // "tum kiracilar" demek olamaz. Kontroller create() ile birebir ayni.
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
+    const productIds = Array.from(new Set(dto.productIds));
+
+    const now = new Date();
+    let auditAction: string;
+    let updateData: any;
+    let auditChangesFor: (product: any) => any;
+
+    if (dto.action === 'delete') {
+      auditAction = 'bulk_delete';
+      updateData = { deletedAt: now };
+      auditChangesFor = (product) => ({ sku: product.sku, deletedAt: now });
+    } else if (dto.action === 'update_status' && dto.data?.status) {
+      auditAction = 'bulk_update_status';
+      updateData = { status: dto.data.status };
+      auditChangesFor = (product) => ({
+        before: { status: product.status },
+        after: { status: dto.data.status },
+      });
+    } else if (dto.action === 'update_location') {
+      const locationCode = dto.data?.locationCode || null;
+      const locationId = dto.data?.locationId || null;
+      auditAction = 'bulk_update_location';
+      updateData = { locationCode, locationId };
+      auditChangesFor = (product) => ({
+        before: { locationId: product.locationId, locationCode: product.locationCode },
+        after: { locationId, locationCode },
+      });
+    } else {
+      throw new BadRequestException(`Unsupported bulk action '${dto.action}'`);
+    }
+
+    const whereClause: any = {
+      id: { in: productIds },
+      deletedAt: null,
+    };
+    if (!isSuperAdmin) {
+      // storeId kosulsuz: yukaridaki 400 dolu olmasini garanti ediyor ve izolasyonu tek
+      // basina o sagliyor - Store satiri agency/client'i sabitliyor. clientId ve agencyId
+      // ek guvence; middleware ikisini de magazadan turetiyor ama client'siz magazalarda
+      // (store.clientId = null, tenant.middleware.ts:165) activeClient hic kurulmuyor.
+      // Onceki hata "hicbiri yoksa filtre de yok"tu; storeId'yi kosulsuz yazmak onu kapatir.
+      whereClause.storeId = activeStoreId;
+      if (activeClientId) whereClause.clientId = activeClientId;
+      if (activeAgencyId) whereClause.agencyId = activeAgencyId;
+    }
+
+    const scopedProducts = await this.prisma.product.findMany({
+      where: whereClause,
+      select: {
+        id: true,
+        sku: true,
+        status: true,
+        agencyId: true,
+        locationId: true,
+        locationCode: true,
+      },
+    });
+
+    // Hepsi ya da hicbiri. updateMany kapsam disi id'leri sessizce atlasaydi donen
+    // updatedCount, bir id'nin baska bir kiracida var olup olmadigini soyleyen bir
+    // oracle olurdu. 403, get()'in yanlis baglam icin verdigi cevapla ayni.
+    if (scopedProducts.length !== productIds.length) {
+      throw new ForbiddenException(
+        'Access denied. One or more products belong to a different tenant context.',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const result = await tx.product.updateMany({
+        where: { id: { in: scopedProducts.map((product) => product.id) } },
+        data: updateData,
+      });
+
+      for (const product of scopedProducts) {
+        await this.writeAuditLog(
+          tx,
+          auditAction,
+          product.id,
+          userId,
+          product.agencyId,
+          ipAddress,
+          auditChangesFor(product),
+        );
+      }
+
+      return { success: true, updatedCount: result.count };
+    });
   }
 }
 

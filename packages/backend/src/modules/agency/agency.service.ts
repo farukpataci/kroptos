@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateAgencyDto, UpdateAgencyDto } from './dto/agency.dto';
+import { Prisma } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
 
 @Injectable()
@@ -17,7 +18,7 @@ export class AgencyService {
   }
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
@@ -66,7 +67,7 @@ export class AgencyService {
   }
 
   async get(id: string, userId: string, isSuperAdmin: boolean) {
-    const agency = await this.prisma.agency.findFirst({
+    let agency = await this.prisma.agency.findFirst({
       where: {
         OR: [
           { id },
@@ -77,7 +78,23 @@ export class AgencyService {
     });
 
     if (!agency) {
-      throw new NotFoundException('Agency not found or soft-deleted');
+      const store = await this.prisma.store.findFirst({
+        where: {
+          OR: [
+            { id },
+            { publicId: id },
+          ],
+          deletedAt: null,
+        },
+        include: { agency: true },
+      });
+      if (store && store.agency) {
+        agency = store.agency;
+      }
+    }
+
+    if (!agency) {
+      throw new NotFoundException(`Agency context '${id}' not found or soft-deleted`);
     }
 
     // Verify access

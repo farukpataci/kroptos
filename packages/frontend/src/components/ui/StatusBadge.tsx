@@ -3,7 +3,12 @@
 type StatusType = 'active' | 'warning' | 'error' | 'syncing' | 'inactive';
 
 interface StatusBadgeProps {
-  status: StatusType;
+  /**
+   * Values outside `StatusType` are tolerated on purpose: statuses arrive from
+   * the API as plain strings, so a value this build has no styling for must
+   * degrade to a neutral badge rather than take the page down.
+   */
+  status: StatusType | (string & {});
   label?: string;
   showDot?: boolean;
 }
@@ -37,7 +42,14 @@ const statusConfig: Record<StatusType, { dotClass: string; badgeClass: string; l
 };
 
 export default function StatusBadge({ status, label, showDot = true }: StatusBadgeProps) {
-  const config = statusConfig[status];
+  // An unmapped status keeps the neutral styling and names itself, so an
+  // unexpected value is visible as such instead of being dressed up as one of
+  // the known states.
+  const config = statusConfig[status as StatusType] ?? {
+    dotClass: '',
+    badgeClass: '',
+    label: status,
+  };
   const displayLabel = label || config.label;
 
   return (

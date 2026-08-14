@@ -17,8 +17,9 @@ import {
   ArrowsUpDownIcon,
   CheckIcon
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 import { Order, OrderFilters } from '../hooks/useOrders';
-import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge } from './OrderStatusBadge';
+import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge, OrderModeBadge } from './OrderStatusBadge';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -34,13 +35,6 @@ interface OrdersTableProps {
   onCreateOrder?: () => void;
 }
 
-const DATE_OPTIONS = [
-  { value: 'all', label: 'Tüm Zamanlar' },
-  { value: '7', label: 'Son 7 Gün' },
-  { value: '30', label: 'Son 30 Gün' },
-  { value: '90', label: 'Son 90 Gün' },
-];
-
 export default function OrdersTable({
   orders,
   isLoading,
@@ -54,6 +48,7 @@ export default function OrdersTable({
   onRowClick,
   onCreateOrder,
 }: OrdersTableProps) {
+  const t = useTranslations('orders.table');
   const totalOnPage = orders.length;
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(startIdx + totalOnPage - 1, totalFiltered);
@@ -86,15 +81,15 @@ export default function OrdersTable({
     }, 3000);
   };
 
-  const handleAction = (actionName: string) => {
-    if (selectedOrderIds.length === 0 && actionName !== 'Excel İhracatı (Tümü)') {
-      showToast('Lütfen önce en az bir sipariş seçin!');
+  const handleAction = (actionName: string, appliesToAll = false) => {
+    if (selectedOrderIds.length === 0 && !appliesToAll) {
+      showToast(t('toolbar.selectFirst'));
       setActiveDropdown(null);
       return;
     }
-    
-    const count = actionName === 'Excel İhracatı (Tümü)' ? totalFiltered : selectedOrderIds.length;
-    showToast(`${count} sipariş için "${actionName}" işlemi başlatıldı.`);
+
+    const count = appliesToAll ? totalFiltered : selectedOrderIds.length;
+    showToast(t('toolbar.actionStarted', { count, action: actionName }));
     setActiveDropdown(null);
   };
 
@@ -128,18 +123,18 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'select' && (
-              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
                   onClick={() => { setSelectedOrderIds(orders.map(o => o.id)); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Tümünü Seç
+                  {t('toolbar.selectAll')}
                 </button>
                 <button
                   onClick={() => { setSelectedOrderIds([]); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Seçimi Temizle
+                  {t('toolbar.clearSelection')}
                 </button>
               </div>
             )}
@@ -150,24 +145,24 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'star' ? null : 'star')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Yıldız / Önem"
+              title={t('toolbar.starTitle')}
             >
               <StarIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'star' && (
-              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-40 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('Yıldızla')}
+                  onClick={() => handleAction(t('toolbar.addStar'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Yıldız Ekle
+                  {t('toolbar.addStar')}
                 </button>
                 <button
-                  onClick={() => handleAction('Yıldızı Kaldır')}
+                  onClick={() => handleAction(t('toolbar.removeStar'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Yıldızı Kaldır
+                  {t('toolbar.removeStar')}
                 </button>
               </div>
             )}
@@ -178,37 +173,37 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'flag' ? null : 'flag')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Bayrak / Etiket"
+              title={t('toolbar.flagTitle')}
             >
               <FlagIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'flag' && (
-              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('Kırmızı Bayrak Ekle')}
+                  onClick={() => handleAction(t('toolbar.redFlag'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center gap-2"
                 >
-                  <span className="h-2 w-2 rounded-full bg-red-500"></span> Kırmızı Bayrak
+                  <span className="h-2 w-2 rounded-full bg-red-500"></span> {t('toolbar.redFlag')}
                 </button>
                 <button
-                  onClick={() => handleAction('Mavi Bayrak Ekle')}
+                  onClick={() => handleAction(t('toolbar.blueFlag'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center gap-2"
                 >
-                  <span className="h-2 w-2 rounded-full bg-blue-500"></span> Mavi Bayrak
+                  <span className="h-2 w-2 rounded-full bg-blue-500"></span> {t('toolbar.blueFlag')}
                 </button>
                 <button
-                  onClick={() => handleAction('Yeşil Bayrak Ekle')}
+                  onClick={() => handleAction(t('toolbar.greenFlag'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center gap-2"
                 >
-                  <span className="h-2 w-2 rounded-full bg-green-500"></span> Yeşil Bayrak
+                  <span className="h-2 w-2 rounded-full bg-green-500"></span> {t('toolbar.greenFlag')}
                 </button>
                 <hr className="border-kp-border my-1" />
                 <button
-                  onClick={() => handleAction('Bayrağı Kaldır')}
+                  onClick={() => handleAction(t('toolbar.removeFlag'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Bayrağı Kaldır
+                  {t('toolbar.removeFlag')}
                 </button>
               </div>
             )}
@@ -219,30 +214,30 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'envelope' ? null : 'envelope')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Mesaj / E-posta Gönder"
+              title={t('toolbar.messageTitle')}
             >
               <EnvelopeIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'envelope' && (
-              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('E-posta Gönder')}
+                  onClick={() => handleAction(t('toolbar.sendEmail'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  E-posta Bildirimi Gönder
+                  {t('toolbar.sendEmail')}
                 </button>
                 <button
-                  onClick={() => handleAction('SMS Gönder')}
+                  onClick={() => handleAction(t('toolbar.sendSms'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  SMS Bildirimi Gönder
+                  {t('toolbar.sendSms')}
                 </button>
                 <button
-                  onClick={() => handleAction('WhatsApp Gönder')}
+                  onClick={() => handleAction(t('toolbar.sendWhatsapp'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  WhatsApp Mesajı Gönder
+                  {t('toolbar.sendWhatsapp')}
                 </button>
               </div>
             )}
@@ -253,30 +248,30 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'document' ? null : 'document')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Fatura / Excel"
+              title={t('toolbar.documentTitle')}
             >
               <DocumentIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'document' && (
-              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('Fatura PDF Oluştur')}
+                  onClick={() => handleAction(t('toolbar.bulkInvoicePdf'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Toplu Fatura PDF Oluştur
+                  {t('toolbar.bulkInvoicePdf')}
                 </button>
                 <button
-                  onClick={() => handleAction('Excel İhracatı (Seçilenler)')}
+                  onClick={() => handleAction(t('toolbar.exportSelected'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-accent font-semibold"
                 >
-                  Excel'e Aktar (Seçilenler)
+                  {t('toolbar.exportSelected')}
                 </button>
                 <button
-                  onClick={() => handleAction('Excel İhracatı (Tümü)')}
+                  onClick={() => handleAction(t('toolbar.exportAll'), true)}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Excel'e Aktar (Tüm Sayfa)
+                  {t('toolbar.exportAll')}
                 </button>
               </div>
             )}
@@ -287,30 +282,30 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'printer' ? null : 'printer')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Yazdır"
+              title={t('toolbar.printTitle')}
             >
               <PrinterIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'printer' && (
-              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('Fatura Yazdır')}
+                  onClick={() => handleAction(t('toolbar.printInvoices'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Faturaları Yazdır
+                  {t('toolbar.printInvoices')}
                 </button>
                 <button
-                  onClick={() => handleAction('Kargo Barkodu Yazdır')}
+                  onClick={() => handleAction(t('toolbar.printLabels'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Kargo Barkodlarını Yazdır
+                  {t('toolbar.printLabels')}
                 </button>
                 <button
-                  onClick={() => handleAction('Çeki Listesi Yazdır')}
+                  onClick={() => handleAction(t('toolbar.printPackingList'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Çeki Listesi Yazdır
+                  {t('toolbar.printPackingList')}
                 </button>
               </div>
             )}
@@ -318,9 +313,9 @@ export default function OrdersTable({
 
           {/* AWB Blue Button */}
           <button
-            onClick={() => handleAction('Kargo Fişi Oluştur (AWB)')}
+            onClick={() => handleAction(t('toolbar.createAwb'))}
             className="flex items-center justify-center h-[28px] w-[32px] rounded bg-blue-600 hover:bg-blue-500 text-white transition-all shadow-sm"
-            title="Kargo Fişi Oluştur (AWB)"
+            title={t('toolbar.createAwb')}
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -332,34 +327,34 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'truck' ? null : 'truck')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Kargo Firmaları"
+              title={t('toolbar.carriersTitle')}
             >
               <TruckIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'truck' && (
-              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('DPD Romania Kargo Gönderimi')}
+                  onClick={() => handleAction('DPD Romania')}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center justify-between"
                 >
                   <span>DPD Romania</span>
-                  <span className="text-[9px] bg-kp-accent/20 text-kp-accent rounded px-1.5 font-bold">Varsayılan</span>
+                  <span className="text-[0.5625rem] bg-kp-accent/20 text-kp-accent rounded px-1.5 font-bold">{t('toolbar.defaultCarrier')}</span>
                 </button>
                 <button
-                  onClick={() => handleAction('Yurtiçi Kargo Entegrasyonu')}
+                  onClick={() => handleAction('Yurtiçi Kargo')}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
                   Yurtiçi Kargo
                 </button>
                 <button
-                  onClick={() => handleAction('MNG Kargo Entegrasyonu')}
+                  onClick={() => handleAction('MNG Kargo')}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
                   MNG Kargo
                 </button>
                 <button
-                  onClick={() => handleAction('Aras Kargo Entegrasyonu')}
+                  onClick={() => handleAction('Aras Kargo')}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
                   Aras Kargo
@@ -373,31 +368,31 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'more' ? null : 'more')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Toplu İşlemler"
+              title={t('toolbar.bulkTitle')}
             >
               <Bars3Icon className="h-3.5 w-3.5 text-kp-text-secondary" />
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'more' && (
-              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute left-0 mt-1 w-44 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('Toplu Durum Değiştir')}
+                  onClick={() => handleAction(t('toolbar.bulkStatusChange'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Toplu Durum Değiştir
+                  {t('toolbar.bulkStatusChange')}
                 </button>
                 <button
-                  onClick={() => handleAction('Arşive Kaldır')}
+                  onClick={() => handleAction(t('toolbar.archive'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Arşive Kaldır
+                  {t('toolbar.archive')}
                 </button>
                 <hr className="border-kp-border my-1" />
                 <button
-                  onClick={() => handleAction('Toplu Sipariş Sil')}
+                  onClick={() => handleAction(t('toolbar.deleteSelected'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-red-500 font-semibold"
                 >
-                  Seçilenleri Sil
+                  {t('toolbar.deleteSelected')}
                 </button>
               </div>
             )}
@@ -408,29 +403,29 @@ export default function OrdersTable({
             <button
               onClick={() => setActiveDropdown(activeDropdown === 'sort' ? null : 'sort')}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded border border-kp-border bg-kp-bg-primary hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary transition-all text-xs"
-              title="Sırala"
+              title={t('toolbar.sortTitle')}
             >
               <ArrowsUpDownIcon className="h-3.5 w-3.5 text-kp-text-secondary" />
             </button>
             {activeDropdown === 'sort' && (
-              <div className="absolute right-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[11px]">
+              <div className="absolute right-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => { onFilterChange({ ...filters, dateRange: 'all' }); showToast('Tarihe göre sıralandı.'); setActiveDropdown(null); }}
+                  onClick={() => { onFilterChange({ ...filters, dateRange: 'all' }); showToast(t('toolbar.sortedByDate')); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Tarihe Göre Sırala
+                  {t('toolbar.sortByDate')}
                 </button>
                 <button
-                  onClick={() => { showToast('Sipariş noya göre sıralandı.'); setActiveDropdown(null); }}
+                  onClick={() => { showToast(t('toolbar.sortedByOrderNo')); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Sipariş No'ya Göre Sırala
+                  {t('toolbar.sortByOrderNo')}
                 </button>
                 <button
-                  onClick={() => { showToast('Tutara göre sıralandı.'); setActiveDropdown(null); }}
+                  onClick={() => { showToast(t('toolbar.sortedByAmount')); setActiveDropdown(null); }}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
                 >
-                  Tutara Göre Sırala
+                  {t('toolbar.sortByAmount')}
                 </button>
               </div>
             )}
@@ -438,8 +433,8 @@ export default function OrdersTable({
 
           {/* Selected Counter */}
           {selectedOrderIds.length > 0 && (
-            <span className="text-[11px] text-kp-accent font-semibold ml-2 animate-fade-in">
-              {selectedOrderIds.length} sipariş seçildi
+            <span className="text-[0.6875rem] text-kp-accent font-semibold ml-2 animate-fade-in">
+              {t('selectedCount', { count: selectedOrderIds.length })}
             </span>
           )}
 
@@ -447,10 +442,10 @@ export default function OrdersTable({
           {onCreateOrder && (
             <button
               onClick={onCreateOrder}
-              className="ml-auto flex items-center justify-center gap-1.5 rounded bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-[11px] font-bold shadow-sm transition-all h-[28px]"
+              className="ml-auto flex items-center justify-center gap-1.5 rounded bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-[0.6875rem] font-bold shadow-sm transition-all h-[28px]"
             >
               <span className="text-sm leading-none">+</span>
-              Sipariş Oluştur
+              {t('createOrder')}
             </button>
           )}
         </div>
@@ -458,9 +453,9 @@ export default function OrdersTable({
 
       {/* Table */}
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse text-xs text-kp-text-secondary">
+        <table className="kp-table w-full text-left border-collapse text-xs text-kp-text-secondary">
           <thead>
-            <tr className="border-b border-kp-border text-[10px] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
+            <tr className="border-b border-kp-border text-[0.625rem] font-semibold uppercase tracking-wider text-kp-text-tertiary bg-kp-bg-primary/30">
               <th className="py-3 px-4 w-10">
                 <input
                   type="checkbox"
@@ -469,14 +464,14 @@ export default function OrdersTable({
                   className="rounded border-kp-border text-kp-accent focus:ring-0 cursor-pointer h-3.5 w-3.5 bg-kp-bg-primary"
                 />
               </th>
-              <th className="py-3 px-4">Sipariş No</th>
-              <th className="py-3 px-4">Müşteri</th>
-              <th className="py-3 px-4">Ürünler</th>
-              <th className="py-3 px-4">Sipariş Durumu</th>
-              <th className="py-3 px-4">Ödeme</th>
-              <th className="py-3 px-4">Karşılama</th>
-              <th className="py-3 px-4 text-right">Tutar</th>
-              <th className="py-3 px-4">Tarih</th>
+              <th className="py-3 px-4">{t('columns.orderNo')}</th>
+              <th className="py-3 px-4">{t('columns.customer')}</th>
+              <th className="py-3 px-4">{t('columns.products')}</th>
+              <th className="py-3 px-4">{t('columns.orderStatus')}</th>
+              <th className="py-3 px-4">{t('columns.payment')}</th>
+              <th className="py-3 px-4">{t('columns.fulfillment')}</th>
+              <th className="py-3 px-4 text-right">{t('columns.amount')}</th>
+              <th className="py-3 px-4">{t('columns.date')}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-kp-border">
@@ -498,11 +493,11 @@ export default function OrdersTable({
                 <td colSpan={9} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-3xl">📦</span>
-                    <p className="text-sm font-medium text-kp-text-secondary">Sipariş bulunamadı</p>
+                    <p className="text-sm font-medium text-kp-text-secondary">{t('empty.title')}</p>
                     <p className="text-xs text-kp-text-tertiary">
                       {filters.search || filters.status !== 'all' || filters.dateRange !== 'all'
-                        ? 'Filtreleri değiştirerek tekrar deneyin.'
-                        : 'İlk siparişi oluşturmak için "Sipariş Oluştur" butonuna tıklayın.'}
+                        ? t('empty.filtered')
+                        : t('empty.noOrders')}
                     </p>
                   </div>
                 </td>
@@ -527,46 +522,49 @@ export default function OrdersTable({
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          showToast('Sipariş favorilere eklendi.');
+                          showToast(t('addedToFavorites'));
                         }}
                         className="text-kp-text-tertiary hover:text-yellow-400 transition-colors"
-                        title="Yıldızla"
+                        title={t('toolbar.addStar')}
                       >
                         <StarIcon className="h-3.5 w-3.5" />
                       </button>
-                      <span className="font-mono text-[11px] font-semibold text-kp-text-primary group-hover:text-kp-accent transition-colors">
+                      <span className="font-mono text-[0.6875rem] font-semibold text-kp-text-primary group-hover:text-kp-accent transition-colors">
                         {order.orderNumber}
                       </span>
                     </div>
                   </td>
                   <td className="py-3.5 px-4">
                     <div>
-                      <p className="font-medium text-kp-text-primary text-[12px]">
+                      <p className="font-medium text-kp-text-primary text-[0.75rem]">
                         {order.customerName || 'Walk-in'}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className={`inline-flex items-center justify-center text-[8px] font-bold text-white rounded-full h-3.5 w-3.5 ${
+                        <span className={`inline-flex items-center justify-center text-[0.5rem] font-bold text-white rounded-full h-3.5 w-3.5 ${
                           order.source === 'trendyol' ? 'bg-orange-500' : 'bg-slate-500'
                         }`}>
                           {order.source === 'trendyol' ? 'T' : 'M'}
                         </span>
-                        <span className="text-[10px] text-kp-text-tertiary font-semibold">
-                          {order.source === 'trendyol' ? 'Trendyol Magros' : 'Manuel Mağaza'}
+                        <span className="text-[0.625rem] text-kp-text-tertiary font-semibold">
+                          {order.source === 'trendyol' ? 'Trendyol Magros' : t('manualStore')}
                         </span>
                       </div>
                     </div>
                   </td>
                   <td className="py-3.5 px-4 max-w-xs truncate">
                     {order.items && order.items.length > 0 ? (
-                      <span className="text-[11px] text-kp-text-secondary font-medium">
+                      <span className="text-[0.6875rem] text-kp-text-secondary font-medium">
                         {order.items.map(item => `${item.quantity}x ${item.name}`).join(', ')}
                       </span>
                     ) : (
-                      <span className="text-[11px] text-kp-text-tertiary">-</span>
+                      <span className="text-[0.6875rem] text-kp-text-tertiary">-</span>
                     )}
                   </td>
                   <td className="py-3.5 px-4">
-                    <OrderStatusBadge status={order.status} />
+                    <div className="flex flex-col items-start gap-1">
+                      <OrderStatusBadge status={order.status} />
+                      <OrderModeBadge isPoolOrder={order.isPoolOrder} logoSyncStatus={order.logoSyncStatus} />
+                    </div>
                   </td>
                   <td className="py-3.5 px-4">
                     <PaymentStatusBadge status={order.paymentStatus} />
@@ -575,7 +573,7 @@ export default function OrdersTable({
                     <FulfillmentStatusBadge status={order.fulfillmentStatus} />
                   </td>
                   <td className="py-3.5 px-4 text-right">
-                    <span className="font-semibold text-kp-text-primary text-[12px]">
+                    <span className="font-semibold text-kp-text-primary text-[0.75rem]">
                       {parseFloat(order.totalAmount.toString()).toLocaleString('tr-TR', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
@@ -586,14 +584,14 @@ export default function OrdersTable({
                   </td>
                   <td className="py-3.5 px-4">
                     <div>
-                      <p className="text-[11px] text-kp-text-secondary">
+                      <p className="text-[0.6875rem] text-kp-text-secondary">
                         {new Date(order.createdAt).toLocaleDateString('tr-TR', {
                           day: '2-digit',
                           month: 'short',
                           year: 'numeric',
                         })}
                       </p>
-                      <p className="text-[10px] text-kp-text-tertiary">
+                      <p className="text-[0.625rem] text-kp-text-tertiary">
                         {new Date(order.createdAt).toLocaleTimeString('tr-TR', {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -611,9 +609,9 @@ export default function OrdersTable({
       {/* Pagination */}
       {!isLoading && totalFiltered > 0 && (
         <div className="flex items-center justify-between border-t border-kp-border px-4 py-3 bg-kp-bg-primary/10">
-          <p className="text-[11px] text-kp-text-tertiary font-medium">
+          <p className="text-[0.6875rem] text-kp-text-tertiary font-medium">
             <span className="font-semibold text-kp-text-secondary">{startIdx}–{endIdx}</span>
-            {' '}/ {totalFiltered} sipariş
+            {' '}{t('paginationSummary', { total: totalFiltered })}
           </p>
           <div className="flex items-center gap-1">
             <button
@@ -634,7 +632,7 @@ export default function OrdersTable({
                 <button
                   key={page}
                   onClick={() => onPageChange(page)}
-                  className={`flex h-7 w-7 items-center justify-center rounded text-[11px] font-semibold transition-colors ${
+                  className={`flex h-7 w-7 items-center justify-center rounded text-[0.6875rem] font-semibold transition-colors ${
                     currentPage === page
                       ? 'bg-kp-accent text-white shadow-sm'
                       : 'border border-kp-border text-kp-text-tertiary hover:bg-kp-bg-hover hover:text-kp-text-primary'

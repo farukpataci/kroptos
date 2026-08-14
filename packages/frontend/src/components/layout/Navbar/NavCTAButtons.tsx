@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
-import { useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import LanguageSwitcher from './LanguageSwitcher';
 
 interface NavCTAButtonsProps {
@@ -12,12 +12,7 @@ interface NavCTAButtonsProps {
 
 export default function NavCTAButtons({ className = '', showLanguageSwitcher = true }: NavCTAButtonsProps) {
   const { isAuthenticated } = useAuth();
-  const locale = useLocale();
-
-  const isTr = locale === 'tr';
-
-  const loginText = isTr ? 'Giriş Yap' : 'Log In';
-  const registerText = isTr ? 'Ücretsiz Başla' : 'Get Started';
+  const t = useTranslations('marketing.nav');
 
   return (
     <div className={`flex items-center gap-4 ${className}`}>
@@ -27,14 +22,14 @@ export default function NavCTAButtons({ className = '', showLanguageSwitcher = t
         href={isAuthenticated ? '/select-tenant' : '/auth/login'}
         className="text-sm font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors duration-200 px-3 py-1.5 rounded-kp-sm hover:bg-kp-bg-hover"
       >
-        {loginText}
+        {t('login')}
       </Link>
 
       <Link
         href={isAuthenticated ? '/select-tenant' : '/auth/login'}
         className="inline-flex items-center justify-center text-sm font-semibold tracking-wide rounded-kp-sm px-4 py-2 bg-kp-accent hover:bg-kp-accent-hover text-white shadow-kp-card hover:shadow-kp-glow transition-all duration-200 active:scale-95"
       >
-        {registerText}
+        {t('getStarted')}
       </Link>
     </div>
   );

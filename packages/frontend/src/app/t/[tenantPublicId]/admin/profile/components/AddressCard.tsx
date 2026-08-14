@@ -42,13 +42,13 @@ export function AddressCard({ profile, onUpdateAddress }: AddressCardProps) {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm mt-4">
           <div>
-            <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+            <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
               Country
             </span>
             <span className="font-medium text-gray-900">{profile.country || '—'}</span>
           </div>
           <div>
-            <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+            <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
               City / State
             </span>
             <span className="font-medium text-gray-900">
@@ -56,19 +56,19 @@ export function AddressCard({ profile, onUpdateAddress }: AddressCardProps) {
             </span>
           </div>
           <div>
-            <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+            <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
               Postal Code
             </span>
             <span className="font-medium text-gray-900">{profile.postalCode || '—'}</span>
           </div>
           <div>
-            <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+            <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
               TAX ID
             </span>
             <span className="font-medium text-gray-900">{profile.taxId || '—'}</span>
           </div>
           <div className="md:col-span-2 border-t border-gray-50 pt-3">
-            <span className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+            <span className="block text-[0.625rem] font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
               Full Address
             </span>
             <span className="font-medium text-gray-900 block whitespace-pre-line leading-relaxed">

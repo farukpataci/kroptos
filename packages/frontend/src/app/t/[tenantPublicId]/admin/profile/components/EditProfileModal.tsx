@@ -143,7 +143,7 @@ export function EditProfileModal({ isOpen, onClose, onSave, initialData }: EditP
             <h4 className="text-sm font-bold text-gray-700 mb-3">Social Links</h4>
             <div className="space-y-3">
               <div>
-                <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-0.5">Facebook URL</label>
+                <label className="block text-[0.625rem] font-semibold text-gray-400 uppercase mb-0.5">Facebook URL</label>
                 <input
                   type="url"
                   name="facebookUrl"
@@ -154,7 +154,7 @@ export function EditProfileModal({ isOpen, onClose, onSave, initialData }: EditP
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-0.5">X / Twitter URL</label>
+                <label className="block text-[0.625rem] font-semibold text-gray-400 uppercase mb-0.5">X / Twitter URL</label>
                 <input
                   type="url"
                   name="xUrl"
@@ -165,7 +165,7 @@ export function EditProfileModal({ isOpen, onClose, onSave, initialData }: EditP
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-0.5">LinkedIn URL</label>
+                <label className="block text-[0.625rem] font-semibold text-gray-400 uppercase mb-0.5">LinkedIn URL</label>
                 <input
                   type="url"
                   name="linkedinUrl"
@@ -176,7 +176,7 @@ export function EditProfileModal({ isOpen, onClose, onSave, initialData }: EditP
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-gray-400 uppercase mb-0.5">Instagram URL</label>
+                <label className="block text-[0.625rem] font-semibold text-gray-400 uppercase mb-0.5">Instagram URL</label>
                 <input
                   type="url"
                   name="instagramUrl"

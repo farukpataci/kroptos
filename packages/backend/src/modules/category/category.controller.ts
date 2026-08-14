@@ -17,6 +17,11 @@ import { RequirePermission } from '../../common/decorators/require-permission.de
 export class CategoryController {
   constructor(private categoryService: CategoryService) {}
 
+  private checkSuperAdmin(req: Request): boolean {
+    const user = (req as any).user;
+    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+  }
+
   @Get()
   @HttpCode(200)
   @RequirePermission('products.read')
@@ -26,11 +31,13 @@ export class CategoryController {
     const activeAgency = (req as any).activeAgency;
     const activeClient = (req as any).activeClient;
     const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
 
     return this.categoryService.list(
       activeAgency?.id,
       activeClient?.id,
       activeStore?.id,
+      isSuperAdmin,
     );
   }
 
@@ -43,12 +50,14 @@ export class CategoryController {
     const activeAgency = (req as any).activeAgency;
     const activeClient = (req as any).activeClient;
     const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
 
     return this.categoryService.get(
       id,
       activeAgency?.id,
       activeClient?.id,
       activeStore?.id,
+      isSuperAdmin,
     );
   }
 

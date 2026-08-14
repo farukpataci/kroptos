@@ -16,6 +16,7 @@ import {
   InformationCircleIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
+import { useTranslations } from 'next-intl';
 
 export type ToastVariant = 'success' | 'error' | 'warning' | 'info';
 
@@ -83,6 +84,7 @@ function ToastItem({
   onDismiss: (id: number) => void;
 }) {
   const { Icon, iconWrapClass, accentClass, role } = variantConfig[toast.variant];
+  const t = useTranslations('common');
 
   return (
     <div
@@ -105,7 +107,7 @@ function ToastItem({
 
       <button
         onClick={() => onDismiss(toast.id)}
-        aria-label="Bildirimi kapat"
+        aria-label={t('dismissNotification')}
         className="flex-shrink-0 p-3 text-kp-text-tertiary transition-colors hover:text-kp-text-primary"
       >
         <XMarkIcon className="h-3.5 w-3.5" />

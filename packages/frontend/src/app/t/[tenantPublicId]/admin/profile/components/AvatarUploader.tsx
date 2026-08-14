@@ -84,7 +84,7 @@ export function AvatarUploader({ currentAvatar, firstName, lastName, onUpload }:
       />
 
       {error && (
-        <span className="text-[10px] font-semibold text-red-500 mt-2 block text-center max-w-[150px]">
+        <span className="text-[0.625rem] font-semibold text-red-500 mt-2 block text-center max-w-[150px]">
           {error}
         </span>
       )}

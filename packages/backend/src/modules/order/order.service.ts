@@ -9,7 +9,7 @@ export class OrderService {
   constructor(private prisma: PrismaService) {}
 
   private async writeAuditLog(
-    tx: any,
+    tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
     performedBy: string,
@@ -97,15 +97,13 @@ export class OrderService {
       throw new NotFoundException(`Order with ID '${id}' not found or soft-deleted`);
     }
 
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
     if (!isSuperAdmin) {
-      if (activeStoreId && order.storeId !== activeStoreId) {
+      if (order.storeId !== activeStoreId) {
         throw new ForbiddenException('Access denied. Order belongs to a different store context.');
-      }
-      if (activeClientId && order.clientId !== activeClientId) {
-        throw new ForbiddenException('Access denied. Order belongs to a different client context.');
-      }
-      if (activeAgencyId && order.agencyId !== activeAgencyId) {
-        throw new ForbiddenException('Access denied. Order belongs to a different agency context.');
       }
     }
 
@@ -193,6 +191,14 @@ export class OrderService {
     return this.prisma.$transaction(async (tx) => {
       const orderNumber = this.generateOrderNumber();
 
+      const targetStore = await tx.store.findUnique({
+        where: { id: storeId },
+        select: { orderProcessingMode: true },
+      });
+      const processingMode = targetStore?.orderProcessingMode || 'LOGO_SYNC';
+      const isPool = processingMode === 'POOL_ONLY' || processingMode === 'MANUAL_APPROVAL';
+      const initialLogoSyncStatus = processingMode === 'POOL_ONLY' ? 'BYPASSED_POOL' : 'PENDING';
+
       const order = await tx.order.create({
         data: {
           agencyId,
@@ -209,6 +215,8 @@ export class OrderService {
           paymentStatus: 'pending',
           fulfillmentStatus: 'unfulfilled',
           source: dto.source || 'manual',
+          isPoolOrder: isPool,
+          logoSyncStatus: initialLogoSyncStatus,
           totalAmount: calculatedTotal,
           currency: dto.currency || 'USD',
           idempotencyKey: idempotencyKey || null,

@@ -1,88 +1,112 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, GoneException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
+import type { IntegrationStatus } from '@kroptos/shared';
+
+/**
+ * Legacy read model for the System Settings screen.
+ *
+ * @deprecated The `IntegrationSettings` table is no longer a source of truth.
+ * It used to be written by this screen alone, which meant a marketplace
+ * connected from the integrations page stayed "Disconnected" here forever —
+ * the two systems never knew about each other. Everything below is now derived
+ * from `Integration`, the single source of truth, and the write path is closed.
+ *
+ * The table and this service are scheduled for removal; see
+ * `docs/plans/integration-settings-removal.md`.
+ */
+
+/** Legacy status vocabulary this screen renders: connected | disconnected | warning | failed. */
+const STATUS_MAP: Record<IntegrationStatus, string> = {
+  active: 'connected',
+  error: 'failed',
+  inactive: 'disconnected',
+};
+
+/**
+ * Providers the screen lists even when nothing is connected, so the grid keeps
+ * its shape. Presentation only — never a claim that a provider is supported.
+ */
+const PLACEHOLDER_PROVIDERS = ['amazon', 'trendyol', 'hepsiburada', 'shopify', 'woocommerce', 'logo'];
+
+export interface LegacyIntegrationSettingsRow {
+  id: string;
+  agencyId: string;
+  provider: string;
+  status: string;
+  config: Record<string, never>;
+  isActive: boolean;
+  lastSyncAt: Date | null;
+  errorCount: number;
+}
 
 @Injectable()
 export class IntegrationSettingsService {
-  private defaultProviders = ['amazon', 'trendyol', 'hepsiburada', 'shopify', 'woocommerce', 'logo'];
-
   constructor(private prisma: PrismaService) {}
 
-  async findAll(agencyId: string) {
-    const existing = await this.prisma.integrationSettings.findMany({
-      where: { agencyId },
+  async findAll(agencyId: string): Promise<LegacyIntegrationSettingsRow[]> {
+    // Tenant scoping belongs on the row selection, not just the signature.
+    const integrations = await this.prisma.integration.findMany({
+      where: { agencyId, deletedAt: null },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        provider: true,
+        status: true,
+        lastSyncAt: true,
+      },
     });
 
-    const result = this.defaultProviders.map((provider) => {
-      const dbItem = existing.find((item) => item.provider.toLowerCase() === provider.toLowerCase());
-      if (dbItem) {
-        return dbItem;
-      }
-      return {
-        id: provider,
-        agencyId,
-        provider,
-        status: 'disconnected',
-        config: {},
-        isActive: false,
-        lastSyncAt: null,
-        errorCount: 0,
-      };
+    // Failed sync jobs are what `errorCount` always meant; it just used to be
+    // stored and left stale. Derived here so the number reflects reality.
+    const failedCounts = await this.prisma.integrationQueue.groupBy({
+      by: ['configId'],
+      // Scoped by agency; rows belonging to deleted integrations simply never
+      // match an id in the map below.
+      where: { agencyId, status: 'failed' },
+      _count: { configId: true },
     });
+    const failedByIntegration = new Map(
+      failedCounts.map((row) => [row.configId, row._count.configId]),
+    );
 
-    return result;
+    const derived: LegacyIntegrationSettingsRow[] = integrations.map((integration) => ({
+      id: integration.id,
+      agencyId,
+      provider: integration.provider.toLowerCase(),
+      status: STATUS_MAP[integration.status as IntegrationStatus] ?? 'disconnected',
+      // Credentials live encrypted on `Integration` and are never echoed here.
+      config: {},
+      isActive: integration.status === 'active',
+      lastSyncAt: integration.lastSyncAt,
+      errorCount: failedByIntegration.get(integration.id) ?? 0,
+    }));
+
+    const connectedProviders = new Set(derived.map((row) => row.provider));
+    const placeholders: LegacyIntegrationSettingsRow[] = PLACEHOLDER_PROVIDERS.filter(
+      (provider) => !connectedProviders.has(provider),
+    ).map((provider) => ({
+      id: provider,
+      agencyId,
+      provider,
+      status: 'disconnected',
+      config: {},
+      isActive: false,
+      lastSyncAt: null,
+      errorCount: 0,
+    }));
+
+    return [...derived, ...placeholders];
   }
 
-  async update(agencyId: string, provider: string, data: any, userId: string) {
-    const providerLower = provider.toLowerCase();
-
-    let dbItem = await this.prisma.integrationSettings.findUnique({
-      where: {
-        agencyId_provider: {
-          agencyId,
-          provider: providerLower,
-        },
-      },
-    });
-
-    const isConnecting = data.status === 'connected';
-
-    if (dbItem) {
-      dbItem = await this.prisma.integrationSettings.update({
-        where: { id: dbItem.id },
-        data: {
-          status: data.status || dbItem.status,
-          config: data.config ? JSON.parse(JSON.stringify(data.config)) : dbItem.config,
-          isActive: typeof data.isActive === 'boolean' ? data.isActive : isConnecting,
-          lastSyncAt: isConnecting ? new Date() : dbItem.lastSyncAt,
-          errorCount: isConnecting ? 0 : dbItem.errorCount,
-        },
-      });
-    } else {
-      dbItem = await this.prisma.integrationSettings.create({
-        data: {
-          agencyId,
-          provider: providerLower,
-          status: data.status || 'connected',
-          config: data.config ? JSON.parse(JSON.stringify(data.config)) : {},
-          isActive: typeof data.isActive === 'boolean' ? data.isActive : true,
-          lastSyncAt: isConnecting ? new Date() : null,
-        },
-      });
-    }
-
-    // Write audit log
-    await this.prisma.auditLog.create({
-      data: {
-        tenantId: agencyId,
-        userId: userId,
-        action: `integration.${providerLower}.update`,
-        module: 'settings',
-        entityType: 'IntegrationSettings',
-        entityId: dbItem.id,
-        newValue: JSON.parse(JSON.stringify(dbItem)),
-      },
-    });
-
-    return dbItem;
+  /**
+   * @deprecated Writing here produced a record nothing else read, so a provider
+   * "connected" on this screen was connected nowhere. Failing loudly beats a
+   * silent no-op that leaves a broken screen looking like it works.
+   */
+  async update(): Promise<never> {
+    throw new GoneException(
+      'Bu uc nokta kaldirildi. Entegrasyonlar artik /integrations uzerinden yonetiliyor; ' +
+        'System Settings ekrani salt okunur olarak oradan turetiliyor.',
+    );
   }
 }

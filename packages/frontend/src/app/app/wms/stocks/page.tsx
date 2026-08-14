@@ -65,21 +65,21 @@ export default function WmsStocksPage() {
     <div className="space-y-6 animate-fade-in">
       <div>
         <h1 className="text-xl font-semibold text-kp-text-primary">Stock Management</h1>
-        <p className="mt-1 text-[13px] text-kp-text-tertiary">View current stock levels, shelf locations, and update quantities in real-time.</p>
+        <p className="mt-1 text-[0.8125rem] text-kp-text-tertiary">View current stock levels, shelf locations, and update quantities in real-time.</p>
       </div>
 
       <div className="card p-5">
         <div className="flex justify-between items-center mb-5 border-b border-kp-border pb-4">
           <input type="text" placeholder="Search by SKU, barcode, or product name…"
-            className="w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[13px] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
+            className="w-80 rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-[0.8125rem] text-kp-text-primary placeholder-kp-text-tertiary focus:border-kp-border-accent focus:outline-none" />
           <button onClick={fetchProducts}
-            className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[12px] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
+            className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-3 py-2 text-[0.75rem] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
             <ArrowPathIcon className="h-3.5 w-3.5" /> Refresh
           </button>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12px]">
+          <table className="w-full text-left text-[0.75rem]">
             <thead>
               <tr className="border-b border-kp-border text-kp-text-tertiary">
                 <th className="pb-2 font-medium">SKU</th>
@@ -93,7 +93,7 @@ export default function WmsStocksPage() {
             <tbody className="divide-y divide-kp-border">
               {products.map((prod) => (
                 <tr key={prod.id}>
-                  <td className="py-3 font-mono text-[11px] font-semibold text-kp-text-primary">{prod.sku}</td>
+                  <td className="py-3 font-mono text-[0.6875rem] font-semibold text-kp-text-primary">{prod.sku}</td>
                   <td className="py-3 text-kp-text-secondary">{prod.name}</td>
                   <td className="py-3 font-medium text-kp-text-primary">{prod.price}</td>
                   <td className="py-3 font-bold">
@@ -106,11 +106,11 @@ export default function WmsStocksPage() {
                   </td>
                   <td className="py-3 text-right space-x-1">
                     <button onClick={() => handleUpdateStock(prod.id, prod.stockQuantity + 10)}
-                      className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-2.5 py-1 text-[11px] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
+                      className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-2.5 py-1 text-[0.6875rem] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
                       +10
                     </button>
                     <button onClick={() => handleUpdateStock(prod.id, Math.max(0, prod.stockQuantity - 1))}
-                      className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-2.5 py-1 text-[11px] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
+                      className="rounded-kp-md border border-kp-border bg-kp-bg-primary/50 px-2.5 py-1 text-[0.6875rem] font-medium text-kp-text-secondary hover:border-kp-border-accent hover:text-kp-text-primary transition-all">
                       −1
                     </button>
                   </td>

@@ -18,10 +18,11 @@ import { IntegrationSettingsService } from './services/integration-settings.serv
 import { SecuritySettingsService } from './services/security-settings.service';
 import { NotificationSettingsService } from './services/notification-settings.service';
 import { ApiKeysService } from './services/api-keys.service';
+import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '@common/prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, AuditModule],
   controllers: [
     SettingsController,
     UsersController,

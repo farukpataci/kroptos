@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CategoryService } from './category.service';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 
 describe('CategoryService', () => {
   let service: CategoryService;
@@ -77,10 +77,10 @@ describe('CategoryService', () => {
       await expect(service.get('invalid-id', 'agency-1')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw NotFoundException if category agency context mismatch', async () => {
+    it('should throw ForbiddenException if category agency context mismatch', async () => {
       mockPrismaService.category.findFirst.mockResolvedValue({ id: 'cat-1', agencyId: 'agency-different' });
 
-      await expect(service.get('cat-1', 'agency-1')).rejects.toThrow(NotFoundException);
+      await expect(service.get('cat-1', 'agency-1')).rejects.toThrow(ForbiddenException);
     });
   });
 
@@ -135,7 +135,9 @@ describe('CategoryService', () => {
           action: 'create',
           entityType: 'Category',
           entityId: 'cat-123',
-          performedBy: 'user-1',
+          userId: 'user-1',
+          tenantId: 'agency-1',
+          ipAddress: '127.0.0.1',
         }),
       });
     });

@@ -7,6 +7,7 @@ import { ToastProvider } from '@/components/ui/Toast';
 
 const outfit = Outfit({
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   variable: '--font-outfit',
   display: 'swap',
 });
@@ -30,7 +31,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${outfit.variable} ${jetbrainsMono.variable}`}>
-      <body className="font-outfit">
+      <body className="font-outfit antialiased">
         <ThemeProvider>
           <AuthProvider>
             <I18nProvider>

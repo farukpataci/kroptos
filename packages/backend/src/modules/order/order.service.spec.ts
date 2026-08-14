@@ -18,6 +18,12 @@ describe('OrderService', () => {
     product: {
       findFirst: jest.fn(),
     },
+    // `create` reads the store's processing mode inside the transaction to
+    // decide whether the order goes to the pool. LOGO_SYNC is the mode the
+    // assertions below describe: not a pool order, sync pending.
+    store: {
+      findUnique: jest.fn().mockResolvedValue({ orderProcessingMode: 'LOGO_SYNC' }),
+    },
     auditLog: {
       create: jest.fn(),
     },

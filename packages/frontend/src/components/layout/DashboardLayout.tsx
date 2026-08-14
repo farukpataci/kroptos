@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import { BuildStamp } from './BuildStamp';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -41,9 +42,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         }`}
       >
         <Header onOpenMobileSidebar={handleOpenMobile} />
-        <main className="p-4 lg:p-6">
+        <main className="w-full p-4 md:p-6 lg:p-8">
           {children}
         </main>
+        <BuildStamp />
       </div>
     </div>
   );
