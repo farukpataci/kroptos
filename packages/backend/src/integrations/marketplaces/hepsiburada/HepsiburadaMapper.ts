@@ -1,6 +1,21 @@
 import { MarketplaceOrder, MarketplaceProduct, MarketplaceOrderItem } from '../core/MarketplaceTypes';
 import { HepsiburadaOrder, HepsiburadaProduct } from './HepsiburadaTypes';
 
+/**
+ * Connector-folded status → domain status. The connector already collapses
+ * Hepsiburada's marketplace names ("Packaged", "InTransit"...) onto this
+ * vocabulary, so this table only has to name the seven folded values.
+ */
+const STATUS: Record<string, string> = {
+  created: 'pending',
+  picking: 'processing',
+  invoiced: 'processing',
+  shipped: 'shipped',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+  returned: 'returned',
+};
+
 export class HepsiburadaMapper {
   static toUnifiedOrder(order: HepsiburadaOrder): MarketplaceOrder {
     const items: MarketplaceOrderItem[] = order.items.map((item) => ({
@@ -11,11 +26,7 @@ export class HepsiburadaMapper {
       totalPrice: item.price * item.quantity,
     }));
 
-    let status = 'pending';
-    if (order.status === 'Open') status = 'pending';
-    else if (order.status === 'Shipped') status = 'shipped';
-    else if (order.status === 'Delivered') status = 'delivered';
-    else if (order.status === 'Cancelled') status = 'cancelled';
+    const status = STATUS[order.status] ?? 'pending';
 
     return {
       orderNumber: order.orderNumber,

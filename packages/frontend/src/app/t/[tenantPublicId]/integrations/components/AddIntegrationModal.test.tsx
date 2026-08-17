@@ -82,9 +82,9 @@ describe('AddIntegrationModal', () => {
   });
 
   describe('planned marketplaces', () => {
-    // `allegro` deliberately left out: its manifest is registered, so the card
-    // is connectable and it is no longer a planned entry.
-    const PLANNED = ['temu', 'zalando', 'aliexpress', 'emag', 'kaufland', 'otto', 'bol'];
+    // `allegro` and `temu` deliberately left out: their manifests are
+    // registered, so those cards are connectable and neither is a planned entry.
+    const PLANNED = ['zalando', 'aliexpress', 'emag', 'kaufland', 'otto', 'bol'];
 
     it.each(PLANNED)('lists %s in the catalogue', (id) => {
       expect(CATALOG_PROVIDERS.map((p) => p.id)).toContain(id);
@@ -105,10 +105,10 @@ describe('AddIntegrationModal', () => {
       open();
 
       await waitFor(() => {
-        expect(within(cardFor('Temu')).getByRole('button')).toHaveTextContent('Çok yakında');
+        expect(within(cardFor('Zalando')).getByRole('button')).toHaveTextContent('Çok yakında');
       });
 
-      for (const name of ['Zalando', 'AliExpress', 'eMAG', 'Kaufland Marketplace', 'OTTO Market', 'Bol']) {
+      for (const name of ['AliExpress', 'eMAG', 'Kaufland Marketplace', 'OTTO Market', 'Bol']) {
         expect(within(cardFor(name)).getByRole('button')).toHaveTextContent('Çok yakında');
       }
     });
@@ -117,7 +117,7 @@ describe('AddIntegrationModal', () => {
       open();
 
       await waitFor(() => {
-        expect(within(cardFor('Temu')).getByRole('button')).toBeDisabled();
+        expect(within(cardFor('Zalando')).getByRole('button')).toBeDisabled();
       });
     });
 
@@ -125,13 +125,47 @@ describe('AddIntegrationModal', () => {
       // Adding a manifest is the whole change; the catalogue needs no edit.
       apiFetch.mockResolvedValue([
         ...REGISTERED,
+        { provider: 'zalando', displayName: 'Zalando', capabilities: [] },
+      ]);
+      open();
+
+      await waitFor(() => {
+        expect(within(cardFor('Zalando')).getByText('Bağlantı Kur')).toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('Temu', () => {
+    /**
+     * Registered on 2026-08-14 to break a deadlock: the card was disabled until
+     * a live call verified the response shapes, but a disabled card has nowhere
+     * to enter credentials, so that call could never be made. These pin what the
+     * card may and may not promise while it is still unverified.
+     */
+    it('is offered for connection once the registry lists it', async () => {
+      apiFetch.mockResolvedValue([
+        ...REGISTERED,
         { provider: 'temu', displayName: 'Temu', capabilities: [] },
       ]);
       open();
 
       await waitFor(() => {
-        expect(within(cardFor('Temu')).getByText('Bağlantı Kur')).toBeInTheDocument();
+        expect(within(cardFor('Temu')).getByRole('button')).toHaveTextContent('Bağlantı Kur');
       });
+    });
+
+    it('carries the beta badge rather than presenting itself as verified', () => {
+      expect(CATALOG_PROVIDERS.find((p) => p.id === 'temu')?.status).toBe('beta');
+    });
+
+    it('advertises no stock capability, because updateStock does not send', () => {
+      // TemuConnector.updateStock deliberately refuses: the stock list element
+      // names are unverified and a mis-parsed list can zero a whole catalogue.
+      // A badge here is how a seller ends up trusting a sync that cannot run.
+      const temu = CATALOG_PROVIDERS.find((p) => p.id === 'temu');
+
+      expect(temu?.capabilities).toEqual(['Siparişler', 'Ürünler', 'Kategoriler']);
+      expect(temu?.capabilities.join(' ')).not.toMatch(/stok/i);
     });
   });
 

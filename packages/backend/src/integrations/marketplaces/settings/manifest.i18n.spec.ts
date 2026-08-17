@@ -6,7 +6,6 @@ import type {
   SettingsField,
 } from '@kroptos/shared';
 import { MarketplaceSettingsRegistry } from './manifest.registry';
-import { temuOverride } from './providers/temu.settings';
 import { zalandoOverride } from './providers/zalando.settings';
 import { aliexpressOverride } from './providers/aliexpress.settings';
 
@@ -95,7 +94,15 @@ function manifestKeys(manifest: ProviderSettingsManifest): string[] {
  * before they are switched on.
  */
 const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [
-  ['temu', temuOverride],
+  // temu moved out on 2026-08-14: it is registered now, so the loop over
+  // `registry.listProviders()` above covers it — and covers more of it than this
+  // list did, since that path checks tab, section and wizard keys too.
+  //
+  // emag was never in this list: it went straight into `OVERRIDES` on
+  // 2026-08-14, so the registry loop covers it. Its dictionary entries are NOT
+  // written yet — the case above fails for `emag` until the UI step adds them,
+  // and that failure is the intended reminder rather than something to silence
+  // by parking the provider here.
   ['zalando', zalandoOverride],
   ['aliexpress', aliexpressOverride],
 ];

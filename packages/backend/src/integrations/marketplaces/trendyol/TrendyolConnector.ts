@@ -7,13 +7,17 @@ import { TrendyolBaseConnector } from './TrendyolBaseConnector';
  * with one integration record per country — see TrendyolBaseConnector for why
  * the protocol is shared but the integration is not.
  *
- * Türkiye's storefront code is documented as "1". Set to `undefined` to go back
- * to sending no storefront header at all, which is what this connector did
- * before the header fix.
+ * The gateway wants an ISO country code here, not the numeric storefront id.
+ * "1" was accepted by the products endpoint and rejected with
+ * `ValidationException: invalid storefrontCode` (400) by orders and
+ * product-categories — so the connection test passed while order import and the
+ * category tree were both dead. Set to `undefined` to send no header at all,
+ * which the gateway also accepts.
  *
- * DOĞRULANAMADI: not exercised against a real seller account.
+ * DOĞRULANDI 2026-08-17: 'TR' → 200 on orders, product-categories and products
+ * against the stored seller account; '1' and '0' → 400 on orders/categories.
  */
-const TR_STOREFRONT_CODE: string | undefined = '1';
+const TR_STOREFRONT_CODE: string | undefined = 'TR';
 
 export class TrendyolConnector extends TrendyolBaseConnector {
   constructor(

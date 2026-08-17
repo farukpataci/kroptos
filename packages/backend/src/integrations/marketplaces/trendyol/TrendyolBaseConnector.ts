@@ -39,6 +39,7 @@ const PATHS = {
   categories: () => '/integration/product/product-categories',
   categoryAttributes: (categoryId: string) =>
     `/integration/product/product-categories/${categoryId}/attributes`,
+  addresses: (sellerId: string) => `/integration/sellers/${sellerId}/addresses`,
 };
 
 /** Trendyol pages are capped at 200 rows; asking for more is silently trimmed. */
@@ -166,12 +167,21 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
     return raw
       .map((order) => this.toTrendyolOrder(order))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(order.status.toLowerCase()))
-      .map((order) =>
-        TrendyolMapper.toUnifiedOrder(order, {
+      .map((order) => {
+        const unified = TrendyolMapper.toUnifiedOrder(order, {
           source: this.orderSource,
           fallbackCurrency: this.fallbackCurrency,
-        }),
-      );
+        });
+
+        // The mapper's table is the default; a seller who filled in
+        // orders.statusMap means it, and Trendyol has statuses the table does
+        // not cover (Picking, Invoiced, UnSupplied) which otherwise all land on
+        // 'pending'.
+        unified.status = this.mapOrderStatus(order.status, unified.status);
+        unified.orderNumber = this.prefixOrderNumber(unified.orderNumber);
+
+        return unified;
+      });
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
@@ -183,17 +193,25 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
   }
 
   /**
-   * Trendyol identifies inventory rows by barcode, so the value handed in must
-   * be the barcode Trendyol knows. Where the local SKU differs, the caller is
-   * responsible for translating it through ProductMapping first.
+   * Trendyol identifies inventory rows by barcode, never by the seller's own
+   * stock code. Sending a SKU that is not also the barcode is not an error the
+   * gateway reports — the batch is accepted and matches nothing, so the update
+   * silently does not happen. The caller therefore hands the product's barcode
+   * in alongside the SKU; the SKU is only a fallback for the case where the two
+   * are genuinely the same string.
    */
-  async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
+  async updateStock(
+    sku: string,
+    quantity: number,
+    identifiers?: { barcode?: string | null },
+  ): Promise<StockUpdateResult> {
     try {
       const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
+      const barcode = String(identifiers?.barcode ?? '').trim() || sku;
 
       await this.call<unknown>(PATHS.priceAndInventory(sellerId), {
         method: 'POST',
-        body: { items: [{ barcode: sku, quantity }] },
+        body: { items: [{ barcode, quantity }] },
       });
 
       return { sku, quantity, success: true };
@@ -218,6 +236,48 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
 
   async getCategoryAttributes(categoryId: string): Promise<any> {
     return this.call<any>(PATHS.categoryAttributes(categoryId));
+  }
+
+  /**
+   * The seller's registered shipment and return addresses. Feeds the two
+   * required `resourceSelect` fields in the settings form, which is why the
+   * rows carry a ready-made `label`: the form only knows `id` and `label`.
+   *
+   * DOĞRULANAMADI: the seller account on hand is in Draft status, so the
+   * gateway answers `supplier.api.draft.address` (404) and no real payload
+   * could be inspected. The path *is* confirmed — it is the only candidate that
+   * answered with a domain error instead of a routing error. Field names come
+   * from Trendyol's documentation and are read with fallbacks so a differently
+   * spelled response degrades to an id-only label instead of an empty list.
+   */
+  async getAddresses(): Promise<Array<Record<string, any>>> {
+    const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
+
+    const result = await this.call<{ supplierAddresses?: any[] }>(PATHS.addresses(sellerId));
+    const rows = result?.supplierAddresses ?? [];
+
+    return rows.map((row) => ({
+      id: String(row?.id ?? ''),
+      label: this.addressLabel(row),
+      // Passed through so the form can tell a shipment address from a return
+      // one without a second call.
+      shipment: Boolean(row?.shipment),
+      returningAddress: Boolean(row?.returningAddress),
+      invoice: Boolean(row?.invoice),
+      isDefault: Boolean(row?.default),
+    }));
+  }
+
+  private addressLabel(row: Record<string, any>): string {
+    const parts = [
+      row?.addressText ?? row?.fullAddress ?? row?.address,
+      row?.district,
+      row?.city,
+    ].filter((part) => typeof part === 'string' && part.trim().length > 0);
+
+    // An address with no readable text is still selectable: better a bare id in
+    // the dropdown than a blank row the seller cannot pick.
+    return parts.length > 0 ? parts.join(', ') : `#${row?.id ?? '?'}`;
   }
 
   // --------------------------------------------------------------------------

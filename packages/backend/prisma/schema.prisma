@@ -350,7 +350,11 @@ model Order {
   storeId           String
   store             Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   channelId         String?
-  orderNumber       String    @unique
+  // Unique per store, not globally: two marketplaces (or two tenants selling on
+  // the same one) hand out the same order number, and a global constraint made
+  // the second import look like an order that already existed — the row was
+  // silently skipped and that tenant never received the order.
+  orderNumber       String
   customerId        String?
   customerName      String
   customerEmail     String?
@@ -378,6 +382,7 @@ model Order {
   wmsPackagingTasks WmsPackagingTask[]
 
   @@unique([storeId, idempotencyKey])
+  @@unique([storeId, orderNumber])
   @@index([agencyId])
   @@index([storeId])
   @@index([status])

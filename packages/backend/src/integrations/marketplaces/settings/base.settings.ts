@@ -88,7 +88,9 @@ const generalTab: SettingsTab = {
           type: 'select',
           labelKey: label('general.currency'),
           default: 'TRY',
-          options: opts('general.currency', ['TRY', 'USD', 'EUR', 'GBP']),
+          // RON/BGN/HUF/PLN added for eMAG's four markets. Appended rather than
+          // reordered: the existing entries are referenced by saved settings rows.
+          options: opts('general.currency', ['TRY', 'USD', 'EUR', 'GBP', 'RON', 'BGN', 'HUF', 'PLN']),
         },
         {
           key: 'general.timezone',
@@ -101,6 +103,12 @@ const generalTab: SettingsTab = {
             'Europe/London',
             'Europe/Berlin',
             'UTC',
+            // eMAG's four markets. Appended, never reordered — saved settings
+            // rows hold these values verbatim.
+            'Europe/Bucharest',
+            'Europe/Sofia',
+            'Europe/Budapest',
+            'Europe/Warsaw',
           ]),
         },
       ],

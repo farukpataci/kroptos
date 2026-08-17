@@ -132,28 +132,58 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         throw new Error(`Integration with ID '${integrationId}' not found`);
       }
 
-      // Resolve tenant context (clientId and storeId) if not explicitly set
+      // Resolve tenant context. The two ids are resolved independently: an
+      // integration scoped to a store but not a client (`storeId` set,
+      // `clientId` null) is the normal shape here, and resolving them as one
+      // unit threw away the store the integration named, then demanded a store
+      // under a client that has none — every sync job failed before a single
+      // marketplace call.
       let storeId = integration.storeId;
       let clientId = integration.clientId;
 
-      if (!clientId || !storeId) {
-        // Find the first client under this agency
-        const client = await this.prisma.client.findFirst({
-          where: { agencyId: integration.agencyId, deletedAt: null },
-        });
-        if (!client) {
-          throw new Error(`No active client found under agency '${integration.agencyId}'`);
-        }
-        clientId = client.id;
-
-        // Find the first store under this client or agency
+      if (!storeId) {
         const store = await this.prisma.store.findFirst({
-          where: { agencyId: integration.agencyId, clientId, deletedAt: null },
+          where: {
+            agencyId: integration.agencyId,
+            deletedAt: null,
+            // Narrow by client only when the integration actually names one:
+            // stores may sit directly under the agency with a null clientId.
+            ...(clientId ? { clientId } : {}),
+          },
+          // Which store receives imported products decides who can see them, so
+          // it must not depend on row order.
+          orderBy: { createdAt: 'asc' },
         });
         if (!store) {
-          throw new Error(`No active store found under client '${clientId}'`);
+          throw new Error(
+            `No active store found for integration '${integration.id}' under agency ` +
+              `'${integration.agencyId}'${clientId ? ` and client '${clientId}'` : ''}`,
+          );
         }
         storeId = store.id;
+      }
+
+      if (!clientId) {
+        // Product.clientId is required, so a client has to be resolved even for
+        // an agency-wide integration. The store's own client is the truthful
+        // answer; only when the store has none does the agency's oldest client
+        // stand in.
+        const store = await this.prisma.store.findUnique({
+          where: { id: storeId },
+          select: { clientId: true },
+        });
+        clientId = store?.clientId ?? null;
+
+        if (!clientId) {
+          const client = await this.prisma.client.findFirst({
+            where: { agencyId: integration.agencyId, deletedAt: null },
+            orderBy: { createdAt: 'asc' },
+          });
+          if (!client) {
+            throw new Error(`No active client found under agency '${integration.agencyId}'`);
+          }
+          clientId = client.id;
+        }
       }
 
       let logMessage = '';
@@ -346,14 +376,27 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
           const { sku, quantity } = payload;
           const outbound = this.applyStockPolicy(quantity, settings);
 
+          // Some marketplaces key inventory on the barcode rather than the
+          // seller's stock code (Trendyol does), and a mismatched identifier is
+          // accepted and then matches nothing. Resolved here rather than in the
+          // enqueuing service so every caller of this event gets it, and read
+          // from the store the integration resolved to so one tenant's SKU can
+          // never pick up another tenant's barcode.
+          const product = await this.prisma.product.findFirst({
+            where: { storeId, sku, deletedAt: null },
+            select: { barcode: true },
+          });
+
           if (dryRun) {
             logMessage = `[dry-run] Would have pushed stock ${outbound} for SKU '${sku}'`;
           } else {
-            const res = await connector.updateStock(sku, outbound);
+            const res = await connector.updateStock(sku, outbound, { barcode: product?.barcode });
             if (!res.success) {
               throw new Error(res.error || 'Stock update failed');
             }
-            logMessage = `Successfully synced stock for SKU '${sku}' to ${outbound}`;
+            logMessage =
+              `Successfully synced stock for SKU '${sku}'` +
+              `${product?.barcode ? ` (barcode: '${product.barcode}')` : ''} to ${outbound}`;
           }
         } else if (eventType === 'sync_products') {
           const marketplaceProducts = await connector.getProducts();
@@ -396,9 +439,11 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
           const marketplaceOrders = await connector.getOrders();
 
           for (const o of marketplaceOrders) {
-            // Check if order already exists
+            // Scoped to the store: an unscoped lookup found another tenant's
+            // order with the same number and skipped the import, so this tenant
+            // never got the order at all.
             const existing = await this.prisma.order.findUnique({
-              where: { orderNumber: o.orderNumber },
+              where: { storeId_orderNumber: { storeId, orderNumber: o.orderNumber } },
             });
 
             if (!existing) {

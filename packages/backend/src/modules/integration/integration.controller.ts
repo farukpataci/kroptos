@@ -266,6 +266,27 @@ export class IntegrationController {
     );
   }
 
+  // Backs the two required address fields in the Trendyol settings form. The
+  // manifest has pointed at this path all along; the route was missing.
+  @Get(':id/trendyol/addresses')
+  @HttpCode(200)
+  @RequirePermission('integrations.manage')
+  @ApiOperation({ summary: "Get the seller's registered Trendyol addresses" })
+  async getTrendyolAddresses(@Param('id') id: string, @Req() req: Request) {
+    const activeAgency = (req as any).activeAgency;
+    const activeClient = (req as any).activeClient;
+    const activeStore = (req as any).activeStore;
+    const isSuperAdmin = this.checkSuperAdmin(req);
+
+    return this.integrationService.getTrendyolAddresses(
+      id,
+      activeAgency?.id,
+      activeClient?.id,
+      activeStore?.id,
+      isSuperAdmin,
+    );
+  }
+
   @Get('products/:productId/mappings')
   @HttpCode(200)
   @RequirePermission('integrations.manage')

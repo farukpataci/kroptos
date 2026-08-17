@@ -2,6 +2,8 @@ import { HttpStatus } from '@nestjs/common';
 import { HepsiburadaConnector } from './HepsiburadaConnector';
 import { MarketplaceHttpClient, MarketplaceHttpError } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
+import { collectDefaults, missingRequiredKeys } from '@kroptos/shared';
+import { MarketplaceSettingsRegistry } from '../settings/manifest.registry';
 
 /**
  * Pins the request shape (host per API family, auth, offset paging) and the
@@ -147,6 +149,55 @@ describe('HepsiburadaConnector', () => {
       const orders = await build({ 'orders.importStatuses': ['created', 'shipped'] }).getOrders();
 
       expect(orders.map((o) => o.orderNumber)).toEqual(['HB-1', 'HB-2']);
+    });
+
+    /**
+     * The fold used to stop at the connector: the mapper compared the raw name
+     * with `===`, so every status outside Open/Shipped/Delivered/Cancelled
+     * reached the database as "pending" — a dispatched order looked unshipped.
+     */
+    it('should carry the folded status through to the domain status', async () => {
+      const names = ['Open', 'Packaged', 'InTransit', 'Delivered', 'Cancelled', 'ReadyToShip'];
+      httpClient.request.mockResolvedValue({
+        items: names.map((status, i) => order(`HB-${i}`, status)),
+        totalCount: names.length,
+      });
+
+      const orders = await build({ 'orders.importStatuses': [] }).getOrders();
+
+      expect(orders.map((o) => o.status)).toEqual([
+        'pending',
+        'processing',
+        'shipped',
+        'delivered',
+        'cancelled',
+        'processing',
+      ]);
+    });
+
+    it('should fall back to a top-level customerName when there is no customer object', async () => {
+      httpClient.request.mockResolvedValue({
+        items: [{ id: 'o', orderNumber: 'HB-9', status: 'Open', customerName: 'Zeynep Kaya', items: [] }],
+        totalCount: 1,
+      });
+
+      const [unified] = await build({ 'orders.importStatuses': [] }).getOrders();
+
+      expect(unified.customerName).toBe('Zeynep Kaya');
+    });
+  });
+
+  /**
+   * `triggerSync` refuses an integration whose `missingRequired` is non-empty.
+   * A required field the seller has no way to fill therefore disables the whole
+   * marketplace, quietly and permanently — which is what a required
+   * `resourceSelect` on an endpoint the backend never exposed did here.
+   */
+  describe('settings manifest', () => {
+    it('should be completable from credentials and defaults alone', () => {
+      const manifest = new MarketplaceSettingsRegistry().getManifest('hepsiburada');
+
+      expect(missingRequiredKeys(manifest, collectDefaults(manifest))).toEqual([]);
     });
   });
 

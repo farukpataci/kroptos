@@ -1,8 +1,31 @@
 # Temu entegrasyonu — açık kalan bilgiler
 
-**Durum:** connector gerçek çağrı yapıyor; sağlayıcı registry'ye **KAYDEDİLMEDİ**.
-Katalog kartı "Çok yakında" olarak duruyor — bu bir karar, eksiklik değil.
-**Son güncelleme:** 2026-08-13
+**Durum:** connector gerçek çağrı yapıyor; sağlayıcı registry'ye **KAYDEDİLDİ**
+(2026-08-14). Katalog kartı **Beta** rozetiyle bağlanabilir durumda.
+**Son güncelleme:** 2026-08-14
+
+---
+
+## 2026-08-14'te ne değişti
+
+`temuOverride` `manifest.registry.ts` içindeki `OVERRIDES`'a eklendi. Kayıt,
+Kademe 2 kapandığı için değil, **kapanabilmesi için** açıldı: kart devre dışıyken
+kimlik bilgisi girilecek yer yoktu, dolayısıyla kaydı haklı çıkaracak canlı çağrı
+hiç yapılamıyordu. Kapı, kendisini açacak tek şeyi engelliyordu.
+
+Yanında gidenler:
+- `capabilities` `[]` → `['orders.read', 'products.read', 'categories.read']`.
+  Bunlar connector'ın gerçekten istek attığı üç işlem. `stock.push`,
+  `attributes.read` ve `price.push` **bilerek yok** — karşılıkları reddediyor.
+- Katalog kartı `coming_soon` → `beta`, rozetler `Siparişler / Ürünler /
+  Kategoriler`. **Stok rozeti yok.**
+- Testler: `manifest.i18n.spec.ts` ve `MarketplaceConnectorFactory.spec.ts`
+  içindeki "kayıtlı değil" pinleri Temu'dan alındı; ikisi de artık Temu'yu
+  kayıtlı sağlayıcı döngüsünden geçiriyor (daha güçlü kontrol).
+  `AddIntegrationModal.test.tsx`'e Temu'nun beta kaldığını ve stok vaat
+  etmediğini pinleyen ayrı bir blok eklendi.
+
+**Aşağıdaki Kademe 2 listesi hâlâ tamamen açık.** Kayıt onu kapatmadı.
 
 ---
 
@@ -103,18 +126,16 @@ diğer adlardan **daha zayıf bir ölçütle** yazılmaması için dışarıda b
 
 ---
 
-## Kart neden hâlâ "Çok yakında"
+## Kart neden artık "Beta"
 
-`temuOverride`, `manifest.registry.ts` içindeki `OVERRIDES` dizisine
-**eklenmedi**. Bu bilinçli: canlı bir doğrulama yapılmadan satıcıya vitrinde
-tamamlanabilir bir bağlantı vaat edilmiyor.
+Kayıt açıldı (yukarı bakın), dolayısıyla kart bağlanabilir. **Beta** rozeti
+duruyor çünkü Kademe 2'nin tek maddesi bile kapanmadı.
 
-**Bunun bir bedeli var ve bilinerek kabul edildi:** kart bağlanabilir olmadığı
-için arayüzde kimlik bilgisi girilecek bir yer yok, dolayısıyla **canlı doğrulama
-da yapılamıyor.** Kademe 2 ancak şu iki yoldan biriyle kapanır:
-
-- kayıt tek satırla açılır (`OVERRIDES`'a `temuOverride` eklenir), ya da
-- gerçek kimlik bilgileriyle geçici bir script/entegrasyon testi çalıştırılır.
+Bunun kabul edilen riski şu: bir satıcı Temu'yu bağlayabilir ve ilk senkron
+başarısız olabilir. Bu, yanlış veri almaktan daha ucuz kabul edildi — connector
+tanımadığı yanıt şeklinde **boş liste değil hata** döndürüyor, yani başarısızlık
+görünür oluyor. Alternatif (kartı kapalı tutmak) ise doğrulamayı süresiz olarak
+imkânsız kılıyordu.
 
 ---
 
@@ -143,5 +164,5 @@ da yapılamıyor.** Kademe 2 ancak şu iki yoldan biriyle kapanır:
 | Siparişler / Ürünler / Kategoriler | **Gerçek çağrı yapıyor**, sayfalama dahil |
 | Stok | Bilerek reddediyor (yukarıya bakın) |
 | Kategori özellikleri | Bilerek reddediyor |
-| Manifest | `temu.settings.ts` yazıldı, `OVERRIDES`'a **eklenmedi** |
+| Manifest | `temu.settings.ts` yazıldı ve `OVERRIDES`'a **eklendi** (2026-08-14) |
 | Testler | 54 (connector 30, imza 16, mapper 20 civarı) |

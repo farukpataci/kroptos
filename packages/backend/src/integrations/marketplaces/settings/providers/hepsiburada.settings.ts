@@ -59,16 +59,19 @@ export const hepsiburadaOverride: ProviderSettingsOverride = {
         icon: 'TruckIcon',
         fields: [
           {
+            // TODO(hepsiburada): back this with a real endpoint and turn it
+            // into a resourceSelect again. It used to be a required
+            // `resourceSelect` pointing at
+            // `/integrations/{id}/hepsiburada/delivery-profiles`, which the
+            // backend never exposed: the dropdown could never be filled, so
+            // `missingRequired` never emptied, `isConfigured` never became true
+            // and `triggerSync` rejected every Hepsiburada sync with
+            // `integration.settings.notConfigured`.
             key: 'hb.deliveryProfileId',
-            type: 'resourceSelect',
+            type: 'text',
             labelKey: label('hb.deliveryProfileId'),
             helpKey: help('hb.deliveryProfileId'),
-            required: true,
-            optionsSource: {
-              endpoint: '/integrations/{id}/hepsiburada/delivery-profiles',
-              valueField: 'id',
-              labelField: 'name',
-            },
+            maxLength: 64,
           },
           {
             key: 'hb.cargoCompanyCode',

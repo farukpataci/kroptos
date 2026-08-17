@@ -23,7 +23,8 @@ export interface HepsiburadaOrder {
   customer: HepsiburadaCustomer;
   shippingAddress: HepsiburadaShippingAddress;
   items: HepsiburadaItem[];
-  status: string; // 'Open', 'Shipped', 'Delivered', 'Cancelled'
+  /** Folded by the connector: created | picking | invoiced | shipped | delivered | cancelled | returned */
+  status: string;
   totalAmount: number;
   currency: string;
 }

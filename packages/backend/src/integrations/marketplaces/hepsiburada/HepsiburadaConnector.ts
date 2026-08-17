@@ -233,10 +233,12 @@ export class HepsiburadaConnector extends MarketplaceConnector {
 
     const customer = raw.customer ?? {};
     const address = raw.shippingAddress ?? raw.deliveryAddress ?? {};
+    // `||`, not `??`: an empty join('') is not nullish, so `??` made every
+    // fallback after the first one unreachable.
     const customerName =
-      customer.name ??
-      [customer.firstName, customer.lastName].filter(Boolean).join(' ') ??
-      raw.customerName ??
+      customer.name ||
+      [customer.firstName, customer.lastName].filter(Boolean).join(' ') ||
+      raw.customerName ||
       '';
 
     return {
@@ -253,7 +255,10 @@ export class HepsiburadaConnector extends MarketplaceConnector {
         town: address.town ?? address.district ?? '',
       },
       items,
-      status: raw.status ?? raw.orderStatus ?? 'Open',
+      // Folded once, here. The mapper used to compare the raw name with `===`,
+      // so anything other than Open/Shipped/Delivered/Cancelled — Packaged,
+      // InTransit, ReadyToShip — silently arrived as "pending".
+      status: this.normaliseStatus(raw.status ?? raw.orderStatus ?? 'Open'),
       totalAmount: Number(raw.totalPrice ?? raw.totalAmount ?? 0),
       currency: raw.currency ?? 'TRY',
     };

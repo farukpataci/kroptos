@@ -13,6 +13,7 @@ import { encrypt, decrypt } from '../../common/utils/encryption.util';
 import { stripMaskedCredentials } from '@kroptos/shared';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
+import { TrendyolBaseConnector } from '../../integrations/marketplaces/trendyol/TrendyolBaseConnector';
 import { IntegrationQueueService } from './integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
@@ -299,6 +300,31 @@ export class IntegrationService {
     });
   }
 
+  /**
+   * Decrypts, validates and builds a marketplace connector with the
+   * integration's resolved settings.
+   *
+   * The settings are not optional decoration: `general.environment` picks the
+   * host, so a connector built without them talks to production even when the
+   * seller selected sandbox. Resolution falls back to `{}` for providers that
+   * have no settings manifest — the connector's own defaults then apply, which
+   * is what those providers had before.
+   */
+  private async buildMarketplaceConnector(integration: {
+    id: string;
+    provider: string;
+    credentialsEncrypted: string;
+  }) {
+    const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
+    this.credentialService.validate(integration.provider, credentials);
+
+    const settings = await this.settingsService
+      .resolveForRuntime(integration.id)
+      .catch(() => ({}) as Record<string, unknown>);
+
+    return this.connectorFactory.create(integration.provider, credentials, settings);
+  }
+
   async testConnection(
     id: string,
     userId: string,
@@ -437,9 +463,7 @@ export class IntegrationService {
       isSuperAdmin,
     );
 
-    const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
-    this.credentialService.validate(integration.provider, credentials);
-    const connector = this.connectorFactory.create(integration.provider, credentials);
+    const connector = await this.buildMarketplaceConnector(integration);
 
     return connector.getCategories();
   }
@@ -460,11 +484,44 @@ export class IntegrationService {
       isSuperAdmin,
     );
 
-    const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
-    this.credentialService.validate(integration.provider, credentials);
-    const connector = this.connectorFactory.create(integration.provider, credentials);
+    const connector = await this.buildMarketplaceConnector(integration);
 
     return connector.getCategoryAttributes(categoryId);
+  }
+
+  /**
+   * Backs the `trendyol.shipmentAddressId` / `trendyol.returnAddressId` fields
+   * in the settings form. Both are marked required, so without this route the
+   * form could never be completed — the manifest referenced an endpoint that
+   * did not exist.
+   */
+  async getTrendyolAddresses(
+    integrationId: string,
+    activeAgencyId?: string,
+    activeClientId?: string,
+    activeStoreId?: string,
+    isSuperAdmin?: boolean,
+  ) {
+    const integration = await this.get(
+      integrationId,
+      activeAgencyId,
+      activeClientId,
+      activeStoreId,
+      isSuperAdmin,
+    );
+
+    const connector = await this.buildMarketplaceConnector(integration);
+
+    // Addresses are a Trendyol concept, not part of the marketplace contract.
+    // Asking the id for a provider that has none is the caller's mistake, and
+    // saying so beats a TypeError from a method that is not there.
+    if (!(connector instanceof TrendyolBaseConnector)) {
+      throw new BadRequestException(
+        `Adres listesi yalnızca Trendyol entegrasyonlarında var: '${integration.provider}'`,
+      );
+    }
+
+    return connector.getAddresses();
   }
 
   async getProductMappings(

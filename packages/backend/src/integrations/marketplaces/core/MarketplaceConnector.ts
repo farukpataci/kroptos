@@ -90,6 +90,53 @@ export abstract class MarketplaceConnector {
   }
 
   // --------------------------------------------------------------------------
+  // Order settings the manifest offers every provider
+  //
+  // Both of these were configurable in the UI and read by nobody: a seller
+  // could fill in a status mapping or an order prefix, see it saved, and have
+  // it silently ignored. They live here rather than in one connector so the
+  // next provider inherits them instead of re-implementing them.
+  // --------------------------------------------------------------------------
+
+  /** Kroptos statuses a mapping may target — anything else is a stale row. */
+  private static readonly MAPPABLE_STATUSES = [
+    'pending',
+    'processing',
+    'shipped',
+    'delivered',
+    'cancelled',
+    'returned',
+  ];
+
+  /**
+   * Applies the seller's `orders.statusMap` to a marketplace status, falling
+   * back to the connector's own mapping when there is no row for it.
+   *
+   * `rawStatus` is the marketplace's own spelling ('Created', 'Picking'); the
+   * mapping table stores it lowercased.
+   */
+  protected mapOrderStatus(rawStatus: string, fallback: string): string {
+    const map = this.setting<Record<string, string>>('orders.statusMap', {});
+    if (!map || typeof map !== 'object') return fallback;
+
+    const configured = map[String(rawStatus ?? '').trim().toLowerCase()];
+    // A value outside the known set would be written straight to Order.status
+    // and quietly break every status filter downstream, so it is ignored.
+    return MarketplaceConnector.MAPPABLE_STATUSES.includes(configured) ? configured : fallback;
+  }
+
+  /**
+   * Prepends `orders.numberPrefix` to an imported order number. Two
+   * marketplaces can hand out the same number, and `Order.orderNumber` is
+   * globally unique, so without a prefix the second one is silently treated as
+   * an order that already exists.
+   */
+  protected prefixOrderNumber(orderNumber: string): string {
+    const prefix = this.setting<string>('orders.numberPrefix', '');
+    return prefix ? `${prefix}${orderNumber}` : orderNumber;
+  }
+
+  // --------------------------------------------------------------------------
   // Shared transport
   //
   // Every marketplace needs the same four things around a request: throttle,
@@ -159,10 +206,9 @@ export abstract class MarketplaceConnector {
    */
   protected describeError(error: any): Error {
     const status = error instanceof MarketplaceHttpError ? error.upstreamStatus : undefined;
-    const detail =
-      error instanceof MarketplaceHttpError && error.upstreamBody
-        ? ` Sunucu yanıtı: ${error.upstreamBody.slice(0, 300)}`
-        : '';
+    const detail = this.describeUpstreamBody(
+      error instanceof MarketplaceHttpError ? error.upstreamBody : undefined,
+    );
     const name = this.displayName;
 
     switch (status) {
@@ -184,10 +230,39 @@ export abstract class MarketplaceConnector {
         if (status && status >= 500) {
           return new Error(`${name} tarafında geçici hata (${status}). Daha sonra tekrar deneyin.${detail}`);
         }
+        // `detail` belongs here most of all: a 400 is a validation answer, and
+        // the body is the only place that says *which* field the marketplace
+        // rejected. Dropping it left the UI showing a bare "status 400" — the
+        // Trendyol storefrontCode bug hid behind exactly that for weeks.
         return new Error(
-          error?.message ? `${name} isteği başarısız: ${error.message}` : `${name} isteği başarısız`,
+          error?.message
+            ? `${name} isteği başarısız: ${error.message}${detail}`
+            : `${name} isteği başarısız${detail}`,
         );
     }
+  }
+
+  /**
+   * Renders the upstream body for a seller-facing message.
+   *
+   * A marketplace API answers with JSON that names the rejected field, and that
+   * belongs in the message. But an edge proxy in front of the API answers with a
+   * full HTML page — Trendyol's stage gateway returns Cloudflare's "you have
+   * been blocked" page for every path — and pasting markup into the UI hides the
+   * one fact that matters: nothing reached the marketplace at all.
+   */
+  private describeUpstreamBody(body?: string): string {
+    const trimmed = body?.trim();
+    if (!trimmed) return '';
+
+    if (trimmed.startsWith('<')) {
+      return (
+        ' Sunucu API yerine bir HTML sayfası döndürdü; istek büyük olasılıkla ' +
+        'pazaryerine ulaşmadan bir ağ geçidi/WAF tarafından engellendi.'
+      );
+    }
+
+    return ` Sunucu yanıtı: ${trimmed.slice(0, 300)}`;
   }
 
   /** Human-readable marketplace name used in error messages. */
@@ -238,7 +313,18 @@ export abstract class MarketplaceConnector {
   abstract testConnection(): Promise<ConnectionTestResult>;
   abstract getOrders(): Promise<MarketplaceOrder[]>;
   abstract getProducts(): Promise<MarketplaceProduct[]>;
-  abstract updateStock(sku: string, quantity: number): Promise<StockUpdateResult>;
+  /**
+   * `identifiers` carries the other names the same product goes by locally, for
+   * marketplaces that key inventory on something other than the SKU — Trendyol
+   * keys on the barcode. Optional so a connector that only needs the SKU can
+   * keep the two-argument signature, and so a caller that has nothing else to
+   * offer still works.
+   */
+  abstract updateStock(
+    sku: string,
+    quantity: number,
+    identifiers?: { barcode?: string | null },
+  ): Promise<StockUpdateResult>;
   abstract getCategories(): Promise<any[]>;
   abstract getCategoryAttributes(categoryId: string): Promise<any>;
 }

@@ -162,14 +162,6 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'beta',
   },
 
-  // Planlanan pazaryerleri. Bunların hiçbirinin manifesti yok, dolayısıyla
-  // registry onları tanımıyor ve kartları kendiliğinden "Çok yakında" olarak,
-  // butonları devre dışı çıkıyor — burada ayrıca bir şey yapmak gerekmiyor.
-  // Bir sağlayıcının manifesti eklendiği gün kartı kendiliğinden bağlanabilir
-  // hale gelir; bu listede tek satır bile değişmez.
-  //
-  // `capabilities` burada bir taahhüt değil, planlanan kapsam. Kart bağlanabilir
-  // olmadığı için kimse ona göre işlem yapamaz.
   {
     id: 'temu',
     name: 'Temu',
@@ -178,14 +170,22 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeBg: 'bg-orange-500/10 border-orange-500/20 text-orange-600',
     badgeText: 'Temu',
     description:
-      'Hızla büyüyen küresel pazaryeri. Bağlantı altyapısı hazır; API metot adları doğrulanmadığı için henüz etkinleştirilmedi.',
-    // Empty on purpose: every operation refuses because no Temu API method name
-    // is confirmed. A badge for an operation that refuses is how a seller ends
-    // up trusting a sync that cannot happen. Badges come back one at a time as
-    // names are confirmed.
-    capabilities: [],
-    status: 'coming_soon',
+      'Hızla büyüyen küresel pazaryeri. Sipariş, ürün ve kategori çekimi yazıldı; gerçek bir satıcı hesabında henüz doğrulanmadığı için beta. Kurulumda bölgenizin API adresi girilir.',
+    // Yalnızca connector'ın gerçekten istek attığı üç işlem. "Stok" bilerek yok:
+    // updateStock gönderim yapmıyor (bkz. TemuConnector). Yapılamayan bir işlemin
+    // rozeti, satıcının hiç çalışmayacak bir senkrona güvenmesiyle sonuçlanır.
+    capabilities: ['Siparişler', 'Ürünler', 'Kategoriler'],
+    status: 'beta',
   },
+
+  // Planlanan pazaryerleri. Bunların hiçbirinin manifesti yok, dolayısıyla
+  // registry onları tanımıyor ve kartları kendiliğinden "Çok yakında" olarak,
+  // butonları devre dışı çıkıyor — burada ayrıca bir şey yapmak gerekmiyor.
+  // Bir sağlayıcının manifesti eklendiği gün kartı kendiliğinden bağlanabilir
+  // hale gelir; bu listede tek satır bile değişmez.
+  //
+  // `capabilities` burada bir taahhüt değil, planlanan kapsam. Kart bağlanabilir
+  // olmadığı için kimse ona göre işlem yapamaz.
   {
     id: 'zalando',
     name: 'Zalando',

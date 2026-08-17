@@ -46,15 +46,18 @@ describe('MarketplaceConnectorFactory / registry agreement', () => {
 
   /**
    * A provider can have a connector while deliberately staying out of the
-   * registry — temu, zalando and aliexpress are written but not switched on,
-   * which is what keeps their catalogue cards on "coming soon".
+   * registry — zalando and aliexpress are written but not switched on, which is
+   * what keeps their catalogue cards on "coming soon".
    *
    * This is pinned because the asymmetry looks like an oversight: iterating the
    * registry means a factory entry with no manifest passes silently, and
    * "tightening" that would turn an intentional state into a failure.
+   *
+   * `temu` left this list on 2026-08-14 when it was registered; the case above
+   * now covers it, which is the stronger check of the two.
    */
   it('allows a connector to exist without a registry entry', () => {
-    for (const provider of ['temu', 'zalando', 'aliexpress', 'woocommerce', 'shopify']) {
+    for (const provider of ['zalando', 'aliexpress', 'woocommerce', 'shopify']) {
       expect(registry.isSupported(provider)).toBe(false);
       // The connector is reachable, so enabling the provider stays a one-line
       // registry change rather than a rewrite.
