@@ -86,9 +86,16 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-red-500/10 border-red-500/20 text-red-600',
     badgeText: 'N11',
-    description: 'N11 REST API ile anlık kategori eşleştirme, fiyat ve stok senkronizasyonu.',
-    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
-    status: 'active',
+    // The card used to promise orders, stock and prices. None of the three has a
+    // confirmed endpoint: n11's gateway answers 404 or "Application is not
+    // available" for every path they were written against, so the integration
+    // installs in simulation mode and only the two category endpoints are real.
+    description:
+      'n11 kategori ve nitelik okuma uçları doğrulandı. Sipariş, ürün ve stok uçları henüz doğrulanmadığı ' +
+      'için entegrasyon simülasyon modunda kurulur: örnek veri üretir, pazaryerine istek göndermez ve ' +
+      'hiçbir kaydı veritabanına yazmaz.',
+    capabilities: ['Kategoriler', 'Nitelikler', 'Simülasyon modu'],
+    status: 'beta',
   },
   {
     id: 'ciceksepeti',

@@ -73,6 +73,9 @@ export class MarketplaceSettingsRegistry {
       provider: manifest.provider,
       displayName: manifest.displayName,
       capabilities: manifest.capabilities,
+      // Sent along so the UI can stop showing a capability as working while its
+      // connector code does not exist.
+      plannedCapabilities: manifest.plannedCapabilities,
       docsUrl: manifest.docsUrl,
     }));
   }

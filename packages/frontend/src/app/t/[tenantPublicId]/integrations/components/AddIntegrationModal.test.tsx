@@ -169,6 +169,28 @@ describe('AddIntegrationModal', () => {
     });
   });
 
+  describe('n11 card', () => {
+    const n11 = () => CATALOG_PROVIDERS.find((p) => p.id === 'n11');
+
+    it('is beta, not active: only two of its endpoints are confirmed', () => {
+      expect(n11()?.status).toBe('beta');
+    });
+
+    it('advertises nothing it cannot do', () => {
+      // Live probe, 2026-08-17: /ms/order/list, /ms/product/stock-update and
+      // /ms/product-query/products answer 503 or 404. A card promising orders,
+      // stock and prices is how a seller trusts a sync that cannot run.
+      const capabilities = n11()!.capabilities;
+
+      expect(capabilities).toEqual(['Kategoriler', 'Nitelikler', 'Simülasyon modu']);
+      expect(capabilities.join(' ')).not.toMatch(/sipariş|stok|fiyat/i);
+    });
+
+    it('says on the card that it runs simulated', () => {
+      expect(n11()?.description).toMatch(/simülasyon/i);
+    });
+  });
+
   describe('registry-derived connectability', () => {
     it('marks a marketplace the registry does not list as upcoming', async () => {
       apiFetch.mockResolvedValue([{ provider: 'trendyol', displayName: 'Trendyol', capabilities: [] }]);

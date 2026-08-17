@@ -49,7 +49,14 @@ export default function IntegrationsParentPage() {
     try {
       const res = await apiFetch<any>(`/integrations/${id}/sync`, { method: 'POST' });
       if (res.success) {
-        toast.success('Senkronizasyon başlatıldı');
+        // A simulated run finishes with nothing imported, by design. Announcing
+        // it as a plain success is how "0 sipariş" gets read as a broken
+        // integration, so the mode decides which toast the user sees.
+        if (res.mode === 'simulation') {
+          toast.warning(res.message, 9000);
+        } else {
+          toast.success('Senkronizasyon başlatıldı');
+        }
         fetchIntegrations();
         window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
       } else {

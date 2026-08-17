@@ -372,6 +372,16 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         rotatingConnector = connector;
         const dryRun = settings['advanced.dryRun'] === true;
 
+        // A connector in simulation mode serves its own sample data because its
+        // endpoints are not verified yet. Persisting that would put invented
+        // orders and products in the seller's tables, where no query downstream
+        // could tell them from real ones — and a filter that every list query
+        // has to remember is a leak waiting for the one query that forgets. So
+        // simulated rows are counted and logged here and never written.
+        const { mode, source: modeSource } = connector.connectionMode;
+        const simulated = mode === 'simulation';
+        const modeTag = simulated ? `[simulation:${modeSource}] ` : '';
+
         if (eventType === 'sync_stock') {
           const { sku, quantity } = payload;
           const outbound = this.applyStockPolicy(quantity, settings);
@@ -387,7 +397,11 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
             select: { barcode: true },
           });
 
-          if (dryRun) {
+          if (simulated) {
+            logMessage =
+              `${modeTag}SKU '${sku}' için stok ${outbound} olarak gönderilecekti; ` +
+              `simülasyon modunda pazaryerine istek gönderilmedi.`;
+          } else if (dryRun) {
             logMessage = `[dry-run] Would have pushed stock ${outbound} for SKU '${sku}'`;
           } else {
             const res = await connector.updateStock(sku, outbound, { barcode: product?.barcode });
@@ -401,7 +415,7 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         } else if (eventType === 'sync_products') {
           const marketplaceProducts = await connector.getProducts();
 
-          for (const p of marketplaceProducts) {
+          for (const p of simulated ? [] : marketplaceProducts) {
             // Upsert product in database
             await this.prisma.product.upsert({
               where: {
@@ -434,11 +448,13 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
               },
             });
           }
-          logMessage = `Successfully synced ${marketplaceProducts.length} products.`;
+          logMessage = simulated
+            ? `${modeTag}${marketplaceProducts.length} örnek ürün üretildi, veritabanına yazılmadı.`
+            : `Successfully synced ${marketplaceProducts.length} products.`;
         } else if (eventType === 'sync_orders') {
           const marketplaceOrders = await connector.getOrders();
 
-          for (const o of marketplaceOrders) {
+          for (const o of simulated ? [] : marketplaceOrders) {
             // Scoped to the store: an unscoped lookup found another tenant's
             // order with the same number and skipped the import, so this tenant
             // never got the order at all.
@@ -519,7 +535,9 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
               });
             }
           }
-          logMessage = `Successfully synced ${marketplaceOrders.length} orders.`;
+          logMessage = simulated
+            ? `${modeTag}${marketplaceOrders.length} örnek sipariş üretildi, veritabanına yazılmadı.`
+            : `Successfully synced ${marketplaceOrders.length} orders.`;
         }
       }
 

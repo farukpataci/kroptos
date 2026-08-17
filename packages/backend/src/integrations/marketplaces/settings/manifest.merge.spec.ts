@@ -225,6 +225,55 @@ describe('resolveManifest', () => {
     expect(ciceksepeti.tabs.map((t) => t.id)).not.toContain('returns');
   });
 
+  /**
+   * n11's manifest used to promise nine capabilities against five that exist,
+   * and three fields the connector never read — one of them `required`, which
+   * gated the wizard on a value nothing consumed.
+   */
+  describe('n11: what is promised matches what is implemented', () => {
+    const manifest = () => new MarketplaceSettingsRegistry().getManifest('n11');
+
+    it('flags the unimplemented capabilities without deleting their tabs', () => {
+      const { capabilities, plannedCapabilities, tabs } = manifest();
+      const unimplemented = ['orders.updateStatus', 'products.push', 'stock.push', 'price.push', 'returns.read'];
+
+      for (const planned of unimplemented) {
+        expect(plannedCapabilities).toContain(planned);
+        // Still granted, because the schema hangs off it: dropping 'stock.push'
+        // deletes the stock tab, and `save` then prunes the buffer and cap the
+        // sync worker reads for every provider.
+        expect(capabilities).toContain(planned);
+      }
+
+      const tabIds = tabs.map((tab) => tab.id);
+      expect(tabIds).toContain('stock');
+      expect(tabIds).toContain('pricing');
+      expect(tabIds).toContain('catalog');
+    });
+
+    it('keeps the unread fields known to the settings layer, but deprecated', () => {
+      const fields = collectFields(manifest());
+      const unread = ['n11.shipmentTemplate', 'n11.preparingDay', 'n11.catalogMatch'];
+
+      for (const key of unread) {
+        const field = fields.find((f) => f.key === key);
+        // Present: deleting the key would make `save` prune whatever the seller
+        // already stored under it, and reject any save that echoes it back.
+        expect(field).toBeDefined();
+        expect(field!.deprecated).toBe(true);
+        // And no longer able to block the wizard.
+        expect(field!.required).toBeFalsy();
+      }
+    });
+
+    it('offers the run mode with no concrete default, so the env stays reachable', () => {
+      const field = collectFields(manifest()).find((f) => f.key === 'general.mode');
+
+      expect(field?.default).toBe('auto');
+      expect(field?.options?.map((o) => o.value)).toEqual(['auto', 'simulation', 'live']);
+    });
+  });
+
   it('rejects an unknown provider by name', () => {
     const registry = new MarketplaceSettingsRegistry();
 

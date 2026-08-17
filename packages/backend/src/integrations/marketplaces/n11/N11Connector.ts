@@ -12,36 +12,111 @@ import { N11Order, N11OrderItem, N11Product } from './N11Types';
 
 /**
  * n11 publishes no separate sandbox gateway, so both environments resolve to
- * the same host; the entry is kept so the shape matches the other connectors
- * and a future stage host is a one-line change.
+ * the same host.
  *
- * DOĞRULANAMADI: paths below are written from n11's REST documentation and have
- * not been exercised against a real seller account. This is the lowest-confidence
- * path set of the connectors written so far — verify before going live.
+ * Only two paths are in this file, and both were confirmed against the live
+ * gateway on 2026-08-17: an unauthenticated GET answers 403 "Authentication
+ * parameters missing", which is the gateway rejecting credentials on a route it
+ * knows. Every other path this connector used to carry answered either an
+ * OpenShift "Application is not available" page (no route at all) or a JSON
+ * `NotFoundException` from the service behind it, so they are gone rather than
+ * left in place looking plausible:
+ *
+ *   /ms/order/list            → unrouted
+ *   /ms/product-query/products→ 404 "No handler found for GET /product-query/products"
+ *   /ms/product/stock-update  → unrouted
+ *   /ms/category              → unrouted
+ *   /ms/category/{id}/attributes → unrouted
+ *
+ * The header pair below is confirmed too: with dummy values the gateway answers
+ * `SellerApiUserUnauthorizedException`, and with no headers at all the service
+ * complains that the required header 'appkey' is absent.
+ *
+ * Until the seller-facing documentation arrives, orders, products and stock
+ * have no verified endpoint, so this connector defaults to simulation and
+ * refuses those three operations outright in live mode.
  */
 const BASE_URL = 'https://api.n11.com';
 
 const PATHS = {
-  orders: () => '/ms/order/list',
-  products: () => '/ms/product-query/products',
-  stockUpdate: () => '/ms/product/stock-update',
-  categories: () => '/ms/category',
-  categoryAttributes: (categoryId: string) => `/ms/category/${categoryId}/attributes`,
+  categories: () => '/cdn/categories',
+  categoryAttributes: (categoryId: string) => `/cdn/category/${categoryId}/attribute`,
 };
 
-const PAGE_SIZE = 100;
-const MAX_PAGES = 50;
+/**
+ * Sample data for simulation mode. Deliberately routed through the same
+ * `toN11Order`/`toN11Product` normalisers as a real response would be, so the
+ * normalisation and mapping code is exercised rather than bypassed.
+ *
+ * Order numbers start with `SIM-`; with the `orders.numberPrefix` default they
+ * land as `N11-SIM-…`, which means a simulated order that somehow reaches a
+ * database is recognisable on sight.
+ */
+const SIMULATED_ORDERS: Record<string, any>[] = [
+  {
+    id: 900001,
+    orderNumber: 'SIM-1001',
+    status: 1,
+    totalPrice: 249.9,
+    currency: 'TRY',
+    buyer: { fullName: 'Simülasyon Alıcı', email: 'simulasyon@example.com', gsm: '5550000000' },
+    shippingAddress: { address: 'Örnek Mah. 1. Sok. No:1', city: 'İstanbul', district: 'Kadıköy' },
+    orderItemList: {
+      orderItem: [
+        { productSellerCode: 'SIM-SKU-1', productName: 'Simülasyon Ürün 1', quantity: 1, price: 149.9 },
+        { productSellerCode: 'SIM-SKU-2', productName: 'Simülasyon Ürün 2', quantity: 2, price: 50 },
+      ],
+    },
+  },
+  {
+    id: 900002,
+    orderNumber: 'SIM-1002',
+    status: 2,
+    totalPrice: 99.9,
+    currency: 'TRY',
+    buyer: { fullName: 'Simülasyon Alıcı 2' },
+    shippingAddress: { address: 'Örnek Cad. No:2', city: 'İzmir', district: 'Konak' },
+    orderItemList: {
+      orderItem: [
+        { productSellerCode: 'SIM-SKU-1', productName: 'Simülasyon Ürün 1', quantity: 1, price: 99.9 },
+      ],
+    },
+  },
+];
 
-interface N11Page<T> {
-  content?: T[];
-  orderList?: T[];
-  products?: T[];
-  totalPages?: number;
-  totalElements?: number;
-}
+const SIMULATED_PRODUCTS: Record<string, any>[] = [
+  {
+    stockCode: 'SIM-SKU-1',
+    title: 'Simülasyon Ürün 1',
+    description: 'Simülasyon modunda üretilmiş örnek kayıt.',
+    salePrice: 149.9,
+    stockQuantity: 12,
+    images: ['https://example.invalid/sim-1.jpg'],
+    gtin: '8690000000001',
+  },
+  {
+    stockCode: 'SIM-SKU-2',
+    title: 'Simülasyon Ürün 2',
+    salePrice: 50,
+    stockQuantity: 0,
+    gtin: '8690000000002',
+  },
+];
+
+const SIMULATED_CATEGORIES = [
+  { id: 1000, name: 'Simülasyon Kategori', parentId: 0 },
+  { id: 1001, name: 'Simülasyon Alt Kategori', parentId: 1000 },
+];
 
 export class N11Connector extends MarketplaceConnector {
   protected readonly defaultRateLimit = 100;
+
+  /**
+   * Unverified endpoints for orders, products and stock; nothing may be believed
+   * until the documentation lands. The seller can still force `live` from the
+   * settings to exercise the two confirmed category endpoints.
+   */
+  protected readonly defaultMode = 'simulation' as const;
 
   protected get displayName(): string {
     return 'n11';
@@ -59,6 +134,7 @@ export class N11Connector extends MarketplaceConnector {
   protected authHeaders(): Record<string, string> {
     const { apiKey, apiSecret } = this.requireCredentials('apiKey', 'apiSecret');
     // n11 authenticates with a header pair rather than an Authorization header.
+    // Confirmed live: dummy values earn SellerApiUserUnauthorizedException.
     return { appKey: apiKey, appSecret: apiSecret };
   }
 
@@ -73,117 +149,115 @@ export class N11Connector extends MarketplaceConnector {
     return this.send<T>(`${BASE_URL}${path}`, options);
   }
 
-  /** Reads whichever collection key this endpoint family happens to use. */
-  private rows<T>(page: N11Page<T> | undefined): T[] {
-    return page?.content ?? page?.orderList ?? page?.products ?? [];
-  }
-
-  private async fetchAllPages<T>(
-    path: string,
-    options: { method?: string; query?: Record<string, string | number | undefined>; body?: Record<string, unknown> },
-  ): Promise<T[]> {
-    const collected: T[] = [];
-    let page = 0;
-    let totalPages = 1;
-
-    while (page < totalPages && page < MAX_PAGES) {
-      // Order search is a POST with a filter body; product search is a GET with
-      // a query string. Paging travels in whichever of the two the caller uses.
-      const result = await this.call<N11Page<T>>(path, {
-        method: options.method,
-        query: options.query ? { ...options.query, page, size: PAGE_SIZE } : undefined,
-        body: options.body ? { ...options.body, pagingData: { currentPage: page, pageSize: PAGE_SIZE } } : undefined,
-      });
-
-      collected.push(...this.rows(result));
-      totalPages = Number(result?.totalPages) || 1;
-      page++;
-    }
-
-    return collected;
-  }
-
   async testConnection(): Promise<ConnectionTestResult> {
     return this.probe(async () => {
+      // Credentials are checked in both modes: a simulated success that hides an
+      // empty API key would send the seller into configuration believing the
+      // account is wired up.
       this.requireCredentials('apiKey', 'apiSecret');
-      const result = await this.call<N11Page<unknown>>(PATHS.products(), {
-        query: { page: 0, size: 1 },
-      });
 
-      const total = Number(result?.totalElements);
-      return Number.isFinite(total)
-        ? `n11 bağlantısı doğrulandı. Satıcı hesabında ${total} ürün görüldü.`
-        : 'n11 bağlantısı doğrulandı.';
+      if (this.isSimulation) {
+        return (
+          'n11 SİMÜLASYON modunda çalışıyor: kimlik bilgileri biçimsel olarak tamam, ' +
+          'ancak pazaryerine hiçbir istek gönderilmedi ve aşağıdaki veriler örnektir. ' +
+          'Sipariş/ürün/stok uçları n11 dokümanı ile doğrulanmadı.'
+        );
+      }
+
+      const categories = await this.readCategories();
+      return `n11 bağlantısı doğrulandı. Kategori listesi okundu (${categories.length} kayıt).`;
     });
   }
 
   async getOrders(): Promise<MarketplaceOrder[]> {
     this.requireCredentials('apiKey', 'apiSecret');
-
-    const backfillDays = Number(this.setting<number>('orders.backfillDays', 7));
-    const startDate = new Date(Date.now() - Math.max(0, backfillDays) * 24 * 60 * 60 * 1000);
-
-    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.orders(), {
-      method: 'POST',
-      body: {
-        searchData: {
-          period: {
-            startDate: startDate.toISOString(),
-            endDate: new Date().toISOString(),
-          },
-        },
-      },
-    });
+    if (!this.isSimulation) this.notImplemented('getOrders');
 
     const wanted = this.setting<string[]>('orders.importStatuses', ['created', 'picking', 'shipped']);
-    const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
+    const wantedSet = new Set((wanted ?? []).map((status) => String(status).toLowerCase()));
 
-    return raw
-      .map((order) => this.toN11Order(order))
+    return SIMULATED_ORDERS.map((raw) => this.toN11Order(raw))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(this.statusName(order.status)))
-      .map((order) => N11Mapper.toUnifiedOrder(order));
+      .map((order) => {
+        const unified = N11Mapper.toUnifiedOrder(order);
+
+        // Two marketplaces can hand out the same order number and Order lookups
+        // key on it, so the seller's prefix has to be applied here — it was
+        // configurable and read by nobody, which is how an n11 order could be
+        // mistaken for an existing order from another marketplace.
+        unified.orderNumber = this.prefixOrderNumber(unified.orderNumber);
+        unified.status = this.mapOrderStatus(this.statusName(order.status), unified.status);
+        return { ...unified, ...this.modeStamp };
+      });
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
     this.requireCredentials('apiKey', 'apiSecret');
+    if (!this.isSimulation) this.notImplemented('getProducts');
 
-    const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(), { query: {} });
-
-    return raw.map((product) => N11Mapper.toUnifiedProduct(this.toN11Product(product)));
+    return SIMULATED_PRODUCTS.map((raw) => ({
+      ...N11Mapper.toUnifiedProduct(this.toN11Product(raw)),
+      ...this.modeStamp,
+    }));
   }
 
-  /** n11 addresses inventory by the seller's own stock code. */
+  /**
+   * n11 addresses inventory by the seller's own stock code, but the endpoint
+   * that accepts it is not confirmed. Reports failure instead of throwing, so a
+   * stock sync logs one clear reason per SKU rather than aborting the run.
+   */
   async updateStock(sku: string, quantity: number): Promise<StockUpdateResult> {
     try {
       this.requireCredentials('apiKey', 'apiSecret');
 
-      await this.call<unknown>(PATHS.stockUpdate(), {
-        method: 'POST',
-        body: { items: [{ stockCode: sku, quantity }] },
-      });
+      if (this.isSimulation) {
+        return { sku, quantity, success: true, ...this.modeStamp };
+      }
 
-      return { sku, quantity, success: true };
+      this.notImplemented('updateStock');
     } catch (error: any) {
       return {
         sku,
         quantity,
         success: false,
         error: error?.message || 'n11 stok güncellemesi başarısız',
+        ...this.modeStamp,
       };
     }
   }
 
   async getCategories(): Promise<any[]> {
-    const result = await this.call<{ categories?: any[]; content?: any[] }>(PATHS.categories());
-    return result?.categories ?? result?.content ?? [];
+    if (this.isSimulation) return SIMULATED_CATEGORIES;
+    return this.readCategories();
   }
 
   async getCategoryAttributes(categoryId: string): Promise<any> {
+    if (this.isSimulation) {
+      return {
+        categoryId,
+        attributes: [
+          { id: 1, name: 'Simülasyon Nitelik', mandatory: false, values: [{ id: 1, name: 'Örnek' }] },
+        ],
+        ...this.modeStamp,
+      };
+    }
+
     return this.call<any>(PATHS.categoryAttributes(categoryId));
+  }
+
+  /** The one confirmed read: shape is unknown, so three wrappings are accepted. */
+  private async readCategories(): Promise<any[]> {
+    const result = await this.call<{ categories?: any[]; content?: any[] } | any[]>(PATHS.categories());
+    if (Array.isArray(result)) return result;
+    return result?.categories ?? result?.content ?? [];
   }
 
   // --------------------------------------------------------------------------
   // Response normalisation
+  //
+  // Kept even though only sample data flows through it today: this is where a
+  // real n11 response will land, and the sample data is shaped like one so the
+  // mapping is not written blind when the documentation arrives.
   // --------------------------------------------------------------------------
 
   /**
@@ -215,7 +289,11 @@ export class N11Connector extends MarketplaceConnector {
     }
   }
 
-  /** Inverse of toStatusCode, used to match against the settings vocabulary. */
+  /**
+   * Inverse of toStatusCode. Used both to match the seller's `importStatuses`
+   * selection and as the key handed to `orders.statusMap`, so the two always
+   * speak the same vocabulary.
+   */
   private statusName(code: number): string {
     switch (code) {
       case 2:
@@ -250,7 +328,7 @@ export class N11Connector extends MarketplaceConnector {
       id: String(raw.id ?? raw.orderId ?? ''),
       orderNumber: raw.orderNumber ?? String(raw.id ?? ''),
       buyer: {
-        fullName: buyer.fullName ?? [buyer.firstName, buyer.lastName].filter(Boolean).join(' ') ?? '',
+        fullName: buyer.fullName || [buyer.firstName, buyer.lastName].filter(Boolean).join(' '),
         email: buyer.email,
         gsm: buyer.gsm ?? buyer.phone,
       },

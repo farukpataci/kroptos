@@ -97,6 +97,14 @@ export interface SettingsField {
   badgeKey?: string;             // 'beta' | 'providerOnly' | 'advanced'
   /** Connector capability required for this field to apply */
   requiresCapability?: MarketplaceCapability;
+
+  /**
+   * A field the connector does not read (yet). It stays in the manifest and the
+   * renderer skips it — removing it outright would make the settings layer prune
+   * whatever the seller already saved under that key, and reject a save that
+   * echoes it back as an unknown key.
+   */
+  deprecated?: boolean;
 }
 
 export interface SettingsSection {
@@ -152,6 +160,16 @@ export interface ProviderSettingsManifest {
   displayName: string;
   version: number;               // schemaVersion
   capabilities: MarketplaceCapability[];
+  /**
+   * The subset of `capabilities` the connector does not actually implement yet.
+   *
+   * An annotation, not a substitute: base tabs are gated by `requiresCapability`,
+   * so dropping a capability deletes the whole tab — and with it the stored
+   * values of every field inside, since `save` prunes keys the manifest no
+   * longer knows. The schema therefore keeps the capability and the UI reads
+   * this list to present it as planned rather than working.
+   */
+  plannedCapabilities?: MarketplaceCapability[];
   credentials: SettingsField[];  // API credentials form (wizard step 1)
   tabs: SettingsTab[];
   wizard: SettingsWizardStep[];
@@ -165,6 +183,8 @@ export interface ProviderSettingsOverride {
   displayName: string;
   version?: number;
   capabilities: MarketplaceCapability[];
+  /** subset of `capabilities` that is not implemented; see ProviderSettingsManifest */
+  plannedCapabilities?: MarketplaceCapability[];
   credentials: SettingsField[];
   /** field / section keys to drop from base */
   omitFields?: string[];
@@ -224,5 +244,7 @@ export interface ProviderSummary {
   provider: string;
   displayName: string;
   capabilities: MarketplaceCapability[];
+  /** Subset of the above with no working implementation; see ProviderSettingsManifest. */
+  plannedCapabilities?: MarketplaceCapability[];
   docsUrl?: string;
 }

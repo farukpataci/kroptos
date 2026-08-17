@@ -1260,6 +1260,10 @@
           },
           "catalog": {
             "title": "n11 Katalog"
+          },
+          "mode": {
+            "title": "Çalışma Modu",
+            "description": "n11 sipariş/ürün/stok uçları gerçek bir satıcı hesabında doğrulanmadı. Simülasyon modunda pazaryerine hiçbir istek gitmez ve üretilen kayıtlar örnektir."
           }
         },
         "amazon": {
@@ -1327,6 +1331,10 @@
           },
           "healthCheckIntervalMinutes": {
             "label": "Sağlık Kontrol Aralığı"
+          },
+          "mode": {
+            "label": "Çalışma modu",
+            "help": "Otomatik: sunucu ayarı yoksa sağlayıcının kendi varsayılanı geçerlidir (n11 için simülasyon). Simülasyon: dış çağrı yapılmaz, örnek veri üretilir ve veritabanına yazılmaz. Canlı: yalnızca doğrulanmış kategori uçları çalışır, diğer işlemler açık hata döner."
           }
         },
         "orders": {
@@ -1800,6 +1808,11 @@
             "Europe/London": "Londra (GMT+0)",
             "Europe/Berlin": "Berlin (GMT+1)",
             "UTC": "UTC"
+          },
+          "mode": {
+            "auto": "Otomatik (sağlayıcı varsayılanı)",
+            "simulation": "Simülasyon (dış çağrı yok)",
+            "live": "Canlı"
           }
         },
         "orders": {

@@ -1,4 +1,12 @@
-import { ConnectionTestResult, MarketplaceOrder, MarketplaceProduct, StockUpdateResult } from './MarketplaceTypes';
+import {
+  ConnectionTestResult,
+  MarketplaceMode,
+  MarketplaceModeSource,
+  MarketplaceModeStamp,
+  MarketplaceOrder,
+  MarketplaceProduct,
+  StockUpdateResult,
+} from './MarketplaceTypes';
 import { MarketplaceHttpClient, MarketplaceHttpError } from './MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from './MarketplaceRateLimiter';
 
@@ -87,6 +95,73 @@ export abstract class MarketplaceConnector {
   /** Which environment the manifest's `general.environment` field selected. */
   protected get environment(): string {
     return this.setting<string>('general.environment', 'production');
+  }
+
+  // --------------------------------------------------------------------------
+  // Live vs simulation
+  //
+  // A connector written from documentation that no seller account has confirmed
+  // is worse than a missing one: it reports success, imports nothing, and the
+  // seller believes the integration works. So a connector may declare itself
+  // unverified, serve sample data instead of calling endpoints that do not
+  // exist, and say so in every payload it hands back.
+  //
+  // Nothing here may fall back silently. Simulation makes no outbound request
+  // at all, and a live call into an unverified endpoint fails loudly rather
+  // than quietly returning sample rows.
+  // --------------------------------------------------------------------------
+
+  /**
+   * What this connector does when nothing else selects a mode. `live` for every
+   * marketplace whose endpoints are verified; a connector overrides it to
+   * `simulation` while its endpoints are still unconfirmed.
+   */
+  protected readonly defaultMode: MarketplaceMode = 'live';
+
+  /**
+   * The resolved mode and what decided it: the seller's `general.mode` setting
+   * wins, then the `MARKETPLACE_MODE` environment variable, then the
+   * connector's own default.
+   *
+   * Public because the callers are the ones that must act on it — the worker
+   * refuses to persist simulated rows, and the API hands the mode to the UI so
+   * the badge is not guesswork.
+   */
+  get connectionMode(): { mode: MarketplaceMode; source: MarketplaceModeSource } {
+    const configured = String(this.settings['general.mode'] ?? '').trim().toLowerCase();
+    if (configured === 'live' || configured === 'simulation') {
+      return { mode: configured, source: 'setting' };
+    }
+
+    const fromEnv = String(process.env.MARKETPLACE_MODE ?? '').trim().toLowerCase();
+    if (fromEnv === 'live' || fromEnv === 'simulation') {
+      return { mode: fromEnv, source: 'env' };
+    }
+
+    return { mode: this.defaultMode, source: 'default' };
+  }
+
+  protected get isSimulation(): boolean {
+    return this.connectionMode.mode === 'simulation';
+  }
+
+  /** Spread into every result so no payload leaves here mode-ambiguous. */
+  protected get modeStamp(): Required<MarketplaceModeStamp> {
+    const { mode, source } = this.connectionMode;
+    return { mode, modeSource: source };
+  }
+
+  /**
+   * Refuses an operation whose endpoint has never been confirmed against a real
+   * seller account. Throwing beats returning an empty list: an empty list reads
+   * as "the marketplace has no orders" and is indistinguishable from success.
+   */
+  protected notImplemented(method: string): never {
+    throw new Error(
+      `${this.displayName} canlı uç noktası doğrulanmadı: ${method}. ` +
+        `Sağlayıcı dokümanı doğrulanana kadar entegrasyonu simülasyon modunda kullanın ` +
+        `(Ayarlar → Genel → Çalışma modu).`,
+    );
   }
 
   // --------------------------------------------------------------------------
@@ -300,12 +375,13 @@ export abstract class MarketplaceConnector {
     const startTime = Date.now();
     try {
       const message = await run();
-      return { success: true, message, durationMs: Date.now() - startTime };
+      return { success: true, message, durationMs: Date.now() - startTime, ...this.modeStamp };
     } catch (error: any) {
       return {
         success: false,
         message: error?.message || `${this.displayName} bağlantısı doğrulanamadı`,
         durationMs: Date.now() - startTime,
+        ...this.modeStamp,
       };
     }
   }

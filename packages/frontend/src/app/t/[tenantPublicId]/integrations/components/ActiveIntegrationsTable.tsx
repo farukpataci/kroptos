@@ -9,6 +9,7 @@ import {
   TruckIcon,
   DocumentTextIcon,
   Squares2X2Icon,
+  BeakerIcon,
 } from '@heroicons/react/24/outline';
 import type { IntegrationStatus } from '@kroptos/shared';
 
@@ -21,6 +22,14 @@ export interface ActiveIntegrationItem {
   lastSyncAt?: string;
   store?: { id: string; name: string } | null;
   setting?: { isConfigured: boolean; completedSteps: string[] } | null;
+  /**
+   * Whether this integration talks to the marketplace or serves its connector's
+   * own sample data. Resolved by the backend, never guessed here: a simulated
+   * integration that looks identical to a live one is how invented orders get
+   * believed.
+   */
+  mode?: 'live' | 'simulation';
+  modeSource?: 'setting' | 'env' | 'default';
 }
 
 interface ActiveIntegrationsTableProps {
@@ -144,6 +153,23 @@ export function ActiveIntegrationsTable({
                     >
                       <BuildingStorefrontIcon className="h-3 w-3" />
                       {item.store.name}
+                    </span>
+                  )}
+                  {item.mode === 'simulation' && (
+                    <span
+                      className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-500/30 bg-amber-500/10 px-1.5 py-0.5 text-[0.6875rem] font-bold text-amber-700 dark:text-amber-400"
+                      title={
+                        'Simülasyon modu: pazaryerine istek gönderilmez, üretilen sipariş ve ürünler örnektir ' +
+                        've veritabanına yazılmaz.' +
+                        (item.modeSource === 'env'
+                          ? ' (Sunucu ayarı MARKETPLACE_MODE ile seçildi.)'
+                          : item.modeSource === 'default'
+                            ? ' (Sağlayıcının uçları henüz doğrulanmadı.)'
+                            : '')
+                      }
+                    >
+                      <BeakerIcon className="h-3 w-3" />
+                      Simülasyon
                     </span>
                   )}
                 </div>

@@ -1,7 +1,13 @@
 'use client';
 
-import type { ProviderSettingsManifest, SettingsField, SettingsSection } from '@kroptos/shared';
+import type {
+  MarketplaceCapability,
+  ProviderSettingsManifest,
+  SettingsField,
+  SettingsSection,
+} from '@kroptos/shared';
 import { isDisabled, isVisible } from '@kroptos/shared';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import { FIELD_REGISTRY } from './fields';
 import { SettingsSectionCard } from './SettingsSectionCard';
 
@@ -15,6 +21,34 @@ interface Props {
   disabled?: boolean;
   onChange: (key: string, value: unknown) => void;
   onResetSection?: (sectionId: string) => void;
+}
+
+/**
+ * Whether a tab, section or field hangs off a capability the provider declares
+ * but has not implemented.
+ *
+ * The capability stays granted on purpose — base tabs are gated by
+ * `requiresCapability`, so revoking it would delete the tab and make the backend
+ * prune every value already saved inside it. The form therefore still renders
+ * and still saves; it only stops implying the values reach the marketplace.
+ */
+function isPlanned(
+  manifest: ProviderSettingsManifest,
+  activeTabId: string | undefined,
+  section?: SettingsSection,
+  field?: SettingsField,
+): boolean {
+  const planned = manifest.plannedCapabilities;
+  if (!planned || planned.length === 0) return false;
+
+  const tab = manifest.tabs.find((candidate) => candidate.id === activeTabId);
+  const required: Array<MarketplaceCapability | undefined> = [
+    tab?.requiresCapability,
+    section?.requiresCapability,
+    field?.requiresCapability,
+  ];
+
+  return required.some((capability) => capability !== undefined && planned.includes(capability));
 }
 
 function resolveSections(
@@ -79,10 +113,35 @@ export function SettingsSchemaRenderer({
     isVisible(section.visibleWhen, values),
   );
 
+  // The whole tab hangs off a capability that has no connector code behind it.
+  const tabIsPlanned = isPlanned(manifest, activeTabId);
+
   return (
     <div className="space-y-5">
+      {tabIsPlanned && (
+        <div
+          role="status"
+          data-testid="planned-capability-notice"
+          className="flex gap-2 rounded-kp-md border border-kp-warning/20 bg-kp-warning/10 p-3 text-xs text-kp-warning"
+        >
+          <ExclamationTriangleIcon className="h-4 w-4 shrink-0" />
+          <span>
+            Bu sekmedeki ayarlar {manifest.displayName} için <strong>henüz desteklenmiyor</strong>.
+            Kayıtlı değerleriniz korunur, ancak bağlayıcı bu bölümü okumadığı için senkronizasyona
+            etkisi olmaz.
+          </span>
+        </div>
+      )}
       {visibleSections.map((section) => {
-        const fields = section.fields.filter((field) => isVisible(field.visibleWhen, values));
+        // `deprecated` fields stay in the manifest on purpose — removing a key
+        // makes the settings service prune whatever the seller already saved
+        // under it, and reject any save that sends it back — but the connector
+        // does not read them, so offering them here would be a promise the sync
+        // cannot keep. Hidden here, still known to the backend.
+        const fields = section.fields.filter(
+          (field) => !field.deprecated && isVisible(field.visibleWhen, values),
+        );
+        // A section whose every field is deprecated has nothing left to show.
         if (fields.length === 0) return null;
 
         const hasError = fields.some((field) => errors[field.key]);
@@ -100,7 +159,10 @@ export function SettingsSchemaRenderer({
                 field={field}
                 values={values}
                 errors={errors}
-                disabled={disabled}
+                // Read-only rather than removed: the save path and the stored
+                // values stay exactly as they were, the user just cannot keep
+                // filling in something the connector will never read.
+                disabled={disabled || isPlanned(manifest, activeTabId, section, field)}
                 onChange={onChange}
               />
             ))}

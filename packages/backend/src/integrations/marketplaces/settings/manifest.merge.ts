@@ -152,6 +152,10 @@ export function resolveManifest(override: ProviderSettingsOverride): ProviderSet
     displayName: override.displayName,
     version: override.version ?? base.version,
     capabilities: [...override.capabilities],
+    // Passed through untouched: these deliberately do not take part in
+    // `filterByCapabilities`, so a planned capability hides its fields exactly
+    // like an absent one while still being reportable.
+    ...(override.plannedCapabilities ? { plannedCapabilities: [...override.plannedCapabilities] } : {}),
     credentials: deepCopy(override.credentials),
     tabs,
     wizard: base.wizard,

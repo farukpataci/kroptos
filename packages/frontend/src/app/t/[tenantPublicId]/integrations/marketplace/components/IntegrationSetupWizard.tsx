@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import {
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
+  BeakerIcon,
   CheckCircleIcon,
   CheckIcon,
   ExclamationTriangleIcon,
@@ -61,6 +62,12 @@ export function IntegrationSetupWizard({
   const [credentials, setCredentials] = useState<Record<string, unknown>>({});
   const [credentialErrors, setCredentialErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState<string | null>(null);
+  /**
+   * Set when the connection test reports it ran simulated. A successful test that
+   * never touched the marketplace must not read like a working connection, so it
+   * gets its own notice rather than sharing the success path silently.
+   */
+  const [simulationNotice, setSimulationNotice] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
 
@@ -142,10 +149,11 @@ export function IntegrationSetupWizard({
         }),
       });
 
-      const test = await apiFetch<{ success: boolean; message: string }>(
-        `/integrations/${created.id}/test-connection`,
-        { method: 'POST' },
-      );
+      const test = await apiFetch<{
+        success: boolean;
+        message: string;
+        mode?: 'live' | 'simulation';
+      }>(`/integrations/${created.id}/test-connection`, { method: 'POST' });
 
       setIntegration(created);
       onCreated(created);
@@ -158,6 +166,7 @@ export function IntegrationSetupWizard({
         return;
       }
 
+      setSimulationNotice(test.mode === 'simulation' ? test.message : null);
       setPhase('configure');
       setStepIndex(0);
     } catch (err: any) {
@@ -257,6 +266,16 @@ export function IntegrationSetupWizard({
               <div className="mb-4 flex gap-2 rounded-kp-md border border-kp-danger/20 bg-kp-danger/10 p-3 text-xs text-kp-danger">
                 <ExclamationTriangleIcon className="h-4 w-4 shrink-0" />
                 <span>{formError}</span>
+              </div>
+            )}
+
+            {simulationNotice && (
+              <div
+                role="status"
+                className="mb-4 flex gap-2 rounded-kp-md border border-kp-warning/20 bg-kp-warning/10 p-3 text-xs text-kp-warning"
+              >
+                <BeakerIcon className="h-4 w-4 shrink-0" />
+                <span>{simulationNotice}</span>
               </div>
             )}
 

@@ -36,8 +36,14 @@ describe('IntegrationService', () => {
   };
 
   const mockConnectorFactory: any = {
-    create: jest.fn().mockImplementation((provider, credentials) => {
+    create: jest.fn().mockImplementation((provider, credentials, settings) => {
       return {
+        // The list asks the connector for its run mode rather than re-deriving
+        // the rule, so the mock has to answer it too.
+        connectionMode:
+          settings?.['general.mode'] === 'live'
+            ? { mode: 'live', source: 'setting' }
+            : { mode: 'simulation', source: 'default' },
         // Every connector exposes this; an OAuth one may return a replacement
         // refresh token here after authenticating.
         consumeRotatedCredentials: jest.fn().mockReturnValue(undefined),
@@ -118,13 +124,45 @@ describe('IntegrationService', () => {
         orderBy: { createdAt: 'desc' },
         include: {
           setting: {
-            select: { isConfigured: true, completedSteps: true, deletedAt: true },
+            // `values` is read to resolve the run mode for the badge and stripped
+            // from the response again; the list never ships the settings map.
+            select: { isConfigured: true, completedSteps: true, deletedAt: true, values: true },
           },
           store: {
             select: { id: true, name: true },
           },
         },
       });
+    });
+
+    it('should carry the run mode on each marketplace row and keep the settings map out', async () => {
+      mockPrismaService.integration.findMany.mockResolvedValue([
+        {
+          id: 'int-1',
+          provider: 'n11',
+          providerType: 'marketplace',
+          setting: { isConfigured: true, completedSteps: [], deletedAt: null, values: { 'stock.bufferQuantity': 3 } },
+        },
+      ]);
+
+      const [row] = (await service.list('agency-1', 'client-1', 'store-1', false)) as any[];
+
+      // The badge needs both: what mode, and whether the seller chose it.
+      expect(row).toMatchObject({ mode: 'simulation', modeSource: 'default' });
+      // Read to resolve the mode, then dropped — the list is not a settings feed.
+      expect(row.setting).toEqual({ isConfigured: true, completedSteps: [], deletedAt: null });
+      expect(row.setting.values).toBeUndefined();
+    });
+
+    it('should leave a non-marketplace row without a mode', async () => {
+      mockPrismaService.integration.findMany.mockResolvedValue([
+        { id: 'int-2', provider: 'logo', providerType: 'erp', setting: null },
+      ]);
+
+      const [row] = (await service.list('agency-1', 'client-1', 'store-1', false)) as any[];
+
+      expect(row.mode).toBeUndefined();
+      expect(row.modeSource).toBeUndefined();
     });
   });
 
@@ -372,6 +410,25 @@ describe('IntegrationService', () => {
       ).rejects.toThrow(BadRequestException);
 
       expect(mockIntegrationQueueService.addSyncJob).not.toHaveBeenCalled();
+    });
+
+    it('should say in the sync summary when the run is simulated', async () => {
+      // "0 sipariş" from a simulated run is the expected output, not a fault.
+      // The log prefix is not enough: the summary is what the user reads.
+      mockPrismaService.integration.findFirst.mockResolvedValue({
+        id: 'int-1',
+        agencyId: 'agency-1',
+        provider: 'n11',
+        providerType: 'marketplace',
+        status: 'active',
+      });
+
+      const res: any = await service.triggerSync('int-1', 'agency-1');
+
+      expect(res.mode).toBe('simulation');
+      expect(res.modeSource).toBe('default');
+      expect(res.message).toMatch(/SİMÜLASYON/);
+      expect(res.message).toMatch(/arıza değil/);
     });
 
     it('should queue product and order jobs once configured', async () => {

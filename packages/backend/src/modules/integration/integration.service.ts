@@ -84,14 +84,16 @@ export class IntegrationService {
       }
     }
 
-    return this.prisma.integration.findMany({
+    const rows = await this.prisma.integration.findMany({
       where: whereClause,
       orderBy: { createdAt: 'desc' },
       include: {
         // The list needs each row's configuration state to show the badge and
         // to disable sync; pulling it here avoids a settings request per row.
+        // `values` comes along only to resolve the run mode and is dropped
+        // again below — the list has no business shipping the whole settings map.
         setting: {
-          select: { isConfigured: true, completedSteps: true, deletedAt: true },
+          select: { isConfigured: true, completedSteps: true, deletedAt: true, values: true },
         },
         // The row shows which store an integration belongs to; storeId is null
         // for agency-wide integrations, so the relation may come back null.
@@ -100,6 +102,40 @@ export class IntegrationService {
         },
       },
     });
+
+    return rows.map((row) => {
+      const stored = (row.setting?.values ?? {}) as Record<string, unknown>;
+      const mode = this.resolveMode(row.provider, row.providerType, stored);
+
+      if (!row.setting) return { ...row, ...mode };
+
+      const { values, ...setting } = row.setting;
+      return { ...row, setting, ...mode };
+    });
+  }
+
+  /**
+   * The run mode for a list row, resolved without decrypting anything: a
+   * connector constructed with no credentials still answers `connectionMode`
+   * from the settings, the environment and its own default. Asking the connector
+   * rather than re-deriving the rule here is what stops the badge from claiming
+   * one mode while the sync runs in another.
+   */
+  private resolveMode(
+    provider: string,
+    providerType: string,
+    values: Record<string, unknown>,
+  ): { mode?: string; modeSource?: string } {
+    if (providerType !== 'marketplace') return {};
+
+    try {
+      const { mode, source } = this.connectorFactory.create(provider, {}, values).connectionMode;
+      return { mode, modeSource: source };
+    } catch {
+      // An unsupported provider has no connector to ask; the row simply carries
+      // no mode rather than failing the whole list.
+      return {};
+    }
   }
 
   async get(
@@ -338,18 +374,19 @@ export class IntegrationService {
     const startTime = Date.now();
     let success = true;
     let message = 'Connection test passed successfully';
+    // Carried to the caller so the UI can badge a simulated connection instead
+    // of presenting sample data as a working marketplace link.
+    let mode: string | undefined;
+    let modeSource: string | undefined;
 
     try {
       if (integration.providerType === 'marketplace') {
-        // 1. Decrypt raw credentials and validate structure
-        const creds = this.credentialService.decrypt(integration.credentialsEncrypted);
-        this.credentialService.validate(integration.provider, creds);
-
-        // 2. Create the connector and run the connector's own connection test
-        const connector = this.connectorFactory.create(integration.provider, creds);
+        const connector = await this.buildMarketplaceConnector(integration);
         const testResult = await connector.testConnection();
         success = testResult.success;
         message = testResult.message;
+        mode = testResult.mode;
+        modeSource = testResult.modeSource;
 
         // An OAuth marketplace may have handed back a replacement refresh token
         // while authenticating. Persisting it here is what stops the next
@@ -392,7 +429,7 @@ export class IntegrationService {
         endpoint: `/api/integrations/${id}/test-connection`,
         method: 'POST',
         requestBody: '[Redacted API Keys]',
-        responseBody: JSON.stringify({ success, message, durationMs }),
+        responseBody: JSON.stringify({ success, message, durationMs, mode, modeSource }),
         statusCode,
         durationMs,
         errorMessage: success ? null : message,
@@ -408,7 +445,7 @@ export class IntegrationService {
       });
     }
 
-    return { success, message, durationMs };
+    return { success, message, durationMs, mode, modeSource };
   }
 
   async triggerSync(
@@ -439,9 +476,29 @@ export class IntegrationService {
     const productsJob = await this.queueService.addSyncJob(integration.id, 'sync_products', {});
     const ordersJob = await this.queueService.addSyncJob(integration.id, 'sync_orders', {});
 
+    // A simulated run imports nothing on purpose. Without saying so here, the
+    // seller sees a sync finish with zero orders and reasonably concludes the
+    // integration is broken — the log prefix is not enough, because the summary
+    // is the only part most of them read.
+    const stored = await this.settingsService
+      .resolveForRuntime(integration.id)
+      .catch(() => ({}) as Record<string, unknown>);
+    const { mode, modeSource } = this.resolveMode(
+      integration.provider,
+      integration.providerType,
+      stored,
+    );
+
     return {
       success: true,
-      message: 'Senkronizasyon görevleri arka plan işleme kuyruğuna başarıyla eklendi',
+      message:
+        mode === 'simulation'
+          ? 'Senkronizasyon SİMÜLASYON modunda kuyruğa alındı: pazaryerine istek gönderilmeyecek, ' +
+            'örnek kayıtlar üretilecek ve hiçbiri veritabanına yazılmayacak. Sıfır sipariş/ürün ' +
+            'sonucu arıza değil, bu modun beklenen çıktısıdır.'
+          : 'Senkronizasyon görevleri arka plan işleme kuyruğuna başarıyla eklendi',
+      mode,
+      modeSource,
       jobs: [productsJob.id, ordersJob.id],
     };
   }
