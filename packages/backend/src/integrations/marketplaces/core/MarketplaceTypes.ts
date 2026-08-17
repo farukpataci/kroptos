@@ -34,7 +34,18 @@ export interface MarketplaceOrderItem {
 }
 
 export interface MarketplaceOrder extends MarketplaceModeStamp {
+  /**
+   * The number this order is stored and deduplicated under. For a marketplace
+   * that splits one order into several shipments this is a composite, because
+   * each shipment moves and is fulfilled on its own.
+   */
   orderNumber: string;
+  /**
+   * The number the marketplace shows the seller, when `orderNumber` had to be
+   * made composite. Kept so the panel can group the shipments back together and
+   * so a seller searching the number the buyer quotes actually finds the order.
+   */
+  marketplaceOrderNumber?: string;
   customerName: string;
   customerEmail?: string;
   customerPhone?: string;
@@ -52,6 +63,17 @@ export interface StockUpdateResult extends MarketplaceModeStamp {
   quantity: number;
   success: boolean;
   error?: string;
+  /**
+   * The marketplace accepted the update into a queue but had not applied it by
+   * the time we stopped waiting. Neither success nor failure: reporting `true`
+   * would claim stock that may still be rejected, and `false` would send the
+   * caller retrying an update the marketplace is already processing.
+   *
+   * Optional, so a marketplace that answers synchronously never sets it.
+   */
+  pending?: boolean;
+  /** Handle for querying the outcome later, when `pending` is set. */
+  taskId?: string;
 }
 
 export interface ConnectionTestResult extends MarketplaceModeStamp {

@@ -27,15 +27,20 @@ export const n11Override: ProviderSettingsOverride = {
     'returns.read',
   ],
   /**
-   * Of the nine above, these five have no working implementation: the connector
-   * has no status push, no product push and no price push at all, and its stock
-   * push has no confirmed endpoint. Only `/cdn/categories` and
-   * `/cdn/category/{id}/attribute` are verified live; orders and products come
-   * from sample data in simulation mode and refuse outright in live mode.
+   * Of the nine above, these four still have no implementation behind them:
+   * there is no status push, no product push, and no price push — the stock
+   * endpoint accepts prices but the connector deliberately omits them until it
+   * is confirmed whether `salePrice` is gross or net of VAT. Returns have no
+   * documented service at all.
+   *
+   * `stock.push` came off this list once `updateStock` was wired to
+   * `/ms/product/tasks/price-stock-update`. It is implemented but not yet
+   * exercised against a real seller account — that is what `general.mode`
+   * guards, not this list.
    *
    * The UI reads this to stop presenting them as working features.
    */
-  plannedCapabilities: ['orders.updateStatus', 'products.push', 'stock.push', 'price.push', 'returns.read'],
+  plannedCapabilities: ['orders.updateStatus', 'products.push', 'price.push', 'returns.read'],
   credentials: [
     { key: 'apiKey', type: 'password', labelKey: cred('apiKey'), required: true, secret: true },
     { key: 'apiSecret', type: 'password', labelKey: cred('apiSecret'), required: true, secret: true },
@@ -109,6 +114,29 @@ export const n11Override: ProviderSettingsOverride = {
       },
     },
     {
+      tabId: 'advanced',
+      section: {
+        id: 'n11.integrator',
+        titleKey: `${I}.sections.n11.integrator.title`,
+        descriptionKey: `${I}.sections.n11.integrator.description`,
+        icon: 'IdentificationIcon',
+        fields: [
+          {
+            key: 'advanced.integrator',
+            type: 'text',
+            labelKey: label('advanced.integrator'),
+            helpKey: help('advanced.integrator'),
+            // Deliberately optional with no default: n11 wants the same name on
+            // every write, and the connector already sends 'KroptOS'. Making it
+            // required would gate the wizard on a value almost nobody needs —
+            // the mistake n11.shipmentTemplate made.
+            maxLength: 64,
+            colSpan: 2,
+          },
+        ],
+      },
+    },
+    {
       tabId: 'catalog',
       section: {
         id: 'n11.catalog',
@@ -131,6 +159,30 @@ export const n11Override: ProviderSettingsOverride = {
   patchFields: {
     'orders.numberPrefix': { default: 'N11-' },
     'advanced.rateLimitPerMinute': { default: 100 },
+    // n11 publishes no sandbox gateway, so the environment choice selects
+    // nothing. Deprecated rather than omitted: dropping the key would make the
+    // settings service prune whatever a seller already saved under it.
+    'general.environment': { deprecated: true },
+    // n11's own status vocabulary, one request per selected status. `invoiced`
+    // and `returned` are gone because n11 defines neither — selecting them
+    // returned nothing at all, which reads as a broken integration rather than
+    // as an unsupported option. `unpacked` is offered but not on by default:
+    // it is what a package becomes once its contents were split into new
+    // packages, so importing it alongside its children counts the goods twice.
+    'orders.importStatuses': {
+      default: ['created', 'picking', 'shipped'],
+      options: [
+        { value: 'created', labelKey: `${I}.options.orders.importStatuses.created` },
+        { value: 'picking', labelKey: `${I}.options.orders.importStatuses.picking` },
+        { value: 'shipped', labelKey: `${I}.options.orders.importStatuses.shipped` },
+        { value: 'delivered', labelKey: `${I}.options.orders.importStatuses.delivered` },
+        { value: 'cancelled', labelKey: `${I}.options.orders.importStatuses.cancelled` },
+        { value: 'unpacked', labelKey: `${I}.options.orders.importStatuses.unpacked` },
+        { value: 'unsupplied', labelKey: `${I}.options.orders.importStatuses.unsupplied` },
+      ],
+    },
+    // n11 serves at most a 15-day window and silently clamps anything wider.
+    'orders.backfillDays': { max: 15 },
   },
   docsUrl: 'https://api.n11.com',
 };

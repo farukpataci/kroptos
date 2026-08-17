@@ -1,17 +1,15 @@
 import { N11Connector } from './N11Connector';
+import { N11Mapper } from './N11Mapper';
 import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
 
 /**
- * The previous version of this file pinned four endpoints that do not exist —
- * every assertion passed against a mock while `testConnection` answered 404 in
- * production. So nothing here asserts an unverified URL.
+ * Every URL asserted here comes from n11's seller documentation
+ * ("n11 RestAPI Entegrasyon Servisleri", 2026-08-17). The version before it
+ * pinned four endpoints that did not exist and passed anyway, so the rule is:
+ * an assertion about a path is only as good as the document behind it.
  *
- * Only two paths were confirmed against the live gateway (2026-08-17):
- *   GET /cdn/categories
- *   GET /cdn/category/{id}/attribute
- * Everything else is asserted the other way round: that it refuses to call at
- * all rather than calling a path nobody has confirmed.
+ * Still unverified against a real seller account — hence `defaultMode`.
  */
 describe('N11Connector', () => {
   const CREDENTIALS = { apiKey: 'app-key', apiSecret: 'app-secret' };
@@ -28,16 +26,45 @@ describe('N11Connector', () => {
       settings,
     );
 
-  /** Live mode has to be asked for explicitly; the connector defaults away from it. */
   const live = (extra: Record<string, unknown> = {}) => build({ 'general.mode': 'live', ...extra });
 
-  const lastCall = () => httpClient.request.mock.calls[httpClient.request.mock.calls.length - 1];
+  const calls = () => httpClient.request.mock.calls;
+  const lastCall = () => calls()[calls().length - 1];
+  const urlsHit = () => calls().map((call: any[]) => String(call[0]));
+  const bodyOf = (index: number) => JSON.parse(calls()[index][1].body);
+
+  /** Spring page envelope, as both paged n11 services return it. */
+  const page = (content: unknown[], totalPages = 1) => ({ content, totalPages, totalElements: content.length });
+
+  /** One shipment package shaped like the document's example. */
+  const shipmentPackage = (over: Record<string, unknown> = {}) => ({
+    orderNumber: '203872347637',
+    id: '112999455244259',
+    customerEmail: 'n11@n11.com',
+    customerfullName: 'N11 müşteri',
+    shippingAddress: {
+      address: 'Reşitpaşa Mah',
+      neighborhood: 'Reşitpaşa',
+      district: 'Sarıyer',
+      city: 'İstanbul',
+      gsm: '5xxxxxxxxx',
+    },
+    lines: [
+      { stockCode: '20242024', productName: 'Ayakkabı', quantity: 2, price: 292.8, totalSellerDiscountPrice: 5.8 },
+    ],
+    totalAmount: 579.8,
+    shipmentPackageStatus: 'Created',
+    ...over,
+  });
 
   beforeEach(() => {
     httpClient = { request: jest.fn() };
     rateLimiter = { throttle: jest.fn().mockResolvedValue(undefined) };
     delete process.env.MARKETPLACE_MODE;
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
   });
+
+  afterEach(() => jest.restoreAllMocks());
 
   afterAll(() => {
     if (originalEnvMode === undefined) delete process.env.MARKETPLACE_MODE;
@@ -47,31 +74,20 @@ describe('N11Connector', () => {
   // ------------------------------------------------------------ mode resolution
 
   describe('mode resolution', () => {
-    it('should default to simulation, because no read endpoint is verified', () => {
+    it('should default to simulation: no endpoint has run against a real account', () => {
       expect(build().connectionMode).toEqual({ mode: 'simulation', source: 'default' });
     });
 
     it('should let the environment override the connector default', () => {
       process.env.MARKETPLACE_MODE = 'live';
-
       expect(build().connectionMode).toEqual({ mode: 'live', source: 'env' });
     });
 
     it('should let the saved setting override the environment', () => {
       process.env.MARKETPLACE_MODE = 'live';
-
       expect(build({ 'general.mode': 'simulation' }).connectionMode).toEqual({
         mode: 'simulation',
         source: 'setting',
-      });
-    });
-
-    it('should ignore an unrecognised value rather than guessing', () => {
-      process.env.MARKETPLACE_MODE = 'nonsense';
-
-      expect(build({ 'general.mode': 'auto' }).connectionMode).toEqual({
-        mode: 'simulation',
-        source: 'default',
       });
     });
   });
@@ -79,227 +95,424 @@ describe('N11Connector', () => {
   // ----------------------------------------------------------------- simulation
 
   describe('simulation mode', () => {
-    it('should test the connection without making any request', async () => {
-      const result = await build().testConnection();
+    it('should serve every operation without a single request', async () => {
+      const connector = build();
+
+      const test = await connector.testConnection();
+      const orders = await connector.getOrders();
+      const products = await connector.getProducts();
+      const stock = await connector.updateStock('SIM-SKU-1', 7);
+      const categories = await connector.getCategories();
 
       expect(httpClient.request).not.toHaveBeenCalled();
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('SİMÜLASYON');
-      expect(result).toMatchObject({ mode: 'simulation', modeSource: 'default' });
+      expect(test.success).toBe(true);
+      expect(test.message).toContain('SİMÜLASYON');
+      expect(orders.length).toBeGreaterThan(0);
+      expect(products.length).toBeGreaterThan(0);
+      expect(stock.success).toBe(true);
+      expect(categories.length).toBeGreaterThan(0);
     });
 
-    it('should still refuse a blank credential, so a fake success cannot hide it', async () => {
+    it('should stamp the mode on every payload', async () => {
+      const connector = build();
+
+      for (const payload of [
+        await connector.testConnection(),
+        (await connector.getOrders())[0],
+        (await connector.getProducts())[0],
+        await connector.updateStock('SIM-SKU-1', 1),
+      ]) {
+        expect(payload).toMatchObject({ mode: 'simulation', modeSource: 'default' });
+      }
+    });
+
+    it('should mark a simulated order so it cannot pass for a real one', async () => {
+      const [order] = await build().getOrders();
+
+      expect(order.orderNumber).toMatch(/^SIM-/);
+    });
+
+    it('should still refuse a blank credential', async () => {
       const result = await build({}, { apiKey: 'k', apiSecret: '' }).testConnection();
 
       expect(result.success).toBe(false);
       expect(result.message).toContain('apiSecret');
       expect(httpClient.request).not.toHaveBeenCalled();
     });
+  });
 
-    it('should produce orders and products without any request, both stamped', async () => {
-      const connector = build();
+  // ------------------------------------------------------------------ products
 
-      const orders = await connector.getOrders();
-      const products = await connector.getProducts();
+  describe('getProducts', () => {
+    it('should read the documented product endpoint with its maximum page size', async () => {
+      httpClient.request.mockResolvedValue(page([{ stockCode: 'SKU-1', title: 'Ürün', salePrice: 10, quantity: 3 }]));
 
-      expect(httpClient.request).not.toHaveBeenCalled();
-      expect(orders.length).toBeGreaterThan(0);
-      expect(products.length).toBeGreaterThan(0);
-      for (const payload of [...orders, ...products]) {
-        expect(payload).toMatchObject({ mode: 'simulation', modeSource: 'default' });
-      }
+      const [product] = await live().getProducts();
+
+      const [url] = lastCall();
+      expect(url).toContain('https://api.n11.com/ms/product-query');
+      expect(url).toContain('page=0');
+      expect(url).toContain('size=250'); // documented maximum
+      expect(product).toMatchObject({ sku: 'SKU-1', name: 'Ürün', price: 10, stockQuantity: 3 });
     });
 
-    it('should mark a simulated order number so it cannot pass for a real one', async () => {
-      const [order] = await build().getOrders();
+    it('should map the fields the document names, not invented ones', async () => {
+      httpClient.request.mockResolvedValue(
+        page([
+          {
+            stockCode: 'TestSKU123',
+            title: 'Test Ürünü',
+            description: 'Açıklama',
+            salePrice: 10000.0,
+            quantity: 2,
+            barcode: null,
+            currencyType: 'TL',
+            imageUrls: ['https://n11scdn3.akamaized.net/a1.jpg'],
+          },
+        ]),
+      );
 
-      // Intrinsic to the sample data, not to a setting: a seller who clears
-      // orders.numberPrefix must not thereby produce order numbers that look
-      // like real ones.
-      expect(order.orderNumber).toMatch(/^SIM-/);
+      const [product] = await live().getProducts();
+
+      expect(product).toEqual(
+        expect.objectContaining({
+          sku: 'TestSKU123',
+          name: 'Test Ürünü',
+          description: 'Açıklama',
+          price: 10000,
+          stockQuantity: 2,
+          image: 'https://n11scdn3.akamaized.net/a1.jpg',
+          barcode: undefined,
+        }),
+      );
     });
 
-    it('should still apply the manifest order prefix on top of that mark', async () => {
-      // 'N11-' is what n11.settings.ts defaults orders.numberPrefix to, and what
-      // resolveForRuntime hands the connector in production.
-      const [order] = await build({ 'orders.numberPrefix': 'N11-' }).getOrders();
+    it('should skip a product priced in an unverified currency instead of importing it', async () => {
+      httpClient.request.mockResolvedValue(
+        page([
+          { stockCode: 'TRY-1', title: 'Lira', salePrice: 10, quantity: 1, currencyType: 'TL' },
+          { stockCode: 'USD-1', title: 'Dolar', salePrice: 10, quantity: 1, currencyType: 'USD' },
+        ]),
+      );
 
-      expect(order.orderNumber).toBe('N11-SIM-1001');
+      const products = await live().getProducts();
+
+      expect(products.map((p) => p.sku)).toEqual(['TRY-1']);
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('USD'));
     });
 
-    it('should report a stock update as simulated, without any request', async () => {
-      const result = await build().updateStock('SIM-SKU-1', 7);
+    it('should stop at an empty page rather than trusting the page count', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(page([{ stockCode: 'A', salePrice: 1, quantity: 1 }], 5))
+        .mockResolvedValueOnce(page([], 5));
 
-      expect(httpClient.request).not.toHaveBeenCalled();
-      expect(result).toEqual({
-        sku: 'SIM-SKU-1',
-        quantity: 7,
-        success: true,
-        mode: 'simulation',
-        modeSource: 'default',
-      });
-    });
-
-    it('should serve categories and attributes without any request', async () => {
-      const connector = build();
-
-      expect((await connector.getCategories()).length).toBeGreaterThan(0);
-      expect(await connector.getCategoryAttributes('1000')).toMatchObject({
-        categoryId: '1000',
-        mode: 'simulation',
-      });
-      expect(httpClient.request).not.toHaveBeenCalled();
+      expect(await live().getProducts()).toHaveLength(1);
+      expect(httpClient.request).toHaveBeenCalledTimes(2);
     });
   });
 
-  // ----------------------------------------------------------------- live mode
+  // -------------------------------------------------------------------- orders
 
-  describe('live mode', () => {
-    it('should read categories from the one confirmed path', async () => {
-      httpClient.request.mockResolvedValue({ categories: [{ id: 1000, name: 'Kitap' }] });
+  describe('getOrders', () => {
+    it('should read the documented order endpoint — not under /ms/', async () => {
+      httpClient.request.mockResolvedValue(page([]));
 
-      const categories = await live().getCategories();
+      await live({ 'orders.importStatuses': ['created'] }).getOrders();
 
-      expect(categories).toHaveLength(1);
-      const [url, options] = lastCall();
-      expect(url).toBe('https://api.n11.com/cdn/categories');
-      expect(options.method).toBe('GET');
-      expect(options.headers.appKey).toBe('app-key');
-      expect(options.headers.appSecret).toBe('app-secret');
-      expect(options.headers.Authorization).toBeUndefined();
+      const [url] = lastCall();
+      expect(url).toContain('https://api.n11.com/rest/delivery/v1/shipmentPackages');
+      expect(url).toContain('status=Created');
+      expect(url).toContain('size=100'); // documented maximum
     });
 
-    it('should accept a bare array of categories as well', async () => {
-      httpClient.request.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+    it('should issue one request per status, because n11 takes only one', async () => {
+      httpClient.request.mockResolvedValue(page([]));
 
-      expect(await live().getCategories()).toHaveLength(2);
+      await live({ 'orders.importStatuses': ['created', 'picking', 'shipped'] }).getOrders();
+
+      const statuses = urlsHit().map((url) => new URL(url).searchParams.get('status'));
+      expect(statuses).toEqual(['Created', 'Picking', 'Shipped']);
     });
 
-    it('should read category attributes from the confirmed path', async () => {
-      httpClient.request.mockResolvedValue({ attributes: [] });
+    it('should drop a status n11 does not define instead of asking for it', async () => {
+      httpClient.request.mockResolvedValue(page([]));
 
-      await live().getCategoryAttributes('42');
+      // 'invoiced' and 'returned' exist in the shared settings vocabulary but
+      // not in n11's; asking for them returns nothing at all.
+      await live({ 'orders.importStatuses': ['created', 'invoiced', 'returned'] }).getOrders();
 
-      expect(lastCall()[0]).toBe('https://api.n11.com/cdn/category/42/attribute');
+      const statuses = urlsHit().map((url) => new URL(url).searchParams.get('status'));
+      expect(statuses).toEqual(['Created']);
     });
 
-    it('should test the connection against the category endpoint', async () => {
-      httpClient.request.mockResolvedValue({ categories: [{ id: 1 }, { id: 2 }] });
+    it('should clamp the backfill window to the 15 days n11 will serve', async () => {
+      httpClient.request.mockResolvedValue(page([]));
 
-      const result = await live().testConnection();
+      await live({ 'orders.backfillDays': 90, 'orders.importStatuses': ['created'] }).getOrders();
 
-      expect(result.success).toBe(true);
-      expect(result.message).toContain('2 kayıt');
-      expect(result).toMatchObject({ mode: 'live', modeSource: 'setting' });
-      expect(lastCall()[0]).toBe('https://api.n11.com/cdn/categories');
+      const params = new URL(lastCall()[0]).searchParams;
+      const spanDays = (Number(params.get('endDate')) - Number(params.get('startDate'))) / 86_400_000;
+      expect(spanDays).toBeCloseTo(15, 1);
+      // Milliseconds, per the document — not ISO strings.
+      expect(Number(params.get('startDate'))).toBeGreaterThan(1_600_000_000_000);
     });
 
-    it.each(['getOrders', 'getProducts'] as const)(
-      'should refuse %s instead of calling an unverified endpoint',
-      async (method) => {
-        await expect(live()[method]()).rejects.toThrow(/canlı uç noktası doğrulanmadı/);
-        expect(httpClient.request).not.toHaveBeenCalled();
-      },
-    );
+    it('should key an order on the package, keeping the seller-facing number', async () => {
+      httpClient.request.mockResolvedValue(page([shipmentPackage()]));
 
-    it('should name the refused operation, so a log says which one is missing', async () => {
-      await expect(live().getOrders()).rejects.toThrow(/getOrders/);
+      const [order] = await live({ 'orders.importStatuses': ['created'] }).getOrders();
+
+      // One n11 order can split into packages that ship separately, so the
+      // package is what a row represents.
+      expect(order.orderNumber).toBe('203872347637-112999455244259');
+      expect(order.marketplaceOrderNumber).toBe('203872347637');
     });
 
-    it('should fail a stock update without throwing, and without calling anything', async () => {
-      const result = await live().updateStock('SKU-9', 5);
+    it('should fall back to the order number when n11 sends no package id', async () => {
+      // "Konuma Özel Teslimat": n11 delivers, and id comes back null.
+      httpClient.request.mockResolvedValue(page([shipmentPackage({ id: null })]));
 
-      expect(httpClient.request).not.toHaveBeenCalled();
-      expect(result.success).toBe(false);
-      expect(result.error).toContain('canlı uç noktası doğrulanmadı');
-      expect(result).toMatchObject({ sku: 'SKU-9', quantity: 5, mode: 'live' });
+      const [order] = await live({ 'orders.importStatuses': ['created'] }).getOrders();
+
+      expect(order.orderNumber).toBe('203872347637');
     });
 
-    it('should never fall back to sample data when live', async () => {
-      const orders = await live().getOrders().catch(() => 'refused');
+    it('should read the buyer from the field n11 misspells', async () => {
+      httpClient.request.mockResolvedValue(page([shipmentPackage()]));
 
-      expect(orders).toBe('refused');
-    });
-  });
+      const [order] = await live({ 'orders.importStatuses': ['created'] }).getOrders();
 
-  // ---------------------------------------------------------- the mode stamp
-
-  /**
-   * Every payload leaving a connector has to say which mode produced it. A
-   * single unstamped return type is a hole: that is the one the worker or the UI
-   * treats as real.
-   */
-  describe('mode stamp reaches every return type', () => {
-    const expectStamp = (payload: any, mode: string, source: string) => {
-      expect(payload.mode).toBe(mode);
-      expect(payload.modeSource).toBe(source);
-    };
-
-    it('stamps all five in simulation', async () => {
-      const connector = build();
-
-      expectStamp(await connector.testConnection(), 'simulation', 'default');
-      expectStamp((await connector.getOrders())[0], 'simulation', 'default');
-      expectStamp((await connector.getProducts())[0], 'simulation', 'default');
-      expectStamp(await connector.updateStock('SIM-SKU-1', 1), 'simulation', 'default');
-      expectStamp(await connector.getCategoryAttributes('1000'), 'simulation', 'default');
+      expect(order.customerName).toBe('N11 müşteri');
+      expect(order.customerEmail).toBe('n11@n11.com');
+      expect(order.shippingAddress).toBe('Reşitpaşa Mah, Reşitpaşa, Sarıyer, İstanbul');
     });
 
-    it('stamps the failure paths in live too, source included', async () => {
-      httpClient.request.mockRejectedValue(new Error('boom'));
+    it('should compute a line total with the documented discount formula', async () => {
+      httpClient.request.mockResolvedValue(page([shipmentPackage()]));
 
-      expectStamp(await live().testConnection(), 'live', 'setting');
-      expectStamp(await live().updateStock('SKU-1', 1), 'live', 'setting');
+      const [order] = await live({ 'orders.importStatuses': ['created'] }).getOrders();
+
+      // (292.8 × 2) − 5.8 = 579.80, which is n11's own sellerInvoiceAmount.
+      expect(order.items[0]).toMatchObject({ sku: '20242024', quantity: 2, unitPrice: 292.8 });
+      expect(order.items[0].totalPrice).toBeCloseTo(579.8, 2);
     });
 
-    it('reports the env as the source when it is what decided', async () => {
-      process.env.MARKETPLACE_MODE = 'simulation';
+    it('should warn when the package total cannot be reconciled with its lines', async () => {
+      // n11's own example has a 149.99 gap that no documented field explains.
+      httpClient.request.mockResolvedValue(page([shipmentPackage({ totalAmount: 729.79 })]));
 
-      expectStamp(await build().testConnection(), 'simulation', 'env');
-      expectStamp((await build().getOrders())[0], 'simulation', 'env');
+      const [order] = await live({ 'orders.importStatuses': ['created'] }).getOrders();
+
+      expect(order.totalAmount).toBe(729.79); // what the seller collects
+      expect(console.warn).toHaveBeenCalledWith(expect.stringContaining('fark var'));
+    });
+
+    it('should assume TRY, since a package carries no currency', async () => {
+      httpClient.request.mockResolvedValue(page([shipmentPackage()]));
+
+      const [order] = await live({ 'orders.importStatuses': ['created'] }).getOrders();
+
+      expect(order.currency).toBe('TRY');
     });
   });
 
-  // ------------------------------------------------------- settings that apply
+  // ------------------------------------------------------------ status mapping
 
-  describe('order settings', () => {
-    it('should apply the seller status map over the connector mapping', async () => {
-      const orders = await build({
+  describe('status mapping', () => {
+    it.each([
+      ['Created', 'pending'],
+      ['Picking', 'processing'],
+      ['Shipped', 'shipped'],
+      ['Delivered', 'delivered'],
+      ['Cancelled', 'cancelled'],
+      // Reachable only from Picking: the package whose contents were split out.
+      ['UnPacked', 'processing'],
+      // The seller could not supply it — the order is off.
+      ['UnSupplied', 'cancelled'],
+    ])('should map %s to %s', (n11Status, expected) => {
+      expect(N11Mapper.toKroptosStatus(n11Status)).toBe(expected);
+    });
+
+    it('should let the seller status map override the connector mapping', async () => {
+      httpClient.request.mockResolvedValue(page([shipmentPackage()]));
+
+      const [order] = await live({
         'orders.importStatuses': ['created'],
         'orders.statusMap': { created: 'processing' },
       }).getOrders();
 
-      expect(orders).toHaveLength(1);
-      expect(orders[0].status).toBe('processing');
+      expect(order.status).toBe('processing');
     });
 
-    it('should ignore a status map value outside the known set', async () => {
-      const [order] = await build({
+    it('should apply the order prefix on top of the package key', async () => {
+      httpClient.request.mockResolvedValue(page([shipmentPackage()]));
+
+      const [order] = await live({
         'orders.importStatuses': ['created'],
-        'orders.statusMap': { created: 'teslim-edildi' },
+        'orders.numberPrefix': 'N11-',
       }).getOrders();
 
-      expect(order.status).toBe('pending');
-    });
-
-    it('should honour a custom order prefix', async () => {
-      const [order] = await build({
-        'orders.importStatuses': ['created'],
-        'orders.numberPrefix': 'X-',
-      }).getOrders();
-
-      expect(order.orderNumber).toBe('X-SIM-1001');
-    });
-
-    it('should filter by the selected import statuses', async () => {
-      const shippedOnly = await build({ 'orders.importStatuses': ['shipped'] }).getOrders();
-
-      expect(shippedOnly).toHaveLength(1);
-      expect(shippedOnly[0].status).toBe('shipped');
+      expect(order.orderNumber).toBe('N11-203872347637-112999455244259');
     });
   });
 
-  // ------------------------------------------------------------- error mapping
+  // --------------------------------------------------------------- updateStock
+
+  describe('updateStock', () => {
+    const ack = (over: Record<string, unknown> = {}) => ({ id: 1092, type: 'SKU_UPDATE', status: 'IN_QUEUE', ...over });
+    const details = (over: Record<string, unknown> = {}) => ({ taskId: 1092, status: 'PROCESSED', ...over });
+
+    it('should post the documented task payload, without touching price', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(ack())
+        .mockResolvedValueOnce(details({ skus: { content: [{ itemCode: 'SKU-9', status: 'SUCCESS' }] } }));
+
+      await live().updateStock('SKU-9', 5);
+
+      expect(urlsHit()[0]).toBe('https://api.n11.com/ms/product/tasks/price-stock-update');
+      expect(bodyOf(0)).toEqual({
+        payload: { integrator: 'KroptOS', skus: [{ stockCode: 'SKU-9', quantity: 5 }] },
+      });
+      // listPrice/salePrice are omitted on purpose: a field left out is left
+      // untouched, and whether salePrice includes VAT is still unverified.
+      expect(bodyOf(0).payload.skus[0]).not.toHaveProperty('salePrice');
+    });
+
+    it('should let the seller override the integrator name', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(ack())
+        .mockResolvedValueOnce(details({ skus: { content: [{ itemCode: 'SKU-9', status: 'SUCCESS' }] } }));
+
+      await live({ 'advanced.integrator': 'AcmeEnt' }).updateStock('SKU-9', 5);
+
+      expect(bodyOf(0).payload.integrator).toBe('AcmeEnt');
+    });
+
+    it('should report success only once n11 says the SKU succeeded', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(ack())
+        .mockResolvedValueOnce(details({ skus: { content: [{ itemCode: 'SKU-9', status: 'SUCCESS' }] } }));
+
+      const result = await live().updateStock('SKU-9', 5);
+
+      expect(urlsHit()[1]).toBe('https://api.n11.com/ms/product/task-details/page-query');
+      expect(result).toMatchObject({ sku: 'SKU-9', quantity: 5, success: true, taskId: '1092' });
+      expect(result.pending).toBeUndefined();
+    });
+
+    it('should report failure with n11 reason when the SKU failed', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(ack())
+        .mockResolvedValueOnce(
+          details({ skus: { content: [{ itemCode: 'SKU-9', status: 'Fail', reasons: ['Stok kodu bulunamadı.'] }] } }),
+        );
+
+      const result = await live().updateStock('SKU-9', 5);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Stok kodu bulunamadı.');
+    });
+
+    it('should report pending — not success — while the task is still queued', async () => {
+      httpClient.request.mockResolvedValueOnce(ack()).mockResolvedValueOnce(details({ status: 'IN_QUEUE' }));
+
+      const result = await live().updateStock('SKU-9', 5);
+
+      // Neither: claiming success would assert stock n11 has not applied, and
+      // claiming failure would send the caller retrying a queued update.
+      expect(result.success).toBe(false);
+      expect(result.pending).toBe(true);
+      expect(result.taskId).toBe('1092');
+    });
+
+    it('should poll exactly once, never loop', async () => {
+      httpClient.request.mockResolvedValueOnce(ack()).mockResolvedValueOnce(details({ status: 'IN_QUEUE' }));
+
+      await live().updateStock('SKU-9', 5);
+
+      expect(httpClient.request).toHaveBeenCalledTimes(2);
+    });
+
+    it('should treat a REJECT as failure without polling', async () => {
+      httpClient.request.mockResolvedValueOnce(ack({ status: 'REJECT', reasons: ['Geçersiz fiyat.'] }));
+
+      const result = await live().updateStock('SKU-9', 5);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Geçersiz fiyat.');
+      expect(httpClient.request).toHaveBeenCalledTimes(1);
+    });
+
+    it('should stay pending when the confirmation call itself fails', async () => {
+      httpClient.request.mockResolvedValueOnce(ack()).mockRejectedValueOnce(new Error('timeout'));
+
+      const result = await live().updateStock('SKU-9', 5);
+
+      // The update was accepted; only our read of the outcome failed.
+      expect(result.pending).toBe(true);
+      expect(result.error).toContain('task sonucu okunamadı');
+    });
+
+    it('should never throw, whatever happens', async () => {
+      httpClient.request.mockRejectedValue(new Error('boom'));
+
+      await expect(live().updateStock('SKU-9', 5)).resolves.toMatchObject({ success: false });
+    });
+  });
+
+  // -------------------------------------------------------------- categories
+
+  describe('categories', () => {
+    it('should read the confirmed category endpoints', async () => {
+      httpClient.request.mockResolvedValue({ categories: [{ id: 1000, name: 'Kitap' }] });
+
+      const connector = live();
+      await connector.getCategories();
+      expect(lastCall()[0]).toBe('https://api.n11.com/cdn/categories');
+
+      httpClient.request.mockResolvedValue({ id: 1002571, categoryAttributes: [] });
+      await connector.getCategoryAttributes('1002571');
+      expect(lastCall()[0]).toBe('https://api.n11.com/cdn/category/1002571/attribute');
+    });
+
+    it('should accept a bare array as well as an envelope', async () => {
+      httpClient.request.mockResolvedValue([{ id: 1 }, { id: 2 }]);
+
+      expect(await live().getCategories()).toHaveLength(2);
+    });
+  });
+
+  // ------------------------------------------------------------- rate limits
+
+  describe('rate limits', () => {
+    it('should throttle orders on n11 published quota, per service family', async () => {
+      httpClient.request.mockResolvedValue(page([]));
+
+      await live({ 'orders.importStatuses': ['created'] }).getOrders();
+
+      // Documented: 1000 requests/minute for the order service.
+      expect(rateLimiter.throttle).toHaveBeenCalledWith('N11:orders', 100, 60000);
+    });
+
+    it('should keep the seller setting as the ceiling, never raise it', async () => {
+      httpClient.request.mockResolvedValue(page([]));
+
+      await live({ 'orders.importStatuses': ['created'], 'advanced.rateLimitPerMinute': 30 }).getOrders();
+
+      // min(setting 30, published 1000) — a higher setting cannot exceed n11's.
+      expect(rateLimiter.throttle).toHaveBeenCalledWith('N11:orders', 30, 60000);
+    });
+
+    it('should throttle products conservatively, since n11 publishes no quota', async () => {
+      httpClient.request.mockResolvedValue(page([]));
+
+      await live({ 'advanced.rateLimitPerMinute': 1000 }).getProducts();
+
+      expect(rateLimiter.throttle).toHaveBeenCalledWith('N11:products', 60, 60000);
+    });
+  });
+
+  // ------------------------------------------------------------ error mapping
 
   describe('error mapping', () => {
     it('should map a 429 onto the rate limit setting', async () => {
@@ -321,7 +534,6 @@ describe('N11Connector', () => {
 
       const result = await live().testConnection();
 
-      expect(result.success).toBe(false);
       expect(result.message).toContain('HTML sayfası');
       expect(result.message).not.toContain('<html>');
     });

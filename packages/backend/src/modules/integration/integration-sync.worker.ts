@@ -516,6 +516,10 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                   clientId,
                   storeId,
                   orderNumber: o.orderNumber,
+                  // Set only by marketplaces that split an order across
+                  // shipments; `orderNumber` is then composite and this keeps
+                  // the number the seller and buyer actually quote.
+                  marketplaceOrderNumber: o.marketplaceOrderNumber || null,
                   customerName: o.customerName,
                   customerEmail: o.customerEmail || null,
                   customerPhone: o.customerPhone || null,

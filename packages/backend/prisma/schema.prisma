@@ -355,6 +355,12 @@ model Order {
   // the second import look like an order that already existed — the row was
   // silently skipped and that tenant never received the order.
   orderNumber       String
+  /// The number the marketplace shows the seller, when `orderNumber` had to be
+  /// made composite. n11 splits one order into packages that ship and are
+  /// cancelled separately, so each package is its own row — but the buyer and
+  /// the seller both quote the original order number, and searching for it has
+  /// to find every package under it.
+  marketplaceOrderNumber String?
   customerId        String?
   customerName      String
   customerEmail     String?
@@ -387,6 +393,9 @@ model Order {
   @@index([storeId])
   @@index([status])
   @@index([deletedAt])
+  /// Scoped to the store: the panel groups a split order's packages, and a
+  /// seller searching the buyer's order number has to find all of them.
+  @@index([storeId, marketplaceOrderNumber])
 }
 
 model OrderItem {

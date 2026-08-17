@@ -235,7 +235,10 @@ describe('resolveManifest', () => {
 
     it('flags the unimplemented capabilities without deleting their tabs', () => {
       const { capabilities, plannedCapabilities, tabs } = manifest();
-      const unimplemented = ['orders.updateStatus', 'products.push', 'stock.push', 'price.push', 'returns.read'];
+      // stock.push is absent on purpose: updateStock now calls n11's real
+      // price-stock-update endpoint, so it is implemented — unverified against a
+      // live account, which is what general.mode guards, not this list.
+      const unimplemented = ['orders.updateStatus', 'products.push', 'price.push', 'returns.read'];
 
       for (const planned of unimplemented) {
         expect(plannedCapabilities).toContain(planned);

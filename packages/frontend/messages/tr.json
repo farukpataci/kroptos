@@ -1264,6 +1264,10 @@
           "mode": {
             "title": "Çalışma Modu",
             "description": "n11 sipariş/ürün/stok uçları gerçek bir satıcı hesabında doğrulanmadı. Simülasyon modunda pazaryerine hiçbir istek gitmez ve üretilen kayıtlar örnektir."
+          },
+          "integrator": {
+            "title": "Entegratör Kimliği",
+            "description": "n11 her yazma isteğinde entegratör adı bekler ve her gönderimde aynı adın iletilmesini ister."
           }
         },
         "amazon": {
@@ -1661,6 +1665,10 @@
           "customHeaders": {
             "label": "Özel Başlıklar",
             "help": "Her isteğe eklenecek HTTP başlıkları. Yalnızca pazaryeri özellikle istediyse kullanın."
+          },
+          "integrator": {
+            "label": "Entegratör Adı",
+            "help": "Boş bırakılırsa 'KroptOS' gönderilir. n11 size kayıtlı bir entegratör adı verdiyse onu yazın."
           }
         },
         "trendyol": {
@@ -1823,7 +1831,9 @@
             "shipped": "Kargoya Verildi",
             "delivered": "Teslim Edildi",
             "cancelled": "İptal Edildi",
-            "returned": "İade Edildi"
+            "returned": "İade Edildi",
+            "unpacked": "Paketi Bölündü",
+            "unsupplied": "Tedarik Edilemedi"
           },
           "kroptosStatus": {
             "pending": "Beklemede",

@@ -146,16 +146,18 @@ describe('IntegrationSyncWorker — simulation isolation', () => {
       settings = { 'general.mode': 'live' };
     });
 
-    it('should refuse an order sync loudly instead of writing sample rows', async () => {
+    it('should never fall back to sample rows when the marketplace call fails', async () => {
+      // Live mode now calls the real n11 endpoints, and this http client throws.
+      // The point being pinned is what happens next: the job fails, and nothing
+      // invented is written in place of the orders that did not arrive.
       await runJob('sync_orders');
 
       expect(prisma.order.create).not.toHaveBeenCalled();
+      expect(prisma.product.create).not.toHaveBeenCalled();
       expect(prisma.integrationQueue.update).toHaveBeenLastCalledWith(
         expect.objectContaining({ data: expect.objectContaining({ status: 'failed' }) }),
       );
-      expect(prisma.apiLog.create.mock.calls[0][0].data.errorMessage).toContain(
-        'canlı uç noktası doğrulanmadı',
-      );
+      expect(prisma.apiLog.create.mock.calls[0][0].data.errorMessage).toContain('n11');
     });
 
     it('should mark the integration as errored so the UI stops claiming success', async () => {

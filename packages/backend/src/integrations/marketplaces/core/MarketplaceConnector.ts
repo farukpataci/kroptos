@@ -243,9 +243,25 @@ export abstract class MarketplaceConnector {
       query?: Record<string, string | number | boolean | undefined>;
       body?: unknown;
       headers?: Record<string, string>;
+      /**
+       * Per-call throttling, for a marketplace that publishes different quotas
+       * for different service families. The seller's `advanced.rateLimitPerMinute`
+       * still applies: the lower of the two wins, so raising the setting can
+       * never push a call past the marketplace's own published limit.
+       */
+      rateLimit?: { key?: string; perMinute?: number };
     } = {},
   ): Promise<T> {
-    await this.throttle();
+    if (options.rateLimit) {
+      const { key, perMinute } = options.rateLimit;
+      await this.rateLimiter.throttle(
+        key ? `${this.rateLimitKey}:${key}` : this.rateLimitKey,
+        perMinute === undefined ? this.rateLimitPerMinute : Math.min(perMinute, this.rateLimitPerMinute),
+        60000,
+      );
+    } else {
+      await this.throttle();
+    }
 
     const target = new URL(url);
     for (const [key, value] of Object.entries(options.query ?? {})) {
