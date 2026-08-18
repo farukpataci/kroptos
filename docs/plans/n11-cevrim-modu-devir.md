@@ -453,15 +453,38 @@ kullanılıyor (bkz. §7), bu yüzden migration dosyası üretilmedi.
 
 | Alan | Değer |
 |---|---|
-| **Durum** | **UYGULANMADI** |
-| Uygulanma tarihi | — |
-| Uygulayan | — |
-| Uygulandığı ortam | — |
-| Uygulama sonrası doğrulama | — |
+| **Durum** | **UYGULANDI** |
+| Uygulanma tarihi | 2026-08-18 |
+| Uygulayan | Claude (kullanıcı talimatıyla) |
+| Uygulandığı ortam | `localhost:5432/eticaret` (`packages/backend/.env`), PostgreSQL |
+| Komut | `npx prisma db push --accept-data-loss` (`packages/backend` dizininden) |
+| Süre | `Done in 1.01s` |
 
-> Push tetiklendikten sonra bu tablo doldurulacak. Doğrulama olarak en az şunlar
-> yazılmalı: `Order_orderNumber_key`'in gittiği, `Order_storeId_orderNumber_key`'in
-> geldiği, ve `marketplaceOrderNumber` kolonunun var olduğu.
+**Uygulama sonrası doğrulama** (aynı oturumda, salt-okunur ölçüm):
+
+| Kriter | Sonuç |
+|---|---|
+| `Order_orderNumber_key` (global unique) gitti mi | **evet — YOK** |
+| `Order_storeId_orderNumber_key` geldi mi | **evet — VAR** |
+| `Order_storeId_marketplaceOrderNumber_idx` geldi mi | **evet — VAR** |
+| `marketplaceOrderNumber` kolonu | **VAR** — `text`, `is_nullable: YES` |
+| Satır sayısı (öncesi 15 / 2 mağaza) | **15 / 2 mağaza — değişmedi** |
+| Dolu `marketplaceOrderNumber` | 0 (beklenen: kolon yeni, henüz n11 senkronu koşmadı) |
+
+Push öncesi çakışma ölçümü tazelendi ve yine temizdi: `(storeId, orderNumber)` 0,
+`(storeId, idempotencyKey)` 0.
+
+> **`--accept-data-loss` neden gerekti:** `db push` bayraksız hiçbir şey uygulamıyor
+> ve `Error: Use the --accept-data-loss flag…` diyerek çıkıyor. Uyarısı tek bir
+> koşula ait — *"composite unique eklenecek; mevcut yinelenen değerler varsa bu
+> başarısız olur"* — ve o koşul ölçümle elenmişti. Bayrak "veriyi sil" demek değil,
+> "bu uyarıya rağmen devam et" demek. Bayraksız iki deneme sonuçsuz kalmıştı;
+> hata çıktının altında kaldığı için sessiz görünüyordu.
+
+> **Yan not:** push sonrası otomatik `prisma generate` adımı `EPERM … query_engine-windows.dll.node`
+> ile düştü (dosya başka bir süreç tarafından kilitli — Windows'ta jest/dev sunucusu
+> açıkken olağan). Şema push'u bundan **etkilenmedi**; client'ı yeniden üretmek için
+> ilgili süreçler kapalıyken `npx prisma generate` çalıştırılmalı.
 
 ### 8.2 Uygulanacak SQL
 
