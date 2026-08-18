@@ -275,7 +275,52 @@ npx jest src/integrations/marketplaces/settings/manifest.i18n.spec.ts 2>&1 \
 
 ## 5. Uç durumu (doküman sonrası)
 
-Kaynak: "n11 RestAPI Entegrasyon Servisleri", kullanıcı tarafından sağlandı, 2026-08-17.
+### 5.0 Kaynak dokümanın künyesi
+
+Bu bölümdeki her uç, alan adı ve kısıt **resmî n11 satıcı dokümanından** okundu.
+Üçüncü taraf kopya, blog, SDK ya da web araması kullanılmadı.
+
+**Doküman depoya alınmadı ve alınmayacak.** n11'e ait, satıcıya özel dağıtılmış bir
+belge; lisansı ve yeniden dağıtım koşulları belirsiz, depo ise yeniden dağıtım
+kanalı değil. Bir kez `49ca06c` ile depoya alındı ve `b27de7c` ile geri alındı;
+`.gitignore`'daki `*.docx` kuralı yanlışlıkla geri girmesini engelliyor.
+
+| | |
+|---|---|
+| Başlık | n11 RestAPI Entegrasyon Servisleri |
+| İndirilen dosya adı | `restapi_genel_dokumantasyon_n2Rrwg2r.docx` |
+| Bize sağlandığı tarih | 2026-08-17 (kullanıcı tarafından) |
+| Belge oluşturma / son değişiklik | 2024-09-12 / **2026-02-04** (docx metadata) |
+| Kapsam | 42 sayfa, ~9.750 kelime, docx revizyon 131 |
+| MD5 | `65ba42820327abc183597b18bdf28177` |
+| Sürüm numarası | **Dokümanda yok** — sürümleme yalnızca son değişiklik tarihinden izlenebiliyor |
+| n11 portalındaki konumu | **Bilinmiyor** — dosya bize doğrudan verildi, portal bağlantısı iletilmedi. Doldurulması gereken tek alan bu. |
+| Doküman içi iletişim | `sellerintegration@n11.com` |
+
+**Yerel kopya (depo dışında):**
+`C:/Users/Administrator/Desktop/kroptos-vendor-docs/n11-restapi-dokumantasyon.docx`
+
+Yeni bir sürüm gelirse: MD5'i ve son değişiklik tarihini yukarıdakiyle karşılaştır;
+farklıysa aşağıdaki eşleme tablosundaki her satır yeniden doğrulanmalı.
+
+### 5.0.1 Hangi bölüm hangi kararı besledi
+
+| Doküman bölümü | Beslediği karar / kod |
+|---|---|
+| *Satıcı Ürünlerini Listeleme (GetProductQuery)* | `getProducts` -> `GET /ms/product-query`; parametre zorunluluğu yok, `page` 0-tabanlı, `size` varsayılan 20 / **maks 250**; yanıt `content[]` + `totalPages`, boş `content` = son sayfa. Alan eşlemesi: `stockCode`=SKU, `title`, `description`, `salePrice`, `quantity`, `barcode`, `imageUrls[]`, `vatRate`, `currencyType` |
+| *Sipariş Listeleme (GetShipmentPackages)* | `getOrders` -> `GET /rest/delivery/v1/shipmentPackages` (**`/ms/` altında değil**); `size` maks 100; `startDate`/`endDate` **timestamp ms, GMT+3**; yanıt alanları `orderNumber`, `id` (paket), `customerfullName` (n11'in yazımı), `shippingAddress.*`, `lines[]` **düz dizi** |
+| Aynı bölüm - *Dikkat Edilmesi Gerekenler* | **15 gün tavanı** (yalnız `startDate` -> +15 gün, yalnız `endDate` -> -15 gün, geniş aralık -> son 15 gün) ve **2024 Kasım öncesi veri yok** -> `MAX_BACKFILL_DAYS`, manifest'te `orders.backfillDays.max = 15` |
+| Aynı bölüm - `status` parametresi | **Statü başına tek istek** -> seçilen her statü için ayrı sweep; geçerli küme `Created, Picking, Shipped, Cancelled, Delivered, UnPacked, UnSupplied` |
+| Aynı bölüm - sipariş hesaplama denklemi | Satır tutarı `(price x quantity) - totalSellerDiscountPrice` -> `N11Mapper.lineTotal` ve `items[].totalPrice` |
+| *Paket Bölme (SplitPackages)* + *Miktar Bazlı Paket Bölme* | **`UnPacked` yalnızca `Picking`'ten gelir** (bölünen ana paket) -> `UnPacked`=`processing`, ama varsayılan içe aktarma listesinde yok (çift sayım riski). **`UnSupplied` = iptal edilen paket** -> `cancelled`. Ayrıca paket bölünmesi -> kayıt anahtarı `orderNumber-packageId` ve `Order.marketplaceOrderNumber` kolonu |
+| *Ürün Fiyat-Stok Güncelleme (UpdateProductPriceAndStock)* | `updateStock` -> `POST /ms/product/tasks/price-stock-update`; gövde `{payload:{integrator, skus:[{stockCode, quantity}]}}`; **`integrator` zorunlu**; tek istekte maks 1000 SKU; yanıt `IN_QUEUE`/`REJECT` + `taskId`. "İstekte mevcut olmayan alanlar için update yapılmaz" -> fiyat alanları kasten gönderilmiyor |
+| *Task Detail Sorgulama (TaskDetails)* | `POST /ms/product/task-details/page-query`; `status` `PROCESSED`/`IN_QUEUE`/`REJECT`, SKU başına `itemCode` + `SUCCESS`/`Fail` -> tek yoklama ve `StockUpdateResult.pending` |
+| *Kategori Ağacı Listeleme* / *Kategori Özellikleri Listeleme* | `getCategories`, `getCategoryAttributes` (zaten canlı doğrulanmıştı); `subCategories: null` = yaprak kategori |
+| Her servisin başlığı | Auth: `appkey` + `appsecret` header'ları, "Authorization: no auth" |
+| *Sipariş Listeleme* başlığı | **Rate limit 1000 istek/dakika** - dokümanda verilen tek limit; ürün/kategori için limit yok -> muhafazakâr 60/dk |
+
+**Dokümanın cevaplamadığı ve açık kalan tek soru:** `salePrice` KDV dâhil mi hariç mi
+(`vatRate` ayrı alan olarak dönüyor ama ilişki yazılmıyor). Bkz. 5.1.
 
 | Metot | Uç | Durum |
 |---|---|---|
