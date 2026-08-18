@@ -277,27 +277,49 @@ describe('TrendyolConnector', () => {
   });
 
   describe('updateStock', () => {
-    it('should post the barcode and quantity', async () => {
-      httpClient.request.mockResolvedValue({ batchRequestId: 'b-1' });
+    /**
+     * Two calls, not one. The POST only queues the change and answers with an
+     * id; the batch result is a second request. Treating the POST as success is
+     * what let a rejected item look applied.
+     *
+     * `stockConfirmDelayMs: 0` keeps these tests off the real clock.
+     */
+    const fast = (extra: Record<string, unknown> = {}) =>
+      build({ 'advanced.stockConfirmDelayMs': 0, ...extra });
 
-      const result = await build().updateStock('869123', 42);
+    const queued = (batchRequestId = 'b-1') => ({ batchRequestId });
+    const batch = (items: Array<Record<string, unknown>>) => ({ batchRequestId: 'b-1', items });
+
+    it('should post the barcode and quantity, then confirm the batch', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(batch([{ status: 'SUCCESS' }]));
+
+      const result = await fast().updateStock('869123', 42);
 
       expect(result).toEqual({ sku: '869123', quantity: 42, success: true });
-      const [url, options] = lastCall();
-      expect(url).toContain('/integration/inventory/sellers/123456/products/price-and-inventory');
-      expect(options.method).toBe('POST');
-      expect(JSON.parse(options.body)).toEqual({ items: [{ barcode: '869123', quantity: 42 }] });
+      expect(httpClient.request).toHaveBeenCalledTimes(2);
+
+      const [postUrl, postOptions] = httpClient.request.mock.calls[0];
+      expect(postUrl).toContain('/integration/inventory/sellers/123456/products/price-and-inventory');
+      expect(postOptions.method).toBe('POST');
+      expect(JSON.parse(postOptions.body)).toEqual({ items: [{ barcode: '869123', quantity: 42 }] });
+
+      const [getUrl] = httpClient.request.mock.calls[1];
+      expect(getUrl).toContain('/integration/product/sellers/123456/products/batch-requests/b-1');
     });
 
     // Trendyol matches inventory on the barcode and accepts a batch that
     // matches nothing without complaining, so sending the local SKU was a
     // silent no-op wherever SKU and barcode differ.
     it('should send the barcode the caller supplies, not the local SKU', async () => {
-      httpClient.request.mockResolvedValue({ batchRequestId: 'b-1' });
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(batch([{ status: 'SUCCESS' }]));
 
-      const result = await build().updateStock('KROP-TSHIRT-M', 7, { barcode: '8690000000001' });
+      const result = await fast().updateStock('KROP-TSHIRT-M', 7, { barcode: '8690000000001' });
 
-      expect(JSON.parse(lastCall()[1].body)).toEqual({
+      expect(JSON.parse(httpClient.request.mock.calls[0][1].body)).toEqual({
         items: [{ barcode: '8690000000001', quantity: 7 }],
       });
       // The result still reports the SKU: that is what the caller asked about.
@@ -305,11 +327,79 @@ describe('TrendyolConnector', () => {
     });
 
     it('should fall back to the SKU when the product has no barcode', async () => {
-      httpClient.request.mockResolvedValue({ batchRequestId: 'b-1' });
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(batch([{ status: 'SUCCESS' }]));
 
-      await build().updateStock('869123', 3, { barcode: null });
+      await fast().updateStock('869123', 3, { barcode: null });
 
-      expect(JSON.parse(lastCall()[1].body)).toEqual({ items: [{ barcode: '869123', quantity: 3 }] });
+      expect(JSON.parse(httpClient.request.mock.calls[0][1].body)).toEqual({
+        items: [{ barcode: '869123', quantity: 3 }],
+      });
+    });
+
+    it('should report failure when the batch rejects the item, with the reason', async () => {
+      httpClient.request.mockResolvedValueOnce(queued()).mockResolvedValueOnce(
+        batch([
+          {
+            status: 'FAILED',
+            failureReasons: ['Barkod bulunamadı. (Barcode: 869123)'],
+          },
+        ]),
+      );
+
+      const result = await fast().updateStock('869123', 5);
+
+      // The gateway accepted the POST and failed the item afterwards; without
+      // the second call this returned success.
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('Barkod bulunamadı');
+    });
+
+    it('should join several failure reasons rather than picking one', async () => {
+      httpClient.request.mockResolvedValueOnce(queued()).mockResolvedValueOnce(
+        batch([
+          { status: 'FAILED', failureReasons: ['Barkod bulunamadı.', 'Ürün onayda.'] },
+        ]),
+      );
+
+      const result = await fast().updateStock('869123', 5);
+
+      expect(result.error).toContain('Barkod bulunamadı.');
+      expect(result.error).toContain('Ürün onayda.');
+    });
+
+    it('should say so when the batch answers FAILED with no reason', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(batch([{ status: 'FAILED' }]));
+
+      const result = await fast().updateStock('869123', 5);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('gerekçe bildirilmedi');
+    });
+
+    it('should refuse to claim success when the POST returns no batchRequestId', async () => {
+      httpClient.request.mockResolvedValueOnce({});
+
+      const result = await fast().updateStock('869123', 5);
+
+      // Nothing to confirm against, so nothing may be claimed. The batch result
+      // is never queried.
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('batchRequestId');
+      expect(httpClient.request).toHaveBeenCalledTimes(1);
+    });
+
+    it('should treat a batch with no items as nothing-failed', async () => {
+      httpClient.request.mockResolvedValueOnce(queued()).mockResolvedValueOnce({ batchRequestId: 'b-1' });
+
+      // DOĞRULANAMADI: whether Trendyol ever answers with an empty item list for
+      // a batch it has accepted is unverified. Reporting success here matches
+      // "no item reported a failure"; a live run may show this needs to become
+      // pending instead.
+      await expect(fast().updateStock('869123', 5)).resolves.toMatchObject({ success: true });
     });
 
     it('should report failure instead of throwing so one SKU cannot abort a sync', async () => {
@@ -317,10 +407,20 @@ describe('TrendyolConnector', () => {
         new MarketplaceHttpError('failed', HttpStatus.BAD_GATEWAY, 401),
       );
 
-      const result = await build().updateStock('869123', 1);
+      const result = await fast().updateStock('869123', 1);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('kimlik doğrulaması reddedildi');
+    });
+
+    it('should keep failing loudly when the confirmation call itself fails', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockRejectedValueOnce(new MarketplaceHttpError('failed', HttpStatus.BAD_GATEWAY, 500));
+
+      const result = await fast().updateStock('869123', 1);
+
+      expect(result.success).toBe(false);
     });
   });
 

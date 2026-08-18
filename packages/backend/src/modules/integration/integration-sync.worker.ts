@@ -524,7 +524,10 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                   customerEmail: o.customerEmail || null,
                   customerPhone: o.customerPhone || null,
                   shippingAddress: o.shippingAddress || null,
-                  status: 'pending',
+                  // The mapper already translated the marketplace's own status;
+                  // hard-coding 'pending' threw that away, so an order that
+                  // arrived already shipped showed up as awaiting action.
+                  status: o.status || 'pending',
                   paymentStatus: o.paymentStatus || 'pending',
                   totalAmount: new Prisma.Decimal(o.totalAmount),
                   currency: o.currency || 'TRY',
@@ -534,6 +537,24 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                   createdBy: 'system',
                   items: {
                     create: orderItemsData,
+                  },
+                },
+              });
+            } else if (o.status && existing.status !== o.status) {
+              // The package moved on the marketplace side. Only the status is
+              // touched: logoSyncStatus and isPoolOrder describe our own
+              // pipeline, and overwriting them here would undo work the ERP or
+              // an operator already did.
+              await this.prisma.order.update({
+                where: { id: existing.id },
+                data: {
+                  status: o.status,
+                  timeline: {
+                    create: {
+                      eventType: 'status_changed',
+                      oldValue: existing.status,
+                      newValue: o.status,
+                    },
                   },
                 },
               });

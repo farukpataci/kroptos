@@ -40,3 +40,17 @@ export interface TrendyolProduct {
   images: TrendyolProductImage[];
   barcode?: string;
 }
+
+/**
+ * One line of a batch request's result. Trendyol accepts a price/inventory batch
+ * and answers only with an id; whether the items were applied is a second call.
+ */
+export interface TrendyolBatchItem {
+  status: string; // SUCCESS | FAILED
+  failureReasons?: string[];
+}
+
+export interface TrendyolBatchStatus {
+  batchRequestId?: string;
+  items?: TrendyolBatchItem[];
+}

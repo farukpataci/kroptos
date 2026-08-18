@@ -6,7 +6,7 @@ import {
   StockUpdateResult,
 } from '../core/MarketplaceTypes';
 import { TrendyolMapper } from './TrendyolMapper';
-import { TrendyolOrder, TrendyolOrderLine, TrendyolProduct } from './TrendyolTypes';
+import { TrendyolBatchStatus, TrendyolOrder, TrendyolOrderLine, TrendyolProduct } from './TrendyolTypes';
 
 /**
  * Everything Türkiye and the international storefronts share: one gateway, one
@@ -36,6 +36,8 @@ const PATHS = {
   products: (sellerId: string) => `/integration/product/sellers/${sellerId}/products`,
   priceAndInventory: (sellerId: string) =>
     `/integration/inventory/sellers/${sellerId}/products/price-and-inventory`,
+  batchRequestResult: (sellerId: string, batchRequestId: string) =>
+    `/integration/product/sellers/${sellerId}/products/batch-requests/${batchRequestId}`,
   categories: () => '/integration/product/product-categories',
   categoryAttributes: (categoryId: string) =>
     `/integration/product/product-categories/${categoryId}/attributes`,
@@ -209,10 +211,54 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
       const { sellerId } = this.requireCredentials('sellerId', 'apiKey', 'apiSecret');
       const barcode = String(identifiers?.barcode ?? '').trim() || sku;
 
-      await this.call<unknown>(PATHS.priceAndInventory(sellerId), {
+      // The POST only queues the change and answers with an id. Treating that
+      // as success is what made a rejected item look applied: the gateway
+      // accepts a batch it will later fail, so the outcome has to be read back.
+      const queued = await this.call<TrendyolBatchStatus>(PATHS.priceAndInventory(sellerId), {
         method: 'POST',
         body: { items: [{ barcode, quantity }] },
       });
+
+      const batchRequestId = String(queued?.batchRequestId ?? '').trim();
+      if (!batchRequestId) {
+        return {
+          sku,
+          quantity,
+          success: false,
+          error:
+            `${this.displayName} stok güncellemesi için batchRequestId döndürmedi; ` +
+            'güncellemenin uygulandığı teyit edilemedi.',
+        };
+      }
+
+      // Trendyol needs a moment before the batch result is queryable; asking
+      // immediately answers with an empty item list, which is indistinguishable
+      // from "nothing failed".
+      await this.delay(Number(this.setting<number>('advanced.stockConfirmDelayMs', 1500)));
+
+      const result = await this.call<TrendyolBatchStatus>(
+        PATHS.batchRequestResult(sellerId, batchRequestId),
+      );
+
+      const failed = (result?.items ?? []).filter(
+        (item) => String(item?.status ?? '').trim().toUpperCase() === 'FAILED',
+      );
+
+      if (failed.length > 0) {
+        const reasons = failed
+          .flatMap((item) => item.failureReasons ?? [])
+          .map((reason) => String(reason).trim())
+          .filter((reason) => reason.length > 0);
+
+        return {
+          sku,
+          quantity,
+          success: false,
+          error:
+            `${this.displayName} stok güncellemesini reddetti: ` +
+            (reasons.join(' | ') || 'gerekçe bildirilmedi'),
+        };
+      }
 
       return { sku, quantity, success: true };
     } catch (error: any) {
@@ -223,6 +269,11 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
         error: error?.message || `${this.displayName} stok güncellemesi başarısız`,
       };
     }
+  }
+
+  /** Zero means no wait, which is what the tests use to keep themselves fast. */
+  private delay(ms: number): Promise<void> {
+    return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
   }
 
   /**

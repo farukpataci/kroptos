@@ -50,7 +50,7 @@ describe('IntegrationSyncWorker — simulation isolation', () => {
       },
       apiLog: { create: jest.fn().mockResolvedValue({}) },
       product: { upsert: jest.fn(), create: jest.fn(), findFirst: jest.fn().mockResolvedValue(null) },
-      order: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn() },
+      order: { findUnique: jest.fn().mockResolvedValue(null), create: jest.fn(), update: jest.fn() },
       store: { findUnique: jest.fn(), findFirst: jest.fn() },
       client: { findFirst: jest.fn() },
     };
@@ -138,6 +138,105 @@ describe('IntegrationSyncWorker — simulation isolation', () => {
       } finally {
         delete process.env.MARKETPLACE_MODE;
       }
+    });
+  });
+
+  /**
+   * The worker used to write a hard-coded 'pending' for every imported order and
+   * never look at an existing one again, so a package that arrived already
+   * shipped showed up as awaiting action and never moved afterwards.
+   *
+   * Simulation mode is used here only because it is the cheapest way to get
+   * orders with known statuses through the worker; the branch under test is the
+   * persistence one, which is shared by every provider.
+   */
+  describe('order status persistence', () => {
+    beforeEach(() => {
+      // n11's sample set carries one Created and one Shipped package.
+      settings = { 'general.mode': 'live' };
+    });
+
+    const orderConnector = (orders: any[]) => ({
+      create: () => ({
+        connectionMode: { mode: 'live', source: 'setting' },
+        consumeRotatedCredentials: () => undefined,
+        getOrders: async () => orders,
+        getProducts: async () => [],
+        updateStock: async () => ({ sku: '', quantity: 0, success: true }),
+      }),
+    });
+
+    const order = (over: Record<string, unknown> = {}) => ({
+      orderNumber: 'TY-1',
+      customerName: 'Alıcı',
+      status: 'shipped',
+      paymentStatus: 'paid',
+      totalAmount: 100,
+      currency: 'TRY',
+      source: 'trendyol',
+      items: [],
+      ...over,
+    });
+
+    it('should write the status the mapper produced, not a fixed pending', async () => {
+      (worker as any).connectorFactory = orderConnector([order()]);
+
+      await runJob('sync_orders');
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'shipped' }) }),
+      );
+    });
+
+    it('should still fall back to pending when the mapper gives nothing', async () => {
+      (worker as any).connectorFactory = orderConnector([order({ status: '' })]);
+
+      await runJob('sync_orders');
+
+      expect(prisma.order.create).toHaveBeenCalledWith(
+        expect.objectContaining({ data: expect.objectContaining({ status: 'pending' }) }),
+      );
+    });
+
+    it('should update an existing order and record the change on its timeline', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'ord-1', status: 'processing' });
+      (worker as any).connectorFactory = orderConnector([order({ status: 'delivered' })]);
+
+      await runJob('sync_orders');
+
+      expect(prisma.order.create).not.toHaveBeenCalled();
+      expect(prisma.order.update).toHaveBeenCalledWith({
+        where: { id: 'ord-1' },
+        data: {
+          status: 'delivered',
+          timeline: {
+            create: { eventType: 'status_changed', oldValue: 'processing', newValue: 'delivered' },
+          },
+        },
+      });
+    });
+
+    it('should leave an unchanged order alone', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'ord-1', status: 'shipped' });
+      (worker as any).connectorFactory = orderConnector([order({ status: 'shipped' })]);
+
+      await runJob('sync_orders');
+
+      expect(prisma.order.update).not.toHaveBeenCalled();
+      expect(prisma.order.create).not.toHaveBeenCalled();
+    });
+
+    it('should not touch logoSyncStatus or isPoolOrder on a status update', async () => {
+      prisma.order.findUnique.mockResolvedValue({ id: 'ord-1', status: 'pending' });
+      (worker as any).connectorFactory = orderConnector([order({ status: 'shipped' })]);
+
+      await runJob('sync_orders');
+
+      // Those two describe our own pipeline; the marketplace has no say in them
+      // and overwriting them here would undo ERP or operator work.
+      const data = prisma.order.update.mock.calls[0][0].data;
+      expect(data).not.toHaveProperty('logoSyncStatus');
+      expect(data).not.toHaveProperty('isPoolOrder');
     });
   });
 
