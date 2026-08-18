@@ -431,3 +431,92 @@ bağımlılıkları kurulu. İş bitince `git worktree remove /c/bl-n11`.
 
 **Yedek:** `C:\Users\Administrator\Desktop\kroptos-backup\kroptos-pre-commit-20260817-201141.tgz`
 (39 MB, 1906 dosya, `.git/` ve `packages/backend/.env` dahil, `node_modules` hariç).
+
+---
+
+## 8. Bekleyen şema push'u — SQL ve çakışma ölçümü
+
+İki commit birer şema değişikliği getirdi ve **hiçbiri veritabanına uygulanmadı**:
+
+- `4d4d1d7` — `Order.orderNumber` store bazlı unique'e geçiyor (`@@unique([storeId, orderNumber])`)
+- `aba9d5f` — `Order.marketplaceOrderNumber` kolonu + `@@index([storeId, marketplaceOrderNumber])`
+
+İkisi tek push'ta gider. Depo migration geçmişi tutmuyor, deploy'da `prisma db push`
+kullanılıyor (bkz. §7), bu yüzden migration dosyası üretilmedi.
+
+### 8.1 Uygulama durumu
+
+| Alan | Değer |
+|---|---|
+| **Durum** | **UYGULANMADI** |
+| Uygulanma tarihi | — |
+| Uygulayan | — |
+| Uygulandığı ortam | — |
+| Uygulama sonrası doğrulama | — |
+
+> Push tetiklendikten sonra bu tablo doldurulacak. Doğrulama olarak en az şunlar
+> yazılmalı: `Order_orderNumber_key`'in gittiği, `Order_storeId_orderNumber_key`'in
+> geldiği, ve `marketplaceOrderNumber` kolonunun var olduğu.
+
+### 8.2 Uygulanacak SQL
+
+`prisma migrate diff --from-schema-datasource --to-schema-datamodel --script` ile,
+**canlı veritabanı salt-okunur introspect edilerek** üretildi (2026-08-18):
+
+```sql
+-- DropIndex
+DROP INDEX "Order_orderNumber_key";
+
+-- AlterTable
+ALTER TABLE "Order" ADD COLUMN     "marketplaceOrderNumber" TEXT;
+
+-- CreateIndex
+CREATE INDEX "Order_storeId_marketplaceOrderNumber_idx" ON "Order"("storeId", "marketplaceOrderNumber");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Order_storeId_orderNumber_key" ON "Order"("storeId", "orderNumber");
+```
+
+`Order_orderNumber_key` düz bir UNIQUE INDEX; `pg_constraint`'te `Order` için
+yalnızca `Order_pkey` (primary key) kayıtlı, UNIQUE constraint yok. Bu yüzden
+`DROP INDEX` yeterli, `ALTER TABLE ... DROP CONSTRAINT` gerekmiyor.
+
+### 8.3 Veritabanının push öncesi hâli (ölçüm: 2026-08-18, salt-okunur)
+
+`Order` tablosundaki index'ler:
+
+| Index | Durum |
+|---|---|
+| `Order_orderNumber_key` (UNIQUE, tek kolon) | **var** — düşecek |
+| `Order_storeId_orderNumber_key` | yok — gelecek |
+| `Order_storeId_marketplaceOrderNumber_idx` | yok — gelecek |
+| `marketplaceOrderNumber` kolonu | yok — gelecek |
+| `Order_storeId_idempotencyKey_key` | var, değişmiyor |
+| `Order_pkey`, `Order_publicId_key`, `Order_agencyId_idx`, `Order_storeId_idx`, `Order_status_idx`, `Order_deletedAt_idx` | var, değişmiyor |
+
+### 8.4 Çakışma ölçümü — temiz
+
+| Kontrol | Sonuç |
+|---|---|
+| Toplam sipariş / mağaza | 15 satır, 2 mağaza |
+| Aynı `(storeId, orderNumber)` birden fazla kayıt | **0** |
+| Aynı `orderNumber` farklı mağazalarda | **0** |
+| Aynı `(storeId, idempotencyKey)` birden fazla kayıt | **0** |
+
+Ölçümün yanında yapısal bir güvence de var: **global unique → composite unique bir
+gevşetmedir.** `orderNumber` tüm tabloda tekse `(storeId, orderNumber)` de zorunlu
+olarak tektir; bu yönde çakışma matematiksel olarak imkânsız. Tehlikeli olan ters
+yön (composite → global) ve bu ona ait değil.
+
+Yeni kolon nullable, index'ler yeni, düşen tek şey daha katı olan bir kısıt →
+`db push` veri kaybı uyarısı üretmemeli.
+
+### 8.5 Push sırasında dikkat
+
+`DROP INDEX` ile `CREATE UNIQUE INDEX` arasında tablo, sipariş numarası kısıtı
+olmadan kalır. 15 satırlık bir tabloda anlamsız bir pencere, ama canlıda trafik
+varken push edilecekse sync worker'ı kısa süre duraklatmak temiz olur — o aralıkta
+gelen iki sipariş aynı numarayı alabilirdi.
+
+Push edilmeden n11 senkronu **çalıştırılmamalı**: worker `marketplaceOrderNumber`
+kolonuna yazmaya çalışır ve "kolon bulunamadı" hatası verir.
