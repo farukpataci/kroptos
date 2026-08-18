@@ -56,7 +56,7 @@ scratch/
 # Satıcı/üçüncü taraf API dokümanları depoya alınmaz: lisansları ve yeniden
 # dağıtım koşulları belirsiz, depo da bir dağıtım kanalı değil. Yerel kopyalar
 # repo dışında tutulur; künyeleri ilgili plan dokümanında referans olarak durur
-# (bkz. docs/plans/n11-cevrim-modu-devir.md §5.0). Bir kez 49ca06c ile girdi,
-# b27de7c ile geri alındı.
+# (bkz. docs/plans/n11-cevrim-modu-devir.md §5.0). Bir kez sehven girdi; hem ekleme
+# hem revert commit'i 2026-08-18'de geçmişten düşürüldü, dal henüz push edilmemişti.
 *.docx
 *.doc

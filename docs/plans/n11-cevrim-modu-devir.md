@@ -282,7 +282,12 @@ Bu bölümdeki her uç, alan adı ve kısıt **resmî n11 satıcı dokümanında
 
 **Doküman depoya alınmadı ve alınmayacak.** n11'e ait, satıcıya özel dağıtılmış bir
 belge; lisansı ve yeniden dağıtım koşulları belirsiz, depo ise yeniden dağıtım
-kanalı değil. Bir kez `49ca06c` ile depoya alındı ve `b27de7c` ile geri alındı;
+kanalı değil.
+
+Dosya bir kez sehven depoya alındı, hemen ardından revert edildi, sonra **her iki
+commit de `rebase --onto` ile geçmişten düşürüldü** (2026-08-18). Dal o sırada hiç
+push edilmemişti, dolayısıyla blob bu makineden hiç çıkmadı ve artık hiçbir ref'ten
+erişilemiyor — yalnızca yerel reflog'da duruyor, o da zamanla budanacak.
 `.gitignore`'daki `*.docx` kuralı yanlışlıkla geri girmesini engelliyor.
 
 | | |
