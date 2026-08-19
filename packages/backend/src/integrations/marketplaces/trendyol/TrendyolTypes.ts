@@ -53,4 +53,12 @@ export interface TrendyolBatchItem {
 export interface TrendyolBatchStatus {
   batchRequestId?: string;
   items?: TrendyolBatchItem[];
+  /**
+   * Measured on stage 2026-08-19: these two are populated *before* `items` is,
+   * so a batch can report `itemCount: 1, failedItemCount: 0` while the single
+   * item it is counting turns out to be a failure. They are only usable as the
+   * expected length of `items`, never as an outcome on their own.
+   */
+  itemCount?: number;
+  failedItemCount?: number;
 }

@@ -285,10 +285,34 @@ describe('TrendyolConnector', () => {
      * `stockConfirmDelayMs: 0` keeps these tests off the real clock.
      */
     const fast = (extra: Record<string, unknown> = {}) =>
-      build({ 'advanced.stockConfirmDelayMs': 0, ...extra });
+      build({
+        'advanced.stockConfirmDelayMs': 0,
+        'advanced.stockConfirmPollIntervalMs': 0,
+        ...extra,
+      });
 
     const queued = (batchRequestId = 'b-1') => ({ batchRequestId });
-    const batch = (items: Array<Record<string, unknown>>) => ({ batchRequestId: 'b-1', items });
+
+    /** A materialised batch: items present and matching itemCount. */
+    const batch = (items: Array<Record<string, unknown>>) => ({
+      batchRequestId: 'b-1',
+      items,
+      itemCount: items.length,
+      failedItemCount: items.filter((i) => i.status === 'FAILED').length,
+    });
+
+    /**
+     * What the gateway really answers before a batch is ready. Measured on stage
+     * 2026-08-19: `items` is empty while the counters are already filled in, so
+     * this shape must never be read as an outcome.
+     */
+    const notReady = (over: Record<string, unknown> = {}) => ({
+      batchRequestId: 'b-1',
+      items: [],
+      itemCount: null,
+      failedItemCount: null,
+      ...over,
+    });
 
     it('should post the barcode and quantity, then confirm the batch', async () => {
       httpClient.request
@@ -392,14 +416,16 @@ describe('TrendyolConnector', () => {
       expect(httpClient.request).toHaveBeenCalledTimes(1);
     });
 
-    it('should treat a batch with no items as nothing-failed', async () => {
-      httpClient.request.mockResolvedValueOnce(queued()).mockResolvedValueOnce({ batchRequestId: 'b-1' });
+    it('should never read an empty item list as success', async () => {
+      httpClient.request.mockResolvedValueOnce(queued()).mockResolvedValue({ batchRequestId: 'b-1' });
 
-      // DOĞRULANAMADI: whether Trendyol ever answers with an empty item list for
-      // a batch it has accepted is unverified. Reporting success here matches
-      // "no item reported a failure"; a live run may show this needs to become
-      // pending instead.
-      await expect(fast().updateStock('869123', 5)).resolves.toMatchObject({ success: true });
+      // This used to return success and was marked DOĞRULANAMADI. The stage run
+      // on 2026-08-19 settled it: an invalid barcode answered exactly this shape
+      // and was reported as applied. Empty means "not ready", never "fine".
+      const result = await fast({ 'advanced.stockConfirmTimeoutMs': 0 }).updateStock('869123', 5);
+
+      expect(result.success).toBe(false);
+      expect(result.pending).toBe(true);
     });
 
     it('should report failure instead of throwing so one SKU cannot abort a sync', async () => {
@@ -411,6 +437,69 @@ describe('TrendyolConnector', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('kimlik doğrulaması reddedildi');
+    });
+
+    it('should keep polling until the batch materialises, then report success', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(notReady())
+        .mockResolvedValueOnce(notReady())
+        .mockResolvedValueOnce(batch([{ status: 'SUCCESS' }]));
+
+      const result = await fast().updateStock('869123', 5);
+
+      expect(result).toMatchObject({ success: true });
+      // POST + three reads: the two empty ones were not an answer.
+      expect(httpClient.request).toHaveBeenCalledTimes(4);
+    });
+
+    it('should keep polling until the batch materialises, then report the failure', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(notReady())
+        .mockResolvedValueOnce(
+          batch([
+            {
+              status: 'FAILED',
+              failureReasons: ['2738  tedarikçi id si ve 0000000000000 barkod ile ürün bulunamadı.'],
+            },
+          ]),
+        );
+
+      const result = await fast().updateStock('0000000000000', 5);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('ürün bulunamadı');
+    });
+
+    /**
+     * The trap this whole change exists for. On stage the counters filled in
+     * five seconds before `items` did, and reported zero failures for an item
+     * that had in fact failed.
+     */
+    it('should not trust itemCount while items is still empty', async () => {
+      httpClient.request
+        .mockResolvedValueOnce(queued())
+        .mockResolvedValueOnce(notReady({ itemCount: 1, failedItemCount: 0 }))
+        .mockResolvedValueOnce(batch([{ status: 'FAILED', failureReasons: ['ürün bulunamadı.'] }]));
+
+      const result = await fast().updateStock('869123', 5);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('ürün bulunamadı');
+    });
+
+    it('should report pending — not success — when the batch never materialises', async () => {
+      httpClient.request.mockResolvedValueOnce(queued()).mockResolvedValue(notReady());
+
+      const result = await fast({ 'advanced.stockConfirmTimeoutMs': 0 }).updateStock('869123', 5);
+
+      // Neither outcome: Trendyol may still apply it, so reporting failure would
+      // send the caller retrying an update that is already in flight.
+      expect(result.success).toBe(false);
+      expect(result.pending).toBe(true);
+      expect(result.taskId).toBe('b-1');
+      expect(result.error).toContain('zaman aşımına');
     });
 
     it('should keep failing loudly when the confirmation call itself fails', async () => {

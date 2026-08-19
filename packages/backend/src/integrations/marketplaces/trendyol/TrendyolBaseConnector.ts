@@ -231,14 +231,23 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
         };
       }
 
-      // Trendyol needs a moment before the batch result is queryable; asking
-      // immediately answers with an empty item list, which is indistinguishable
-      // from "nothing failed".
-      await this.delay(Number(this.setting<number>('advanced.stockConfirmDelayMs', 1500)));
+      const result = await this.pollBatchResult(sellerId, batchRequestId);
 
-      const result = await this.call<TrendyolBatchStatus>(
-        PATHS.batchRequestResult(sellerId, batchRequestId),
-      );
+      if (!result) {
+        // The batch never finished materialising inside the budget. Neither
+        // success nor failure: Trendyol may still apply it, so reporting failure
+        // would send the caller retrying an update that is already in flight.
+        return {
+          sku,
+          quantity,
+          success: false,
+          pending: true,
+          taskId: batchRequestId,
+          error:
+            `${this.displayName} stok güncellemesi teyit edilemedi (batch ` +
+            `${batchRequestId} zaman aşımına uğradı, hâlâ işleniyor olabilir).`,
+        };
+      }
 
       const failed = (result?.items ?? []).filter(
         (item) => String(item?.status ?? '').trim().toUpperCase() === 'FAILED',
@@ -268,6 +277,51 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
         success: false,
         error: error?.message || `${this.displayName} stok güncellemesi başarısız`,
       };
+    }
+  }
+
+  /**
+   * Waits for a batch result to actually materialise.
+   *
+   * Measured against the stage gateway on 2026-08-19 with a deliberately
+   * invalid barcode:
+   *
+   *     +0s   items=[]  itemCount=null  failedItemCount=null
+   *     +5s   items=[]  itemCount=1     failedItemCount=0      <- trap
+   *     +10s  items=[{status:'FAILED'}] itemCount=1 failedItemCount=1
+   *
+   * Two things follow. An empty `items` means "not ready", never "nothing
+   * failed" — the previous single-read version reported success for a barcode
+   * that does not exist. And the counters are not an outcome either: at +5s the
+   * batch claimed zero failures for the item that had in fact failed. So the
+   * only trustworthy readiness signal is `items` reaching `itemCount`.
+   *
+   * Returns null when the budget runs out, which the caller reports as pending
+   * rather than as either outcome.
+   */
+  private async pollBatchResult(
+    sellerId: string,
+    batchRequestId: string,
+  ): Promise<TrendyolBatchStatus | null> {
+    const pollIntervalMs = Number(this.setting<number>('advanced.stockConfirmPollIntervalMs', 2000));
+    const timeoutMs = Number(this.setting<number>('advanced.stockConfirmTimeoutMs', 15000));
+    const deadline = Date.now() + timeoutMs;
+
+    // The first read is never worth making immediately; nothing is ready yet.
+    await this.delay(Number(this.setting<number>('advanced.stockConfirmDelayMs', 1500)));
+
+    for (;;) {
+      const result = await this.call<TrendyolBatchStatus>(
+        PATHS.batchRequestResult(sellerId, batchRequestId),
+      );
+
+      const items = result?.items ?? [];
+      if (items.length > 0 && items.length === result?.itemCount) {
+        return result;
+      }
+
+      if (Date.now() >= deadline) return null;
+      await this.delay(pollIntervalMs);
     }
   }
 
