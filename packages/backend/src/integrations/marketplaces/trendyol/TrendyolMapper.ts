@@ -15,7 +15,37 @@ export interface TrendyolMapperContext {
 
 const TR_CONTEXT: TrendyolMapperContext = { source: 'trendyol', fallbackCurrency: 'TRY' };
 
+/**
+ * Every package status a live gateway returns, lower-cased. The four-branch
+ * if/else this replaces knew only Created/Shipped/Delivered/Cancelled, so
+ * Picking, UnPacked, Invoiced and Returned — which together were most of the
+ * packages on the account measured — all landed on 'pending'.
+ */
+const STATUS_MAP: Record<string, string> = {
+  awaiting: 'pending',
+  created: 'pending',
+  picking: 'processing',
+  invoiced: 'processing',
+  unpacked: 'processing',
+  shipped: 'shipped',
+  atcollectionpoint: 'shipped',
+  delivered: 'delivered',
+  cancelled: 'cancelled',
+  unsupplied: 'cancelled',
+  returned: 'returned',
+};
+
 export class TrendyolMapper {
+  /**
+   * The key an order is stored under. Trendyol splits one order number across
+   * several shipment packages that ship and cancel independently; storing them
+   * all under the order number makes the second package collide with the first
+   * — `Order.orderNumber` is unique — so only one of them is ever imported.
+   */
+  static packageKey(order: TrendyolOrder): string {
+    return order.packageId ? `${order.orderNumber}-${order.packageId}` : order.orderNumber;
+  }
+
   static toUnifiedOrder(
     order: TrendyolOrder,
     context: TrendyolMapperContext = TR_CONTEXT,
@@ -25,17 +55,19 @@ export class TrendyolMapper {
       name: line.productName || 'Trendyol Product',
       quantity: line.quantity,
       unitPrice: line.price,
-      totalPrice: line.price * line.quantity,
+      // The line discount covers all units, so it comes off the line total, not
+      // the unit price — otherwise a discounted line rounds its way out of
+      // agreeing with the package total.
+      totalPrice: line.price * line.quantity - (line.discount ?? 0),
     }));
 
-    let status = 'pending';
-    if (order.status === 'Created') status = 'pending';
-    else if (order.status === 'Shipped') status = 'shipped';
-    else if (order.status === 'Delivered') status = 'delivered';
-    else if (order.status === 'Cancelled') status = 'cancelled';
+    const status = STATUS_MAP[String(order.status ?? '').trim().toLowerCase()] ?? 'pending';
 
     return {
-      orderNumber: order.orderNumber,
+      orderNumber: TrendyolMapper.packageKey(order),
+      // The number the seller and the buyer quote; `orderNumber` above is
+      // composite whenever the order arrived as more than one package.
+      marketplaceOrderNumber: order.orderNumber,
       customerName: `${order.customerFirstName} ${order.customerLastName}`,
       customerEmail: order.customerEmail,
       customerPhone: order.customerPhone,

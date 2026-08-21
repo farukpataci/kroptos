@@ -254,8 +254,8 @@ describe('TrendyolConnector', () => {
         'orders.statusMap': { picking: 'processing' },
       }).getOrders();
 
-      // 'Picking' has no row in the mapper's table and used to land on
-      // 'pending'; 'Created' keeps the built-in mapping.
+      // The seller's row wins over the built-in table; 'Created' has no row
+      // and keeps the built-in mapping.
       expect(orders.map((o) => o.status)).toEqual(['processing', 'pending']);
     });
 
@@ -265,6 +265,101 @@ describe('TrendyolConnector', () => {
       const [unified] = await build({ 'orders.statusMap': { created: 'made-up' } }).getOrders();
 
       expect(unified.status).toBe('pending');
+    });
+
+    // ------------------------------------------------------------------
+    // The fixture below is a real gateway response, trimmed. The one above it
+    // was written from documentation and uses field names the gateway does not
+    // send (`price`, `totalPrice`), which is exactly why every imported order
+    // used to arrive at zero: the fallbacks kept the mock happy and read
+    // nothing from the real payload.
+    // ------------------------------------------------------------------
+    const livePackage = (orderNumber: string, shipmentPackageId: number, status: string) => ({
+      orderNumber,
+      shipmentPackageId,
+      status,
+      shipmentPackageStatus: status,
+      customerFirstName: 'TY',
+      customerLastName: 'Demir Cargo',
+      customerEmail: 'pf+dbn98bnm@trendyolmail.com',
+      currencyCode: 'TRY',
+      packageGrossAmount: 1998.0,
+      packageTotalPrice: 1898.0,
+      packageTotalDiscount: 100.0,
+      shipmentAddress: { address1: 'Güzelyurt Mah. 2137. Sk.', city: 'İstanbul', countryCode: 'TR', phone: '5111111111' },
+      lines: [
+        {
+          quantity: 2,
+          stockCode: 'KZK-BLUE-S',
+          barcode: 'KZK-BLUE-S',
+          productName: 'agr test',
+          sellerId: 2738,
+          lineUnitPrice: 999.0,
+          lineGrossAmount: 1998.0,
+          lineTotalDiscount: 100.0,
+          currencyCode: 'TRY',
+        },
+      ],
+    });
+
+    it('should read the amounts the live gateway actually sends', async () => {
+      httpClient.request.mockResolvedValue({
+        content: [livePackage('1798679650', 92015118, 'Picking')],
+        totalPages: 1,
+      });
+
+      const [unified] = await build().getOrders();
+
+      // packageTotalPrice, not the absent `totalPrice`.
+      expect(unified.totalAmount).toBe(1898);
+      expect(unified.items).toEqual([
+        {
+          sku: 'KZK-BLUE-S',
+          name: 'agr test',
+          quantity: 2,
+          // lineUnitPrice, not the absent `price`.
+          unitPrice: 999,
+          totalPrice: 999 * 2 - 100,
+        },
+      ]);
+    });
+
+    // Trendyol splits one order across packages that ship and cancel on their
+    // own. Stored under the bare order number they collide on the unique
+    // constraint and only the first one survives the import.
+    it('should key each shipment package separately and keep the seller-facing number', async () => {
+      httpClient.request.mockResolvedValue({
+        content: [
+          livePackage('791395587', 92311593, 'Picking'),
+          livePackage('791395587', 92311594, 'Picking'),
+        ],
+        totalPages: 1,
+      });
+
+      const orders = await build({ 'orders.importStatuses': ['picking'] }).getOrders();
+
+      expect(orders.map((o) => o.orderNumber)).toEqual(['791395587-92311593', '791395587-92311594']);
+      expect(orders.map((o) => o.marketplaceOrderNumber)).toEqual(['791395587', '791395587']);
+    });
+
+    // Picking, UnPacked, Invoiced and Returned were every status the mapper's
+    // four-branch table did not know, so they all became 'pending'.
+    it.each([
+      ['Picking', 'processing'],
+      ['UnPacked', 'processing'],
+      ['Invoiced', 'processing'],
+      ['Returned', 'returned'],
+      ['Delivered', 'delivered'],
+      ['Cancelled', 'cancelled'],
+    ])('should map the %s package status onto %s', async (trendyolStatus, expected) => {
+      httpClient.request.mockResolvedValue({
+        content: [livePackage('TY-1', 1, trendyolStatus)],
+        totalPages: 1,
+      });
+
+      const [unified] = await build({ 'orders.importStatuses': [] }).getOrders();
+
+      expect(unified.status).toBe(expected);
     });
 
     it('should prefix imported order numbers with orders.numberPrefix', async () => {

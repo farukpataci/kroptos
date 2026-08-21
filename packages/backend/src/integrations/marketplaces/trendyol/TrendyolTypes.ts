@@ -8,7 +8,10 @@ export interface TrendyolOrderLine {
   barcode: string;
   sku: string;
   quantity: number;
+  /** Unit price before discount — Trendyol's `lineUnitPrice`. */
   price: number;
+  /** Discount Trendyol already deducted from the line, over all its units. */
+  discount: number;
   merchantId: number;
   productName: string;
 }
@@ -16,6 +19,12 @@ export interface TrendyolOrderLine {
 export interface TrendyolOrder {
   id: number;
   orderNumber: string;
+  /**
+   * Shipment package id. One order number arrives as several packages that
+   * ship, invoice and cancel on their own, so this is what makes a row unique —
+   * see TrendyolMapper.packageKey. Empty when the payload carries no package.
+   */
+  packageId: string;
   customerFirstName: string;
   customerLastName: string;
   customerEmail?: string;

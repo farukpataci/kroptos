@@ -393,22 +393,30 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
    * Narrows a raw order payload down to the shape TrendyolMapper already knows.
    * Field names differ between Trendyol's order versions, so each value has a
    * fallback rather than assuming one spelling.
+   *
+   * The `line*` / `package*` spellings come first because they are the ones a
+   * live gateway actually sends. Reading `price` and `totalPrice` — the names
+   * the older documentation uses — found nothing, so every imported order
+   * arrived with a zero total and zero-priced items and looked like a free
+   * order rather than a failed mapping.
    */
   private toTrendyolOrder(raw: Record<string, any>): TrendyolOrder {
     const lines: TrendyolOrderLine[] = (raw.lines ?? []).map((line: Record<string, any>) => ({
       barcode: line.barcode ?? '',
       sku: line.merchantSku ?? line.sku ?? line.stockCode ?? line.barcode ?? '',
       quantity: Number(line.quantity) || 0,
-      price: Number(line.price ?? line.amount ?? 0),
-      merchantId: Number(line.merchantId) || 0,
+      price: Number(line.lineUnitPrice ?? line.price ?? line.amount ?? 0),
+      discount: Number(line.lineTotalDiscount ?? line.discount ?? 0),
+      merchantId: Number(line.merchantId ?? line.sellerId) || 0,
       productName: line.productName ?? line.productTitle ?? '',
     }));
 
     const address = raw.shipmentAddress ?? raw.invoiceAddress ?? {};
 
     return {
-      id: Number(raw.id) || 0,
+      id: Number(raw.id ?? raw.shipmentPackageId) || 0,
       orderNumber: raw.orderNumber ?? raw.id?.toString() ?? '',
+      packageId: String(raw.shipmentPackageId ?? ''),
       customerFirstName: raw.customerFirstName ?? '',
       customerLastName: raw.customerLastName ?? '',
       customerEmail: raw.customerEmail,
@@ -422,7 +430,12 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
       },
       lines,
       status: raw.status ?? raw.shipmentPackageStatus ?? 'Created',
-      totalPrice: Number(raw.totalPrice ?? raw.grossAmount ?? 0),
+      // What the buyer paid for this package, after Trendyol's and the
+      // seller's discounts. `packageGrossAmount` is the pre-discount figure and
+      // only stands in when the net one is missing.
+      totalPrice: Number(
+        raw.packageTotalPrice ?? raw.packageGrossAmount ?? raw.totalPrice ?? raw.grossAmount ?? 0,
+      ),
       // Currency comes from the payload wherever Trendyol sends it; the fallback
       // only covers a response that omits it entirely.
       currency: raw.currencyCode ?? raw.currency ?? this.fallbackCurrency,
