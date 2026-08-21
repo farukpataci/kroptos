@@ -115,9 +115,13 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-blue-500/10 border-blue-500/20 text-blue-600',
     badgeText: 'Pazarama',
-    description: 'İş Bankası Pazarama pazaryeri altyapısı ile doğrudan ürün ve sipariş senkronizasyonu.',
-    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
-    status: 'active',
+    description:
+      'İş Bankası Pazarama pazaryeri altyapısı. Sipariş, ürün ve stok akışı yazıldı; gerçek bir satıcı hesabında henüz doğrulanmadığı için beta.',
+    // "Fiyatlar" bilerek yok: fiyat gönderen tek satır kod yok (bkz.
+    // PazaramaConnector). Yapılamayan bir işlemin rozeti, satıcının hiç
+    // çalışmayacak bir senkrona güvenmesiyle sonuçlanır.
+    capabilities: ['Siparişler', 'Ürünler', 'Stok'],
+    status: 'beta',
   },
   {
     id: 'pttavm',

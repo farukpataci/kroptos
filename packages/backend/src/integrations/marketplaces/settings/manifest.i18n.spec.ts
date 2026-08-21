@@ -99,10 +99,8 @@ const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [
   // list did, since that path checks tab, section and wizard keys too.
   //
   // emag was never in this list: it went straight into `OVERRIDES` on
-  // 2026-08-14, so the registry loop covers it. Its dictionary entries are NOT
-  // written yet — the case above fails for `emag` until the UI step adds them,
-  // and that failure is the intended reminder rather than something to silence
-  // by parking the provider here.
+  // 2026-08-14, so the registry loop covers it. Its dictionary entries landed on
+  // 2026-08-21, so the case above is green for `emag` too.
   ['zalando', zalandoOverride],
   ['aliexpress', aliexpressOverride],
 ];

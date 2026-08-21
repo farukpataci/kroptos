@@ -5,6 +5,8 @@ const cred = (key: string) => `${I}.credentials.emag.${key}`;
 const label = (key: string) => `${I}.fields.${key}.label`;
 const help = (key: string) => `${I}.fields.${key}.help`;
 const option = (key: string, value: string) => `${I}.options.${key}.${value}`;
+const opts = (key: string, values: string[]) =>
+  values.map((value) => ({ value, labelKey: option(key, value) }));
 
 /** The four markets one eMAG integration can point at. */
 const EMAG_COUNTRIES = ['RO', 'BG', 'HU', 'PL'] as const;
@@ -77,6 +79,25 @@ export const emagOverride: ProviderSettingsOverride = {
     },
   ],
   patchFields: {
+    // eMAG's four markets, widened here rather than in `base.settings.ts`.
+    // Base carries only what every provider shares; a market parked there
+    // makes eMAG's missing translations fail all fifteen providers at once.
+    // Appended, never reordered — saved settings rows hold these verbatim.
+    'general.currency': {
+      options: opts('general.currency', ['TRY', 'USD', 'EUR', 'GBP', 'RON', 'BGN', 'HUF', 'PLN']),
+    },
+    'general.timezone': {
+      options: opts('general.timezone', [
+        'Europe/Istanbul',
+        'Europe/London',
+        'Europe/Berlin',
+        'UTC',
+        'Europe/Bucharest',
+        'Europe/Sofia',
+        'Europe/Budapest',
+        'Europe/Warsaw',
+      ]),
+    },
     // Empty by design, NOT 'EMG-'. A single-market install has nothing to
     // disambiguate and should not carry a prefix it never asked for; an operator
     // running two eMAG markets sets 'EMG-RO-' / 'EMG-PL-' themselves. eMAG is the

@@ -1786,6 +1786,12 @@
             "label": "Pazar (eBay sitesi)",
             "help": "Bağlantının hangi eBay sitesine kurulacağı. Her site için ayrı bağlantı kurulur; kategori ağacı ve siparişler siteye göre değişir."
           }
+        },
+        "emag": {
+          "country": {
+            "label": "Pazar (Ülke)",
+            "help": "Satıcı hesabınızın açıldığı eMAG pazarı. Sunucu adresini, para birimini ve istek limitini belirler; bağlantı testinden önce seçilmesi zorunludur ve sonradan değiştirilemez."
+          }
         }
       },
       "options": {
@@ -1809,13 +1815,21 @@
             "TRY": "₺ Türk Lirası",
             "USD": "$ Amerikan Doları",
             "EUR": "€ Euro",
-            "GBP": "£ Sterlin"
+            "GBP": "£ Sterlin",
+            "RON": "lei Rumen Leyi",
+            "BGN": "лв Bulgar Levası",
+            "HUF": "Ft Macar Forinti",
+            "PLN": "zł Polonya Zlotisi"
           },
           "timezone": {
             "Europe/Istanbul": "İstanbul (GMT+3)",
             "Europe/London": "Londra (GMT+0)",
             "Europe/Berlin": "Berlin (GMT+1)",
-            "UTC": "UTC"
+            "UTC": "UTC",
+            "Europe/Bucharest": "Bükreş (GMT+2)",
+            "Europe/Sofia": "Sofya (GMT+2)",
+            "Europe/Budapest": "Budapeşte (GMT+1)",
+            "Europe/Warsaw": "Varşova (GMT+1)"
           },
           "mode": {
             "auto": "Otomatik (sağlayıcı varsayılanı)",
@@ -2055,6 +2069,14 @@
             "EBAY_GB": "Birleşik Krallık (EBAY_GB)",
             "EBAY_DE": "Almanya (EBAY_DE)"
           }
+        },
+        "emag": {
+          "country": {
+            "RO": "Romanya (emag.ro)",
+            "BG": "Bulgaristan (emag.bg)",
+            "HU": "Macaristan (emag.hu)",
+            "PL": "Polonya (emag.pl)"
+          }
         }
       },
       "credentials": {
@@ -2156,6 +2178,14 @@
           "appSecret": "App Secret",
           "accessToken": "Access Token",
           "accessTokenHelp": "Satıcı hesabınızda uygulamaya yetki verdikten sonra üretilen erişim anahtarı. İstek gövdesinde session parametresi olarak gönderilir."
+        },
+        "emag": {
+          "username": "API Kullanıcı Adı",
+          "usernameHelp": "eMAG Marketplace panelinde oluşturduğunuz API kullanıcısı. Panele giriş yaptığınız e-posta değil, ayrı bir API hesabıdır.",
+          "password": "API Şifresi",
+          "passwordHelp": "API kullanıcısının şifresi. Şifrelenerek saklanır ve kaydedildikten sonra bir daha gösterilmez.",
+          "ipWhitelist": "Sunucu IP adresi eMAG’de tanımlı olmalı",
+          "ipWhitelistHelp": "eMAG, kayıtlı olmayan bir IP’den gelen isteği yanlış şifreyle aynı 401 hatasıyla reddeder. Bağlantı testi doğru bilgilere rağmen başarısız oluyorsa, sunucunuzun çıkış IP’sini eMAG destek ekibine bildirip beyaz listeye ekletin."
         }
       },
       "mapping": {

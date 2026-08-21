@@ -55,8 +55,24 @@ interface PazaramaEnvelope<T> {
 export class PazaramaConnector extends MarketplaceConnector {
   protected readonly defaultRateLimit = 60;
 
+  /**
+   * The hosts and payload keys below come from the documentation only, so the
+   * shapes this connector parses are unproven. Simulation keeps those guesses
+   * out of tenant tables until a real seller account confirms them.
+   */
+  protected readonly defaultMode = 'simulation' as const;
+
   protected get displayName(): string {
     return 'Pazarama';
+  }
+
+  /**
+   * Pazarama meters per merchant, so the bucket is keyed by the account rather
+   * than the provider — otherwise one agency's sync stalls every other agency
+   * inside the same 60/min.
+   */
+  protected get rateLimitKey(): string {
+    return `PAZARAMA:${this.credentials.apiKey ?? ''}`;
   }
 
   /** Cached per connector instance, like the other token-based marketplaces. */
@@ -97,9 +113,11 @@ export class PazaramaConnector extends MarketplaceConnector {
         body: body.toString(),
       });
     } catch (error: any) {
-      throw new Error(
-        `Pazarama oturum anahtarı alınamadı. API Key veya Secret Key hatalı olabilir. ${error?.message ?? ''}`.trim(),
-      );
+      // Only 401/403 is evidence about the key pair. Blaming it for a 429, a
+      // 5xx or a DNS failure sends the seller to re-enter credentials that were
+      // never wrong, and drops the OAuth body that says `invalid_scope`.
+      const described = this.describeError(error);
+      throw new Error(`Pazarama oturum anahtarı alınamadı. ${described.message}`);
     }
 
     const token = response?.data?.accessToken ?? response?.access_token;
@@ -119,7 +137,12 @@ export class PazaramaConnector extends MarketplaceConnector {
     return { Authorization: `Bearer ${token}` };
   }
 
-  private call<T>(
+  /**
+   * Pazarama answers 200 even when it refuses the operation; the refusal only
+   * appears as `success:false` in the envelope. Every request goes through
+   * here, so the check belongs here rather than at each call site.
+   */
+  private async call<T>(
     path: string,
     options: {
       method?: string;
@@ -127,7 +150,14 @@ export class PazaramaConnector extends MarketplaceConnector {
       body?: unknown;
     } = {},
   ): Promise<T> {
-    return this.send<T>(`${BASE_URL}${path}`, options);
+    const response = await this.send<T>(`${BASE_URL}${path}`, options);
+
+    const envelope = response as PazaramaEnvelope<unknown> | undefined;
+    if (envelope?.success === false) {
+      throw new Error(envelope.message?.trim() || `Pazarama isteği reddetti: ${path}`);
+    }
+
+    return response;
   }
 
   /** Pazarama wraps every payload in `data`, sometimes with a nested `items`. */
@@ -153,6 +183,7 @@ export class PazaramaConnector extends MarketplaceConnector {
     },
   ): Promise<T[]> {
     const collected: T[] = [];
+    let previousFirstRow: string | undefined;
 
     for (let page = 0; page < MAX_PAGES; page++) {
       const envelope = await this.call<PazaramaEnvelope<T>>(path, {
@@ -162,27 +193,49 @@ export class PazaramaConnector extends MarketplaceConnector {
       });
 
       const rows = this.rows(envelope);
+
+      // The query and body dialects below are both unverified. If Pazarama
+      // ignores whichever one it is handed, every page comes back identical and
+      // the loop would otherwise collect the same rows MAX_PAGES times.
+      const firstRow = rows.length ? JSON.stringify(rows[0]) : undefined;
+      if (firstRow !== undefined && firstRow === previousFirstRow) {
+        throw new Error(
+          `Pazarama sayfalaması ilerlemiyor: ${path} ${page}. sayfada da aynı kaydı döndürdü.`,
+        );
+      }
+      previousFirstRow = firstRow;
+
       collected.push(...rows);
 
       // A short page ends the walk; totalCount is advisory and sometimes absent.
-      if (rows.length < PAGE_SIZE) break;
+      if (rows.length < PAGE_SIZE) return collected;
 
       const total = this.total(envelope);
-      if (total !== undefined && collected.length >= total) break;
+      if (total !== undefined && collected.length >= total) return collected;
     }
 
-    return collected;
+    // Falling out of the loop means the walk was cut short. Returning quietly
+    // would report a partial catalogue as a complete sync.
+    throw new Error(
+      `Pazarama ${path} için sayfa sınırına ulaşıldı (${MAX_PAGES}×${PAGE_SIZE}). ` +
+        'Senkron eksik kalacağı için durduruldu.',
+    );
   }
 
   // --------------------------------------------------------------------------
   // Connector surface
   // --------------------------------------------------------------------------
 
+  /** Seller-facing toggle from the catalogue tab; drives both probe and sync. */
+  private get onlyApproved(): boolean {
+    return this.setting<boolean>('pazarama.onlyApprovedProducts', true) !== false;
+  }
+
   async testConnection(): Promise<ConnectionTestResult> {
     return this.probe(async () => {
       this.requireCredentials('apiKey', 'secretKey');
       const envelope = await this.call<PazaramaEnvelope<unknown>>(PATHS.products(), {
-        query: { Approved: true, Page: 0, Size: 1 },
+        query: { Approved: this.onlyApproved, Page: 0, Size: 1 },
       });
 
       const total = this.total(envelope);
@@ -212,14 +265,22 @@ export class PazaramaConnector extends MarketplaceConnector {
     return raw
       .map((order) => this.toPazaramaOrder(order))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(this.settingsStatus(order.status)))
-      .map((order) => PazaramaMapper.toUnifiedOrder(order));
+      .map((order) => {
+        const unified = PazaramaMapper.toUnifiedOrder(order);
+        // Both are seller-visible settings, and `orders.numberPrefix` even has
+        // a 'PZR-' default set for this provider; neither did anything until
+        // they were applied here.
+        unified.status = this.mapOrderStatus(order.status, unified.status);
+        unified.orderNumber = this.prefixOrderNumber(unified.orderNumber);
+        return unified;
+      });
   }
 
   async getProducts(): Promise<MarketplaceProduct[]> {
     this.requireCredentials('apiKey', 'secretKey');
 
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(), {
-      query: { Approved: true },
+      query: { Approved: this.onlyApproved },
     });
 
     return raw.map((product) => PazaramaMapper.toUnifiedProduct(this.toPazaramaProduct(product)));

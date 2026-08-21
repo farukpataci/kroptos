@@ -78,7 +78,21 @@ describe('PazaramaConnector', () => {
       const result = await build().testConnection();
 
       expect(result.success).toBe(false);
-      expect(result.message).toContain('Secret Key');
+      expect(result.message).toContain('kimlik doğrulaması reddedildi');
+    });
+
+    // Sending a throttled seller to re-enter keys that were never wrong is the
+    // failure mode this guards.
+    it('should not blame the key pair when the exchange is throttled', async () => {
+      httpClient.request.mockRejectedValue(
+        new MarketplaceHttpError('failed', HttpStatus.BAD_GATEWAY, 429),
+      );
+
+      const result = await build().testConnection();
+
+      expect(result.success).toBe(false);
+      expect(result.message).toContain('istek limiti');
+      expect(result.message).not.toContain('kimlik doğrulaması reddedildi');
     });
 
     it('should name the missing credential before calling anything', async () => {
@@ -152,6 +166,44 @@ describe('PazaramaConnector', () => {
 
       expect(orders.map((o) => o.orderNumber)).toEqual(['PZR-1']);
     });
+
+    // Both settings are seller-visible and 'PZR-' is this provider's default,
+    // so neither may stay decorative.
+    it('should apply the number prefix and the status map', async () => {
+      withToken(() => ({ data: { items: [order('1001', 'Shipped')] } }));
+
+      const [unified] = await build({
+        'orders.numberPrefix': 'PZR-',
+        'orders.statusMap': { shipped: 'processing' },
+      }).getOrders();
+
+      expect(unified.orderNumber).toBe('PZR-1001');
+      expect(unified.status).toBe('processing');
+    });
+  });
+
+  describe('pagination', () => {
+    const page = (first: string) =>
+      Array.from({ length: 100 }, (_, i) => ({
+        code: i === 0 ? first : `SKU-${first}-${i}`,
+        name: 'Ürün',
+        salePrice: 1,
+        stockCount: 1,
+      }));
+
+    it('should stop instead of collecting the same page forever', async () => {
+      // What an API that ignores the paging keys actually does.
+      withToken(() => ({ data: { items: page('SAME') } }));
+
+      await expect(build().getProducts()).rejects.toThrow('sayfalaması ilerlemiyor');
+    });
+
+    it('should fail loudly rather than report a truncated catalogue', async () => {
+      let n = 0;
+      withToken(() => ({ data: { items: page(`p${n++}`) } }));
+
+      await expect(build().getProducts()).rejects.toThrow('sayfa sınırına ulaşıldı');
+    });
   });
 
   describe('updateStock', () => {
@@ -163,6 +215,35 @@ describe('PazaramaConnector', () => {
       expect(result).toEqual({ sku: 'SKU-7', quantity: 4, success: true });
       expect(lastCall()[0]).toContain('/product/updateStock');
       expect(JSON.parse(lastCall()[1].body)).toEqual({ items: [{ code: 'SKU-7', stockCount: 4 }] });
+    });
+
+    // Pazarama refuses with HTTP 200; reading only the status code would report
+    // a stock write that never landed.
+    it('should fail when the envelope refuses despite HTTP 200', async () => {
+      withToken(() => ({ success: false, message: 'Stok kodu bulunamadı' }));
+
+      const result = await build().updateStock('SKU-YOK', 4);
+
+      expect(result).toEqual({
+        sku: 'SKU-YOK',
+        quantity: 4,
+        success: false,
+        error: 'Stok kodu bulunamadı',
+      });
+    });
+  });
+
+  describe('settings', () => {
+    it('should stay in simulation until a live seller account verifies it', () => {
+      expect(build().connectionMode).toEqual({ mode: 'simulation', source: 'default' });
+    });
+
+    it('should let the catalogue toggle reach the products query', async () => {
+      withToken(() => ({ data: { items: [] } }));
+
+      await build({ 'pazarama.onlyApprovedProducts': false }).getProducts();
+
+      expect(lastCall()[0]).toContain('Approved=false');
     });
   });
 });

@@ -88,9 +88,11 @@ const generalTab: SettingsTab = {
           type: 'select',
           labelKey: label('general.currency'),
           default: 'TRY',
-          // RON/BGN/HUF/PLN added for eMAG's four markets. Appended rather than
-          // reordered: the existing entries are referenced by saved settings rows.
-          options: opts('general.currency', ['TRY', 'USD', 'EUR', 'GBP', 'RON', 'BGN', 'HUF', 'PLN']),
+          // Only what every provider can actually settle in. A provider that
+          // trades elsewhere widens this list from its own override — putting
+          // its currencies here would make its missing translations surface as
+          // a failure on all fifteen providers instead of on itself.
+          options: opts('general.currency', ['TRY', 'USD', 'EUR', 'GBP']),
         },
         {
           key: 'general.timezone',
@@ -98,17 +100,13 @@ const generalTab: SettingsTab = {
           labelKey: label('general.timezone'),
           helpKey: help('general.timezone'),
           default: 'Europe/Istanbul',
+          // Same rule as `general.currency`: a provider adds its own zones from
+          // its override, never here.
           options: opts('general.timezone', [
             'Europe/Istanbul',
             'Europe/London',
             'Europe/Berlin',
             'UTC',
-            // eMAG's four markets. Appended, never reordered — saved settings
-            // rows hold these values verbatim.
-            'Europe/Bucharest',
-            'Europe/Sofia',
-            'Europe/Budapest',
-            'Europe/Warsaw',
           ]),
         },
       ],

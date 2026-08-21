@@ -21,14 +21,20 @@ export const pazaramaOverride: ProviderSettingsOverride = {
     'attributes.read',
     'returns.read',
   ],
+  // Listed above so their tabs survive the merge, but no connector method backs
+  // them yet — the card must not promise them.
+  plannedCapabilities: ['orders.updateStatus', 'products.push', 'price.push', 'returns.read'],
   // The token endpoint takes these two as an OAuth2 client-credentials pair.
   credentials: [
     {
+      // Half of a Basic auth pair, so it is masked like every other provider's
+      // key rather than rendered as plain text in the form.
       key: 'apiKey',
-      type: 'text',
+      type: 'password',
       labelKey: cred('apiKey'),
       helpKey: cred('apiKeyHelp'),
       required: true,
+      secret: true,
     },
     { key: 'secretKey', type: 'password', labelKey: cred('secretKey'), required: true, secret: true },
   ],
