@@ -12,6 +12,7 @@ import { ZalandoMapper } from './ZalandoMapper';
 import {
   ZalandoIdentity,
   ZalandoOrdersDocument,
+  ZalandoOutlinesResponse,
   ZalandoStockUpdatesRequest,
   ZalandoStockUpdatesResponse,
   ZalandoTokenResponse,
@@ -38,7 +39,10 @@ import {
  *    answers 403 for every spec but authentication. Strongly corroborated,
  *    not first-party proof, and NOT yet exercised against a live account.
  *
- *  - Products, categories and attributes have no spec at all and still refuse.
+ *  - Outlines (Zalando's stand-in for a category tree) and their attribute
+ *    types come from the mirrored Outlines and Attributes specs, same caveat.
+ *
+ *  - Product LISTING has no endpoint at all — see `getProducts`.
  *
  * The registry deliberately does not list this provider yet, so none of this is
  * reachable from the catalogue until a real account confirms it.
@@ -57,12 +61,14 @@ const PATHS = {
   orders: (merchantId: string) => `/merchants/${merchantId}/orders`,
   /** From the mirrored Stocks spec. */
   stocks: (merchantId: string) => `/merchants/${merchantId}/stocks`,
-};
-
-/** Still no spec of any kind; calling these refuses instead of guessing. */
-const UNCONFIRMED_PATHS = {
-  products: null as string | null,
-  categories: null as string | null,
+  /**
+   * From the mirrored Outlines spec. An outline is the product template that
+   * fixes which attribute types a submission must carry; it is the nearest
+   * thing zDirect has to a category. Scope: `products/attributes/read`.
+   */
+  outlines: (merchantId: string) => `/merchants/${merchantId}/outlines`,
+  outline: (merchantId: string, label: string) =>
+    `/merchants/${merchantId}/outlines/${encodeURIComponent(label)}`,
 };
 
 /** The Orders API is JSON:API, so it neither sends nor accepts plain JSON. */
@@ -197,15 +203,6 @@ export class ZalandoConnector extends MarketplaceConnector {
     return this.send<T>(`${this.host}${path}`, options);
   }
 
-  private unconfirmed(operation: keyof typeof UNCONFIRMED_PATHS): never {
-    throw new Error(
-      `Zalando '${operation}' işlemi için API yolu doğrulanmadı. ` +
-        `Yolu ZalandoConnector içindeki UNCONFIRMED_PATHS.${operation} sabitine yazın; ` +
-        'connector bu bilgi olmadan tahmini bir çağrı yapmaz. ' +
-        'Ayrıca hangi Zalando modelinde olduğunuzu teyit edin (zDirect / Connected Retail).',
-    );
-  }
-
   // --------------------------------------------------------------------------
   // Contract
   // --------------------------------------------------------------------------
@@ -286,9 +283,25 @@ export class ZalandoConnector extends MarketplaceConnector {
     return collected.filter((order) => wantedSet.has(order.status.toLowerCase()));
   }
 
+  /**
+   * zDirect publishes no endpoint that lists a merchant's articles. What exists
+   * is point access only: `GET /products/identifiers/{ean}` looks one EAN up,
+   * and `PUT /merchants/{id}/products/identifiers/{ean}` registers a merchant
+   * identifier against a product Zalando already knows. Neither can enumerate a
+   * catalogue, so there is no path to fill in here — the operation is absent,
+   * not merely unconfirmed.
+   *
+   * Refusing keeps a sync from reporting an empty catalogue as a successful
+   * pull, which is what returning `[]` would do.
+   */
   async getProducts(): Promise<MarketplaceProduct[]> {
-    if (!UNCONFIRMED_PATHS.products) this.unconfirmed('products');
-    return [];
+    throw new Error(
+      'Zalando zDirect ürün listeleme uç noktası yayınlamıyor; yalnızca EAN ile tek ' +
+        'ürün sorgulanabiliyor. Katalog Zalando’dan çekilemez, KroptOS tarafındaki ' +
+        'ürünler EAN ile eşleştirilerek kullanılır. ' +
+        'Connected Retail modelindeyseniz protokol tamamen farklıdır (dosya tabanlı) — ' +
+        'docs/plans/zalando-integration.md.',
+    );
   }
 
   /**
@@ -358,14 +371,35 @@ export class ZalandoConnector extends MarketplaceConnector {
     }
   }
 
+  /**
+   * Outlines, not categories: a flat list of product templates. The mapping
+   * screen binds to `{ id, name, parentId }`, so that is what comes back.
+   */
   async getCategories(): Promise<any[]> {
-    if (!UNCONFIRMED_PATHS.categories) this.unconfirmed('categories');
-    return [];
+    const { merchantId } = this.requireCredentials('merchantId');
+
+    const response = await this.call<ZalandoOutlinesResponse>(PATHS.outlines(merchantId));
+
+    return (response?.items ?? []).map((outline) => ZalandoMapper.toUnifiedCategory(outline));
   }
 
-  async getCategoryAttributes(_categoryId: string): Promise<any> {
-    if (!UNCONFIRMED_PATHS.categories) this.unconfirmed('categories');
-    return {};
+  /**
+   * `categoryId` is an outline label (`shoe`), not a numeric id. The single
+   * outline carries its own tiers, so the attribute list costs one request.
+   */
+  async getCategoryAttributes(categoryId: string): Promise<any> {
+    const { merchantId } = this.requireCredentials('merchantId');
+
+    const response = await this.call<ZalandoOutlinesResponse>(
+      PATHS.outline(merchantId, categoryId),
+    );
+
+    const outline = response?.items?.[0];
+    if (!outline) {
+      throw new Error(`Zalando '${categoryId}' outline'ı bulunamadı.`);
+    }
+
+    return ZalandoMapper.toCategoryAttributes(outline);
   }
 
   /**

@@ -458,14 +458,96 @@ describe('ZalandoConnector', () => {
     });
   });
 
-  describe('operations with no published spec', () => {
-    it('refuses getProducts and names the constant to fill in', async () => {
-      await expect(build().getProducts()).rejects.toThrow(/UNCONFIRMED_PATHS\.products/);
-      expect(httpClient.request).not.toHaveBeenCalled();
+  describe('outlines (categories)', () => {
+    const OUTLINE = {
+      label: 'shoe',
+      name: { en: 'Shoe', de: 'Schuh' },
+      tiers: {
+        model: {
+          mandatory_types: ['brand'],
+          optional_types: ['care_instructions'],
+          restricted_attributes: [{ type: { label: 'brand' }, values: ['Nike', 'Adidas'] }],
+        },
+        config: {
+          mandatory_types: ['color'],
+          optional_types: [],
+          restricted_attributes: [{ type: { label: 'color' }, values: ['black', 'white'] }],
+        },
+        simple: { mandatory_types: ['size'], optional_types: [], restricted_attributes: [] },
+      },
+    };
+
+    it('reads the outlines path for the configured merchant', async () => {
+      mockTokenThen({ items: [OUTLINE] });
+
+      const categories = await build().getCategories();
+
+      expect(lastCall()[0]).toBe('https://api.merchants.zalando.com/merchants/merchant-9/outlines');
+      // Outlines are a flat list — there is no tree to descend.
+      expect(categories).toEqual([{ id: 'shoe', name: 'Shoe', parentId: null }]);
     });
 
-    it('refuses getCategories and names the constant to fill in', async () => {
-      await expect(build().getCategories()).rejects.toThrow(/UNCONFIRMED_PATHS\.categories/);
+    it('falls back to the label rather than showing an unselectable blank row', async () => {
+      mockTokenThen({ items: [{ label: 'shirt' }, { label: 'bag', name: { de: 'Tasche' } }] });
+
+      const categories = await build().getCategories();
+
+      expect(categories.map((c) => c.name)).toEqual(['shirt', 'Tasche']);
+    });
+
+    it('asks for one outline by label and encodes it', async () => {
+      mockTokenThen({ items: [OUTLINE] });
+
+      await build().getCategoryAttributes('sports shoe');
+
+      expect(lastCall()[0]).toBe(
+        'https://api.merchants.zalando.com/merchants/merchant-9/outlines/sports%20shoe',
+      );
+    });
+
+    it('marks what varies between variants and what is mandatory', async () => {
+      mockTokenThen({ items: [OUTLINE] });
+
+      const result = await build().getCategoryAttributes('shoe');
+      const by = (label: string) =>
+        result.categoryAttributes.find((a: any) => a.attribute.id === label);
+
+      // Tiers ARE Zalando's variant model: below `model` is per-variant.
+      expect(by('brand')).toMatchObject({ required: true, variability: 'UNIFIED' });
+      expect(by('color')).toMatchObject({ required: true, variability: 'VARIANTS' });
+      expect(by('size')).toMatchObject({ required: true, variability: 'VARIANTS' });
+      expect(by('care_instructions')).toMatchObject({ required: false, variability: 'UNIFIED' });
+    });
+
+    it('offers the restricted values and leaves unrestricted types free text', async () => {
+      mockTokenThen({ items: [OUTLINE] });
+
+      const result = await build().getCategoryAttributes('shoe');
+      const by = (label: string) =>
+        result.categoryAttributes.find((a: any) => a.attribute.id === label);
+
+      expect(by('color').attributeValues).toEqual([
+        { id: 'black', name: 'black' },
+        { id: 'white', name: 'white' },
+      ]);
+      expect(by('color').allowCustom).toBe(false);
+      // No restriction listed for `size`, so the seller may type a value.
+      expect(by('size')).toMatchObject({ allowCustom: true, attributeValues: [] });
+    });
+
+    it('fails instead of returning an empty attribute set for an unknown outline', async () => {
+      mockTokenThen({ items: [] });
+
+      await expect(build().getCategoryAttributes('nope')).rejects.toThrow(/bulunamadı/);
+    });
+  });
+
+  describe('product listing, which zDirect does not publish', () => {
+    it('refuses rather than reporting an empty catalogue as a successful pull', async () => {
+      // Point lookup by EAN exists; enumeration does not. Returning [] here
+      // would let a sync record "0 products" as a healthy result.
+      await expect(build().getProducts()).rejects.toThrow(/EAN/);
+      expect(httpClient.request).not.toHaveBeenCalled();
     });
 
     it('warns about the two Zalando models in the refusal', async () => {

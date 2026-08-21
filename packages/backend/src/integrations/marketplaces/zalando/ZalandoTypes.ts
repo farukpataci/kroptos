@@ -185,3 +185,67 @@ export interface ZalandoStockUpdatesResponse {
     };
   }>;
 }
+
+// ------------------------------------------------------- Outlines (categories)
+
+/**
+ * From the mirrored Outlines and Attributes specs. Zalando has no category
+ * tree: an **outline** is the product template that decides which attribute
+ * types a submission must carry (`shoe`, `shirt`…), and it is the nearest thing
+ * the mapping screen can bind to.
+ *
+ * MIRROR, NOT FIRST PARTY — same provenance caveat as orders and stocks.
+ */
+
+/** `{ en: 'The name', de: 'Der Name' }` — RFC 2616 §3.10 language tags. */
+export type ZalandoLocalizedText = Record<string, string>;
+
+/** Ties an (outline, attribute type) pair to the values it may take. */
+export interface ZalandoAttributePerType {
+  type?: { label?: string; version?: string };
+  values?: string[];
+}
+
+export interface ZalandoOutlineTier {
+  /** Must be present for the product submission to be accepted. */
+  mandatory_types?: string[];
+  /** Improves product quality; submission succeeds without them. */
+  optional_types?: string[];
+  restricted_attributes?: ZalandoAttributePerType[];
+  validation_hints?: Record<string, unknown>;
+}
+
+/**
+ * The three tiers are Zalando's variant model: `model` is the product, `config`
+ * the colourway, `simple` the individual size.
+ */
+export interface ZalandoOutlineTiers {
+  model?: ZalandoOutlineTier;
+  config?: ZalandoOutlineTier;
+  simple?: ZalandoOutlineTier;
+}
+
+export interface ZalandoOutline {
+  label?: string;
+  name?: ZalandoLocalizedText;
+  description?: ZalandoLocalizedText;
+  tiers?: ZalandoOutlineTiers;
+}
+
+/** Both the list and the single-outline path answer with an `items` array. */
+export interface ZalandoOutlinesResponse {
+  items?: ZalandoOutline[];
+}
+
+/**
+ * Shaped for the category mapping screen, which reads `categoryAttributes` and
+ * the fields below regardless of provider.
+ */
+export interface ZalandoCategoryAttribute {
+  attribute: { id: string; name: string };
+  required: boolean;
+  allowCustom: boolean;
+  /** `VARIANTS` when the type separates two variants, else `UNIFIED`. */
+  variability: string;
+  attributeValues: Array<{ id: string; name: string }>;
+}

@@ -34,7 +34,12 @@ export const zalandoOverride: ProviderSettingsOverride = {
   // but nothing in this system calls a connector to push a price — there is no
   // `updatePrice` on the contract and no sync event that would reach one.
   // Claiming the capability would light up a pricing tab that does nothing.
-  capabilities: ['orders.read', 'stock.push'],
+  //
+  // `categories.read` / `attributes.read` cover outlines: zDirect's product
+  // templates, which is what this provider has instead of a category tree.
+  // Still no `products.read` — Zalando publishes no endpoint that lists a
+  // merchant's articles at all (see `ZalandoConnector.getProducts`).
+  capabilities: ['orders.read', 'stock.push', 'categories.read', 'attributes.read'],
   credentials: [
     { key: 'clientId', type: 'text', labelKey: cred('clientId'), helpKey: cred('clientIdHelp'), required: true },
     { key: 'clientSecret', type: 'password', labelKey: cred('clientSecret'), required: true, secret: true },

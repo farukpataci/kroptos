@@ -1,11 +1,15 @@
 import { MarketplaceOrder, MarketplaceOrderItem } from '../core/MarketplaceTypes';
 import {
+  ZalandoCategoryAttribute,
   ZalandoIncludedResource,
   ZalandoMoney,
   ZalandoOrderItemAttributes,
   ZalandoOrderLineAttributes,
   ZalandoOrderResource,
   ZalandoOrdersDocument,
+  ZalandoOutline,
+  ZalandoOutlineTier,
+  ZalandoLocalizedText,
 } from './ZalandoTypes';
 
 /**
@@ -50,6 +54,18 @@ function toStatus(orderStatus: unknown, lineStatuses: string[]): string {
       // Anything Zalando adds later stays pending rather than being guessed at.
       return 'pending';
   }
+}
+
+/**
+ * Outline `name` and `description` are language maps. English is Zalando's own
+ * documentation language and the tag present in every example; anything else
+ * falls back to whatever the payload does carry, and finally to the label —
+ * never to an empty string, because a blank row is unselectable in the mapping
+ * screen.
+ */
+function text(localized: ZalandoLocalizedText | undefined, fallback: string): string {
+  if (!localized) return fallback;
+  return localized.en || Object.values(localized).find(Boolean) || fallback;
 }
 
 function addressLine(order: ZalandoOrderResource): string | undefined {
@@ -198,6 +214,87 @@ export class ZalandoMapper {
         fallbackCurrency,
       source: 'zalando',
       items,
+    };
+  }
+
+  /**
+   * Zalando has no category tree. The closest equivalent is an **outline** —
+   * the product template that fixes which attribute types a submission must
+   * carry — and outlines are a flat list, so `parentId` is always null.
+   */
+  static toUnifiedCategory(outline: ZalandoOutline): {
+    id: string;
+    name: string;
+    parentId: null;
+  } {
+    const label = String(outline.label ?? '');
+    return { id: label, name: text(outline.name, label), parentId: null };
+  }
+
+  /**
+   * An outline states its attribute types per tier, and the tiers ARE Zalando's
+   * variant model: `model` is the product, `config` the colourway, `simple` the
+   * individual size. A type that appears below the model tier is therefore what
+   * separates two variants — exactly the distinction the mapping screen calls
+   * `variability`.
+   *
+   * Allowed values come from the outline's own `restricted_attributes`; a type
+   * with no restriction listed takes free text.
+   * ponytail: one request per outline. Fan out to
+   * `/attribute-types/{label}/attributes` only if a real account shows a type
+   * restricting values it does not list here.
+   */
+  static toCategoryAttributes(outline: ZalandoOutline): {
+    id: string;
+    name: string;
+    categoryAttributes: ZalandoCategoryAttribute[];
+  } {
+    const tiers: Array<[string, ZalandoOutlineTier | undefined]> = [
+      ['model', outline.tiers?.model],
+      ['config', outline.tiers?.config],
+      ['simple', outline.tiers?.simple],
+    ];
+
+    // Restrictions are collected across every tier first: the same type can be
+    // declared in one tier and restricted in another.
+    const allowed = new Map<string, string[]>();
+    for (const [, tier] of tiers) {
+      for (const restriction of tier?.restricted_attributes ?? []) {
+        const label = restriction.type?.label;
+        if (!label) continue;
+        allowed.set(label, [
+          ...new Set([...(allowed.get(label) ?? []), ...(restriction.values ?? [])]),
+        ]);
+      }
+    }
+
+    const rows = new Map<string, ZalandoCategoryAttribute>();
+    for (const [tierName, tier] of tiers) {
+      if (!tier) continue;
+      const mandatory = tier.mandatory_types ?? [];
+
+      for (const label of [...mandatory, ...(tier.optional_types ?? [])]) {
+        const values = allowed.get(label) ?? [];
+        const row = rows.get(label) ?? {
+          attribute: { id: label, name: label },
+          required: false,
+          allowCustom: values.length === 0,
+          variability: 'UNIFIED',
+          attributeValues: values.map((value) => ({ id: value, name: value })),
+        };
+
+        // Mandatory in any tier means the submission needs it.
+        row.required = row.required || mandatory.includes(label);
+        if (tierName !== 'model') row.variability = 'VARIANTS';
+        rows.set(label, row);
+      }
+    }
+
+    const label = String(outline.label ?? '');
+    return {
+      id: label,
+      name: text(outline.name, label),
+      categoryAttributes: [...rows.values()],
     };
   }
 }

@@ -1,9 +1,10 @@
 # Zalando entegrasyonu — durum ve açık kalanlar
 
-**Durum:** connector yazıldı, sipariş ve stok yolları spec'e göre gerçeklendi,
-sağlayıcı registry'ye **KAYDEDİLMEDİ**. Katalog kartı "Çok yakında" duruyor.
+**Durum:** connector yazıldı; sipariş, stok ve **outline (kategori + nitelik)**
+yolları spec'e göre gerçeklendi. Sağlayıcı registry'ye **KAYDEDİLMEDİ**.
+Katalog kartı "Çok yakında" duruyor.
 **Satıcı modeli:** zDirect (kullanıcı tarafından teyit edildi, 2026-08-13).
-**Tarih:** 2026-08-13
+**Tarih:** 2026-08-13, outline'lar 2026-08-21'de eklendi.
 
 ---
 
@@ -121,10 +122,44 @@ içinde buna varan bir olay yok. Yazılsa çağrılmayan kod olurdu. Manifest de
 yüzden `price.push` yeteneğini **istemiyor**; istese hiçbir şey yapmayan bir
 fiyat sekmesi açılırdı.
 
+#### Outline'lar — kategori ve nitelik (2026-08-21, aynadan)
+
+zDirect'te kategori ağacı **yok**. Karşılığı **outline**: bir ürünün hangi nitelik
+tiplerini taşımak zorunda olduğunu belirleyen şablon (`shoe`, `shirt`…). Düz liste,
+alt kırılım yok — bu yüzden `parentId` her zaman `null`.
+
+| | Değer |
+|---|---|
+| Liste | `GET /merchants/{merchant_id}/outlines` → `{ items: Outline[] }` |
+| Tek kayıt | `GET /merchants/{merchant_id}/outlines/{outline_label}` → aynı zarf |
+| Yetki | `products/attributes/read` |
+| Sayfalama | **Yok** — spec'te tek parametre `X-Flow-Id` başlığı |
+| Outline | `label`, `name` / `description` (dil haritası: `{en, de, …}`), `tiers` |
+| `tiers` | `model` · `config` · `simple` — **Zalando'nun varyant modeli budur** |
+| Tier içi | `mandatory_types[]`, `optional_types[]`, `restricted_attributes[]` |
+| `restricted_attributes` | `{ type: {label, version}, values: string[] }` |
+
+Eşleme kararları (`ZalandoMapper.toCategoryAttributes`):
+- `model` tier'ının altındaki her tip **`VARIANTS`**, `model`'dekiler `UNIFIED` —
+  `config` renk, `simple` beden demek olduğu için varyantı ayıran şey odur.
+- Herhangi bir tier'da `mandatory` ise `required: true`.
+- İzinli değerler outline'ın kendi `restricted_attributes`'ından okunuyor;
+  kısıtı olmayan tip serbest metin (`allowCustom: true`). Tip başına
+  `/attribute-types/{label}/attributes` çağrısı **yapılmıyor** — gerçek hesapta
+  eksik değer çıkarsa açılacak (`ponytail:` notu mapper'da).
+
+Ayrıca aynada bulunan ama kullanılmayanlar: `attribute-types/{type_label}`
+(tipin tanımı, cardinality), `attribute-types/{type_label}/attributes` (izinli
+değerler, sayfalı).
+
 ### C. Hâlâ hiç bilinmiyor
 
-- **Ürün / makale listeleme.** Spec yok. `getProducts` reddediyor.
-- **Kategori / özellik ağacı.** Spec yok. `getCategories` reddediyor.
+- **Ürün / makale listeleme uç noktası YOK.** "Spec bulunamadı" değil — yayınlanan
+  yüzeyde böyle bir işlem yok. Var olanlar nokta erişimi: `GET /products/identifiers/{ean}`
+  (tek EAN sorgusu) ve `PUT /merchants/{id}/products/identifiers/{ean}` (satıcı
+  kimliğini Zalando'nun bildiği ürüne bağlama). `getProducts` bu yüzden boş dizi
+  değil **hata** döndürüyor: boş dizi, senkronun "0 ürün çekildi"yi sağlıklı sonuç
+  saymasına yol açardı. Katalog KroptOS tarafında kalır, eşleme EAN üzerinden yapılır.
 - Rate limit değerleri. Manifest 60/dk varsayıyor — DOĞRULANAMADI.
 - Her satış kanalının hangi para biriminde kapandığı. Yük bunu söylediği yerde
   okunuyor; tahmini bir ülke→para tablosu **yok**.
@@ -163,6 +198,10 @@ ve siparişi ilişkilendirdiği birim; ikisi tek kayıtta duramaz.
    - **Tutar birimi gerçek bir siparişle** — yanlışsa her sipariş 100 kat sapar
    - `include=order_items,order_lines` satırları ve fiyatları getiriyor mu
 4. **Tek bir EAN'a stok gönder** ve 207 gövdesindeki `status` alanını gör.
+4b. **Outline listesi çek.** `getCategories()` — yetki `products/attributes/read`
+   verilmemişse burada 403 döner, kod hatası değildir. Sonra bir outline'ın
+   niteliklerini çek ve `restricted_attributes`'ın gerçekten değer listelediğini
+   doğrula; listelemiyorsa `attribute-types` fan-out'u açılacak.
 5. Yalnız bunlar geçtikten sonra: `manifest.registry.ts` içindeki `OVERRIDES`
    dizisine `zalandoOverride` ekle — tek satır. Çeviriler hazır ve
    kaydedilmemiş-manifest testi onları koruyor.
