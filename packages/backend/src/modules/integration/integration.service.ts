@@ -18,6 +18,7 @@ import { IntegrationQueueService } from './integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
+import { MarketplaceSettingsRegistry } from '../../integrations/marketplaces/settings/manifest.registry';
 
 @Injectable()
 export class IntegrationService {
@@ -29,7 +30,21 @@ export class IntegrationService {
     private queueService: IntegrationQueueService,
     @Inject(forwardRef(() => IntegrationSettingsService))
     private settingsService: IntegrationSettingsService,
+    private settingsRegistry: MarketplaceSettingsRegistry,
   ) {}
+
+  /**
+   * Whether the provider claims a catalogue that can be pulled.
+   *
+   * Unknown providers answer `true`: the point is to skip work a manifest says
+   * is impossible, not to gate on a manifest that is missing.
+   */
+  private readsProducts(provider: string): boolean {
+    if (!this.settingsRegistry.isSupported(provider)) return true;
+    return (this.settingsRegistry.getManifest(provider).capabilities ?? []).includes(
+      'products.read',
+    );
+  }
 
   private async writeAuditLog(
     tx: Prisma.TransactionClient,
@@ -472,8 +487,14 @@ export class IntegrationService {
       await this.settingsService.assertConfigured(integration.id, integration.provider);
     }
 
-    // Create sync_products and sync_orders jobs
-    const productsJob = await this.queueService.addSyncJob(integration.id, 'sync_products', {});
+    // A provider whose manifest does not claim `products.read` has no catalogue
+    // to pull — its connector refuses the call. The worker turns that refusal
+    // into a failed queue row AND drops the whole integration to `status:
+    // 'error'`, so a seller whose orders arrived perfectly still sees red after
+    // every sync. The job had nothing to do, so it is not queued at all.
+    const productsJob = this.readsProducts(integration.provider)
+      ? await this.queueService.addSyncJob(integration.id, 'sync_products', {})
+      : null;
     const ordersJob = await this.queueService.addSyncJob(integration.id, 'sync_orders', {});
 
     // A simulated run imports nothing on purpose. Without saying so here, the
@@ -499,7 +520,7 @@ export class IntegrationService {
           : 'Senkronizasyon görevleri arka plan işleme kuyruğuna başarıyla eklendi',
       mode,
       modeSource,
-      jobs: [productsJob.id, ordersJob.id],
+      jobs: [productsJob?.id, ordersJob.id].filter(Boolean),
     };
   }
 

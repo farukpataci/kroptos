@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { IntegrationService } from './integration.service';
+import { MarketplaceSettingsRegistry } from '../../integrations/marketplaces/settings/manifest.registry';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { encrypt, decrypt } from '../../common/utils/encryption.util';
@@ -75,6 +76,13 @@ describe('IntegrationService', () => {
     resolveForRuntime: jest.fn().mockResolvedValue({}),
   };
 
+  // Real manifests all claim `products.read` today, so the branch that skips
+  // the catalogue job can only be exercised against a stubbed one.
+  const mockSettingsRegistry = {
+    isSupported: jest.fn().mockReturnValue(true),
+    getManifest: jest.fn().mockReturnValue({ capabilities: ['orders.read', 'products.read'] }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -85,6 +93,7 @@ describe('IntegrationService', () => {
         { provide: ErpConnectorFactory, useValue: mockErpConnectorFactory },
         { provide: IntegrationQueueService, useValue: mockIntegrationQueueService },
         { provide: IntegrationSettingsService, useValue: mockSettingsService },
+        { provide: MarketplaceSettingsRegistry, useValue: mockSettingsRegistry },
       ],
     }).compile();
 
@@ -92,6 +101,10 @@ describe('IntegrationService', () => {
     prisma = module.get<PrismaService>(PrismaService);
 
     jest.clearAllMocks();
+    mockSettingsRegistry.isSupported.mockReturnValue(true);
+    mockSettingsRegistry.getManifest.mockReturnValue({
+      capabilities: ['orders.read', 'products.read'],
+    });
   });
 
   it('should be defined', () => {
@@ -429,6 +442,46 @@ describe('IntegrationService', () => {
       expect(res.modeSource).toBe('default');
       expect(res.message).toMatch(/SİMÜLASYON/);
       expect(res.message).toMatch(/arıza değil/);
+    });
+
+    it('should not queue a catalogue job a provider cannot serve', async () => {
+      // Zalando and AliExpress publish no product listing endpoint, so their
+      // connectors refuse. The worker turns that refusal into `status: 'error'`
+      // on the whole integration — a seller whose orders arrived fine would see
+      // red after every sync.
+      mockPrismaService.integration.findFirst.mockResolvedValue(marketplaceIntegration);
+      mockSettingsService.assertConfigured.mockResolvedValueOnce(undefined);
+      mockSettingsRegistry.getManifest.mockReturnValue({
+        capabilities: ['orders.read', 'stock.push'],
+      });
+
+      const result: any = await service.triggerSync('int-123', 'agency-1', 'client-1', 'store-1');
+
+      expect(result.success).toBe(true);
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledTimes(1);
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledWith(
+        'int-123',
+        'sync_orders',
+        {},
+      );
+      // A null job id must not leak into the response.
+      expect(result.jobs.every(Boolean)).toBe(true);
+    });
+
+    it('should still queue the catalogue job for an unknown provider', async () => {
+      // The point is to skip work a manifest calls impossible, not to gate on a
+      // manifest that is missing.
+      mockPrismaService.integration.findFirst.mockResolvedValue(marketplaceIntegration);
+      mockSettingsService.assertConfigured.mockResolvedValueOnce(undefined);
+      mockSettingsRegistry.isSupported.mockReturnValue(false);
+
+      await service.triggerSync('int-123', 'agency-1', 'client-1', 'store-1');
+
+      expect(mockIntegrationQueueService.addSyncJob).toHaveBeenCalledWith(
+        'int-123',
+        'sync_products',
+        {},
+      );
     });
 
     it('should queue product and order jobs once configured', async () => {
