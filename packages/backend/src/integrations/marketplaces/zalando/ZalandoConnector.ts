@@ -12,6 +12,7 @@ import { ZalandoMapper } from './ZalandoMapper';
 import {
   ZalandoIdentity,
   ZalandoOrdersDocument,
+  ZalandoOutline,
   ZalandoOutlinesResponse,
   ZalandoStockUpdatesRequest,
   ZalandoStockUpdatesResponse,
@@ -53,22 +54,29 @@ const HOSTS: Record<string, string> = {
   sandbox: 'https://api-sandbox.merchants.zalando.com',
 };
 
+/**
+ * `merchantId` is credential input, so it is encoded like any other segment: a
+ * value carrying `../` would otherwise be normalised away by `new URL()` and
+ * the request would land on a different Zalando path than the one written here.
+ */
+const seg = (value: string) => encodeURIComponent(value);
+
 const PATHS = {
   /** Verified against the published Authentication OpenAPI spec. */
   token: () => '/auth/token',
   identity: () => '/auth/me',
   /** From the mirrored Orders spec; matches the operation id Zalando publishes. */
-  orders: (merchantId: string) => `/merchants/${merchantId}/orders`,
+  orders: (merchantId: string) => `/merchants/${seg(merchantId)}/orders`,
   /** From the mirrored Stocks spec. */
-  stocks: (merchantId: string) => `/merchants/${merchantId}/stocks`,
+  stocks: (merchantId: string) => `/merchants/${seg(merchantId)}/stocks`,
   /**
    * From the mirrored Outlines spec. An outline is the product template that
    * fixes which attribute types a submission must carry; it is the nearest
    * thing zDirect has to a category. Scope: `products/attributes/read`.
    */
-  outlines: (merchantId: string) => `/merchants/${merchantId}/outlines`,
+  outlines: (merchantId: string) => `/merchants/${seg(merchantId)}/outlines`,
   outline: (merchantId: string, label: string) =>
-    `/merchants/${merchantId}/outlines/${encodeURIComponent(label)}`,
+    `/merchants/${seg(merchantId)}/outlines/${seg(label)}`,
 };
 
 /** The Orders API is JSON:API, so it neither sends nor accepts plain JSON. */
@@ -380,7 +388,11 @@ export class ZalandoConnector extends MarketplaceConnector {
 
     const response = await this.call<ZalandoOutlinesResponse>(PATHS.outlines(merchantId));
 
-    return (response?.items ?? []).map((outline) => ZalandoMapper.toUnifiedCategory(outline));
+    return (response?.items ?? [])
+      // The label is the id every later call keys on; a row without one is an
+      // unselectable blank line in the mapping screen.
+      .filter((outline) => Boolean(outline?.label))
+      .map((outline) => ZalandoMapper.toUnifiedCategory(outline));
   }
 
   /**
@@ -390,13 +402,26 @@ export class ZalandoConnector extends MarketplaceConnector {
   async getCategoryAttributes(categoryId: string): Promise<any> {
     const { merchantId } = this.requireCredentials('merchantId');
 
-    const response = await this.call<ZalandoOutlinesResponse>(
+    const payload = await this.call<ZalandoOutlinesResponse & ZalandoOutline>(
       PATHS.outline(merchantId, categoryId),
     );
 
-    const outline = response?.items?.[0];
+    // The `items` envelope on this path comes from the mirror, not from
+    // Zalando, so a bare Outline is accepted too. Matching on the label first
+    // matters more than the envelope: an endpoint that ignores an unknown label
+    // and answers with the full list would otherwise show the seller a
+    // different outline's attributes without saying so.
+    const outline =
+      payload?.items?.find((item) => item?.label === categoryId) ??
+      (payload?.items?.length === 1 ? payload.items[0] : undefined) ??
+      (payload?.label ? payload : undefined);
+
     if (!outline) {
-      throw new Error(`Zalando '${categoryId}' outline'ı bulunamadı.`);
+      throw new Error(
+        `Zalando '${categoryId}' outline'ı bulunamadı. ` +
+          'Bu label satıcıda tanımlı değilse beklenen sonuçtur; değilse yanıt zarfı ' +
+          'beklenenden farklı olabilir (bu yolun zarfı aynadan alındı, birinci elden değil).',
+      );
     }
 
     return ZalandoMapper.toCategoryAttributes(outline);

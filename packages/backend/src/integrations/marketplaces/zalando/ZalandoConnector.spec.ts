@@ -540,6 +540,42 @@ describe('ZalandoConnector', () => {
 
       await expect(build().getCategoryAttributes('nope')).rejects.toThrow(/bulunamadı/);
     });
+
+    it('matches on the label rather than trusting the first row', async () => {
+      // An endpoint that ignores an unknown label and answers with the whole
+      // list would otherwise show a different outline's attributes silently.
+      mockTokenThen({ items: [{ label: 'bag' }, OUTLINE] });
+
+      const result = await build().getCategoryAttributes('shoe');
+
+      expect(result.id).toBe('shoe');
+    });
+
+    it('accepts a bare outline, since this envelope came from the mirror', async () => {
+      mockTokenThen(OUTLINE);
+
+      const result = await build().getCategoryAttributes('shoe');
+
+      expect(result.id).toBe('shoe');
+    });
+
+    it('drops outlines with no label instead of listing a blank row', async () => {
+      mockTokenThen({ items: [OUTLINE, { name: { en: 'Nameless' } }] });
+
+      expect(await build().getCategories()).toEqual([
+        { id: 'shoe', name: 'Shoe', parentId: null },
+      ]);
+    });
+
+    it('encodes the merchant id too, so a stray credential cannot move the path', async () => {
+      mockTokenThen({ items: [] });
+
+      await build({ ...CREDENTIALS, merchantId: 'a/../b' }).getCategories();
+
+      expect(lastCall()[0]).toBe(
+        'https://api.merchants.zalando.com/merchants/a%2F..%2Fb/outlines',
+      );
+    });
   });
 
   describe('product listing, which zDirect does not publish', () => {
