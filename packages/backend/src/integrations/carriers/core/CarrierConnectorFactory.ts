@@ -1,0 +1,34 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { CarrierConnector } from './CarrierConnector';
+import { CarrierHttpClient } from './CarrierHttpClient';
+import { CarrierRateLimiter } from './CarrierRateLimiter';
+import { MockCarrierConnector } from '../mock/MockCarrierConnector';
+
+@Injectable()
+export class CarrierConnectorFactory {
+  constructor(
+    private readonly httpClient: CarrierHttpClient,
+    private readonly rateLimiter: CarrierRateLimiter,
+  ) {}
+
+  create(
+    provider: string,
+    credentials: Record<string, any>,
+    isTestMode = true,
+  ): CarrierConnector {
+    switch (provider.toUpperCase()) {
+      case 'MOCK':
+        return new MockCarrierConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      default:
+        // Every other CarrierProvider value is declared in CarrierTypes but has
+        // no connector yet. Refusing beats falling back to the mock: a silent
+        // fallback would hand out tracking numbers no carrier issued.
+        throw new BadRequestException(`Taşıyıcı entegrasyonu henüz uygulanmadı: ${provider}`);
+    }
+  }
+
+  /** Providers that can actually be selected today. */
+  supportedProviders(): string[] {
+    return ['MOCK'];
+  }
+}

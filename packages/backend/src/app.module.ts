@@ -13,6 +13,7 @@ import { IntegrationSettingsModule } from './modules/integration-settings/integr
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
 import { WmsModule } from './modules/wms/wms.module';
+import { ShipmentModule } from './modules/shipment/shipment.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { IntegrationLogModule } from './modules/integration-log/integration-log.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -41,6 +42,7 @@ import { HealthController } from './modules/health/health.controller';
     IntegrationModule,
     IntegrationSettingsModule,
     WmsModule,
+    ShipmentModule,
     AuditModule,
     IntegrationLogModule,
     AnalyticsModule,
