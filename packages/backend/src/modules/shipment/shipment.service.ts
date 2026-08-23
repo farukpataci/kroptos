@@ -1,11 +1,12 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, Shipment } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
 import {
   CancelResult,
   CarrierAddress,
   CarrierLabel,
+  isShipmentStatus,
   LabelFormat,
   RateQuote,
 } from '../../integrations/carriers/core/CarrierTypes';
@@ -39,6 +40,60 @@ export class ShipmentService {
     };
   }
 
+  /**
+   * Swallows only the duplicate-event violation.
+   *
+   * A blanket `catch(() => undefined)` hid every write failure: a timeline that
+   * silently stopped filling looked exactly like a clean sync, while the status
+   * column kept moving. Anything that is not the expected duplicate is a real
+   * failure and belongs in the caller's face.
+   */
+  private ignoreDuplicateEvent(error: unknown): void {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') return;
+    throw error;
+  }
+
+  /** Prisma hands back Decimal; JSON should carry a number, not an object. */
+  private num(value: Prisma.Decimal | null): number | null {
+    return value == null ? null : Number(value);
+  }
+
+  /**
+   * What the list endpoint returns, field for field — see ShipmentResponseDto.
+   *
+   * Sender and recipient addresses are dropped here on purpose. The table does
+   * not render them, and a paged list is the widest KVKK exposure in the module:
+   * one call with pageSize=200 would hand out two hundred customers' names,
+   * phones and addresses. The detail endpoint still serves them to an operator
+   * who deliberately opened one shipment.
+   */
+  private toListItem(row: Shipment) {
+    return {
+      id: row.id,
+      publicId: row.publicId,
+      provider: row.provider,
+      status: row.status,
+      carrierStatusCode: row.carrierStatusCode,
+      trackingNumber: row.trackingNumber,
+      barcode: row.barcode,
+      orderId: row.orderId,
+      referenceCode: row.referenceCode,
+      serviceLevel: row.serviceLevel,
+      paymentType: row.paymentType,
+      codAmount: this.num(row.codAmount),
+      codCurrency: row.codCurrency,
+      totalDesi: this.num(row.totalDesi),
+      totalWeightKg: this.num(row.totalWeightKg),
+      chargeableWeightKg: this.num(row.chargeableWeightKg),
+      labelFormat: row.labelFormat,
+      isTestMode: row.isTestMode,
+      handedOverAt: row.handedOverAt,
+      deliveredAt: row.deliveredAt,
+      cancelledAt: row.cancelledAt,
+      createdAt: row.createdAt,
+    };
+  }
+
   async list(scope: TenantScope, query: ListShipmentsQueryDto) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 50;
@@ -67,7 +122,7 @@ export class ShipmentService {
       this.prisma.shipment.count({ where }),
     ]);
 
-    return { items, total, page, pageSize };
+    return { items: items.map((row) => this.toListItem(row)), total, page, pageSize };
   }
 
   async get(id: string, scope: TenantScope) {
@@ -317,7 +372,12 @@ export class ShipmentService {
       throw new BadRequestException('Gönderinin takip numarası yok, etiket üretilemez.');
     }
 
-    const integration = await this.carriers.findOneOrFail(shipment.carrierIntegrationId ?? '', scope);
+    // includeDeleted: the barcode outlives the connection it was bought from.
+    const integration = await this.carriers.findOneOrFail(
+      shipment.carrierIntegrationId ?? '',
+      scope,
+      { includeDeleted: true },
+    );
     return this.carriers.connectorFor(integration).getLabel(shipment.trackingNumber, format);
   }
 
@@ -356,6 +416,7 @@ export class ShipmentService {
         const integration = await this.carriers.findOneOrFail(
           shipment.carrierIntegrationId ?? '',
           scope,
+          { includeDeleted: true },
         );
         const result = await this.carriers
           .connectorFor(integration)
@@ -399,8 +460,9 @@ export class ShipmentService {
         },
       })
       // The cancellation already happened; a duplicate timeline row must not
-      // turn a completed cancel into an error for the operator.
-      .catch(() => undefined);
+      // turn a completed cancel into an error. Anything else still surfaces —
+      // cancel is idempotent, so a retry is safe and beats a lost timeline.
+      .catch((error) => this.ignoreDuplicateEvent(error));
 
     return {
       success: true,
@@ -421,12 +483,30 @@ export class ShipmentService {
       throw new BadRequestException('Takip numarası olmayan gönderi sorgulanamaz.');
     }
 
-    const integration = await this.carriers.findOneOrFail(shipment.carrierIntegrationId ?? '', scope);
+    const integration = await this.carriers.findOneOrFail(
+      shipment.carrierIntegrationId ?? '',
+      scope,
+      { includeDeleted: true },
+    );
     const [tracking] = await this.carriers
       .connectorFor(integration)
       .track([shipment.trackingNumber]);
 
     if (!tracking) return shipment;
+
+    // Checked before a single row is written, and for the events too: a mapper
+    // that leaks the carrier's own code must not get half its poll persisted.
+    // The loud failure is the point — an unrecognised code quietly written to
+    // `status` would eventually be an order closed as 'delivered' that never
+    // arrived.
+    const unmapped = [tracking, ...tracking.events].find((item) => !isShipmentStatus(item.status));
+    if (unmapped) {
+      throw new BadRequestException(
+        `${integration.provider} normalize edilmemiş bir gönderi durumu döndürdü: ` +
+          `"${String(unmapped.status)}" (taşıyıcı kodu: ${tracking.carrierStatusCode ?? '-'}). ` +
+          'Mapper düzeltilmeden gönderi durumu güncellenmez.',
+      );
+    }
 
     for (const event of tracking.events) {
       // Duplicate deliveries of the same event are expected; the composite
@@ -446,7 +526,7 @@ export class ShipmentService {
             occurredAt: event.at,
           },
         })
-        .catch(() => undefined);
+        .catch((error) => this.ignoreDuplicateEvent(error));
     }
 
     return this.prisma.shipment.update({
@@ -487,6 +567,7 @@ export class ShipmentService {
           parcels: measured.parcels,
           desiDivisor: divisor,
           paymentType: dto.paymentType as any,
+          serviceLevel: dto.serviceLevel as any,
         })),
       );
     }

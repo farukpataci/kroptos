@@ -49,6 +49,19 @@ export const SHIPMENT_STATUSES = [
 
 export type ShipmentStatus = (typeof SHIPMENT_STATUSES)[number];
 
+/**
+ * Runtime gate for the one column automation reads.
+ *
+ * The union above is a compile-time promise, and a mapper breaks it with a
+ * single `as any` or an untyped JSON field. This is what actually keeps a
+ * carrier's raw code out of `Shipment.status` — and, more to the point, keeps
+ * an unrecognised code from being written to a terminal state like
+ * 'delivered', which stops tracking and closes the order.
+ */
+export function isShipmentStatus(value: unknown): value is ShipmentStatus {
+  return typeof value === 'string' && (SHIPMENT_STATUSES as readonly string[]).includes(value);
+}
+
 /** Statuses that never change again, so tracking may stop polling them. */
 export const TERMINAL_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
   'delivered',
@@ -175,6 +188,8 @@ export interface RateQuoteRequest {
   /** Same contract as CreateShipmentRequest: quote on the tenant's own tariff. */
   desiDivisor: number;
   paymentType?: PaymentType;
+  /** Quoting standard for a parcel that ships express prices the wrong service. */
+  serviceLevel?: ServiceLevel;
   codAmount?: number;
 }
 

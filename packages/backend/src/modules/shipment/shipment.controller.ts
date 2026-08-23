@@ -78,7 +78,11 @@ export class ShipmentController {
   @HttpCode(200)
   @RequirePermission('shipments.read')
   @ApiOperation({ summary: 'Shipment detail with packages and tracking events' })
-  @ApiResponse({ status: 200, type: ShipmentResponseDto })
+  @ApiResponse({
+    status: 200,
+    description:
+      'List fields plus senderAddress, recipientAddress (KVKK data), packages and events.',
+  })
   async get(@Param('id') id: string, @Req() req: Request) {
     return this.service.get(id, tenantScopeFrom(req));
   }

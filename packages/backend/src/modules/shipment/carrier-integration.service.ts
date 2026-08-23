@@ -29,10 +29,13 @@ export class CarrierIntegrationService {
    * inherits. Both halves matter — the store clause alone would match another
    * agency's agency-wide row.
    */
-  private scopeWhere(scope: TenantScope): Prisma.CarrierIntegrationWhereInput {
+  private scopeWhere(
+    scope: TenantScope,
+    includeDeleted = false,
+  ): Prisma.CarrierIntegrationWhereInput {
     const where: Prisma.CarrierIntegrationWhereInput = {
       agencyId: scope.agencyId,
-      deletedAt: null,
+      ...(includeDeleted ? {} : { deletedAt: null }),
     };
 
     if (scope.storeId) {
@@ -95,10 +98,18 @@ export class CarrierIntegrationService {
     return rows.map((row) => this.toResponse(row));
   }
 
-  /** Raw row, tenant-checked. Callers that need credentials use this. */
-  async findOneOrFail(id: string, scope: TenantScope) {
+  /**
+   * Raw row, tenant-checked. Callers that need credentials use this.
+   *
+   * `includeDeleted` exists for shipments that already left the building: the
+   * connection is soft deleted, but the barcodes it issued are still out there
+   * and the operator has to print, track and cancel them. Filtering the deleted
+   * row out would 404 every one of those shipments, permanently — the parcel is
+   * in a van and the only screen that can manage it says "not found".
+   */
+  async findOneOrFail(id: string, scope: TenantScope, options?: { includeDeleted?: boolean }) {
     const row = await this.prisma.carrierIntegration.findFirst({
-      where: { ...this.scopeWhere(scope), id },
+      where: { ...this.scopeWhere(scope, options?.includeDeleted), id },
     });
     if (!row) throw new NotFoundException(`Taşıyıcı bağlantısı bulunamadı: ${id}`);
     return row;

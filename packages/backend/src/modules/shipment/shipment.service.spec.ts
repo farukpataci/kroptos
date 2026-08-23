@@ -411,3 +411,114 @@ describe('ShipmentService.refresh — tracking events', () => {
     });
   });
 });
+
+/**
+ * The guards added in the second pass. Each one exists because the failure it
+ * prevents is silent: a wrong status, a swallowed write, a shipment that goes
+ * unmanageable, a list that hands out customer addresses.
+ */
+describe('ShipmentService — tracking, cancel and list guards', () => {
+  let service: ShipmentService;
+
+  const track = jest.fn();
+  const integration = { id: 'ci-1', provider: 'YURTICI', isActive: true, isTestMode: true, settings: {} };
+  const shipment = { id: 'shp-1', trackingNumber: 'TRK-1', carrierIntegrationId: 'ci-1', deliveredAt: null };
+
+  const prisma: any = {
+    shipment: { findFirst: jest.fn(), findMany: jest.fn(), count: jest.fn(), update: jest.fn() },
+    shipmentTrackingEvent: { create: jest.fn() },
+    $transaction: jest.fn(),
+  };
+  const carriers: any = { findOneOrFail: jest.fn(), connectorFor: jest.fn() };
+  const scope = { agencyId: 'ag-1', storeId: 'st-1', clientId: null } as any;
+
+  const trackingEvent = (over: any = {}) => ({
+    at: new Date('2026-08-23T10:00:00Z'),
+    status: 'in_transit',
+    carrierStatusCode: 'YK_TRANSFER',
+    description: 'Transfer merkezinde',
+    ...over,
+  });
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ShipmentService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: CarrierIntegrationService, useValue: carriers },
+      ],
+    }).compile();
+
+    service = module.get(ShipmentService);
+    jest.clearAllMocks();
+
+    prisma.shipment.findFirst.mockResolvedValue(shipment);
+    prisma.shipment.update.mockResolvedValue(shipment);
+    prisma.shipmentTrackingEvent.create.mockResolvedValue({});
+    carriers.findOneOrFail.mockResolvedValue(integration);
+    carriers.connectorFor.mockReturnValue({ track });
+    track.mockResolvedValue([
+      { trackingNumber: 'TRK-1', status: 'in_transit', carrierStatusCode: 'YK_TRANSFER', events: [trackingEvent()] },
+    ]);
+  });
+
+  it('refuses a status the mapper failed to normalise, before writing anything', async () => {
+    track.mockResolvedValue([
+      { trackingNumber: 'TRK-1', status: 'TESLIM_EDILDI', carrierStatusCode: 'YK_99', events: [] },
+    ]);
+
+    await expect(service.refresh('shp-1', scope)).rejects.toThrow(/TESLIM_EDILDI/);
+    expect(prisma.shipment.update).not.toHaveBeenCalled();
+    expect(prisma.shipmentTrackingEvent.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses an unnormalised event status too, without persisting the good ones', async () => {
+    track.mockResolvedValue([
+      {
+        trackingNumber: 'TRK-1',
+        status: 'in_transit',
+        carrierStatusCode: 'YK_TRANSFER',
+        events: [trackingEvent(), trackingEvent({ status: 'DAGITIMDA' })],
+      },
+    ]);
+
+    await expect(service.refresh('shp-1', scope)).rejects.toThrow(/DAGITIMDA/);
+    expect(prisma.shipmentTrackingEvent.create).not.toHaveBeenCalled();
+  });
+
+  it('still reaches the carrier after the connection was soft deleted', async () => {
+    await service.refresh('shp-1', scope);
+
+    expect(carriers.findOneOrFail).toHaveBeenCalledWith('ci-1', scope, { includeDeleted: true });
+  });
+
+  it('swallows a duplicate event but not a real write failure', async () => {
+    prisma.shipmentTrackingEvent.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('dup', { code: 'P2002', clientVersion: 'test' }),
+    );
+    await expect(service.refresh('shp-1', scope)).resolves.toBeDefined();
+
+    prisma.shipmentTrackingEvent.create.mockRejectedValue(new Error('connection reset'));
+    await expect(service.refresh('shp-1', scope)).rejects.toThrow('connection reset');
+  });
+
+  it('keeps recipient addresses out of the list payload', async () => {
+    const row = {
+      id: 'shp-1',
+      publicId: 'shp_1',
+      provider: 'YURTICI',
+      status: 'in_transit',
+      totalDesi: new Prisma.Decimal('0.33'),
+      recipientAddress: { fullName: 'Ada', phone: '05551112233' },
+      senderAddress: { fullName: 'Depo' },
+    };
+    prisma.$transaction.mockResolvedValue([[row], 1]);
+
+    const result = await service.list(scope, {} as any);
+
+    expect(result.items[0]).not.toHaveProperty('recipientAddress');
+    expect(result.items[0]).not.toHaveProperty('senderAddress');
+    // Decimal is serialised as a number, not as a Prisma object.
+    expect(result.items[0].totalDesi).toBe(0.33);
+  });
+});

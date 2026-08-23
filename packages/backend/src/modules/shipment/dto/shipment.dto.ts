@@ -224,21 +224,51 @@ export class QuoteShipmentDto {
   @IsOptional()
   paymentType?: string;
 
+  @ApiPropertyOptional({
+    enum: SERVICE_LEVELS,
+    description: 'Quote the level that will actually ship; omitting it prices standard.',
+  })
+  @IsIn(SERVICE_LEVELS as readonly string[])
+  @IsOptional()
+  serviceLevel?: string;
+
   @ApiPropertyOptional({ description: 'Include carriers still in test mode' })
   @IsBoolean()
   @IsOptional()
   includeTestMode?: boolean;
 }
 
+/**
+ * The list row, field for field as ShipmentService.toListItem builds it.
+ *
+ * No sender or recipient address: those are KVKK data and a paged list is the
+ * module's widest exposure of them. The detail endpoint returns them, with the
+ * packages and the tracking timeline, to an operator who opened one shipment.
+ */
 export class ShipmentResponseDto {
   @ApiProperty() id: string;
   @ApiProperty() publicId: string;
   @ApiProperty() provider: string;
-  @ApiProperty() status: string;
+  @ApiProperty({ enum: SHIPMENT_STATUSES }) status: string;
+  @ApiPropertyOptional({ description: "Carrier's own code, never used for filtering" })
+  carrierStatusCode?: string;
   @ApiPropertyOptional() trackingNumber?: string;
   @ApiPropertyOptional() barcode?: string;
   @ApiPropertyOptional() orderId?: string;
-  @ApiPropertyOptional() totalDesi?: string;
+  @ApiPropertyOptional({ description: 'Idempotency key this shipment claimed' })
+  referenceCode?: string;
+  @ApiPropertyOptional({ enum: SERVICE_LEVELS }) serviceLevel?: string;
+  @ApiProperty({ enum: PAYMENT_TYPES }) paymentType: string;
+  @ApiPropertyOptional({ type: Number }) codAmount?: number;
+  @ApiPropertyOptional() codCurrency?: string;
+  @ApiPropertyOptional({ type: Number }) totalDesi?: number;
+  @ApiPropertyOptional({ type: Number }) totalWeightKg?: number;
+  @ApiPropertyOptional({ type: Number, description: 'max(weight, desi) per parcel, summed' })
+  chargeableWeightKg?: number;
+  @ApiPropertyOptional({ enum: LABEL_FORMATS }) labelFormat?: string;
   @ApiProperty() isTestMode: boolean;
+  @ApiPropertyOptional() handedOverAt?: Date;
+  @ApiPropertyOptional() deliveredAt?: Date;
+  @ApiPropertyOptional() cancelledAt?: Date;
   @ApiProperty() createdAt: Date;
 }
