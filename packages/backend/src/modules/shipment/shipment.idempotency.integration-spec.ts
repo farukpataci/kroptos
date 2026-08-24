@@ -1270,4 +1270,28 @@ describe('F-4: shipment idempotency against the real database', () => {
     const allowedRead = await call('/api/shipments');
     expect(allowedRead.status).toBe(200);
   }, 60000);
+
+  /**
+   * `shipments.handover` was added after this database was seeded, so it only
+   * exists here because the backfill script put it there. The pair below is
+   * what proves that: the guard reads the permission from the database, so a
+   * 200 for the granted role means the row and the grant are both live.
+   */
+  it('guards the handover endpoint by its own permission', async () => {
+    const refused = await call('/api/shipments/handover', {
+      method: 'POST',
+      body: { shipmentIds: ['does-not-matter'] },
+      userId: deniedUserId,
+    });
+    expect(refused.status).toBe(403);
+
+    const allowed = await call('/api/shipments/handover', {
+      method: 'POST',
+      // An id from no tenant: the point is reaching the handler at all, and it
+      // answers with a refusal per shipment rather than a permission error.
+      body: { shipmentIds: ['not-a-real-shipment'] },
+    });
+    expect(allowed.status).toBe(200);
+    expect(((await allowed.json()) as any).refused[0].code).toBe('NOT_FOUND');
+  }, 60000);
 });
