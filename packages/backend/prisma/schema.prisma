@@ -365,7 +365,32 @@ model Order {
   customerName      String
   customerEmail     String?
   customerPhone     String?
+  /// Legacy free text. Kept because 148 of 162 rows carry it and nothing else,
+  /// but it is not a carrier address: a courier needs the district as its own
+  /// field, and no parser gets that out of one line reliably enough to put a
+  /// parcel on the right van.
   shippingAddress   String?
+
+  /// The carrier address, field by field, as CarrierAddressDto needs it. The
+  /// `shipping` prefix follows shippingAddress above; the buyer keeps the
+  /// `customer` prefix.
+  ///
+  /// All nullable and no default, `shippingCountryCode` included: a default of
+  /// 'TR' would read as "Turkey" on every row that was never filled in, and an
+  /// international parcel would be labelled domestic without anyone choosing
+  /// that. Missing means missing, and the label request says which field.
+  ///
+  /// The marketplace mappers already receive these apart — CicekSepetiMapper
+  /// has order.district and order.city and joins them into one string — so
+  /// filling these is a mapper change, not new data collection.
+  shippingFullName    String?
+  shippingPhone       String?
+  shippingLine1       String?
+  shippingLine2       String?
+  shippingDistrict    String?
+  shippingCity        String?
+  shippingPostalCode  String?
+  shippingCountryCode String?
   status            String    @default("pending") // pending, processing, shipped, delivered, cancelled
   paymentStatus     String    @default("pending") // pending, paid, partially_refunded, refunded, failed
   fulfillmentStatus String    @default("unfulfilled") // unfulfilled, partially_fulfilled, fulfilled, returned
