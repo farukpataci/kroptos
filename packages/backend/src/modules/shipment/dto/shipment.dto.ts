@@ -21,6 +21,7 @@ import {
   LABEL_FORMATS,
   PAYMENT_TYPES,
   SERVICE_LEVELS,
+  SHIPMENT_PROBLEMS,
   SHIPMENT_STATUSES,
 } from '../../../integrations/carriers/core/CarrierTypes';
 import { CarrierAddressDto } from './carrier-integration.dto';
@@ -151,6 +152,15 @@ export class ListShipmentsQueryDto {
   @IsOptional()
   provider?: string;
 
+  @ApiPropertyOptional({
+    enum: SHIPMENT_PROBLEMS,
+    description:
+      'Only the shipments someone has to chase: a claim with no barcode, or a cancel the carrier refused.',
+  })
+  @IsIn(SHIPMENT_PROBLEMS as readonly string[])
+  @IsOptional()
+  problem?: string;
+
   @ApiPropertyOptional({ description: 'ISO date, inclusive lower bound on createdAt' })
   @IsDateString()
   @IsOptional()
@@ -270,5 +280,11 @@ export class ShipmentResponseDto {
   @ApiPropertyOptional() handedOverAt?: Date;
   @ApiPropertyOptional() deliveredAt?: Date;
   @ApiPropertyOptional() cancelledAt?: Date;
+  @ApiPropertyOptional({ description: 'Set only when the carrier confirmed the cancellation' })
+  carrierCancelledAt?: Date;
+  @ApiPropertyOptional({
+    description: 'Filled with carrierCancelledAt empty = the barcode is still live at the carrier',
+  })
+  carrierCancelError?: string;
   @ApiProperty() createdAt: Date;
 }

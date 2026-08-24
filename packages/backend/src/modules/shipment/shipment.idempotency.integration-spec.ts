@@ -17,9 +17,10 @@ import { ShipmentModule } from './shipment.module';
  * only stand-in is the carrier itself — which has to be a spy, because the
  * whole question is how many times it was asked to sell a barcode.
  *
- * Needs the live Postgres from packages/backend/.env. It fails rather than
- * skips when the database is unreachable: a silently skipped proof is not a
- * proof.
+ * Needs the live Postgres from packages/backend/.env, so it is kept out of the
+ * default `jest` run (see jest.integration.config.js) and started with
+ * `pnpm test:integration`. It fails rather than skips when the database is
+ * unreachable: a silently skipped proof is not a proof.
  */
 describe('F-4: shipment idempotency against the real database', () => {
   let app: INestApplication;
@@ -140,6 +141,15 @@ describe('F-4: shipment idempotency against the real database', () => {
     });
 
     prisma = app.get(PrismaService);
+    try {
+      await prisma.$connect();
+    } catch (error: any) {
+      throw new Error(
+        'Bu suite canli Postgres gerektiriyor (packages/backend/.env -> DATABASE_URL). ' +
+          'Calistirma: pnpm test:integration. Baglanti hatasi: ' +
+          (error?.message ?? String(error)),
+      );
+    }
     before.snapshot = 0;
     Object.assign(before, await countAll());
 
@@ -378,6 +388,103 @@ describe('F-4: shipment idempotency against the real database', () => {
     expect(own.status).toBe(200);
     expect(((await own.json()) as any).publicId).toBe(shipment.publicId);
   }, 60000);
+
+  /**
+   * The two states nobody is coming to fix automatically. Both are measured
+   * here rather than in the unit suite because the boundary is a real
+   * `createdAt < now() - 15min` comparison made by Postgres, and because the
+   * point of the pair is that it survives the projection all the way out to
+   * JSON — a field dropped on the way is exactly how this became invisible in
+   * the first place.
+   */
+  describe('the shipments someone has to chase', () => {
+    const stuckIds: string[] = [];
+
+    const claimRow = (label: string, minutesAgo: number) => ({
+      publicId: `shp_${suffix}_${label}`,
+      agencyId,
+      storeId,
+      provider: 'MOCK',
+      status: 'created',
+      paymentType: 'sender_pays',
+      referenceCode: `ref-${suffix}-${label}`,
+      trackingNumber: null,
+      createdAt: new Date(Date.now() - minutesAgo * 60_000),
+      isTestMode: true,
+    });
+
+    afterEach(async () => {
+      if (stuckIds.length) {
+        await prisma.shipment.deleteMany({ where: { id: { in: stuckIds.splice(0) } } });
+      }
+    });
+
+    it('counts a claim older than the cutoff and leaves the younger one alone', async () => {
+      // Sixteen and fourteen minutes: one on each side of the fifteen-minute
+      // line, so the assertion is about the boundary and not about "old" versus
+      // "new".
+      const older = await prisma.shipment.create({ data: claimRow('old', 16) });
+      const younger = await prisma.shipment.create({ data: claimRow('young', 14) });
+      stuckIds.push(older.id, younger.id);
+
+      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      expect(counts.stuckClaims).toBe(1);
+      expect(counts.stuckClaimAfterMinutes).toBe(15);
+
+      const listed = (await (await call('/api/shipments?problem=stuck_claim')).json()) as any;
+      expect(listed.items).toHaveLength(1);
+      expect(listed.items[0].publicId).toBe(older.publicId);
+    }, 60000);
+
+    it('surfaces a cancel the carrier refused, as the pair that means it', async () => {
+      const live = await prisma.shipment.create({
+        data: {
+          ...claimRow('livebarcode', 1),
+          status: 'cancelled',
+          trackingNumber: `TRK-${suffix}-live`,
+          cancelledAt: new Date(),
+          // Filled error, empty confirmation: the barcode is still live.
+          carrierCancelledAt: null,
+          carrierCancelError: 'Paket toplanmis, iptal edilemez',
+        },
+      });
+      stuckIds.push(live.id);
+
+      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      expect(counts.carrierCancelFailed).toBe(1);
+      expect(counts.total).toBe(counts.stuckClaims + counts.carrierCancelFailed);
+
+      const listed = (await (await call('/api/shipments?problem=carrier_cancel_failed')).json()) as any;
+      expect(listed.items).toHaveLength(1);
+      // Both halves survive the projection; either one alone says nothing.
+      expect(listed.items[0].carrierCancelError).toContain('toplanmis');
+      expect(listed.items[0].carrierCancelledAt).toBeNull();
+      // And still no address on the way out.
+      expect(listed.items[0]).not.toHaveProperty('recipientAddress');
+    }, 60000);
+
+    it('does not count a cancel the carrier confirmed', async () => {
+      const clean = await prisma.shipment.create({
+        data: {
+          ...claimRow('cleancancel', 1),
+          status: 'cancelled',
+          trackingNumber: `TRK-${suffix}-clean`,
+          cancelledAt: new Date(),
+          carrierCancelledAt: new Date(),
+          carrierCancelError: null,
+        },
+      });
+      stuckIds.push(clean.id);
+
+      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      expect(counts.carrierCancelFailed).toBe(0);
+    }, 60000);
+
+    it('rejects a problem filter it does not know', async () => {
+      const response = await call('/api/shipments?problem=whatever');
+      expect(response.status).toBe(400);
+    }, 60000);
+  });
 
   it('refuses a role without shipments.create with a 403', async () => {
     const response = await call('/api/shipments', {

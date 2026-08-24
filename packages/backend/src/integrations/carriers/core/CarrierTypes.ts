@@ -70,6 +70,28 @@ export const TERMINAL_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
   'lost',
 ];
 
+/**
+ * The two states an operator has to chase by hand. Neither is an error the code
+ * can resolve on its own, and both are invisible unless something asks for them
+ * — which is why they are named here rather than left as an ad-hoc where clause
+ * inside one report.
+ *
+ * `stuck_claim`           the row reserved a reference code and never came back
+ *                         with a barcode. The carrier call may still have
+ *                         bought one, so it is not cleaned up automatically.
+ * `carrier_cancel_failed` we cancelled, the carrier did not. The barcode is
+ *                         live at the carrier and will be invoiced.
+ */
+export const SHIPMENT_PROBLEMS = ['stuck_claim', 'carrier_cancel_failed'] as const;
+export type ShipmentProblem = (typeof SHIPMENT_PROBLEMS)[number];
+
+/**
+ * How long a claim may sit without a barcode before it counts as stuck. Long
+ * enough that a slow carrier call is not flagged, short enough that a packing
+ * station notices within a shift.
+ */
+export const STUCK_CLAIM_MINUTES = 15;
+
 export const PAYMENT_TYPES = ['sender_pays', 'recipient_pays', 'cod'] as const;
 export type PaymentType = (typeof PAYMENT_TYPES)[number];
 

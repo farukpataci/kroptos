@@ -47,6 +47,16 @@ export class ShipmentController {
   }
 
   // Declared before ':id' so the literal path is not swallowed by the param.
+  @Get('problems')
+  @HttpCode(200)
+  @RequirePermission('shipments.read')
+  @ApiOperation({
+    summary: 'Counts for the shipments someone has to chase, by hand and by carrier panel',
+  })
+  async problems(@Req() req: Request) {
+    return this.service.problemCounts(tenantScopeFrom(req));
+  }
+
   @Post('quote')
   @HttpCode(200)
   @RequirePermission('shipments.read')

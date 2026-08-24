@@ -10,6 +10,8 @@ import {
   isShipmentStatus,
   LabelFormat,
   RateQuote,
+  ShipmentProblem,
+  STUCK_CLAIM_MINUTES,
 } from '../../integrations/carriers/core/CarrierTypes';
 import { DEFAULT_DESI_DIVISOR, measureParcels } from '../../integrations/carriers/core/DesiCalculator';
 import { CarrierIntegrationService } from './carrier-integration.service';
@@ -91,7 +93,51 @@ export class ShipmentService {
       handedOverAt: row.handedOverAt,
       deliveredAt: row.deliveredAt,
       cancelledAt: row.cancelledAt,
+      // These two only mean anything as a pair: an error with no carrier
+      // confirmation is a barcode still live at the carrier, billable, waiting
+      // for someone to close it from the carrier's own panel. Left out of the
+      // projection it cannot be seen at all.
+      carrierCancelledAt: row.carrierCancelledAt,
+      carrierCancelError: row.carrierCancelError,
       createdAt: row.createdAt,
+    };
+  }
+
+  /**
+   * The where clause behind each problem bucket. Written once so the list
+   * filter and the counter cannot drift apart about what "stuck" means.
+   */
+  private problemWhere(problem: ShipmentProblem): Prisma.ShipmentWhereInput {
+    if (problem === 'stuck_claim') {
+      return {
+        status: 'created',
+        trackingNumber: null,
+        createdAt: { lt: new Date(Date.now() - STUCK_CLAIM_MINUTES * 60_000) },
+      };
+    }
+    // Cancelled here, not at the carrier: the barcode is live and will be billed.
+    return { carrierCancelError: { not: null }, carrierCancelledAt: null };
+  }
+
+  /**
+   * The counts a dashboard needs. Both buckets are tenant-scoped like every
+   * other read; a KPI that leaked across tenants would be worse than no KPI.
+   */
+  async problemCounts(scope: TenantScope) {
+    const [stuckClaims, carrierCancelFailed] = await Promise.all([
+      this.prisma.shipment.count({
+        where: { ...this.scopeWhere(scope), ...this.problemWhere('stuck_claim') },
+      }),
+      this.prisma.shipment.count({
+        where: { ...this.scopeWhere(scope), ...this.problemWhere('carrier_cancel_failed') },
+      }),
+    ]);
+
+    return {
+      stuckClaims,
+      carrierCancelFailed,
+      total: stuckClaims + carrierCancelFailed,
+      stuckClaimAfterMinutes: STUCK_CLAIM_MINUTES,
     };
   }
 
@@ -103,6 +149,7 @@ export class ShipmentService {
       ...this.scopeWhere(scope),
       ...(query.status ? { status: query.status } : {}),
       ...(query.provider ? { provider: query.provider.toUpperCase() } : {}),
+      ...(query.problem ? this.problemWhere(query.problem as ShipmentProblem) : {}),
       ...(query.from || query.to
         ? {
             createdAt: {
