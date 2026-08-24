@@ -203,6 +203,27 @@ describe('ShipmentService.create — idempotency', () => {
     expect(data.packages.create[0]).toMatchObject({ desi: 0.33, chargeableWeightKg: 1 });
   });
 
+  it('carries the connection test flag onto the shipment row', async () => {
+    prisma.shipment.findFirst.mockResolvedValue(null);
+    carriers.findOneOrFail.mockResolvedValue({ ...integration, isTestMode: true });
+
+    await service.create(dto(), scope);
+
+    // The column defaults to false so an unset flag reads as a real shipment;
+    // the default is the net, not the decision. This pins the decision: the
+    // value is written explicitly, from the connection.
+    expect(prisma.shipment.create.mock.calls[0][0].data.isTestMode).toBe(true);
+  });
+
+  it('marks a shipment from a live connection as live', async () => {
+    prisma.shipment.findFirst.mockResolvedValue(null);
+    carriers.findOneOrFail.mockResolvedValue({ ...integration, isTestMode: false });
+
+    await service.create(dto(), scope);
+
+    expect(prisma.shipment.create.mock.calls[0][0].data.isTestMode).toBe(false);
+  });
+
   it('fills the tracking number in only after the carrier answers', async () => {
     prisma.shipment.findFirst.mockResolvedValue(null);
     createShipment.mockResolvedValue({
@@ -520,5 +541,166 @@ describe('ShipmentService — tracking, cancel and list guards', () => {
     expect(result.items[0]).not.toHaveProperty('senderAddress');
     // Decimal is serialised as a number, not as a Prisma object.
     expect(result.items[0].totalDesi).toBe(0.33);
+  });
+});
+
+/**
+ * The detail payload and the cancel branches. Both are places where the quiet
+ * failure is the expensive one: an address handed to everyone who can read a
+ * shipment, and a barcode left live at the carrier because nobody asked.
+ */
+describe('ShipmentService - detail projection and cancel branches', () => {
+  let service: ShipmentService;
+
+  const cancelShipment = jest.fn();
+  const findByReference = jest.fn();
+  const integration = { id: 'ci-1', provider: 'YURTICI', isTestMode: true, settings: {} };
+
+  const prisma: any = {
+    shipment: { findFirst: jest.fn(), update: jest.fn() },
+    shipmentTrackingEvent: { create: jest.fn() },
+  };
+  const carriers: any = { findOneOrFail: jest.fn(), connectorFor: jest.fn() };
+  const scope = { agencyId: 'ag-1', storeId: 'st-1', clientId: null } as any;
+
+  const claim = (over: any = {}) => ({
+    id: 'shp-1',
+    publicId: 'shp_1',
+    provider: 'YURTICI',
+    status: 'created',
+    trackingNumber: null,
+    referenceCode: 'ord-7',
+    carrierIntegrationId: 'ci-1',
+    carrierCancelledAt: null,
+    ...over,
+  });
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ShipmentService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: CarrierIntegrationService, useValue: carriers },
+      ],
+    }).compile();
+
+    service = module.get(ShipmentService);
+    jest.clearAllMocks();
+
+    prisma.shipment.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'shp-1', ...data }),
+    );
+    prisma.shipmentTrackingEvent.create.mockResolvedValue({});
+    carriers.findOneOrFail.mockResolvedValue(integration);
+    carriers.connectorFor.mockReturnValue({ cancelShipment, findByReference });
+    cancelShipment.mockResolvedValue({ success: true });
+    findByReference.mockResolvedValue(null);
+  });
+
+  it('keeps addresses out of the detail payload but keeps the timeline', async () => {
+    prisma.shipment.findFirst.mockResolvedValue({
+      ...claim({ status: 'in_transit', trackingNumber: 'TRK-1' }),
+      totalDesi: new Prisma.Decimal('0.33'),
+      senderAddress: { fullName: 'Depo' },
+      recipientAddress: { fullName: 'Ada', phone: '05551112233', line1: 'Bahce sok. 3' },
+      packages: [
+        {
+          id: 'pkg-1',
+          barcode: null,
+          weightKg: new Prisma.Decimal('1'),
+          lengthCm: new Prisma.Decimal('10'),
+          widthCm: new Prisma.Decimal('10'),
+          heightCm: new Prisma.Decimal('10'),
+          desi: new Prisma.Decimal('0.33'),
+          chargeableWeightKg: new Prisma.Decimal('1'),
+          contentDescription: 'Tekstil',
+        },
+      ],
+      events: [
+        {
+          id: 'ev-1',
+          status: 'in_transit',
+          carrierStatusCode: 'YK_TRANSFER',
+          description: 'Transfer merkezinde',
+          location: 'Istanbul',
+          occurredAt: new Date('2026-08-24T09:00:00Z'),
+          agencyId: 'ag-1',
+          shipmentId: 'shp-1',
+        },
+      ],
+    });
+
+    const detail: any = await service.get('shp-1', scope);
+
+    expect(detail).not.toHaveProperty('recipientAddress');
+    expect(detail).not.toHaveProperty('senderAddress');
+    expect(detail.events).toHaveLength(1);
+    expect(detail.events[0]).toMatchObject({
+      status: 'in_transit',
+      carrierStatusCode: 'YK_TRANSFER',
+    });
+    // The nested rows are projected too, not spread wholesale.
+    expect(detail.events[0]).not.toHaveProperty('agencyId');
+    expect(detail.packages[0].desi).toBe(0.33);
+    expect(JSON.stringify(detail)).not.toContain('05551112233');
+  });
+
+  it('asks the carrier by reference when the claim has no tracking number', async () => {
+    prisma.shipment.findFirst.mockResolvedValue(claim());
+
+    const result = await service.cancel('shp-1', scope, {} as any);
+
+    expect(findByReference).toHaveBeenCalledWith('ord-7');
+    // Nothing came back, so there is no barcode to void.
+    expect(cancelShipment).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(result.carrierCancelled).toBe(false);
+    const data = prisma.shipment.update.mock.calls[0][0].data;
+    expect(data).toMatchObject({
+      status: 'cancelled',
+      carrierCancelledAt: null,
+      carrierCancelError: null,
+    });
+    expect(data.cancelledAt).toBeInstanceOf(Date);
+  });
+
+  it('voids the barcode the reference lookup turned up, and records it', async () => {
+    prisma.shipment.findFirst.mockResolvedValue(claim());
+    findByReference.mockResolvedValue({ trackingNumber: 'TRK-RECOVERED' });
+
+    const result = await service.cancel('shp-1', scope, {} as any);
+
+    expect(cancelShipment).toHaveBeenCalledWith('TRK-RECOVERED');
+    expect(result.carrierCancelled).toBe(true);
+    const data = prisma.shipment.update.mock.calls[0][0].data;
+    // The barcode existed after all; the row must stop claiming otherwise.
+    expect(data.trackingNumber).toBe('TRK-RECOVERED');
+    expect(data.carrierCancelledAt).toBeInstanceOf(Date);
+  });
+
+  it('still cancels when the reference lookup fails, and writes the doubt down', async () => {
+    prisma.shipment.findFirst.mockResolvedValue(claim());
+    findByReference.mockRejectedValue(new Error('carrier 503'));
+
+    const result = await service.cancel('shp-1', scope, {} as any);
+
+    expect(result.success).toBe(true);
+    expect(cancelShipment).not.toHaveBeenCalled();
+    const data = prisma.shipment.update.mock.calls[0][0].data;
+    expect(data.status).toBe('cancelled');
+    // carrierCancelError filled + carrierCancelledAt empty = chase this by hand.
+    expect(data.carrierCancelError).toContain('carrier 503');
+    expect(data.carrierCancelledAt).toBeNull();
+  });
+
+  it('closes our side without touching a carrier that cannot look up by reference', async () => {
+    prisma.shipment.findFirst.mockResolvedValue(claim());
+    carriers.connectorFor.mockReturnValue({ cancelShipment }); // no findByReference
+
+    const result = await service.cancel('shp-1', scope, {} as any);
+
+    expect(cancelShipment).not.toHaveBeenCalled();
+    expect(result.success).toBe(true);
+    expect(prisma.shipment.update.mock.calls[0][0].data.status).toBe('cancelled');
   });
 });

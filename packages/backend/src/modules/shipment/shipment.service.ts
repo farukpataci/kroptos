@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { Prisma, Shipment } from '@prisma/client';
+import { Prisma, Shipment, ShipmentPackage, ShipmentTrackingEvent } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
+import { CarrierConnector } from '../../integrations/carriers/core/CarrierConnector';
 import {
   CancelResult,
   CarrierAddress,
@@ -125,6 +126,46 @@ export class ShipmentService {
     return { items: items.map((row) => this.toListItem(row)), total, page, pageSize };
   }
 
+  /**
+   * The detail payload: the list fields plus the parcels and the timeline.
+   *
+   * Still no sender or recipient address. The rule is per response, not per
+   * endpoint — the detail call is not a narrower audience, just a narrower
+   * query, and an operator who needs the delivery address reads it from the
+   * order, behind the permission that guards it there.
+   *
+   * The events are projected field by field for the same reason. `description`
+   * is the carrier's own free text and can name whoever signed for the parcel;
+   * it stays because a timeline without descriptions is useless, but nothing in
+   * the row carries the phone or the address this projection exists to withhold.
+   */
+  private toDetail(
+    row: Shipment & { packages: ShipmentPackage[]; events: ShipmentTrackingEvent[] },
+  ) {
+    return {
+      ...this.toListItem(row),
+      packages: row.packages.map((parcel) => ({
+        id: parcel.id,
+        barcode: parcel.barcode,
+        weightKg: this.num(parcel.weightKg),
+        lengthCm: this.num(parcel.lengthCm),
+        widthCm: this.num(parcel.widthCm),
+        heightCm: this.num(parcel.heightCm),
+        desi: this.num(parcel.desi),
+        chargeableWeightKg: this.num(parcel.chargeableWeightKg),
+        contentDescription: parcel.contentDescription,
+      })),
+      events: row.events.map((event) => ({
+        id: event.id,
+        status: event.status,
+        carrierStatusCode: event.carrierStatusCode,
+        description: event.description,
+        location: event.location,
+        occurredAt: event.occurredAt,
+      })),
+    };
+  }
+
   async get(id: string, scope: TenantScope) {
     const shipment = await this.prisma.shipment.findFirst({
       where: { ...this.scopeWhere(scope), id },
@@ -134,7 +175,7 @@ export class ShipmentService {
       },
     });
     if (!shipment) throw new NotFoundException(`Gönderi bulunamadı: ${id}`);
-    return shipment;
+    return this.toDetail(shipment);
   }
 
   /** Same lookup without the relations, for the operations that only act. */
@@ -410,18 +451,48 @@ export class ShipmentService {
 
     let carrierCancelled = false;
     let carrierError: string | null = null;
+    let trackingNumber = shipment.trackingNumber;
+    let recoveredTracking: string | null = null;
 
-    if (shipment.trackingNumber) {
+    // Resolved once, for both branches below. A failure here is recorded rather
+    // than thrown: losing the connector must not stop us closing our own side.
+    let connector: CarrierConnector | null = null;
+    if (trackingNumber || shipment.referenceCode) {
       try {
         const integration = await this.carriers.findOneOrFail(
           shipment.carrierIntegrationId ?? '',
           scope,
           { includeDeleted: true },
         );
-        const result = await this.carriers
-          .connectorFor(integration)
-          .cancelShipment(shipment.trackingNumber);
+        connector = this.carriers.connectorFor(integration);
+      } catch (error: any) {
+        carrierError = error?.message ?? 'Taşıyıcı bağlantısı çözülemedi.';
+      }
+    }
 
+    // A claim row whose createShipment timed out carries no tracking number,
+    // but the timeout may well have bought a barcode. Ask the carrier with our
+    // own reference before concluding there is nothing to void. Carriers that
+    // cannot be queried by reference simply do not implement this, and the
+    // shipment closes on our side alone.
+    if (!trackingNumber && shipment.referenceCode && connector?.findByReference) {
+      try {
+        const found = await connector.findByReference(shipment.referenceCode);
+        if (found?.trackingNumber) {
+          trackingNumber = found.trackingNumber;
+          recoveredTracking = found.trackingNumber;
+        }
+      } catch (error: any) {
+        // The lookup failing leaves us unable to prove the barcode does not
+        // exist. The cancel still succeeds; the doubt is written down so the
+        // possibly-live barcode gets chased by hand.
+        carrierError = error?.message ?? 'Taşıyıcı referans sorgusu başarısız oldu.';
+      }
+    }
+
+    if (trackingNumber && connector) {
+      try {
+        const result = await connector.cancelShipment(trackingNumber);
         carrierCancelled = result.success;
         if (!result.success) {
           carrierError = result.message ?? 'Taşıyıcı iptal isteğini reddetti.';
@@ -439,6 +510,9 @@ export class ShipmentService {
         cancelledAt: now,
         carrierCancelledAt: carrierCancelled ? now : null,
         carrierCancelError: carrierError,
+        // Recovered from the carrier: the barcode existed after all, and the
+        // row must show it whether or not the void itself succeeded.
+        ...(recoveredTracking ? { trackingNumber: recoveredTracking } : {}),
       },
     });
 
