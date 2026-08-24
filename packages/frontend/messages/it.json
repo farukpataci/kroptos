@@ -56,5 +56,54 @@
     "savingButton": "Salvataggio...",
     "resetButton": "Ripristina impostazioni",
     "successAlert": "Impostazioni salvate con successo."
+  },
+  "shipping": {
+    "title": "Shipping Center",
+    "subtitle": "Shipments created at the carrier, with their barcode and tracking status",
+    "reload": "Reload",
+    "searchPlaceholder": "Filter this page by barcode, tracking or reference...",
+    "allStatuses": "All statuses",
+    "empty": "No shipments. One appears here when a packed order is handed to a carrier.",
+    "refreshTitle": "Pull the current status from the carrier",
+    "cancelFailedTag": "cancel failed",
+    "errors": {
+      "load": "Shipments could not be loaded",
+      "refresh": "Tracking status could not be refreshed"
+    },
+    "problems": {
+      "summary": "{count} shipment(s) need chasing:",
+      "stuckClaim": "{count} stuck without a barcode for over {minutes} min",
+      "cancelFailed": "{count} still live at the carrier after a failed cancel"
+    },
+    "columns": {
+      "barcode": "Barcode",
+      "trackingNumber": "Tracking No",
+      "carrier": "Carrier",
+      "reference": "Reference",
+      "desi": "Desi",
+      "weight": "Weight",
+      "cod": "Cash on Delivery",
+      "status": "Status",
+      "createdAt": "Created"
+    },
+    "status": {
+      "created": "created",
+      "label_ready": "label ready",
+      "handed_over": "handed over",
+      "in_transit": "in transit",
+      "out_for_delivery": "out for delivery",
+      "delivered": "delivered",
+      "undelivered": "undelivered",
+      "returning": "returning",
+      "returned": "returned",
+      "cancelled": "cancelled",
+      "lost": "lost"
+    },
+    "pagination": {
+      "range": "{first}–{last} of {total}",
+      "page": "{page} / {totalPages}",
+      "previous": "Previous",
+      "next": "Next"
+    }
   }
 }

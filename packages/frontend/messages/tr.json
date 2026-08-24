@@ -3660,5 +3660,54 @@
       "saveFailed": "Kaydedilemedi.",
       "deleteFailed": "Silinemedi."
     }
+  },
+  "shipping": {
+    "title": "Kargo Merkezi",
+    "subtitle": "Taşıyıcıda oluşturulmuş gönderiler, barkodları ve takip durumları",
+    "reload": "Yenile",
+    "searchPlaceholder": "Bu sayfada barkod, takip veya referans ara...",
+    "allStatuses": "Tüm durumlar",
+    "empty": "Gönderi yok. Paketlenen sipariş taşıyıcıya verildiğinde burada görünür.",
+    "refreshTitle": "Taşıyıcıdan güncel durumu çek",
+    "cancelFailedTag": "iptal edilemedi",
+    "errors": {
+      "load": "Gönderiler yüklenemedi",
+      "refresh": "Takip durumu güncellenemedi"
+    },
+    "problems": {
+      "summary": "{count} gönderi takip gerektiriyor:",
+      "stuckClaim": "{count} tanesi {minutes} dakikadır barkodsuz takılı",
+      "cancelFailed": "{count} tanesi iptal edilemedi, barkodu taşıyıcıda hâlâ canlı"
+    },
+    "columns": {
+      "barcode": "Barkod",
+      "trackingNumber": "Takip No",
+      "carrier": "Taşıyıcı",
+      "reference": "Referans",
+      "desi": "Desi",
+      "weight": "Ağırlık",
+      "cod": "Kapıda Ödeme",
+      "status": "Durum",
+      "createdAt": "Oluşturma"
+    },
+    "status": {
+      "created": "oluşturuldu",
+      "label_ready": "etiket hazır",
+      "handed_over": "taşıyıcıya verildi",
+      "in_transit": "yolda",
+      "out_for_delivery": "dağıtımda",
+      "delivered": "teslim edildi",
+      "undelivered": "teslim edilemedi",
+      "returning": "iade yolunda",
+      "returned": "iade edildi",
+      "cancelled": "iptal edildi",
+      "lost": "kayıp"
+    },
+    "pagination": {
+      "range": "{total} kayıttan {first}–{last}",
+      "page": "{page} / {totalPages}",
+      "previous": "Önceki",
+      "next": "Sonraki"
+    }
   }
 }

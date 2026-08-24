@@ -19,6 +19,7 @@ import {
   XMarkIcon,
   LifebuoyIcon,
   SparklesIcon,
+  TruckIcon,
 } from '@heroicons/react/24/outline';
 
 interface SubNavItem {
@@ -114,6 +115,15 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       label: t('inventory'),
       icon: CubeIcon,
       href: `/t/${tenantPublicId}/inventory`,
+    },
+    // Sits between stock and the integration/system groups because that is
+    // where it sits in the day: an order is picked from inventory, then handed
+    // to a carrier. Everything below this line is configuration, not daily work.
+    {
+      id: 'shipping',
+      label: t('shipping'),
+      icon: TruckIcon,
+      href: `/t/${tenantPublicId}/shipping`,
     },
     {
       id: 'integrations',
