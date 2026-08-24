@@ -40,6 +40,7 @@ async function main() {
     { name: 'shipments.create', description: 'Create shipments and obtain barcodes' },
     { name: 'shipments.cancel', description: 'Cancel shipments at the carrier' },
     { name: 'shipments.label.print', description: 'Print or download shipping labels' },
+    { name: 'shipments.handover', description: 'Hand parcels to the courier and print the manifest' },
     { name: 'analytics.read', description: 'View analytics dashboards and reports' },
     { name: 'analytics.export', description: 'Export analytics reports' },
     { name: 'analytics.financial.read', description: 'View profitability and financial analytics' },
@@ -129,6 +130,7 @@ async function main() {
         'shipments.create',
         'shipments.cancel',
         'shipments.label.print',
+        'shipments.handover',
       ],
     },
     {
@@ -194,6 +196,7 @@ async function main() {
         'shipments.create',
         'shipments.cancel',
         'shipments.label.print',
+        'shipments.handover',
       ],
     },
     {
@@ -214,6 +217,7 @@ async function main() {
         'shipments.read',
         'shipments.create',
         'shipments.label.print',
+        'shipments.handover',
       ],
     },
     {
@@ -247,6 +251,7 @@ async function main() {
         'shipments.read',
         'shipments.create',
         'shipments.label.print',
+        'shipments.handover',
       ],
     },
     {

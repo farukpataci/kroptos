@@ -3,7 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '../../../common/guards/permission.guard';
 import { RequirePermission } from '../../../common/decorators/require-permission.decorator';
 import { WmsLabelService } from './wms-label.service';
-import { CreateWmsLabelDto } from './dto/create-wms-label.dto';
+import { CreateWmsLabelDto, CreateWmsLabelsBulkDto } from './dto/create-wms-label.dto';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 
@@ -30,6 +30,21 @@ export class WmsLabelController {
     const user = req.user as any;
     const activeAgency = (req as any).activeAgency;
     return this.labelService.getLabelPreview(activeAgency.id, id, user.userId, req.ip);
+  }
+
+  @Post('bulk')
+  @HttpCode(201)
+  @RequirePermission('wms.labels.create')
+  @ApiOperation({ summary: 'Create labels for a packing round; failures are reported per order' })
+  async createLabelsBulk(@Body() body: CreateWmsLabelsBulkDto, @Req() req: Request) {
+    const user = req.user as any;
+    const activeAgency = (req as any).activeAgency;
+    return this.labelService.createShippingLabelsBulk(
+      activeAgency.id,
+      body.items,
+      user.userId,
+      req.ip,
+    );
   }
 
   @Post()

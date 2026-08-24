@@ -196,6 +196,59 @@ export class WmsLabelService {
     return updated;
   }
 
+  /**
+   * A packing round, one order at a time behind one request.
+   *
+   * Deliberately sequential and deliberately not transactional. Each entry buys
+   * a barcode from a carrier, and a rollback cannot un-buy one: an order that
+   * succeeded must keep its label even when the next order fails. So every
+   * failure is reported against its own order and the round continues — the
+   * packer sees which parcels are ready and which need another look, instead of
+   * a batch that either all worked or all appears not to have.
+   */
+  async createShippingLabelsBulk(
+    agencyId: string,
+    items: CreateWmsLabelDto[],
+    performedBy: string,
+    ipAddress?: string,
+  ) {
+    const results: {
+      orderId: string;
+      success: boolean;
+      label?: unknown;
+      error?: { code?: string; message: string };
+    }[] = [];
+
+    for (const item of items) {
+      try {
+        results.push({
+          orderId: item.orderId,
+          success: true,
+          label: await this.createShippingLabel(agencyId, item, performedBy, ipAddress),
+        });
+      } catch (error: any) {
+        // The structured refusals (NO_ACTIVE_CARRIER, AMBIGUOUS_CARRIER,
+        // INCOMPLETE_SHIPPING_ADDRESS, SHIPMENT_WITHOUT_BARCODE) are passed
+        // through as they are: the screen needs the code, not a sentence.
+        const body = error?.response ?? {};
+        results.push({
+          orderId: item.orderId,
+          success: false,
+          error: {
+            code: body.code,
+            message: body.message ?? error?.message ?? 'Etiket olusturulamadi.',
+          },
+        });
+      }
+    }
+
+    return {
+      created: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
+      results,
+    };
+  }
+
   async getLatestLabel(agencyId: string) {
     return this.prisma.wmsShippingLabel.findFirst({
       where: { agencyId },

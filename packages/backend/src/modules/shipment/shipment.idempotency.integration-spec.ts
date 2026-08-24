@@ -189,6 +189,7 @@ describe('F-4: shipment idempotency against the real database', () => {
       'carriers.read',
       'carriers.create',
       'carriers.update',
+      'shipments.handover',
     ];
     const permissions = [];
     for (const name of permissionNames) {
@@ -650,6 +651,159 @@ describe('F-4: shipment idempotency against the real database', () => {
         await call(`/api/shipments?q=ORD-${suffix}-FOREIGNNO`)
       ).json()) as any;
       expect(listed.total).toBe(0);
+    }, 60000);
+  });
+
+  /**
+   * The packing round and the courier handover, end to end.
+   *
+   * Both claims are about rows: labels really exist for the orders that
+   * succeeded even though one in the batch failed, and `handedOverAt` really
+   * stops moving once it is set. Neither survives a mocked Prisma.
+   */
+  describe('packing round and handover', () => {
+    const roundIds: string[] = [];
+    const roundOrderIds: string[] = [];
+
+    const box = () => ({ weightKg: 1, lengthCm: 30, widthCm: 20, heightCm: 10 });
+
+    const orderFor = async (label: string, withAddress = true) => {
+      const order = await prisma.order.create({
+        data: {
+          agencyId,
+          storeId,
+          orderNumber: `ORD-${suffix}-${label}`,
+          customerName: 'Ada Yilmaz',
+          customerPhone: '05551112233',
+          totalAmount: 100,
+          currency: 'TRY',
+          createdBy: allowedUserId,
+          ...(withAddress
+            ? {
+                shippingLine1: 'Bahce sok. 3',
+                shippingDistrict: 'Kadikoy',
+                shippingCity: 'Istanbul',
+                shippingCountryCode: 'TR',
+              }
+            : {}),
+        },
+      });
+      roundOrderIds.push(order.id);
+      return order;
+    };
+
+    afterEach(async () => {
+      if (roundIds.length) {
+        await prisma.wmsShippingLabel.deleteMany({ where: { shipmentId: { in: roundIds } } });
+        await prisma.shipment.deleteMany({ where: { id: { in: roundIds.splice(0) } } });
+      }
+      if (roundOrderIds.length) {
+        await prisma.wmsShippingLabel.deleteMany({ where: { orderId: { in: roundOrderIds } } });
+        await prisma.shipment.deleteMany({ where: { orderId: { in: roundOrderIds } } });
+        await prisma.order.deleteMany({ where: { id: { in: roundOrderIds.splice(0) } } });
+      }
+    });
+
+    it('labels the orders it can and blames the one it cannot, in the same round', async () => {
+      const good = await orderFor('bulk-ok');
+      const broken = await orderFor('bulk-noaddress', false);
+
+      const response = await call('/api/wms/labels/bulk', {
+        method: 'POST',
+        body: {
+          items: [
+            { orderId: good.id, parcels: [box()] },
+            { orderId: broken.id, parcels: [box()] },
+          ],
+        },
+      });
+      expect(response.status).toBe(201);
+
+      const body = (await response.json()) as any;
+      expect(body.created).toBe(1);
+      expect(body.failed).toBe(1);
+      // The refusal keeps its code, so the screen can act on it rather than
+      // parse a Turkish sentence.
+      expect(body.results[1].error.code).toBe('INCOMPLETE_SHIPPING_ADDRESS');
+
+      // The successful half is real: a shipment row with a barcode, and a label.
+      const shipment = await prisma.shipment.findFirst({ where: { orderId: good.id } });
+      expect(shipment?.barcode).toBeTruthy();
+      expect(await prisma.wmsShippingLabel.count({ where: { orderId: good.id } })).toBe(1);
+      // And the failed one bought nothing.
+      expect(await prisma.shipment.count({ where: { orderId: broken.id } })).toBe(0);
+    }, 60000);
+
+    it('stamps the handover once and refuses what must not go on the van', async () => {
+      const order = await orderFor('handover');
+      await call('/api/wms/labels', {
+        method: 'POST',
+        body: { orderId: order.id, parcels: [box()] },
+      });
+      const ready = await prisma.shipment.findFirstOrThrow({ where: { orderId: order.id } });
+
+      const cancelled = await prisma.shipment.create({
+        data: {
+          publicId: `shp_${suffix}_ho_cancelled`,
+          agencyId,
+          storeId,
+          provider: 'MOCK',
+          status: 'cancelled',
+          paymentType: 'sender_pays',
+          referenceCode: `ref-${suffix}-ho-cancelled`,
+          trackingNumber: `TRK-${suffix}-HO-CANCELLED`,
+          isTestMode: true,
+        },
+      });
+      const claim = await prisma.shipment.create({
+        data: {
+          publicId: `shp_${suffix}_ho_claim`,
+          agencyId,
+          storeId,
+          provider: 'MOCK',
+          status: 'created',
+          paymentType: 'sender_pays',
+          referenceCode: `ref-${suffix}-ho-claim`,
+          isTestMode: true,
+        },
+      });
+      roundIds.push(cancelled.id, claim.id);
+
+      const first = (await (
+        await call('/api/shipments/handover', {
+          method: 'POST',
+          body: { shipmentIds: [ready.id, cancelled.id, claim.id] },
+        })
+      ).json()) as any;
+
+      expect(first.handedOver).toHaveLength(1);
+      expect(first.handedOver[0].id).toBe(ready.id);
+      expect(first.refused.map((r: any) => r.code).sort()).toEqual([
+        'SHIPMENT_CANCELLED',
+        'SHIPMENT_WITHOUT_BARCODE',
+      ]);
+
+      const stamped = await prisma.shipment.findUniqueOrThrow({ where: { id: ready.id } });
+      expect(stamped.status).toBe('handed_over');
+      expect(stamped.handedOverAt).not.toBeNull();
+
+      // The timeline starts when the parcel left us, not at the carrier's first
+      // scan, and the internal event carries the KROPTOS_ prefix.
+      const events = await prisma.shipmentTrackingEvent.findMany({
+        where: { shipmentId: ready.id },
+      });
+      expect(events.map((e) => e.carrierStatusCode)).toContain('KROPTOS_HANDOVER');
+
+      // Reprinting the manifest must not restate when the van left.
+      await call('/api/shipments/handover', {
+        method: 'POST',
+        body: { shipmentIds: [ready.id] },
+      });
+      const again = await prisma.shipment.findUniqueOrThrow({ where: { id: ready.id } });
+      expect(again.handedOverAt?.toISOString()).toBe(stamped.handedOverAt?.toISOString());
+      expect(await prisma.shipmentTrackingEvent.count({ where: { shipmentId: ready.id } })).toBe(
+        events.length,
+      );
     }, 60000);
   });
 

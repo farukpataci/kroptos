@@ -101,3 +101,22 @@ export class CreateWmsLabelDto {
   @IsOptional()
   serviceLevel?: string;
 }
+
+/**
+ * One packing round: several orders, each with its own measured boxes.
+ *
+ * Not `POST /api/shipments/bulk`, which the packing station cannot use — that
+ * endpoint wants the recipient address in the body, and the screens the packer
+ * works from deliberately never receive it (KVKK: the shipment list withholds
+ * addresses). Here the address comes off the order on the server, exactly as
+ * the single-label endpoint already does.
+ */
+export class CreateWmsLabelsBulkDto {
+  @ApiProperty({ type: [CreateWmsLabelDto], description: 'One entry per order' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => CreateWmsLabelDto)
+  items: CreateWmsLabelDto[];
+}

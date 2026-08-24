@@ -1,6 +1,9 @@
 /**
  * Carrier and shipment permissions into an existing database.
  *
+ * Re-run after `shipments.handover` was added: the upserts are by name and the
+ * role grants use `connect`, so a second run only adds what is missing.
+ *
  * `prisma/seed.ts` already declares these, but it cannot be run against a live
  * database to get them: two of its writes are not idempotent.
  *
@@ -30,6 +33,7 @@ const PERMISSIONS: { name: string; description: string }[] = [
   { name: 'shipments.create', description: 'Create shipments and obtain barcodes' },
   { name: 'shipments.cancel', description: 'Cancel shipments at the carrier' },
   { name: 'shipments.label.print', description: 'Print or download shipping labels' },
+  { name: 'shipments.handover', description: 'Hand parcels to the courier and print the manifest' },
 ];
 
 /** Copied from prisma/seed.ts — this script does not invent a mapping. */
@@ -37,8 +41,20 @@ const ROLE_GRANTS: Record<string, string[]> = {
   agency_owner: PERMISSIONS.map((p) => p.name),
   client_admin: PERMISSIONS.map((p) => p.name),
   agency_admin: ['carriers.read', 'shipments.read'],
-  store_manager: ['carriers.read', 'shipments.read', 'shipments.create', 'shipments.label.print'],
-  warehouse_staff: ['carriers.read', 'shipments.read', 'shipments.create', 'shipments.label.print'],
+  store_manager: [
+    'carriers.read',
+    'shipments.read',
+    'shipments.create',
+    'shipments.label.print',
+    'shipments.handover',
+  ],
+  warehouse_staff: [
+    'carriers.read',
+    'shipments.read',
+    'shipments.create',
+    'shipments.label.print',
+    'shipments.handover',
+  ],
 };
 
 const COUNTED = [

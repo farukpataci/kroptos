@@ -521,6 +521,88 @@ export class ShipmentService {
   }
 
   /**
+   * The parcels a courier is taking, marked as gone.
+   *
+   * Per shipment rather than in one `updateMany`: the refusals are the point.
+   * A barcode-less claim has nothing for the courier to scan and a cancelled
+   * shipment must not leave the building, so both are reported by id instead of
+   * being silently swept into the count. Everything else in the batch still
+   * goes.
+   *
+   * Idempotent: a parcel already handed over keeps its original timestamp. The
+   * manifest is printed and signed from the returned rows, and reprinting it
+   * must not restate when the van left.
+   */
+  async handover(scope: TenantScope, shipmentIds: string[]) {
+    const rows = await this.prisma.shipment.findMany({
+      where: { ...this.scopeWhere(scope), id: { in: shipmentIds } },
+    });
+    const found = new Map(rows.map((row) => [row.id, row]));
+
+    const handedOver: Awaited<ReturnType<ShipmentService['toListItem']>>[] = [];
+    const refused: { id: string; code: string; message: string }[] = [];
+    const now = new Date();
+
+    for (const id of shipmentIds) {
+      const row = found.get(id);
+      if (!row) {
+        refused.push({
+          id,
+          code: 'NOT_FOUND',
+          message: 'Gönderi bu kiracıda bulunamadı.',
+        });
+        continue;
+      }
+      if (row.status === 'cancelled') {
+        refused.push({
+          id,
+          code: 'SHIPMENT_CANCELLED',
+          message: `${row.barcode ?? row.publicId} iptal edilmiş, kuryeye verilemez.`,
+        });
+        continue;
+      }
+      if (!row.barcode && !row.trackingNumber) {
+        refused.push({
+          id,
+          code: 'SHIPMENT_WITHOUT_BARCODE',
+          message: `${row.publicId} için barkod yok; kuryenin okutacağı bir şey olmadan teslim edilemez.`,
+        });
+        continue;
+      }
+
+      if (row.handedOverAt) {
+        handedOver.push(this.toListItem(row));
+        continue;
+      }
+
+      const updated = await this.prisma.shipment.update({
+        where: { id: row.id },
+        data: { status: 'handed_over', handedOverAt: now },
+      });
+
+      // An internal event, with the KROPTOS_ prefix the schema reserves for
+      // them: the timeline should show when the parcel left us, not start at
+      // the carrier's first scan.
+      await this.prisma.shipmentTrackingEvent
+        .create({
+          data: {
+            shipmentId: row.id,
+            agencyId: scope.agencyId,
+            status: 'handed_over',
+            carrierStatusCode: 'KROPTOS_HANDOVER',
+            description: 'Kuryeye teslim edildi (manifesto)',
+            occurredAt: now,
+          },
+        })
+        .catch((error) => this.ignoreDuplicateEvent(error));
+
+      handedOver.push(this.toListItem(updated));
+    }
+
+    return { handedOverAt: now, handedOver, refused };
+  }
+
+  /**
    * Two steps, deliberately independent.
    *
    * 1. Ask the carrier to void the barcode — skipped when there is no tracking

@@ -20,6 +20,7 @@ import {
   BulkCreateShipmentDto,
   CancelShipmentDto,
   CreateShipmentDto,
+  HandoverShipmentsDto,
   LabelQueryDto,
   ListShipmentsQueryDto,
   QuoteShipmentDto,
@@ -71,6 +72,19 @@ export class ShipmentController {
   @ApiOperation({ summary: 'Create shipments in batch; failures are reported per item' })
   async createBulk(@Body() dto: BulkCreateShipmentDto, @Req() req: Request) {
     return this.service.createBulk(dto.shipments, tenantScopeFrom(req));
+  }
+
+  @Post('handover')
+  @HttpCode(200)
+  @RequirePermission('shipments.handover')
+  @ApiOperation({
+    summary: 'Mark a batch as handed to the courier and return the manifest rows',
+    description:
+      'Refusals are reported per shipment: a cancelled one or a claim with no barcode does not ' +
+      'go on the van, and the rest of the batch is unaffected.',
+  })
+  async handover(@Body() dto: HandoverShipmentsDto, @Req() req: Request) {
+    return this.service.handover(tenantScopeFrom(req), dto.shipmentIds);
   }
 
   @Post()

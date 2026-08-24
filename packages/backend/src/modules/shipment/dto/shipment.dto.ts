@@ -141,6 +141,20 @@ export class BulkCreateShipmentDto {
   shipments: CreateShipmentDto[];
 }
 
+/**
+ * The parcels going onto one courier's van. Ids rather than a filter: a manifest
+ * is signed for a pile someone counted, not for whatever a query returned a
+ * second later.
+ */
+export class HandoverShipmentsDto {
+  @ApiProperty({ type: [String], description: 'Shipment ids in the active tenant' })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(500)
+  @IsString({ each: true })
+  shipmentIds: string[];
+}
+
 export class ListShipmentsQueryDto {
   @ApiPropertyOptional({ enum: SHIPMENT_STATUSES })
   @IsIn(SHIPMENT_STATUSES as readonly string[])
