@@ -286,6 +286,25 @@ describe('F-4: shipment idempotency against the real database', () => {
     });
   });
 
+  /**
+   * DO NOT DISABLE THIS TEST, and do not thin the six requests down.
+   *
+   * It is the only thing in the repo that exercises the concurrent path, and it
+   * has already caught a real bug this way: `nextReferenceCode` counted live
+   * shipments as well as cancelled ones, so the slower request computed
+   * `<order>:2`, wrote a different reference code, sailed past the unique index
+   * and bought the order a second barcode. Before that fix the run below went
+   * red in two runs out of five — the shape of a test that looks flaky and is
+   * in fact reporting a race.
+   *
+   * Six requests rather than two: with two, both usually land in the same
+   * millisecond and take the same branch, and the interesting window — one
+   * request already committed while another is still deciding — barely opens.
+   * Six spreads them out enough that at least one pair hits it.
+   *
+   * If this ever goes red again, the first hypothesis is a real race, not the
+   * test.
+   */
   it('buys one barcode when the same order is posted twice at once', async () => {
     const orderId = `ord-${suffix}-race`;
 
