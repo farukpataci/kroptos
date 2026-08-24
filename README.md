@@ -48,13 +48,24 @@ pnpm dev
 
 ## Database
 
-### Migrations
-```bash
-# Create & apply new migration
-pnpm db:migrate
+### Schema changes
 
-# Push schema to DB without migrations
+This repo keeps **no migration history**; the schema is deployed with `db push`.
+`prisma migrate dev` would produce a single "init" migration that collides with
+the deployed schema, so the script that used to run it is disabled on purpose
+(`db:migrate:YASAK-bkz-kargo-spec`).
+
+```bash
+# 1. Review the change as SQL, without touching the database
+cd packages/backend
+npx prisma migrate diff   --from-schema-datasource prisma/schema.prisma   --to-schema-datamodel  prisma/schema.prisma   --script > ../../docs/plans/<change>.sql
+
+# 2. Apply it
 pnpm db:push
+
+# 3. On Windows a running backend locks the Prisma engine and `generate` fails
+#    with EPERM. Stop it first:
+#    pm2 stop kroptos-backend && npx prisma generate && pm2 start kroptos-backend
 
 # Open Prisma Studio (GUI)
 pnpm db:studio
@@ -66,7 +77,8 @@ pnpm db:studio
 ```bash
 cd packages/backend
 pnpm dev              # Start dev server on :3001
-pnpm test             # Run tests
+pnpm test             # Run tests (no database needed)
+pnpm test:integration # Run the suites that need the live Postgres from .env
 pnpm build            # Build for production
 ```
 

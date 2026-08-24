@@ -12,6 +12,7 @@
     "dev": "pnpm -r run dev",
     "build": "pnpm -r run build",
     "test": "pnpm -r run test",
+    "test:integration": "cd packages/backend && pnpm run test:integration",
     "lint": "pnpm -r run lint",
     "format": "prettier --write .",
     "db:migrate:YASAK-bkz-kargo-spec": "echo YASAK: bu repo migration gecmisi tutmuyor, deploy prisma db push ile yapiliyor. prisma migrate dev tek parca bir init migration uretir ve prod semasiyla cakisir. Sema degisikligi icin: npx prisma migrate diff --from-schema-datasource --to-schema-datamodel --script ile SQL uret, gozden gecir, sonra pnpm db:push. Ayrinti: .claude/skills/kroptos-kargo-entegrasyon/ && exit 1",

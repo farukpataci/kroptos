@@ -9,6 +9,7 @@
     "start": "node dist/main",
     "build": "nest build",
     "test": "jest",
+    "test:integration": "jest --config jest.integration.config.js --runInBand",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "lint": "eslint src --ext .ts",
