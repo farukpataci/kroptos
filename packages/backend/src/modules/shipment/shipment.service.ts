@@ -141,9 +141,48 @@ export class ShipmentService {
     };
   }
 
+  /**
+   * The search clause for `q`.
+   *
+   * The order number is not a column on Shipment — there is no relation to
+   * follow, only `orderId` — so the matching orders are looked up first, under
+   * the same tenant scope. Scoping that lookup is the whole point: without it
+   * an order number belonging to another agency would resolve to ids, and this
+   * clause would then be the only thing standing between a caller and rows the
+   * outer filter was meant to hide.
+   */
+  private async searchWhere(
+    scope: TenantScope,
+    term: string,
+  ): Promise<Prisma.ShipmentWhereInput[]> {
+    const contains = { contains: term, mode: 'insensitive' as const };
+
+    const orders = await this.prisma.order.findMany({
+      where: {
+        agencyId: scope.agencyId,
+        deletedAt: null,
+        ...(scope.storeId ? { storeId: scope.storeId } : {}),
+        ...(scope.clientId ? { clientId: scope.clientId } : {}),
+        OR: [{ orderNumber: contains }, { marketplaceOrderNumber: contains }],
+      },
+      select: { id: true },
+      // A short term matches a lot of orders; the cap keeps the IN list sane.
+      // Operators search for a number they are holding, not for a prefix.
+      take: 200,
+    });
+
+    return [
+      { trackingNumber: contains },
+      { barcode: contains },
+      { referenceCode: contains },
+      ...(orders.length ? [{ orderId: { in: orders.map((order) => order.id) } }] : []),
+    ];
+  }
+
   async list(scope: TenantScope, query: ListShipmentsQueryDto) {
     const page = query.page ?? 1;
     const pageSize = query.pageSize ?? 50;
+    const term = query.q?.trim();
 
     const where: Prisma.ShipmentWhereInput = {
       ...this.scopeWhere(scope),
@@ -158,6 +197,7 @@ export class ShipmentService {
             },
           }
         : {}),
+      ...(term ? { OR: await this.searchWhere(scope, term) } : {}),
     };
 
     const [items, total] = await this.prisma.$transaction([
@@ -613,7 +653,10 @@ export class ShipmentService {
       .connectorFor(integration)
       .track([shipment.trackingNumber]);
 
-    if (!tracking) return shipment;
+    // Projected, not the raw row: the carrier answering nothing is not a reason
+    // to hand the caller senderAddress, recipientAddress and Decimal objects
+    // that every other response on this controller withholds.
+    if (!tracking) return this.get(id, scope);
 
     // Checked before a single row is written, and for the events too: a mapper
     // that leaks the carrier's own code must not get half its poll persisted.
@@ -650,7 +693,7 @@ export class ShipmentService {
         .catch((error) => this.ignoreDuplicateEvent(error));
     }
 
-    return this.prisma.shipment.update({
+    await this.prisma.shipment.update({
       where: { id: shipment.id },
       data: {
         // Normalised status only. The carrier's own code lives beside it.
@@ -659,6 +702,10 @@ export class ShipmentService {
         deliveredAt: tracking.deliveredAt ?? shipment.deliveredAt,
       },
     });
+
+    // The detail projection, so the caller gets the events this poll just wrote
+    // — and so this endpoint withholds the addresses like every other one.
+    return this.get(id, scope);
   }
 
   /**

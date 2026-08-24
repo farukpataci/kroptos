@@ -3665,14 +3665,18 @@
     "title": "Kargo Merkezi",
     "subtitle": "Taşıyıcıda oluşturulmuş gönderiler, barkodları ve takip durumları",
     "reload": "Yenile",
-    "searchPlaceholder": "Bu sayfada barkod, takip veya referans ara...",
+    "searchPlaceholder": "Takip no, barkod, referans veya sipariş no ile ara...",
     "allStatuses": "Tüm durumlar",
     "empty": "Gönderi yok. Paketlenen sipariş taşıyıcıya verildiğinde burada görünür.",
+    "emptySearch": "Aramayla eşleşen gönderi yok.",
     "refreshTitle": "Taşıyıcıdan güncel durumu çek",
     "cancelFailedTag": "iptal edilemedi",
     "errors": {
       "load": "Gönderiler yüklenemedi",
-      "refresh": "Takip durumu güncellenemedi"
+      "refresh": "Takip durumu güncellenemedi",
+      "detail": "Gönderi detayı yüklenemedi",
+      "label": "Etiket alınamadı",
+      "cancel": "Gönderi iptal edilemedi"
     },
     "problems": {
       "summary": "{count} gönderi takip gerektiriyor:",
@@ -3703,11 +3707,52 @@
       "cancelled": "iptal edildi",
       "lost": "kayıp"
     },
+    "paymentType": {
+      "sender_pays": "Gönderici öder",
+      "recipient_pays": "Alıcı öder",
+      "cod": "Kapıda ödeme"
+    },
     "pagination": {
       "range": "{total} kayıttan {first}–{last}",
       "page": "{page} / {totalPages}",
       "previous": "Önceki",
       "next": "Sonraki"
+    },
+    "detail": {
+      "heading": "Gönderi detayı",
+      "close": "Kapat",
+      "loading": "Yükleniyor...",
+      "identity": "Künye",
+      "provider": "Taşıyıcı",
+      "subCarrier": "Alt taşıyıcı",
+      "trackingNumber": "Takip no",
+      "barcode": "Barkod",
+      "reference": "Referans",
+      "serviceLevel": "Servis",
+      "paymentType": "Ödeme",
+      "codAmount": "Tahsil edilecek",
+      "desi": "Toplam desi",
+      "weight": "Toplam ağırlık",
+      "chargeableWeight": "Faturalanan ağırlık",
+      "testMode": "Test gönderisi",
+      "createdAt": "Oluşturuldu",
+      "handedOverAt": "Taşıyıcıya verildi",
+      "deliveredAt": "Teslim edildi",
+      "cancelledAt": "İptal edildi",
+      "packages": "Paketler",
+      "packageLine": "{index}. kutu · {weight} kg · {length}×{width}×{height} cm · {desi} desi",
+      "timeline": "Hareketler",
+      "noEvents": "Taşıyıcıdan henüz hareket gelmedi."
+    },
+    "actions": {
+      "refresh": "Durumu yenile",
+      "printLabel": "Etiket yazdır",
+      "labelNeedsBarcode": "Takip numarası olmayan gönderinin etiketi basılamaz",
+      "cancel": "İptal et",
+      "cancelConfirm": "Onaylıyorum, iptal et",
+      "cancelAbort": "Vazgeç",
+      "cancelled": "Gönderi iptal edildi.",
+      "cancelledCarrierLive": "KroptOS'ta iptal edildi, taşıyıcıda barkod hâlâ canlı — taşıyıcı panelinden elle kapatın."
     }
   }
 }

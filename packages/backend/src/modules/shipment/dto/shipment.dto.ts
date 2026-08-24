@@ -161,6 +161,15 @@ export class ListShipmentsQueryDto {
   @IsOptional()
   problem?: string;
 
+  @ApiPropertyOptional({
+    description:
+      'Free-text search over the tracking number, the barcode, our reference and the order number.',
+  })
+  @IsString()
+  @MaxLength(120)
+  @IsOptional()
+  q?: string;
+
   @ApiPropertyOptional({ description: 'ISO date, inclusive lower bound on createdAt' })
   @IsDateString()
   @IsOptional()

@@ -492,6 +492,139 @@ describe('F-4: shipment idempotency against the real database', () => {
   });
 
   /**
+   * Search, against the real query rather than a mocked `where`.
+   *
+   * The point of the tenant case is that the order-number branch does its own
+   * lookup: it resolves a number to order ids and then filters shipments by
+   * them. A mocked Prisma would have returned whatever ids the test handed it,
+   * which is precisely the bug this is here to catch — so the foreign row is a
+   * real row, in a real other agency, and the assertion is that the API cannot
+   * see it while the database plainly can.
+   */
+  describe('search by q', () => {
+    const searchIds: string[] = [];
+    const orderIds: string[] = [];
+
+    const row = (label: string, over: any = {}) => ({
+      publicId: `shp_${suffix}_q_${label}`,
+      agencyId,
+      storeId,
+      provider: 'MOCK',
+      status: 'in_transit',
+      paymentType: 'sender_pays',
+      referenceCode: `ref-${suffix}-q-${label}`,
+      isTestMode: true,
+      ...over,
+    });
+
+    afterEach(async () => {
+      if (searchIds.length) {
+        await prisma.shipment.deleteMany({ where: { id: { in: searchIds.splice(0) } } });
+      }
+      if (orderIds.length) {
+        await prisma.order.deleteMany({ where: { id: { in: orderIds.splice(0) } } });
+      }
+    });
+
+    it('finds a shipment by its tracking number', async () => {
+      const mine = await prisma.shipment.create({
+        data: row('mine', { trackingNumber: `TRK-${suffix}-MINE` }),
+      });
+      const other = await prisma.shipment.create({
+        data: row('noise', { trackingNumber: `TRK-${suffix}-NOISE` }),
+      });
+      searchIds.push(mine.id, other.id);
+
+      const listed = (await (
+        await call(`/api/shipments?q=TRK-${suffix}-MINE`)
+      ).json()) as any;
+      expect(listed.total).toBe(1);
+      expect(listed.items[0].publicId).toBe(mine.publicId);
+    }, 60000);
+
+    it('does not find another tenant\'s tracking number', async () => {
+      const foreign = await prisma.shipment.create({
+        data: {
+          ...row('foreign'),
+          publicId: `shp_${suffix}_q_foreign`,
+          agencyId: otherAgencyId,
+          storeId: otherStoreId,
+          trackingNumber: `TRK-${suffix}-FOREIGN`,
+        },
+      });
+      searchIds.push(foreign.id);
+
+      const listed = (await (
+        await call(`/api/shipments?q=TRK-${suffix}-FOREIGN`)
+      ).json()) as any;
+      expect(listed.total).toBe(0);
+      expect(listed.items).toHaveLength(0);
+
+      // The row is there — the search did not miss it, the scope hid it.
+      expect(
+        await prisma.shipment.count({ where: { trackingNumber: `TRK-${suffix}-FOREIGN` } }),
+      ).toBe(1);
+    }, 60000);
+
+    it('finds a shipment by the order number, which is not a column on it', async () => {
+      const order = await prisma.order.create({
+        data: {
+          agencyId,
+          storeId,
+          orderNumber: `ORD-${suffix}-QSEARCH`,
+          customerName: 'Ada Yilmaz',
+          totalAmount: 100,
+          currency: 'TRY',
+          createdBy: allowedUserId,
+        },
+      });
+      orderIds.push(order.id);
+
+      const mine = await prisma.shipment.create({
+        data: row('byorder', { orderId: order.id, trackingNumber: `TRK-${suffix}-BYORDER` }),
+      });
+      searchIds.push(mine.id);
+
+      const listed = (await (
+        await call(`/api/shipments?q=ORD-${suffix}-QSEARCH`)
+      ).json()) as any;
+      expect(listed.total).toBe(1);
+      expect(listed.items[0].publicId).toBe(mine.publicId);
+    }, 60000);
+
+    it('does not find a shipment through another tenant\'s order number', async () => {
+      const foreignOrder = await prisma.order.create({
+        data: {
+          agencyId: otherAgencyId,
+          storeId: otherStoreId,
+          orderNumber: `ORD-${suffix}-FOREIGNNO`,
+          customerName: 'Baska Ajans',
+          totalAmount: 100,
+          currency: 'TRY',
+          createdBy: allowedUserId,
+        },
+      });
+      orderIds.push(foreignOrder.id);
+
+      const foreign = await prisma.shipment.create({
+        data: {
+          ...row('foreignorder'),
+          publicId: `shp_${suffix}_q_foreignorder`,
+          agencyId: otherAgencyId,
+          storeId: otherStoreId,
+          orderId: foreignOrder.id,
+        },
+      });
+      searchIds.push(foreign.id);
+
+      const listed = (await (
+        await call(`/api/shipments?q=ORD-${suffix}-FOREIGNNO`)
+      ).json()) as any;
+      expect(listed.total).toBe(0);
+    }, 60000);
+  });
+
+  /**
    * The WMS label, end to end: order in, barcode out.
    *
    * Measured here because the claim is about rows the database actually holds

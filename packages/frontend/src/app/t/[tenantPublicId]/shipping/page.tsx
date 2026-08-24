@@ -10,24 +10,8 @@ import {
 import { useTranslations } from 'next-intl';
 import StatusBadge from '@/components/ui/StatusBadge';
 import { api } from '@/lib/api';
-
-/** Mirrors ShipmentService.toListItem — only the fields this table renders. */
-interface Shipment {
-  id: string;
-  publicId: string;
-  provider: string;
-  status: string;
-  trackingNumber: string | null;
-  barcode: string | null;
-  referenceCode: string | null;
-  paymentType: string | null;
-  codAmount: number | null;
-  codCurrency: string | null;
-  totalDesi: number | null;
-  totalWeightKg: number | null;
-  carrierCancelError: string | null;
-  createdAt: string;
-}
+import ShipmentDetailDrawer, { ShipmentDetail } from './components/ShipmentDetailDrawer';
+import { badgeType, Shipment, STATUSES } from './shipmentStatus';
 
 interface ListResponse {
   items: Shipment[];
@@ -43,31 +27,6 @@ interface ProblemCounts {
   stuckClaimAfterMinutes: number;
 }
 
-const STATUSES = [
-  'created',
-  'label_ready',
-  'handed_over',
-  'in_transit',
-  'out_for_delivery',
-  'delivered',
-  'undelivered',
-  'returning',
-  'returned',
-  'cancelled',
-  'lost',
-];
-
-/**
- * Only the states someone has to act on get a colour; anything still moving
- * stays neutral, so a coloured row in this list means work, not traffic.
- */
-function badgeType(status: string) {
-  if (status === 'delivered') return 'active';
-  if (status === 'undelivered' || status === 'lost' || status === 'cancelled') return 'error';
-  if (status === 'returning' || status === 'returned') return 'warning';
-  return 'syncing';
-}
-
 const buttonClass =
   'flex items-center gap-2 rounded-kp-md border border-kp-border px-3 py-2 text-xs font-semibold text-kp-text-secondary transition-all hover:bg-kp-bg-hover disabled:opacity-40';
 
@@ -81,9 +40,21 @@ export default function ShippingPage() {
   const [problem, setProblem] = useState('');
   const [problems, setProblems] = useState<ProblemCounts | null>(null);
   const [search, setSearch] = useState('');
+  const [query, setQuery] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Typing hits the API, so it waits for the typist to stop. Filtering the page
+  // in hand instead would answer "no such shipment" for anything off page one.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery(search.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -91,7 +62,13 @@ export default function ShippingPage() {
     try {
       const [list, counts] = await Promise.all([
         api.get<ListResponse>('/api/shipments', {
-          params: { page, pageSize, status: status || undefined, problem: problem || undefined },
+          params: {
+            page,
+            pageSize,
+            status: status || undefined,
+            problem: problem || undefined,
+            q: query || undefined,
+          },
         }),
         api.get<ProblemCounts>('/api/shipments/problems'),
       ]);
@@ -108,35 +85,26 @@ export default function ShippingPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [page, pageSize, status, problem, t]);
+  }, [page, pageSize, status, problem, query, t]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  const replaceRow = (updated: Shipment) =>
+    setShipments((rows) => rows.map((row) => (row.id === updated.id ? { ...row, ...updated } : row)));
+
   const refresh = async (id: string) => {
     setRefreshingId(id);
     setError(null);
     try {
-      const updated = await api.post<Shipment>(`/api/shipments/${id}/refresh`);
-      setShipments((rows) => rows.map((row) => (row.id === id ? { ...row, ...updated } : row)));
+      replaceRow(await api.post<Shipment>(`/api/shipments/${id}/refresh`));
     } catch (e: any) {
       setError(e?.message || t('errors.refresh'));
     } finally {
       setRefreshingId(null);
     }
   };
-
-  // The list endpoint has no search parameter, so this filters the page in
-  // hand — the placeholder says so rather than pretending to search all rows.
-  const term = search.trim().toLowerCase();
-  const visible = term
-    ? shipments.filter((s) =>
-        [s.barcode, s.trackingNumber, s.referenceCode, s.provider].some((field) =>
-          field?.toLowerCase().includes(term),
-        ),
-      )
-    : shipments;
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const firstOnPage = total === 0 ? 0 : (page - 1) * pageSize + 1;
@@ -258,15 +226,19 @@ export default function ShippingPage() {
                     <ArrowPathIcon className="mx-auto h-6 w-6 animate-spin text-kp-accent" />
                   </td>
                 </tr>
-              ) : visible.length === 0 ? (
+              ) : shipments.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="py-12 text-center text-xs text-kp-text-tertiary">
-                    {t('empty')}
+                    {query ? t('emptySearch') : t('empty')}
                   </td>
                 </tr>
               ) : (
-                visible.map((shipment) => (
-                  <tr key={shipment.id} className="transition-colors hover:bg-kp-bg-hover/30">
+                shipments.map((shipment) => (
+                  <tr
+                    key={shipment.id}
+                    onClick={() => setOpenId(shipment.id)}
+                    className="cursor-pointer transition-colors hover:bg-kp-bg-hover/30"
+                  >
                     <td className="py-3.5 px-4 font-mono font-semibold text-kp-accent">
                       {shipment.barcode || '—'}
                     </td>
@@ -308,7 +280,10 @@ export default function ShippingPage() {
                     <td className="py-3.5 px-4 text-right">
                       <button
                         type="button"
-                        onClick={() => refresh(shipment.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          refresh(shipment.id);
+                        }}
                         disabled={refreshingId === shipment.id}
                         title={t('refreshTitle')}
                         className="text-kp-text-tertiary transition-colors hover:text-kp-accent disabled:opacity-50"
@@ -350,6 +325,20 @@ export default function ShippingPage() {
           </div>
         </div>
       </div>
+
+      <ShipmentDetailDrawer
+        shipmentId={openId}
+        onClose={() => setOpenId(null)}
+        // The drawer's actions change the row behind it; the counters can change
+        // with them (a cancel the carrier refused adds one), so those reload too.
+        onChanged={(updated: ShipmentDetail) => {
+          replaceRow(updated);
+          api
+            .get<ProblemCounts>('/api/shipments/problems')
+            .then(setProblems)
+            .catch((e: any) => setError(e?.message || t('errors.load')));
+        }}
+      />
     </div>
   );
 }

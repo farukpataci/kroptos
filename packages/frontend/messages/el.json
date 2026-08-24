@@ -61,14 +61,18 @@
     "title": "Shipping Center",
     "subtitle": "Shipments created at the carrier, with their barcode and tracking status",
     "reload": "Reload",
-    "searchPlaceholder": "Filter this page by barcode, tracking or reference...",
+    "searchPlaceholder": "Search by tracking number, barcode, reference or order number...",
     "allStatuses": "All statuses",
     "empty": "No shipments. One appears here when a packed order is handed to a carrier.",
+    "emptySearch": "No shipment matches the search.",
     "refreshTitle": "Pull the current status from the carrier",
     "cancelFailedTag": "cancel failed",
     "errors": {
       "load": "Shipments could not be loaded",
-      "refresh": "Tracking status could not be refreshed"
+      "refresh": "Tracking status could not be refreshed",
+      "detail": "Shipment detail could not be loaded",
+      "label": "Label could not be fetched",
+      "cancel": "Shipment could not be cancelled"
     },
     "problems": {
       "summary": "{count} shipment(s) need chasing:",
@@ -99,11 +103,52 @@
       "cancelled": "cancelled",
       "lost": "lost"
     },
+    "paymentType": {
+      "sender_pays": "Sender pays",
+      "recipient_pays": "Recipient pays",
+      "cod": "Cash on delivery"
+    },
     "pagination": {
       "range": "{first}–{last} of {total}",
       "page": "{page} / {totalPages}",
       "previous": "Previous",
       "next": "Next"
+    },
+    "detail": {
+      "heading": "Shipment detail",
+      "close": "Close",
+      "loading": "Loading...",
+      "identity": "Details",
+      "provider": "Carrier",
+      "subCarrier": "Sub-carrier",
+      "trackingNumber": "Tracking no",
+      "barcode": "Barcode",
+      "reference": "Reference",
+      "serviceLevel": "Service",
+      "paymentType": "Payment",
+      "codAmount": "To collect",
+      "desi": "Total desi",
+      "weight": "Total weight",
+      "chargeableWeight": "Chargeable weight",
+      "testMode": "Test shipment",
+      "createdAt": "Created",
+      "handedOverAt": "Handed over",
+      "deliveredAt": "Delivered",
+      "cancelledAt": "Cancelled",
+      "packages": "Parcels",
+      "packageLine": "Box {index} · {weight} kg · {length}×{width}×{height} cm · {desi} desi",
+      "timeline": "Tracking events",
+      "noEvents": "No movement from the carrier yet."
+    },
+    "actions": {
+      "refresh": "Refresh status",
+      "printLabel": "Print label",
+      "labelNeedsBarcode": "A shipment without a tracking number has no label to print",
+      "cancel": "Cancel",
+      "cancelConfirm": "Yes, cancel it",
+      "cancelAbort": "Keep it",
+      "cancelled": "Shipment cancelled.",
+      "cancelledCarrierLive": "Cancelled in KroptOS, but the barcode is still live at the carrier — close it by hand in the carrier's own panel."
     }
   }
 }

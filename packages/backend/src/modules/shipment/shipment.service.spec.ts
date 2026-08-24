@@ -389,6 +389,9 @@ describe('ShipmentService.refresh — tracking events', () => {
       trackingNumber: 'TRK-1',
       carrierIntegrationId: 'ci-1',
       deliveredAt: null,
+      // refresh answers with the detail projection, which reads both relations.
+      packages: [],
+      events: [],
     });
     prisma.shipment.update.mockResolvedValue({});
     prisma.shipmentTrackingEvent.create.mockResolvedValue({});
@@ -443,7 +446,15 @@ describe('ShipmentService — tracking, cancel and list guards', () => {
 
   const track = jest.fn();
   const integration = { id: 'ci-1', provider: 'YURTICI', isActive: true, isTestMode: true, settings: {} };
-  const shipment = { id: 'shp-1', trackingNumber: 'TRK-1', carrierIntegrationId: 'ci-1', deliveredAt: null };
+  // The relations are here because refresh answers with the detail projection.
+  const shipment = {
+    id: 'shp-1',
+    trackingNumber: 'TRK-1',
+    carrierIntegrationId: 'ci-1',
+    deliveredAt: null,
+    packages: [],
+    events: [],
+  };
 
   const prisma: any = {
     shipment: { findFirst: jest.fn(), findMany: jest.fn(), count: jest.fn(), update: jest.fn() },
