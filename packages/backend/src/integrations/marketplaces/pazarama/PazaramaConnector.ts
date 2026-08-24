@@ -383,6 +383,16 @@ export class PazaramaConnector extends MarketplaceConnector {
       customerPhone: raw.customerPhone ?? raw.phone,
       address: addressLine,
       city: typeof address === 'string' ? (raw.city ?? '') : address.city ?? raw.city ?? '',
+      // Optional passthrough: absent means undefined, which is today's
+      // behaviour. Nothing is invented, nothing is parsed out of the line.
+      neighborhood:
+        typeof address === 'string'
+          ? raw.neighborhood
+          : address.neighborhood ?? address.quarter ?? raw.neighborhood,
+      postalCode:
+        typeof address === 'string'
+          ? (raw.postalCode ?? raw.zipCode)
+          : address.postalCode ?? address.zipCode ?? raw.postalCode,
       district:
         typeof address === 'string'
           ? (raw.district ?? '')

@@ -217,6 +217,10 @@ export class CicekSepetiConnector extends MarketplaceConnector {
       address: raw.address ?? raw.deliveryAddress ?? '',
       city: raw.city ?? '',
       district: raw.district ?? raw.town ?? '',
+      // Optional passthrough: absent in the payload means undefined here, which
+      // is the same as today's behaviour. Nothing is invented.
+      neighborhood: raw.neighborhood ?? raw.quarter,
+      postalCode: raw.postalCode ?? raw.zipCode ?? raw.postCode,
       status: this.toStatusName(raw.status ?? raw.orderStatus),
       totalPrice: Number(raw.totalPrice ?? raw.totalAmount ?? 0),
       currency: raw.currency ?? 'TRY',

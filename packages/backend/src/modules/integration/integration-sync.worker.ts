@@ -524,6 +524,19 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                   customerEmail: o.customerEmail || null,
                   customerPhone: o.customerPhone || null,
                   shippingAddress: o.shippingAddress || null,
+                  // The same address apart, for the carrier. Written alongside
+                  // the free-text line, never instead of it. A mapper whose
+                  // marketplace does not send a field leaves it undefined and
+                  // the column stays null — the label request then names the
+                  // missing field instead of shipping to half an address.
+                  shippingFullName: o.shippingFullName || null,
+                  shippingPhone: o.shippingPhone || null,
+                  shippingLine1: o.shippingLine1 || null,
+                  shippingLine2: o.shippingLine2 || null,
+                  shippingDistrict: o.shippingDistrict || null,
+                  shippingCity: o.shippingCity || null,
+                  shippingPostalCode: o.shippingPostalCode || null,
+                  shippingCountryCode: o.shippingCountryCode || null,
                   // The mapper already translated the marketplace's own status;
                   // hard-coding 'pending' threw that away, so an order that
                   // arrived already shipped showed up as awaiting action.

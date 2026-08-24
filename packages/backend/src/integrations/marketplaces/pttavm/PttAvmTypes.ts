@@ -14,6 +14,9 @@ export interface PttAvmOrder {
   address: string;
   city: string;
   district: string;
+  /** Passed through when the payload carries them; dropped before, silently. */
+  neighborhood?: string;
+  postalCode?: string;
   status: string; // 'New', 'Approved', 'Shipped', 'Delivered', 'Cancelled'
   totalPrice: number;
   currency: string;

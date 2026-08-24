@@ -253,6 +253,9 @@ export class HepsiburadaConnector extends MarketplaceConnector {
         address: address.address ?? address.addressDetail ?? '',
         city: address.city ?? '',
         town: address.town ?? address.district ?? '',
+        // Optional passthrough: absent means undefined, today's behaviour.
+        neighborhood: address.neighborhood ?? address.quarter,
+        postalCode: address.postalCode ?? address.zipCode ?? address.postCode,
       },
       items,
       // Folded once, here. The mapper used to compare the raw name with `===`,

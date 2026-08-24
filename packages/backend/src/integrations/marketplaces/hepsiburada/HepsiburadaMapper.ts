@@ -34,6 +34,17 @@ export class HepsiburadaMapper {
       customerEmail: order.customer.email,
       customerPhone: order.customer.phone,
       shippingAddress: `${order.shippingAddress.address}, ${order.shippingAddress.town}, ${order.shippingAddress.city}`,
+      shippingFullName: order.customer.name,
+      shippingPhone: order.customer.phone,
+      shippingLine1: order.shippingAddress.address,
+      shippingLine2: order.shippingAddress.neighborhood,
+      // `town` is Hepsiburada's spelling of the district (ilce), not a town in
+      // addition to the city. Mapping it anywhere else routes the parcel to the
+      // wrong branch.
+      shippingDistrict: order.shippingAddress.town,
+      shippingCity: order.shippingAddress.city,
+      shippingPostalCode: order.shippingAddress.postalCode,
+      shippingCountryCode: 'TR',
       status,
       paymentStatus: status === 'cancelled' ? 'failed' : 'paid',
       totalAmount: order.totalAmount,

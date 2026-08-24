@@ -14,6 +14,9 @@ export interface PazaramaOrder {
   address: string;
   city: string;
   district: string;
+  /** Passed through when the payload carries them; dropped before, silently. */
+  neighborhood?: string;
+  postalCode?: string;
   status: string; // 'New', 'Preparing', 'Shipped', 'Delivered', 'Cancelled'
   totalPrice: number;
   currency: string;

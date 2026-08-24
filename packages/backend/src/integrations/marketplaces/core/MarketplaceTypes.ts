@@ -49,7 +49,28 @@ export interface MarketplaceOrder extends MarketplaceModeStamp {
   customerName: string;
   customerEmail?: string;
   customerPhone?: string;
+  /**
+   * One line of free text, joined by the mapper. Kept because every consumer
+   * built so far reads it, but a courier cannot route on it: the district has
+   * to be its own field.
+   */
   shippingAddress?: string;
+  /**
+   * The same address, apart. Every field optional because the marketplaces do
+   * not all send them — a provider with no concept of a district leaves
+   * `shippingDistrict` undefined rather than having one guessed for it.
+   *
+   * Filled alongside `shippingAddress`, never instead of it.
+   */
+  shippingFullName?: string;
+  shippingPhone?: string;
+  shippingLine1?: string;
+  shippingLine2?: string;
+  shippingDistrict?: string;
+  shippingCity?: string;
+  shippingPostalCode?: string;
+  /** ISO-3166-1 alpha-2, stated by the mapper that knows its marketplace. */
+  shippingCountryCode?: string;
   status: string; // 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
   paymentStatus: string; // 'pending' | 'paid' | 'failed'
   totalAmount: number;

@@ -78,6 +78,17 @@ export class N11Mapper {
         .map((part) => part?.trim())
         .filter(Boolean)
         .join(', '),
+      shippingFullName: address.fullName?.trim() || pkg.customerfullName?.trim(),
+      shippingPhone: address.gsm?.trim(),
+      shippingLine1: address.address?.trim(),
+      // The neighbourhood is its own line, not folded into the district: they
+      // are different levels and a courier sorts on the district.
+      shippingLine2: address.neighborhood?.trim(),
+      shippingDistrict: address.district?.trim(),
+      shippingCity: address.city?.trim(),
+      // n11 sends this and nothing read it until now — it was simply lost.
+      shippingPostalCode: address.postalCode?.trim(),
+      shippingCountryCode: 'TR',
       status,
       paymentStatus: status === 'cancelled' ? 'failed' : 'paid',
       // What the seller actually collects. The line sum is checked against this

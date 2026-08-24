@@ -7,7 +7,11 @@ export interface HepsiburadaCustomer {
 export interface HepsiburadaShippingAddress {
   address: string;
   city: string;
+  /** Hepsiburada's name for the district (ilce) — not a separate town. */
   town: string;
+  /** Passed through when the payload carries them; dropped before, silently. */
+  neighborhood?: string;
+  postalCode?: string;
 }
 
 export interface HepsiburadaItem {

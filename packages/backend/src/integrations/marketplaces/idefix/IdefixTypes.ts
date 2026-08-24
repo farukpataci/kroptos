@@ -14,6 +14,9 @@ export interface IdefixOrder {
   address: string;
   city: string;
   district: string;
+  /** Passed through when the payload carries them; dropped before, silently. */
+  neighborhood?: string;
+  postalCode?: string;
   status: string; // 'Created', 'Picking', 'Shipped', 'Delivered', 'Cancelled'
   totalPrice: number;
   currency: string;
