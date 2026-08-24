@@ -123,6 +123,8 @@ export class ShipmentController {
   @ApiOperation({ summary: 'Pull the current tracking status from the carrier' })
   @ApiResponse({ status: 200, type: ShipmentResponseDto })
   async refresh(@Param('id') id: string, @Req() req: Request) {
-    return this.service.refresh(id, tenantScopeFrom(req));
+    // The operator's own id, so a delivery discovered by hand is audited as
+    // theirs rather than as the sweep's.
+    return this.service.refresh(id, tenantScopeFrom(req), (req as any).user?.userId);
   }
 }

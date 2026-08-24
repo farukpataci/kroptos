@@ -17,6 +17,12 @@ export class OrderService {
     agencyId: string,
     ipAddress?: string,
     changes: any = {},
+    /**
+     * Who did it when `performedBy` is empty. Goes to `userName`, which is
+     * plain text rather than a foreign key, so the row answers "who" instead of
+     * leaving a null nobody can interpret. Never overwrites a real user's name.
+     */
+    actorLabel?: string,
   ) {
     try {
       await tx.auditLog.create({
@@ -25,6 +31,7 @@ export class OrderService {
           entityType: 'Order',
           entityId,
           userId: performedBy,
+          userName: performedBy ? undefined : actorLabel,
           tenantId: agencyId,
           ipAddress: ipAddress || null,
           newValue: changes ? JSON.parse(JSON.stringify(changes)) : undefined,
@@ -270,8 +277,7 @@ export class OrderService {
      * Left undefined by the carrier tracking sweep: no person pressed anything,
      * and `AuditLog.userId` is a foreign key — a sentinel like 'system' would
      * fail it inside the transaction and take the status update down with it.
-     * The timeline and audit rows then carry a null actor, which is what a
-     * machine-made transition is.
+     * `actorLabel` names the machine instead, in a column that is not a key.
      */
     userId: string | undefined,
     activeAgencyId?: string,
@@ -279,6 +285,7 @@ export class OrderService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
     ipAddress?: string,
+    actorLabel?: string,
   ) {
     const order = await this.get(id, activeAgencyId, activeClientId, activeStoreId, isSuperAdmin);
 
@@ -350,6 +357,7 @@ export class OrderService {
           before: { status: order.status, paymentStatus: order.paymentStatus, fulfillmentStatus: order.fulfillmentStatus },
           after: { status: updatedOrder.status, paymentStatus: updatedOrder.paymentStatus, fulfillmentStatus: updatedOrder.fulfillmentStatus },
         },
+        actorLabel,
       );
 
       return updatedOrder;

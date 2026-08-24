@@ -181,7 +181,9 @@ export class CarrierTrackingWorker implements OnModuleInit, OnModuleDestroy {
         if (!shipment) continue;
 
         try {
-          await this.shipments.applyTracking(shipment, tracking, scope, integration.provider);
+          await this.shipments.applyTracking(shipment, tracking, scope, integration.provider, {
+            label: CARRIER_TRACKING_QUEUE + '-sweep',
+          });
         } catch (error: any) {
           // An unnormalised status throws before anything is written for this
           // shipment. It stays exactly as it was and the next sweep tries

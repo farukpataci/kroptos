@@ -819,6 +819,15 @@ describe('F-4: shipment idempotency against the real database', () => {
         'status_changed:shipped->delivered',
       );
 
+      // The audit row names the machine. `userId` stays null because it is a
+      // foreign key and there is no such user; `userName` is plain text and is
+      // where the answer to "who did this" actually lives.
+      const audit = await prisma.auditLog.findFirst({
+        where: { entityType: 'Order', entityId: order.id, action: 'update_status' },
+      });
+      expect(audit?.userId).toBeNull();
+      expect(audit?.userName).toBe('carrier-tracking-sweep');
+
       // Delivered is terminal, so the next sweep must not ask about it again.
       track.mockClear();
       await app.get(CarrierTrackingWorker).sweep();

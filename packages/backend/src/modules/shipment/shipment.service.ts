@@ -661,6 +661,12 @@ export class ShipmentService {
     tracking: CarrierTrackingResult,
     scope: TenantScope,
     providerLabel: string,
+    /**
+     * Who to record on the order transition this poll may cause. An operator
+     * pressing refresh has a real id; the sweep has none and names itself
+     * instead, so the audit row says which machine moved the order.
+     */
+    actor: { userId?: string; label: string },
   ): Promise<void> {
     // Checked before a single row is written, and for the events too: a mapper
     // that leaks the carrier's own code must not get half its poll persisted.
@@ -715,11 +721,13 @@ export class ShipmentService {
       await this.orders.updateStatus(
         shipment.orderId,
         { status: 'delivered' },
-        // No actor: the carrier reported this, nobody clicked it.
-        undefined,
+        actor.userId,
         scope.agencyId,
         scope.clientId ?? undefined,
         scope.storeId ?? undefined,
+        undefined,
+        undefined,
+        actor.label,
       );
     }
   }
@@ -728,7 +736,7 @@ export class ShipmentService {
    * Pulls the carrier's current state for one shipment — the manual path an
    * operator triggers. The scheduled sweep is CarrierTrackingWorker.
    */
-  async refresh(id: string, scope: TenantScope) {
+  async refresh(id: string, scope: TenantScope, userId?: string) {
     const shipment = await this.findOrFail(id, scope);
     if (!shipment.trackingNumber) {
       throw new BadRequestException('Takip numarası olmayan gönderi sorgulanamaz.');
@@ -747,7 +755,10 @@ export class ShipmentService {
     // to hand the caller senderAddress, recipientAddress and Decimal objects
     // that every other response on this controller withholds.
     if (tracking) {
-      await this.applyTracking(shipment, tracking, scope, integration.provider);
+      await this.applyTracking(shipment, tracking, scope, integration.provider, {
+        userId,
+        label: 'shipment-refresh',
+      });
     }
 
     // The detail projection, so the caller gets the events this poll just wrote
