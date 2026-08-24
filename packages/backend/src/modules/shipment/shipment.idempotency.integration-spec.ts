@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { encrypt } from '../../common/utils/encryption.util';
 import { CarrierConnectorFactory } from '../../integrations/carriers/core/CarrierConnectorFactory';
+import { CarrierTrackingWorker } from './carrier-tracking.worker';
 import { WmsModule } from '../wms/wms.module';
 import { ShipmentModule } from './shipment.module';
 
@@ -29,6 +30,7 @@ describe('F-4: shipment idempotency against the real database', () => {
   let baseUrl: string;
 
   const createShipment = jest.fn();
+  const track = jest.fn();
   const suffix = `it${Date.now()}`;
 
   // Everything created here is torn down in afterAll; the counts are compared
@@ -124,7 +126,7 @@ describe('F-4: shipment idempotency against the real database', () => {
         create: () => ({
           createShipment,
           getLabel: jest.fn(),
-          track: jest.fn(),
+          track,
           cancelShipment: jest.fn(),
           testConnection: jest.fn(),
         }),
@@ -621,6 +623,175 @@ describe('F-4: shipment idempotency against the real database', () => {
         await call(`/api/shipments?q=ORD-${suffix}-FOREIGNNO`)
       ).json()) as any;
       expect(listed.total).toBe(0);
+    }, 60000);
+  });
+
+  /**
+   * The scheduled sweep, against real rows and a spy carrier.
+   *
+   * Three claims, none of which a mocked Prisma could settle: the selection
+   * really leaves terminal shipments out, one carrier really gets one call for
+   * many parcels, and re-polling the same event really collapses on the unique
+   * index instead of doubling the timeline.
+   */
+  describe('the scheduled tracking sweep', () => {
+    const sweptIds: string[] = [];
+    const sweptOrderIds: string[] = [];
+
+    const pollRow = (label: string, over: any = {}) => ({
+      publicId: `shp_${suffix}_sw_${label}`,
+      agencyId,
+      storeId,
+      carrierIntegrationId,
+      provider: 'MOCK',
+      status: 'in_transit',
+      paymentType: 'sender_pays',
+      referenceCode: `ref-${suffix}-sw-${label}`,
+      trackingNumber: `TRK-${suffix}-SW-${label.toUpperCase()}`,
+      isTestMode: true,
+      ...over,
+    });
+
+    const event = (over: any = {}) => ({
+      at: new Date('2026-08-24T08:00:00Z'),
+      status: 'in_transit',
+      carrierStatusCode: 'MOCK_TRANSFER',
+      description: 'Transfer merkezinde',
+      ...over,
+    });
+
+    /** The spy answers for whatever numbers it is handed. */
+    const answerWith = (per: (trackingNumber: string) => any) =>
+      track.mockImplementation(async (numbers: string[]) => numbers.map(per));
+
+    afterEach(async () => {
+      if (sweptIds.length) {
+        await prisma.shipment.deleteMany({ where: { id: { in: sweptIds.splice(0) } } });
+      }
+      if (sweptOrderIds.length) {
+        await prisma.order.deleteMany({ where: { id: { in: sweptOrderIds.splice(0) } } });
+      }
+    });
+
+    it('asks the carrier once for both parcels and never for the delivered one', async () => {
+      const first = await prisma.shipment.create({ data: pollRow('a') });
+      const second = await prisma.shipment.create({ data: pollRow('b') });
+      const done = await prisma.shipment.create({
+        data: pollRow('done', { status: 'delivered', deliveredAt: new Date() }),
+      });
+      sweptIds.push(first.id, second.id, done.id);
+
+      answerWith((trackingNumber) => ({
+        trackingNumber,
+        status: 'out_for_delivery',
+        carrierStatusCode: 'MOCK_OUT',
+        events: [event({ status: 'out_for_delivery', carrierStatusCode: 'MOCK_OUT' })],
+      }));
+
+      await app.get(CarrierTrackingWorker).sweep();
+
+      // One call carrying both numbers — not two calls carrying one each.
+      const ours = track.mock.calls.filter((args: any[]) =>
+        args[0].some((n: string) => n.startsWith(`TRK-${suffix}-SW-`)),
+      );
+      expect(ours).toHaveLength(1);
+      expect([...ours[0][0]].sort()).toEqual(
+        [first.trackingNumber, second.trackingNumber].sort(),
+      );
+      // The terminal row was never in the batch, so it cannot have been polled.
+      expect(ours[0][0]).not.toContain(done.trackingNumber);
+
+      const after = await prisma.shipment.findUnique({ where: { id: first.id } });
+      expect(after?.status).toBe('out_for_delivery');
+      expect(after?.carrierStatusCode).toBe('MOCK_OUT');
+    }, 60000);
+
+    it('collapses the same event onto one row across two sweeps', async () => {
+      const row = await prisma.shipment.create({ data: pollRow('dupe') });
+      sweptIds.push(row.id);
+
+      answerWith((trackingNumber) => ({
+        trackingNumber,
+        status: 'in_transit',
+        carrierStatusCode: 'MOCK_TRANSFER',
+        events: [event()],
+      }));
+
+      const worker = app.get(CarrierTrackingWorker);
+      await worker.sweep();
+      await worker.sweep();
+
+      // The database's unique index did this, not a read-then-write check.
+      expect(await prisma.shipmentTrackingEvent.count({ where: { shipmentId: row.id } })).toBe(1);
+    }, 60000);
+
+    it('leaves a shipment untouched when the carrier returns a status the mapper missed', async () => {
+      const row = await prisma.shipment.create({ data: pollRow('unmapped') });
+      sweptIds.push(row.id);
+
+      answerWith((trackingNumber) => ({
+        trackingNumber,
+        status: 'TESLIM_EDILDI',
+        carrierStatusCode: 'MOCK_99',
+        events: [event()],
+      }));
+
+      await app.get(CarrierTrackingWorker).sweep();
+
+      const after = await prisma.shipment.findUnique({ where: { id: row.id } });
+      expect(after?.status).toBe('in_transit');
+      expect(after?.carrierStatusCode).toBeNull();
+      expect(await prisma.shipmentTrackingEvent.count({ where: { shipmentId: row.id } })).toBe(0);
+    }, 60000);
+
+    it('closes the order through the order service when the carrier reports delivery', async () => {
+      const order = await prisma.order.create({
+        data: {
+          agencyId,
+          storeId,
+          orderNumber: `ORD-${suffix}-SWEEP`,
+          customerName: 'Ada Yilmaz',
+          totalAmount: 100,
+          currency: 'TRY',
+          status: 'shipped',
+          createdBy: allowedUserId,
+        },
+      });
+      sweptOrderIds.push(order.id);
+
+      const row = await prisma.shipment.create({
+        data: pollRow('delivered', { orderId: order.id }),
+      });
+      sweptIds.push(row.id);
+
+      const deliveredAt = new Date('2026-08-24T15:00:00Z');
+      answerWith((trackingNumber) => ({
+        trackingNumber,
+        status: 'delivered',
+        carrierStatusCode: 'MOCK_DELIVERED',
+        deliveredAt,
+        events: [event({ status: 'delivered', carrierStatusCode: 'MOCK_DELIVERED' })],
+      }));
+
+      await app.get(CarrierTrackingWorker).sweep();
+
+      const closed = await prisma.order.findUnique({
+        where: { id: order.id },
+        include: { timeline: true },
+      });
+      expect(closed?.status).toBe('delivered');
+      // Through OrderService, which is the only thing that writes this row.
+      expect(closed?.timeline.map((t) => `${t.eventType}:${t.oldValue}->${t.newValue}`)).toContain(
+        'status_changed:shipped->delivered',
+      );
+
+      // Delivered is terminal, so the next sweep must not ask about it again.
+      track.mockClear();
+      await app.get(CarrierTrackingWorker).sweep();
+      const asked = track.mock.calls.some((args: any[]) =>
+        args[0].includes(row.trackingNumber),
+      );
+      expect(asked).toBe(false);
     }, 60000);
   });
 

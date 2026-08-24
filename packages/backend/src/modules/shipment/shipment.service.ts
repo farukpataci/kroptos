@@ -6,6 +6,7 @@ import { CarrierConnector } from '../../integrations/carriers/core/CarrierConnec
 import {
   CancelResult,
   CarrierAddress,
+  CarrierTrackingResult,
   CarrierLabel,
   isShipmentStatus,
   LabelFormat,
@@ -14,6 +15,7 @@ import {
   STUCK_CLAIM_MINUTES,
 } from '../../integrations/carriers/core/CarrierTypes';
 import { DEFAULT_DESI_DIVISOR, measureParcels } from '../../integrations/carriers/core/DesiCalculator';
+import { OrderService } from '../order/order.service';
 import { CarrierIntegrationService } from './carrier-integration.service';
 import {
   CancelShipmentDto,
@@ -28,6 +30,7 @@ export class ShipmentService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly carriers: CarrierIntegrationService,
+    private readonly orders: OrderService,
   ) {}
 
   /**
@@ -282,11 +285,7 @@ export class ShipmentService {
     return dto.orderId ?? `orderNo:${dto.orderNumber}`;
   }
 
-  /**
-   * How many shipments this order has already had, cancelled ones included.
-   * The count drives the reference suffix, so a cancelled attempt still
-   * occupies its number and the next one cannot collide with it.
-   */
+  /** Every shipment this order has had, whatever state it is in. */
   private priorShipmentWhere(
     agencyId: string,
     storeId: string,
@@ -647,29 +646,22 @@ export class ShipmentService {
   }
 
   /**
-   * Pulls the carrier's current state for one shipment. The scheduled batch
-   * sync does not exist yet; this is the manual path an operator triggers.
+   * Writes one carrier answer onto one shipment.
+   *
+   * Shared by the manual refresh below and the scheduled sweep, which cannot
+   * call `refresh` itself: the sweep asks each carrier about every parcel in
+   * one `track([...])` call, and going through `refresh` would turn that back
+   * into one HTTP request per shipment.
+   *
+   * Nothing is written when the carrier's answer fails the guard — that is the
+   * caller's cue to leave this shipment exactly as it was.
    */
-  async refresh(id: string, scope: TenantScope) {
-    const shipment = await this.findOrFail(id, scope);
-    if (!shipment.trackingNumber) {
-      throw new BadRequestException('Takip numarası olmayan gönderi sorgulanamaz.');
-    }
-
-    const integration = await this.carriers.findOneOrFail(
-      shipment.carrierIntegrationId ?? '',
-      scope,
-      { includeDeleted: true },
-    );
-    const [tracking] = await this.carriers
-      .connectorFor(integration)
-      .track([shipment.trackingNumber]);
-
-    // Projected, not the raw row: the carrier answering nothing is not a reason
-    // to hand the caller senderAddress, recipientAddress and Decimal objects
-    // that every other response on this controller withholds.
-    if (!tracking) return this.get(id, scope);
-
+  async applyTracking(
+    shipment: Shipment,
+    tracking: CarrierTrackingResult,
+    scope: TenantScope,
+    providerLabel: string,
+  ): Promise<void> {
     // Checked before a single row is written, and for the events too: a mapper
     // that leaks the carrier's own code must not get half its poll persisted.
     // The loud failure is the point — an unrecognised code quietly written to
@@ -678,7 +670,7 @@ export class ShipmentService {
     const unmapped = [tracking, ...tracking.events].find((item) => !isShipmentStatus(item.status));
     if (unmapped) {
       throw new BadRequestException(
-        `${integration.provider} normalize edilmemiş bir gönderi durumu döndürdü: ` +
+        `${providerLabel} normalize edilmemiş bir gönderi durumu döndürdü: ` +
           `"${String(unmapped.status)}" (taşıyıcı kodu: ${tracking.carrierStatusCode ?? '-'}). ` +
           'Mapper düzeltilmeden gönderi durumu güncellenmez.',
       );
@@ -714,6 +706,49 @@ export class ShipmentService {
         deliveredAt: tracking.deliveredAt ?? shipment.deliveredAt,
       },
     });
+
+    // Only on the transition. Polling a delivered parcel again must not add a
+    // second timeline row saying it was delivered again.
+    if (tracking.deliveredAt && shipment.orderId && !shipment.deliveredAt) {
+      // Through the order service, not prisma.order.update: the status change
+      // owes an OrderTimeline row and an audit entry, and both live in there.
+      await this.orders.updateStatus(
+        shipment.orderId,
+        { status: 'delivered' },
+        // No actor: the carrier reported this, nobody clicked it.
+        undefined,
+        scope.agencyId,
+        scope.clientId ?? undefined,
+        scope.storeId ?? undefined,
+      );
+    }
+  }
+
+  /**
+   * Pulls the carrier's current state for one shipment — the manual path an
+   * operator triggers. The scheduled sweep is CarrierTrackingWorker.
+   */
+  async refresh(id: string, scope: TenantScope) {
+    const shipment = await this.findOrFail(id, scope);
+    if (!shipment.trackingNumber) {
+      throw new BadRequestException('Takip numarası olmayan gönderi sorgulanamaz.');
+    }
+
+    const integration = await this.carriers.findOneOrFail(
+      shipment.carrierIntegrationId ?? '',
+      scope,
+      { includeDeleted: true },
+    );
+    const [tracking] = await this.carriers
+      .connectorFor(integration)
+      .track([shipment.trackingNumber]);
+
+    // Projected, not the raw row: the carrier answering nothing is not a reason
+    // to hand the caller senderAddress, recipientAddress and Decimal objects
+    // that every other response on this controller withholds.
+    if (tracking) {
+      await this.applyTracking(shipment, tracking, scope, integration.provider);
+    }
 
     // The detail projection, so the caller gets the events this poll just wrote
     // — and so this endpoint withholds the addresses like every other one.

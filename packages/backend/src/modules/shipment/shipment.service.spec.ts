@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { ShipmentService } from './shipment.service';
+import { OrderService } from '../order/order.service';
 import { CarrierIntegrationService } from './carrier-integration.service';
 import { CreateShipmentDto } from './dto/shipment.dto';
 
@@ -57,6 +58,8 @@ describe('ShipmentService.create — idempotency', () => {
         ShipmentService,
         { provide: PrismaService, useValue: prisma },
         { provide: CarrierIntegrationService, useValue: carriers },
+        // Only the delivery transition reaches it; the branches below never do.
+        { provide: OrderService, useValue: { updateStatus: jest.fn() } },
       ],
     }).compile();
 
@@ -291,6 +294,8 @@ describe('ShipmentService.cancel — two steps', () => {
         ShipmentService,
         { provide: PrismaService, useValue: prisma },
         { provide: CarrierIntegrationService, useValue: carriers },
+        // Only the delivery transition reaches it; the branches below never do.
+        { provide: OrderService, useValue: { updateStatus: jest.fn() } },
       ],
     }).compile();
 
@@ -383,6 +388,8 @@ describe('ShipmentService.refresh — tracking events', () => {
         ShipmentService,
         { provide: PrismaService, useValue: prisma },
         { provide: CarrierIntegrationService, useValue: carriers },
+        // Only the delivery transition reaches it; the branches below never do.
+        { provide: OrderService, useValue: { updateStatus: jest.fn() } },
       ],
     }).compile();
 
@@ -485,6 +492,8 @@ describe('ShipmentService — tracking, cancel and list guards', () => {
         ShipmentService,
         { provide: PrismaService, useValue: prisma },
         { provide: CarrierIntegrationService, useValue: carriers },
+        // Only the delivery transition reaches it; the branches below never do.
+        { provide: OrderService, useValue: { updateStatus: jest.fn() } },
       ],
     }).compile();
 
@@ -599,6 +608,8 @@ describe('ShipmentService - detail projection and cancel branches', () => {
         ShipmentService,
         { provide: PrismaService, useValue: prisma },
         { provide: CarrierIntegrationService, useValue: carriers },
+        // Only the delivery transition reaches it; the branches below never do.
+        { provide: OrderService, useValue: { updateStatus: jest.fn() } },
       ],
     }).compile();
 

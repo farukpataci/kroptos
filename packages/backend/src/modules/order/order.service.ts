@@ -12,7 +12,8 @@ export class OrderService {
     tx: Prisma.TransactionClient,
     action: string,
     entityId: string,
-    performedBy: string,
+    /** Undefined for machine-made changes; the column is a nullable FK. */
+    performedBy: string | undefined,
     agencyId: string,
     ipAddress?: string,
     changes: any = {},
@@ -265,7 +266,14 @@ export class OrderService {
   async updateStatus(
     id: string,
     dto: UpdateOrderStatusDto,
-    userId: string,
+    /**
+     * Left undefined by the carrier tracking sweep: no person pressed anything,
+     * and `AuditLog.userId` is a foreign key — a sentinel like 'system' would
+     * fail it inside the transaction and take the status update down with it.
+     * The timeline and audit rows then carry a null actor, which is what a
+     * machine-made transition is.
+     */
+    userId: string | undefined,
     activeAgencyId?: string,
     activeClientId?: string,
     activeStoreId?: string,

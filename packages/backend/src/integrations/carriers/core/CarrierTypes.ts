@@ -71,6 +71,27 @@ export const TERMINAL_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
 ];
 
 /**
+ * What the scheduled sweep asks the carrier about: the parcel is with them and
+ * still moving.
+ *
+ * Not the complement of TERMINAL — `created` and `label_ready` are left out on
+ * purpose. Those parcels are still on our side of the counter, so the carrier
+ * has nothing to report yet, and asking about a barcode that was never handed
+ * over spends quota on a "not found" every half hour.
+ *
+ * `undelivered` and `returning` are also out, and that one is a decision rather
+ * than a fact: both are non-terminal and both still change at the carrier, so a
+ * parcel that fails delivery stops being polled here and someone has to press
+ * the button on it. Widening this list is the only change needed if that turns
+ * out to be the wrong call.
+ */
+export const POLLABLE_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
+  'handed_over',
+  'in_transit',
+  'out_for_delivery',
+];
+
+/**
  * The two states an operator has to chase by hand. Neither is an error the code
  * can resolve on its own, and both are invisible unless something asks for them
  * — which is why they are named here rather than left as an ad-hoc where clause
