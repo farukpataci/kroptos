@@ -1,10 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { Order } from '@prisma/client';
-import { CarrierAddress } from '../../../integrations/carriers/core/CarrierTypes';
-import { CarrierIntegrationService } from '../../shipment/carrier-integration.service';
 import { ShipmentService } from '../../shipment/shipment.service';
-import { TenantScope } from '../../shipment/tenant-scope';
 import { CreateWmsLabelDto } from './dto/create-wms-label.dto';
 
 @Injectable()
@@ -12,58 +8,7 @@ export class WmsLabelService {
   constructor(
     private prisma: PrismaService,
     private shipments: ShipmentService,
-    private carriers: CarrierIntegrationService,
   ) {}
-
-  /**
-   * The delivery address, assembled from the order's own columns.
-   *
-   * Every field the carrier needs is named, and a missing one is reported by
-   * name rather than filled in. `shippingAddress` is not consulted: it is one
-   * line of free text and no parser gets a district out of it reliably enough
-   * to put a parcel on the right van.
-   *
-   * fullName and phone fall back to the buyer's, which is not a guess - an
-   * order without a separate recipient is delivered to the person who placed
-   * it. Nothing else has a fallback.
-   */
-  private recipientFrom(order: Order): CarrierAddress {
-    const fullName = order.shippingFullName?.trim() || order.customerName?.trim() || '';
-    const phone = order.shippingPhone?.trim() || order.customerPhone?.trim() || '';
-
-    const fields: Record<string, string> = {
-      shippingFullName: fullName,
-      shippingPhone: phone,
-      shippingLine1: order.shippingLine1?.trim() || '',
-      shippingDistrict: order.shippingDistrict?.trim() || '',
-      shippingCity: order.shippingCity?.trim() || '',
-      shippingCountryCode: order.shippingCountryCode?.trim() || '',
-    };
-
-    const missing = Object.entries(fields)
-      .filter(([, value]) => !value)
-      .map(([name]) => name);
-
-    if (missing.length > 0) {
-      throw new BadRequestException({
-        code: 'INCOMPLETE_SHIPPING_ADDRESS',
-        messageKey: 'shipping.errors.incompleteAddress',
-        message: `Siparisin kargo adresi eksik: ${missing.join(', ')}`,
-        missingFields: missing,
-      });
-    }
-
-    return {
-      fullName: fields.shippingFullName,
-      phone: fields.shippingPhone,
-      line1: fields.shippingLine1,
-      line2: order.shippingLine2?.trim() || undefined,
-      district: fields.shippingDistrict,
-      city: fields.shippingCity,
-      postalCode: order.shippingPostalCode?.trim() || undefined,
-      countryCode: fields.shippingCountryCode,
-    };
-  }
 
   private async writeWmsAuditLog(
     action: string,
@@ -107,49 +52,11 @@ export class WmsLabelService {
     performedBy: string,
     ipAddress?: string,
   ) {
-    const order = await this.prisma.order.findFirst({
-      where: { id: dto.orderId, agencyId },
-    });
-
-    if (!order) {
-      throw new NotFoundException(`Order with ID '${dto.orderId}' not found.`);
-    }
-
-    if (dto.paymentType === 'cod' && !dto.codAmount) {
-      throw new BadRequestException(
-        'Kapida odeme icin codAmount zorunludur: tahsil edilecek tutar bilinmeden etiket basilamaz.',
-      );
-    }
-
-    const recipient = this.recipientFrom(order);
-    const scope: TenantScope = {
-      agencyId,
-      clientId: order.clientId,
-      storeId: order.storeId,
-    };
-
-    // Throws NO_ACTIVE_CARRIER or AMBIGUOUS_CARRIER rather than picking one.
-    const integration = await this.carriers.resolveCarrierIntegration(
-      scope,
-      dto.carrierIntegrationId,
-    );
-
-    // Idempotent by order: a second label request for the same order returns
-    // the shipment that already exists instead of buying a second barcode.
-    const shipment = await this.shipments.create(
-      {
-        carrierIntegrationId: integration.id,
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        recipient: recipient as any,
-        parcels: dto.parcels,
-        paymentType: dto.paymentType ?? 'sender_pays',
-        codAmount: dto.codAmount,
-        codCurrency: dto.codCurrency ?? (dto.paymentType === 'cod' ? order.currency : undefined),
-        serviceLevel: dto.serviceLevel,
-      } as any,
-      scope,
-    );
+    // The order lookup, the address, the carrier choice and the idempotent
+    // shipment all live in ShipmentService now — this endpoint and
+    // POST /api/shipments/bulk go through the same body, so they cannot drift
+    // apart about where a recipient address may come from.
+    const { order, integration, shipment } = await this.shipments.createForOrder(agencyId, dto);
 
     if (!shipment.trackingNumber || !shipment.barcode) {
       // The claim row exists but the carrier never came back with a barcode.

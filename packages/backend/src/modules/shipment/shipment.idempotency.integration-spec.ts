@@ -734,6 +734,59 @@ describe('F-4: shipment idempotency against the real database', () => {
       expect(await prisma.shipment.count({ where: { orderId: broken.id } })).toBe(0);
     }, 60000);
 
+    it('refuses a bulk request that carries an address in the body', async () => {
+      const order = await orderFor('bulk-pii');
+
+      const response = await call('/api/shipments/bulk', {
+        method: 'POST',
+        body: {
+          items: [
+            {
+              orderId: order.id,
+              parcels: [box()],
+              // The door this endpoint used to leave open. There is one body
+              // now and it has no address field, so the global
+              // forbidNonWhitelisted answers before the handler sees it.
+              recipient: {
+                fullName: 'Ada Test',
+                phone: '05550000000',
+                line1: 'Baska sok. 9',
+                district: 'Besiktas',
+                city: 'Istanbul',
+                countryCode: 'TR',
+              },
+            },
+          ],
+        },
+      });
+
+      expect(response.status).toBe(400);
+      expect(await prisma.shipment.count({ where: { orderId: order.id } })).toBe(0);
+    }, 60000);
+
+    it('creates shipments for a batch of orders through the shared body', async () => {
+      const good = await orderFor('bulk-shared');
+      const broken = await orderFor('bulk-shared-noaddress', false);
+
+      const response = await call('/api/shipments/bulk', {
+        method: 'POST',
+        body: {
+          items: [
+            { orderId: good.id, parcels: [box()] },
+            { orderId: broken.id, parcels: [box()] },
+          ],
+        },
+      });
+      expect(response.status).toBe(201);
+
+      const body = (await response.json()) as any;
+      expect(body.created).toBe(1);
+      expect(body.results[1].error.code).toBe('INCOMPLETE_SHIPPING_ADDRESS');
+      // Same address rule as the WMS round above, because it is the same code.
+      expect(await prisma.shipment.count({ where: { orderId: good.id } })).toBe(1);
+      expect(await prisma.shipment.count({ where: { orderId: broken.id } })).toBe(0);
+    }, 60000);
+
     it('stamps the handover once and refuses what must not go on the van', async () => {
       const order = await orderFor('handover');
       await call('/api/wms/labels', {

@@ -69,9 +69,15 @@ export class ShipmentController {
   @Post('bulk')
   @HttpCode(201)
   @RequirePermission('shipments.create')
-  @ApiOperation({ summary: 'Create shipments in batch; failures are reported per item' })
+  @ApiOperation({
+    summary: 'Create shipments for a batch of orders; failures are reported per order',
+    description:
+      'The recipient address is read from each order, never taken from the body — a body that ' +
+      'accepted one would let a client post PII it was never given. Same body as ' +
+      'POST /api/wms/labels/bulk, which delegates here.',
+  })
   async createBulk(@Body() dto: BulkCreateShipmentDto, @Req() req: Request) {
-    return this.service.createBulk(dto.shipments, tenantScopeFrom(req));
+    return this.service.createForOrders(tenantScopeFrom(req).agencyId, dto.items);
   }
 
   @Post('handover')

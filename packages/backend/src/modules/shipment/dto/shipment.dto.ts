@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
@@ -8,6 +8,7 @@ import {
   IsDateString,
   IsIn,
   IsInt,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsPositive,
@@ -25,6 +26,13 @@ import {
   SHIPMENT_STATUSES,
 } from '../../../integrations/carriers/core/CarrierTypes';
 import { CarrierAddressDto } from './carrier-integration.dto';
+
+/**
+ * Trimmed before validation: `@IsNotEmpty` rejects '' but not '   ', and a
+ * whitespace value passes straight through to the database.
+ */
+const trimmed = () =>
+  Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
 export class ParcelDto {
   @ApiProperty({ example: 1.5 })
@@ -131,14 +139,81 @@ export class CreateShipmentDto {
   notes?: string;
 }
 
+/**
+ * One order in a packing round.
+ *
+ * There is no recipient field and there will not be one. The address is read
+ * from the order's own structured columns on the server, which is both the only
+ * place it is trustworthy and the reason the packing screens can stay free of
+ * it: a body that accepted an address would be an open door for PII to be
+ * posted from a client that was never given any.
+ *
+ * `parcels` has no default. The measurement is the price — desi is
+ * (l*w*h)/divisor and the carrier bills whichever is larger, that or the weight
+ * — so a stand-in like 1 kg / 20x20x20 would invoice the tenant for a parcel
+ * nobody put on the scale.
+ */
+export class CreateShipmentForOrderDto {
+  @ApiProperty({ description: 'Order the shipment fulfils; its address is used' })
+  @trimmed()
+  @IsString({ message: 'orderId zorunlu bir metin alanidir.' })
+  @IsNotEmpty({ message: 'orderId zorunludur: gonderi bir siparise bagli olmadan olusturulamaz.' })
+  orderId: string;
+
+  @ApiProperty({
+    type: [ParcelDto],
+    description: 'Measured at the packing station. One entry per box.',
+  })
+  @IsArray({ message: 'parcels zorunludur: paket olculeri olmadan desi ve ucret hesaplanamaz.' })
+  @ArrayMinSize(1, {
+    message: 'parcels en az bir paket icermelidir: olculmemis kutu icin gonderi olusturulamaz.',
+  })
+  @ArrayMaxSize(50)
+  @ValidateNested({ each: true })
+  @Type(() => ParcelDto)
+  parcels: ParcelDto[];
+
+  @ApiPropertyOptional({
+    description:
+      'Which carrier connection to use. Only needed when the store has more than one active.',
+  })
+  @trimmed()
+  @IsString()
+  @IsOptional()
+  carrierIntegrationId?: string;
+
+  @ApiPropertyOptional({ enum: PAYMENT_TYPES, default: 'sender_pays' })
+  @IsIn(PAYMENT_TYPES as readonly string[])
+  @IsOptional()
+  paymentType?: string;
+
+  @ApiPropertyOptional({ description: 'Required when paymentType is cod' })
+  @IsNumber()
+  @IsPositive()
+  @IsOptional()
+  codAmount?: number;
+
+  @ApiPropertyOptional({ example: 'TRY' })
+  @trimmed()
+  @IsString()
+  @IsOptional()
+  @MaxLength(3)
+  codCurrency?: string;
+
+  @ApiPropertyOptional({ enum: SERVICE_LEVELS })
+  @IsIn(SERVICE_LEVELS as readonly string[])
+  @IsOptional()
+  serviceLevel?: string;
+}
+
 export class BulkCreateShipmentDto {
-  @ApiProperty({ type: [CreateShipmentDto], description: 'Packing station batch' })
+  @ApiProperty({ type: [CreateShipmentForOrderDto], description: 'Packing station batch' })
   @IsArray()
   @ArrayMinSize(1)
-  @ArrayMaxSize(100)
+  @ArrayMaxSize(50)
   @ValidateNested({ each: true })
-  @Type(() => CreateShipmentDto)
-  shipments: CreateShipmentDto[];
+  @Type(() => CreateShipmentForOrderDto)
+  items: CreateShipmentForOrderDto[];
 }
 
 /**

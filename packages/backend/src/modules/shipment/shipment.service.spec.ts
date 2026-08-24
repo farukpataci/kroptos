@@ -1,3 +1,4 @@
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@common/prisma/prisma.service';
@@ -731,5 +732,196 @@ describe('ShipmentService - detail projection and cancel branches', () => {
     expect(cancelShipment).not.toHaveBeenCalled();
     expect(result.success).toBe(true);
     expect(prisma.shipment.update.mock.calls[0][0].data.status).toBe('cancelled');
+  });
+});
+
+/**
+ * The body both bulk endpoints and the WMS label go through.
+ *
+ * These assertions used to live in the WMS label spec, because that is where
+ * the code was. They moved with it: the address rules and the store the
+ * shipment lands in are properties of this path now, and testing them where
+ * they are is what keeps a second copy from growing back.
+ */
+describe('ShipmentService.createForOrder — one order in, one shipment out', () => {
+  let service: ShipmentService;
+
+  const prisma: any = {
+    order: { findFirst: jest.fn() },
+    shipment: { findFirst: jest.fn(), count: jest.fn(), create: jest.fn(), update: jest.fn() },
+  };
+  const createShipment = jest.fn();
+  const carriers: any = {
+    resolveCarrierIntegration: jest.fn(),
+    findOneOrFail: jest.fn(),
+    connectorFor: jest.fn(() => ({ createShipment })),
+  };
+  const orders: any = { updateStatus: jest.fn() };
+
+  const parcel = { weightKg: 1, lengthCm: 10, widthCm: 10, heightCm: 10 };
+  const dto = (over: any = {}) => ({ orderId: 'ord-1', parcels: [parcel], ...over });
+
+  const order = {
+    id: 'ord-1',
+    agencyId: 'ag-1',
+    clientId: null,
+    storeId: 'st-1',
+    orderNumber: 'ORD-1',
+    currency: 'TRY',
+    customerName: 'Ada Yilmaz',
+    customerPhone: '05551112233',
+    shippingFullName: null,
+    shippingPhone: null,
+    shippingLine1: 'Bahce sok. 3',
+    shippingLine2: null,
+    shippingDistrict: 'Kadikoy',
+    shippingCity: 'Istanbul',
+    shippingPostalCode: '34710',
+    shippingCountryCode: 'TR',
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        ShipmentService,
+        { provide: PrismaService, useValue: prisma },
+        { provide: CarrierIntegrationService, useValue: carriers },
+        { provide: OrderService, useValue: orders },
+      ],
+    }).compile();
+
+    service = module.get(ShipmentService);
+    jest.clearAllMocks();
+
+    prisma.order.findFirst.mockResolvedValue(order);
+    prisma.shipment.findFirst.mockResolvedValue(null);
+    prisma.shipment.count.mockResolvedValue(0);
+    prisma.shipment.create.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'shp-1', ...data }),
+    );
+    prisma.shipment.update.mockImplementation(({ data }: any) =>
+      Promise.resolve({ id: 'shp-1', ...data }),
+    );
+    carriers.resolveCarrierIntegration.mockResolvedValue({
+      id: 'ci-1',
+      provider: 'YURTICI',
+      displayName: 'Yurtici Kargo',
+      isActive: true,
+      isTestMode: true,
+      settings: {},
+      senderAddress: { fullName: 'Depo', city: 'Istanbul' },
+    });
+    carriers.findOneOrFail.mockResolvedValue({
+      id: 'ci-1',
+      provider: 'YURTICI',
+      displayName: 'Yurtici Kargo',
+      isActive: true,
+      isTestMode: true,
+      settings: {},
+      senderAddress: { fullName: 'Depo', city: 'Istanbul' },
+    });
+    createShipment.mockResolvedValue({ trackingNumber: 'TRK-1', barcode: 'BC-1' });
+  });
+
+  it("creates the shipment in the order's own store, not the request's", async () => {
+    await service.createForOrder('ag-1', dto() as any);
+
+    // A packer at agency level must not have to switch stores between two
+    // parcels on the same bench.
+    expect(prisma.shipment.create.mock.calls[0][0].data).toMatchObject({
+      agencyId: 'ag-1',
+      storeId: 'st-1',
+      clientId: null,
+    });
+  });
+
+  it('reads the address off the order and never from the caller', async () => {
+    await service.createForOrder('ag-1', dto() as any);
+
+    const request = createShipment.mock.calls[0][0];
+    expect(request.recipient).toMatchObject({
+      // Falls back to the buyer: an order with no separate recipient is
+      // delivered to whoever placed it. Nothing else falls back.
+      fullName: 'Ada Yilmaz',
+      phone: '05551112233',
+      district: 'Kadikoy',
+      city: 'Istanbul',
+    });
+  });
+
+  it('names the missing address fields instead of shipping to half an address', async () => {
+    prisma.order.findFirst.mockResolvedValue({
+      ...order,
+      shippingDistrict: null,
+      shippingCity: '   ',
+    });
+
+    const error = await service.createForOrder('ag-1', dto() as any).catch((e) => e);
+
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect(error.getResponse()).toMatchObject({
+      code: 'INCOMPLETE_SHIPPING_ADDRESS',
+      missingFields: ['shippingDistrict', 'shippingCity'],
+    });
+    expect(createShipment).not.toHaveBeenCalled();
+  });
+
+  it('requires the amount when the parcel is paid on delivery', async () => {
+    const error = await service
+      .createForOrder('ag-1', dto({ paymentType: 'cod' }) as any)
+      .catch((e) => e);
+
+    expect(error).toBeInstanceOf(BadRequestException);
+    expect(createShipment).not.toHaveBeenCalled();
+  });
+
+  it("takes the order's currency for a cash-on-delivery parcel", async () => {
+    await service.createForOrder('ag-1', dto({ paymentType: 'cod', codAmount: 250 }) as any);
+
+    expect(prisma.shipment.create.mock.calls[0][0].data).toMatchObject({
+      paymentType: 'cod',
+      codAmount: 250,
+      codCurrency: 'TRY',
+    });
+  });
+
+  it('refuses an order outside the agency', async () => {
+    prisma.order.findFirst.mockResolvedValue(null);
+
+    await expect(service.createForOrder('ag-1', dto() as any)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+    expect(createShipment).not.toHaveBeenCalled();
+  });
+
+  it('lets the carrier refusal through untouched', async () => {
+    carriers.resolveCarrierIntegration.mockRejectedValue(
+      new BadRequestException({ code: 'NO_ACTIVE_CARRIER' }),
+    );
+
+    const error = await service.createForOrder('ag-1', dto() as any).catch((e) => e);
+
+    expect(error.getResponse()).toMatchObject({ code: 'NO_ACTIVE_CARRIER' });
+    expect(prisma.shipment.create).not.toHaveBeenCalled();
+  });
+
+  it('keeps going after a failed order and reports it by id', async () => {
+    prisma.order.findFirst
+      .mockResolvedValueOnce(order)
+      .mockResolvedValueOnce({ ...order, id: 'ord-2', shippingCity: null });
+
+    const result = await service.createForOrders('ag-1', [
+      dto(),
+      dto({ orderId: 'ord-2' }),
+    ] as any);
+
+    // A rollback cannot un-buy the first barcode, so the round does not stop.
+    expect(result.created).toBe(1);
+    expect(result.failed).toBe(1);
+    expect(result.results[1]).toMatchObject({
+      orderId: 'ord-2',
+      success: false,
+      error: { code: 'INCOMPLETE_SHIPPING_ADDRESS' },
+    });
   });
 });

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { Prisma, Shipment, ShipmentPackage, ShipmentTrackingEvent } from '@prisma/client';
+import { Order, Prisma, Shipment, ShipmentPackage, ShipmentTrackingEvent } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { CarrierConnector } from '../../integrations/carriers/core/CarrierConnector';
 import {
@@ -20,6 +20,7 @@ import { CarrierIntegrationService } from './carrier-integration.service';
 import {
   CancelShipmentDto,
   CreateShipmentDto,
+  CreateShipmentForOrderDto,
   ListShipmentsQueryDto,
   QuoteShipmentDto,
 } from './dto/shipment.dto';
@@ -479,23 +480,152 @@ export class ShipmentService {
   }
 
   /**
-   * Packing station batch. Each shipment is independent, so one rejected
-   * address must not sink the other forty-nine — failures come back per item.
+   * The recipient, built from the order's own structured columns.
+   *
+   * The free-text `shippingAddress` is not consulted. A courier sorts by
+   * district and no parser gets that out of one line reliably enough to put a
+   * parcel on the right van, so a missing column is named rather than guessed
+   * at.
+   *
+   * fullName and phone fall back to the buyer's, which is not a guess — an
+   * order with no separate recipient is delivered to the person who placed it.
+   * Nothing else has a fallback.
    */
-  async createBulk(shipments: CreateShipmentDto[], scope: TenantScope) {
-    const results: Array<{ orderNumber: string; shipment?: unknown; error?: string }> = [];
+  recipientFrom(order: Order): CarrierAddress {
+    const fullName = order.shippingFullName?.trim() || order.customerName?.trim() || '';
+    const phone = order.shippingPhone?.trim() || order.customerPhone?.trim() || '';
 
-    for (const dto of shipments) {
+    const fields: Record<string, string> = {
+      shippingFullName: fullName,
+      shippingPhone: phone,
+      shippingLine1: order.shippingLine1?.trim() || '',
+      shippingDistrict: order.shippingDistrict?.trim() || '',
+      shippingCity: order.shippingCity?.trim() || '',
+      shippingCountryCode: order.shippingCountryCode?.trim() || '',
+    };
+
+    const missing = Object.entries(fields)
+      .filter(([, value]) => !value)
+      .map(([name]) => name);
+
+    if (missing.length > 0) {
+      throw new BadRequestException({
+        code: 'INCOMPLETE_SHIPPING_ADDRESS',
+        messageKey: 'shipping.errors.incompleteAddress',
+        message: `Siparisin kargo adresi eksik: ${missing.join(', ')}`,
+        missingFields: missing,
+      });
+    }
+
+    return {
+      fullName: fields.shippingFullName,
+      phone: fields.shippingPhone,
+      line1: fields.shippingLine1,
+      line2: order.shippingLine2?.trim() || undefined,
+      district: fields.shippingDistrict,
+      city: fields.shippingCity,
+      postalCode: order.shippingPostalCode?.trim() || undefined,
+      countryCode: fields.shippingCountryCode,
+    };
+  }
+
+  /**
+   * One order in, one shipment out — the whole path a packing station uses.
+   *
+   * This is the only body behind both bulk endpoints and the WMS label. They
+   * used to be two implementations of the same five steps, and two
+   * implementations drift: the day one of them starts accepting an address from
+   * the caller, the other is still reading it off the order.
+   *
+   * The tenant scope is built from the ORDER, not from the request headers.
+   * `agencyId` still comes from the validated context and the order is looked
+   * up inside it, but the store is the order's own — a packer working at agency
+   * level would otherwise have to switch stores between two parcels on the same
+   * bench.
+   */
+  async createForOrder(agencyId: string, dto: CreateShipmentForOrderDto) {
+    const order = await this.prisma.order.findFirst({
+      where: { id: dto.orderId, agencyId, deletedAt: null },
+    });
+    if (!order) {
+      throw new NotFoundException(`Siparis bulunamadi: ${dto.orderId}`);
+    }
+
+    if (dto.paymentType === 'cod' && !dto.codAmount) {
+      throw new BadRequestException(
+        'Kapida odeme icin codAmount zorunludur: tahsil edilecek tutar bilinmeden etiket basilamaz.',
+      );
+    }
+
+    const recipient = this.recipientFrom(order);
+    const scope: TenantScope = { agencyId, clientId: order.clientId, storeId: order.storeId };
+
+    // Throws NO_ACTIVE_CARRIER or AMBIGUOUS_CARRIER rather than picking one.
+    const integration = await this.carriers.resolveCarrierIntegration(
+      scope,
+      dto.carrierIntegrationId,
+    );
+
+    // Idempotent by order: a second request for the same order returns the
+    // shipment that already exists instead of buying a second barcode.
+    const shipment = await this.create(
+      {
+        carrierIntegrationId: integration.id,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        recipient: recipient as any,
+        parcels: dto.parcels,
+        paymentType: dto.paymentType ?? 'sender_pays',
+        codAmount: dto.codAmount,
+        codCurrency: dto.codCurrency ?? (dto.paymentType === 'cod' ? order.currency : undefined),
+        serviceLevel: dto.serviceLevel,
+      } as any,
+      scope,
+    );
+
+    return { order, integration, shipment };
+  }
+
+  /**
+   * A packing round.
+   *
+   * Sequential and deliberately not transactional: every item buys a barcode
+   * from a carrier, and a rollback cannot un-buy one. An order that succeeded
+   * keeps its barcode even when the next order fails, and each failure is
+   * reported against its own order so the packer can see which parcels are
+   * ready.
+   */
+  async createForOrders(agencyId: string, items: CreateShipmentForOrderDto[]) {
+    const results: {
+      orderId: string;
+      success: boolean;
+      shipment?: unknown;
+      error?: { code?: string; message: string };
+    }[] = [];
+
+    for (const item of items) {
       try {
-        results.push({ orderNumber: dto.orderNumber, shipment: await this.create(dto, scope) });
+        const { shipment } = await this.createForOrder(agencyId, item);
+        results.push({ orderId: item.orderId, success: true, shipment });
       } catch (error: any) {
-        results.push({ orderNumber: dto.orderNumber, error: error?.message ?? 'Bilinmeyen hata' });
+        // The structured refusals (NO_ACTIVE_CARRIER, AMBIGUOUS_CARRIER,
+        // INCOMPLETE_SHIPPING_ADDRESS) keep their code: a screen acts on the
+        // code, not on a Turkish sentence.
+        const body = error?.response ?? {};
+        results.push({
+          orderId: item.orderId,
+          success: false,
+          error: {
+            code: body.code,
+            message: body.message ?? error?.message ?? 'Gonderi olusturulamadi.',
+          },
+        });
       }
     }
 
     return {
-      created: results.filter((r) => r.shipment).length,
-      failed: results.filter((r) => r.error).length,
+      created: results.filter((r) => r.success).length,
+      failed: results.filter((r) => !r.success).length,
       results,
     };
   }
