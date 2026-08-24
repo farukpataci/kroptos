@@ -744,7 +744,12 @@ model WmsShippingLabel {
   agencyId       String
   agency         Agency   @relation(fields: [agencyId], references: [id], onDelete: Cascade)
   orderId        String?
+  /// The shipment this label was printed for. Nullable because labels predate
+  /// the Shipment table and because a label may be produced before the carrier
+  /// answers; SetNull rather than Cascade so deleting a shipment never erases
+  /// the WMS print history.
   shipmentId     String?
+  shipment       Shipment? @relation(fields: [shipmentId], references: [id], onDelete: SetNull)
   carrierName    String
   trackingNumber String
   barcode        String
@@ -756,6 +761,7 @@ model WmsShippingLabel {
   createdAt      DateTime @default(now())
 
   @@index([agencyId])
+  @@index([shipmentId])
 }
 
 model WmsPrintJob {
@@ -1384,6 +1390,7 @@ model Shipment {
 
   packages           ShipmentPackage[]
   events             ShipmentTrackingEvent[]
+  wmsLabels          WmsShippingLabel[]
   carrierIntegration CarrierIntegration?    @relation(fields: [carrierIntegrationId], references: [id], onDelete: SetNull)
 
   @@unique([provider, trackingNumber])
