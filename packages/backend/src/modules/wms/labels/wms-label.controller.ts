@@ -3,6 +3,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { PermissionGuard } from '../../../common/guards/permission.guard';
 import { RequirePermission } from '../../../common/decorators/require-permission.decorator';
 import { WmsLabelService } from './wms-label.service';
+import { CreateWmsLabelDto } from './dto/create-wms-label.dto';
 import { Request } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiHeader } from '@nestjs/swagger';
 
@@ -35,15 +36,14 @@ export class WmsLabelController {
   @HttpCode(201)
   @RequirePermission('wms.labels.create')
   @ApiOperation({ summary: 'Create a shipping label for an order' })
-  async createLabel(
-    @Body() body: { orderId: string; shipmentId?: string },
-    @Req() req: Request,
-  ) {
+  @ApiResponse({ status: 400, description: 'orderId or shipmentId missing' })
+  @ApiResponse({ status: 404, description: 'Order or shipment not in the active tenant' })
+  async createLabel(@Body() body: CreateWmsLabelDto, @Req() req: Request) {
     const user = req.user as any;
     const activeAgency = (req as any).activeAgency;
     return this.labelService.createShippingLabel(
       activeAgency.id,
-      body.shipmentId || 'sh-1002',
+      body.shipmentId,
       body.orderId,
       user.userId,
       req.ip,

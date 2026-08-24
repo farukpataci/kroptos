@@ -44,6 +44,18 @@ export class WmsLabelService {
       throw new NotFoundException(`Order with ID '${orderId}' not found.`);
     }
 
+    // shipmentId is a foreign key now. Checking it here, in the tenant's own
+    // scope, turns an unknown or borrowed id into a 404 instead of letting the
+    // insert fail with a Prisma P2003 the caller reads as a server error.
+    const shipment = await this.prisma.shipment.findFirst({
+      where: { id: shipmentId, agencyId, deletedAt: null },
+      select: { id: true },
+    });
+
+    if (!shipment) {
+      throw new NotFoundException(`Shipment with ID '${shipmentId}' not found.`);
+    }
+
     const carrierName = 'Yurtici Kargo';
     const trackingNumber = `YK-${Math.floor(10000000 + Math.random() * 90000000)}`;
     const barcode = `YK${Math.floor(1000000000 + Math.random() * 9000000000)}`;
