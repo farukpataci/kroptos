@@ -1325,6 +1325,9 @@ model Shipment {
   orderId              String?
   carrierIntegrationId String?
   provider             String
+  /// Aggregators resell other carriers: Geliver hands the parcel to ARAS, and
+  /// the operator chasing it needs the name on the van, not the reseller's.
+  subCarrier           String?
 
   trackingNumber String?
   barcode        String?
@@ -1350,8 +1353,11 @@ model Shipment {
   labelFormat String?
   /// Idempotency key, derived from the order.
   referenceCode String?
-  /// Test shipments must not mix into live reports.
-  isTestMode  Boolean @default(true)
+  /// Test shipments must not mix into live reports. Defaults to false, unlike
+  /// the connection's own flag: a shipment whose flag was never set is a real
+  /// one, and defaulting it to `true` would hide live parcels from the reports
+  /// that count money. The service always writes it from the connection.
+  isTestMode  Boolean @default(false)
 
   senderAddress    Json?
   /// KVKK: PII. Masked before it reaches any log.
@@ -1479,7 +1485,11 @@ model CarrierWebhookEvent {
   agencyId String?
   provider String
 
-  externalId  String?
+  /// NOT NULL, same reason as ShipmentTrackingEvent.carrierStatusCode: Postgres
+  /// treats NULLs as distinct, so a nullable column makes the unique below
+  /// dedupe nothing and an at-least-once redelivery is applied twice. When the
+  /// provider sends no event id, write the sha256 of the raw body.
+  externalId  String
   payload     Json
   signatureOk Boolean   @default(false)
   processedAt DateTime?
