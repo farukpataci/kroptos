@@ -1,9 +1,69 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { Order } from '@prisma/client';
+import { CarrierAddress } from '../../../integrations/carriers/core/CarrierTypes';
+import { CarrierIntegrationService } from '../../shipment/carrier-integration.service';
+import { ShipmentService } from '../../shipment/shipment.service';
+import { TenantScope } from '../../shipment/tenant-scope';
+import { CreateWmsLabelDto } from './dto/create-wms-label.dto';
 
 @Injectable()
 export class WmsLabelService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private shipments: ShipmentService,
+    private carriers: CarrierIntegrationService,
+  ) {}
+
+  /**
+   * The delivery address, assembled from the order's own columns.
+   *
+   * Every field the carrier needs is named, and a missing one is reported by
+   * name rather than filled in. `shippingAddress` is not consulted: it is one
+   * line of free text and no parser gets a district out of it reliably enough
+   * to put a parcel on the right van.
+   *
+   * fullName and phone fall back to the buyer's, which is not a guess - an
+   * order without a separate recipient is delivered to the person who placed
+   * it. Nothing else has a fallback.
+   */
+  private recipientFrom(order: Order): CarrierAddress {
+    const fullName = order.shippingFullName?.trim() || order.customerName?.trim() || '';
+    const phone = order.shippingPhone?.trim() || order.customerPhone?.trim() || '';
+
+    const fields: Record<string, string> = {
+      shippingFullName: fullName,
+      shippingPhone: phone,
+      shippingLine1: order.shippingLine1?.trim() || '',
+      shippingDistrict: order.shippingDistrict?.trim() || '',
+      shippingCity: order.shippingCity?.trim() || '',
+      shippingCountryCode: order.shippingCountryCode?.trim() || '',
+    };
+
+    const missing = Object.entries(fields)
+      .filter(([, value]) => !value)
+      .map(([name]) => name);
+
+    if (missing.length > 0) {
+      throw new BadRequestException({
+        code: 'INCOMPLETE_SHIPPING_ADDRESS',
+        messageKey: 'shipping.errors.incompleteAddress',
+        message: `Siparisin kargo adresi eksik: ${missing.join(', ')}`,
+        missingFields: missing,
+      });
+    }
+
+    return {
+      fullName: fields.shippingFullName,
+      phone: fields.shippingPhone,
+      line1: fields.shippingLine1,
+      line2: order.shippingLine2?.trim() || undefined,
+      district: fields.shippingDistrict,
+      city: fields.shippingCity,
+      postalCode: order.shippingPostalCode?.trim() || undefined,
+      countryCode: fields.shippingCountryCode,
+    };
+  }
 
   private async writeWmsAuditLog(
     action: string,
@@ -29,51 +89,94 @@ export class WmsLabelService {
     }
   }
 
+  /**
+   * Prints a label by creating the shipment it is a label for.
+   *
+   * The carrier name and the tracking number used to be invented here: a fixed
+   * 'Yurtici Kargo' and a random number no carrier had ever issued. Both now
+   * come from the connector's answer, and the label row points at the Shipment
+   * through a real foreign key.
+   *
+   * The shipment is created in the order's own store, not the caller's active
+   * one. The order was already fetched inside the caller's agency, and a label
+   * belongs to the store that sold the thing.
+   */
   async createShippingLabel(
     agencyId: string,
-    shipmentId: string,
-    orderId: string,
+    dto: CreateWmsLabelDto,
     performedBy: string,
     ipAddress?: string,
   ) {
     const order = await this.prisma.order.findFirst({
-      where: { id: orderId, agencyId },
+      where: { id: dto.orderId, agencyId },
     });
 
     if (!order) {
-      throw new NotFoundException(`Order with ID '${orderId}' not found.`);
+      throw new NotFoundException(`Order with ID '${dto.orderId}' not found.`);
     }
 
-    // shipmentId is a foreign key now. Checking it here, in the tenant's own
-    // scope, turns an unknown or borrowed id into a 404 instead of letting the
-    // insert fail with a Prisma P2003 the caller reads as a server error.
-    const shipment = await this.prisma.shipment.findFirst({
-      where: { id: shipmentId, agencyId, deletedAt: null },
-      select: { id: true },
-    });
-
-    if (!shipment) {
-      throw new NotFoundException(`Shipment with ID '${shipmentId}' not found.`);
+    if (dto.paymentType === 'cod' && !dto.codAmount) {
+      throw new BadRequestException(
+        'Kapida odeme icin codAmount zorunludur: tahsil edilecek tutar bilinmeden etiket basilamaz.',
+      );
     }
 
-    const carrierName = 'Yurtici Kargo';
-    const trackingNumber = `YK-${Math.floor(10000000 + Math.random() * 90000000)}`;
-    const barcode = `YK${Math.floor(1000000000 + Math.random() * 9000000000)}`;
+    const recipient = this.recipientFrom(order);
+    const scope: TenantScope = {
+      agencyId,
+      clientId: order.clientId,
+      storeId: order.storeId,
+    };
+
+    // Throws NO_ACTIVE_CARRIER or AMBIGUOUS_CARRIER rather than picking one.
+    const integration = await this.carriers.resolveCarrierIntegration(
+      scope,
+      dto.carrierIntegrationId,
+    );
+
+    // Idempotent by order: a second label request for the same order returns
+    // the shipment that already exists instead of buying a second barcode.
+    const shipment = await this.shipments.create(
+      {
+        carrierIntegrationId: integration.id,
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        recipient: recipient as any,
+        parcels: dto.parcels,
+        paymentType: dto.paymentType ?? 'sender_pays',
+        codAmount: dto.codAmount,
+        codCurrency: dto.codCurrency ?? (dto.paymentType === 'cod' ? order.currency : undefined),
+        serviceLevel: dto.serviceLevel,
+      } as any,
+      scope,
+    );
+
+    if (!shipment.trackingNumber || !shipment.barcode) {
+      // The claim row exists but the carrier never came back with a barcode.
+      // Printing a label without one puts a parcel in a van with nothing to
+      // scan.
+      throw new BadRequestException({
+        code: 'SHIPMENT_WITHOUT_BARCODE',
+        messageKey: 'shipping.errors.shipmentWithoutBarcode',
+        message:
+          'Gonderi olusturuldu ancak tasiyicidan barkod alinamadi; etiket basilamaz.',
+        shipmentId: shipment.id,
+      });
+    }
 
     const label = await this.prisma.wmsShippingLabel.create({
       data: {
         agencyId,
-        orderId,
-        shipmentId,
-        carrierName,
-        trackingNumber,
-        barcode,
-        labelFormat: 'PDF',
+        orderId: order.id,
+        shipmentId: shipment.id,
+        carrierName: integration.displayName,
+        trackingNumber: shipment.trackingNumber,
+        barcode: shipment.barcode,
+        labelFormat: shipment.labelFormat ?? 'PDF',
         status: 'pending',
       },
     });
 
-    // Update with mock preview URL pointing to preview endpoint
     const updated = await this.prisma.wmsShippingLabel.update({
       where: { id: label.id },
       data: {
@@ -82,13 +185,13 @@ export class WmsLabelService {
       },
     });
 
-    await this.writeWmsAuditLog(
-      'wms.label.created',
-      performedBy,
-      agencyId,
-      ipAddress,
-      { labelId: label.id, trackingNumber },
-    );
+    await this.writeWmsAuditLog('wms.label.created', performedBy, agencyId, ipAddress, {
+      labelId: label.id,
+      shipmentId: shipment.id,
+      provider: integration.provider,
+      trackingNumber: shipment.trackingNumber,
+      parcelCount: dto.parcels.length,
+    });
 
     return updated;
   }

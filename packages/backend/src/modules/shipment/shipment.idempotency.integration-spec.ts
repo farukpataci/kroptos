@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { encrypt } from '../../common/utils/encryption.util';
 import { CarrierConnectorFactory } from '../../integrations/carriers/core/CarrierConnectorFactory';
+import { WmsModule } from '../wms/wms.module';
 import { ShipmentModule } from './shipment.module';
 
 /**
@@ -51,6 +52,8 @@ describe('F-4: shipment idempotency against the real database', () => {
   let deniedUserId: string;
 
   const COUNTED = [
+    'order',
+    'wmsShippingLabel',
     'shipment',
     'shipmentPackage',
     'shipmentTrackingEvent',
@@ -109,7 +112,7 @@ describe('F-4: shipment idempotency against the real database', () => {
 
   beforeAll(async () => {
     const moduleRef: TestingModule = await Test.createTestingModule({
-      imports: [ShipmentModule],
+      imports: [ShipmentModule, WmsModule],
     })
       // Authentication is not what this test is about; the tenant middleware and
       // the JWT strategy live in AppModule, so their output is injected instead.
@@ -176,7 +179,7 @@ describe('F-4: shipment idempotency against the real database', () => {
 
     // The carrier permissions are in prisma/seed.ts but this database has not
     // been re-seeded since, so they are created here and removed again.
-    const permissionNames = ['shipments.read', 'shipments.create'];
+    const permissionNames = ['shipments.read', 'shipments.create', 'wms.labels.create'];
     const permissions = [];
     for (const name of permissionNames) {
       const existing = await prisma.permission.findUnique({ where: { name } });
@@ -246,7 +249,9 @@ describe('F-4: shipment idempotency against the real database', () => {
     try {
       // Children first: Shipment cascades its packages and events, but the
       // carrier connection is only SetNull, so shipments go before it.
+      await prisma.wmsShippingLabel.deleteMany({ where: { agencyId: { in: made.agencyIds } } });
       await prisma.shipment.deleteMany({ where: { agencyId: { in: made.agencyIds } } });
+      await prisma.order.deleteMany({ where: { agencyId: { in: made.agencyIds } } });
       await prisma.carrierIntegration.deleteMany({ where: { id: { in: made.carrierIntegrationIds } } });
       await prisma.userRole.deleteMany({ where: { userId: { in: made.userIds } } });
       await prisma.user.deleteMany({ where: { id: { in: made.userIds } } });
@@ -483,6 +488,135 @@ describe('F-4: shipment idempotency against the real database', () => {
     it('rejects a problem filter it does not know', async () => {
       const response = await call('/api/shipments?problem=whatever');
       expect(response.status).toBe(400);
+    }, 60000);
+  });
+
+  /**
+   * The WMS label, end to end: order in, barcode out.
+   *
+   * Measured here because the claim is about rows the database actually holds
+   * — one ShipmentPackage per measured box, and a total that is the sum of the
+   * parts rather than a figure computed from one of them. A mocked Prisma would
+   * have agreed with any arithmetic.
+   */
+  describe('WMS label from a real order', () => {
+    const box = (over: any = {}) => ({
+      weightKg: 1,
+      lengthCm: 30,
+      widthCm: 20,
+      heightCm: 10,
+      ...over,
+    });
+
+    const makeOrder = async (label: string) =>
+      prisma.order.create({
+        data: {
+          agencyId,
+          storeId,
+          orderNumber: `ORD-${suffix}-${label}`,
+          customerName: 'Ada Yilmaz',
+          customerPhone: '05551112233',
+          totalAmount: 100,
+          currency: 'TRY',
+          createdBy: allowedUserId,
+          shippingLine1: 'Bahce sok. 3',
+          shippingDistrict: 'Kadikoy',
+          shippingCity: 'Istanbul',
+          shippingPostalCode: '34710',
+          shippingCountryCode: 'TR',
+        },
+      });
+
+    it('writes one package row per box and totals the desi from the parts', async () => {
+      const order = await makeOrder('multi');
+
+      const response = await call('/api/wms/labels', {
+        method: 'POST',
+        body: {
+          orderId: order.id,
+          // 30x20x10 / 3000 = 2 desi, and 40x30x20 / 3000 = 8 desi.
+          parcels: [box(), box({ lengthCm: 40, widthCm: 30, heightCm: 20, weightKg: 3 })],
+        },
+      });
+
+      expect(response.status).toBe(201);
+      const label = (await response.json()) as any;
+
+      const shipment = await prisma.shipment.findFirst({
+        where: { agencyId, orderId: order.id },
+        include: { packages: true },
+      });
+
+      expect(shipment).not.toBeNull();
+      expect(shipment!.packages).toHaveLength(2);
+      // 2 + 8, summed per parcel rather than measured off the total.
+      expect(Number(shipment!.totalDesi)).toBe(10);
+      expect(Number(shipment!.totalWeightKg)).toBe(4);
+      // Billed weight is max(weight, desi) per box: max(1,2) + max(3,8) = 10.
+      expect(Number(shipment!.chargeableWeightKg)).toBe(10);
+
+      // The label is a derivative of that shipment, with no invented values.
+      expect(label.shipmentId).toBe(shipment!.id);
+      expect(label.trackingNumber).toBe(shipment!.trackingNumber);
+      expect(label.carrierName).toBe('F4 mock');
+      expect(label.trackingNumber).not.toMatch(/^YK-/);
+    }, 60000);
+
+    it('still handles a single box', async () => {
+      const order = await makeOrder('single');
+
+      const response = await call('/api/wms/labels', {
+        method: 'POST',
+        body: { orderId: order.id, parcels: [box()] },
+      });
+
+      expect(response.status).toBe(201);
+      const shipment = await prisma.shipment.findFirst({
+        where: { agencyId, orderId: order.id },
+        include: { packages: true },
+      });
+      expect(shipment!.packages).toHaveLength(1);
+      expect(Number(shipment!.totalDesi)).toBe(2);
+    }, 60000);
+
+    it('refuses a label request with no measurement', async () => {
+      const order = await makeOrder('nobox');
+
+      const response = await call('/api/wms/labels', {
+        method: 'POST',
+        body: { orderId: order.id },
+      });
+
+      expect(response.status).toBe(400);
+      expect(await prisma.shipment.count({ where: { agencyId, orderId: order.id } })).toBe(0);
+    }, 60000);
+
+    it('names the missing address fields rather than shipping to half an address', async () => {
+      const order = await prisma.order.create({
+        data: {
+          agencyId,
+          storeId,
+          orderNumber: `ORD-${suffix}-noaddr`,
+          customerName: 'Ada Yilmaz',
+          totalAmount: 100,
+          createdBy: allowedUserId,
+          shippingCity: 'Istanbul',
+        },
+      });
+
+      const response = await call('/api/wms/labels', {
+        method: 'POST',
+        body: { orderId: order.id, parcels: [box()] },
+      });
+
+      expect(response.status).toBe(400);
+      const body = (await response.json()) as any;
+      expect(body.code).toBe('INCOMPLETE_SHIPPING_ADDRESS');
+      expect(body.missingFields).toEqual(
+        expect.arrayContaining(['shippingLine1', 'shippingDistrict', 'shippingCountryCode']),
+      );
+      // The buyer's own phone and name filled those two in.
+      expect(body.missingFields).not.toContain('shippingFullName');
     }, 60000);
   });
 

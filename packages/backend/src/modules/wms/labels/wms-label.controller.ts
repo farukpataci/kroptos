@@ -41,12 +41,6 @@ export class WmsLabelController {
   async createLabel(@Body() body: CreateWmsLabelDto, @Req() req: Request) {
     const user = req.user as any;
     const activeAgency = (req as any).activeAgency;
-    return this.labelService.createShippingLabel(
-      activeAgency.id,
-      body.shipmentId,
-      body.orderId,
-      user.userId,
-      req.ip,
-    );
+    return this.labelService.createShippingLabel(activeAgency.id, body, user.userId, req.ip);
   }
 }
