@@ -57,6 +57,20 @@ export class CarrierIntegrationController {
     return this.service.list(tenantScopeFrom(req));
   }
 
+  // Declared before ':id' so the literal path is not swallowed by the param.
+  @Get('providers')
+  @HttpCode(200)
+  @RequirePermission('carriers.read')
+  @ApiOperation({
+    summary: 'Selectable carriers and the credential fields each one needs',
+    description:
+      'The form asks for exactly these fields. Hard-coding them in the client is how a ' +
+      'connector gains a credential and the setup screen keeps collecting the old set.',
+  })
+  async providers() {
+    return this.service.providers();
+  }
+
   @Get(':id')
   @HttpCode(200)
   @RequirePermission('carriers.read')

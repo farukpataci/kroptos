@@ -150,5 +150,83 @@
       "cancelled": "Shipment cancelled.",
       "cancelledCarrierLive": "Cancelled in KroptOS, but the barcode is still live at the carrier — close it by hand in the carrier's own panel."
     }
+  },
+  "carriers": {
+    "title": "Carrier connections",
+    "subtitle": "Your carrier accounts live here; every shipment leaves through one of them",
+    "reload": "Reload",
+    "new": "New connection",
+    "noProviders": "No carrier can be connected yet: no provider has a connector",
+    "empty": "No carrier connection yet. At least one is needed before a shipment can be created.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "testMode": "Test mode",
+    "edit": "Settings",
+    "test": {
+      "run": "Test connection",
+      "ok": "Connection verified",
+      "failed": "Connection could not be verified",
+      "last": "Last test",
+      "never": "never",
+      "neverRun": "Not tested yet"
+    },
+    "toggle": {
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "activated": "Connection activated",
+      "deactivated": "Connection deactivated; no new shipment goes out through it"
+    },
+    "errors": {
+      "load": "Carrier connections could not be loaded",
+      "test": "The connection test could not be run",
+      "toggle": "The connection state could not be changed",
+      "save": "The connection could not be saved"
+    },
+    "form": {
+      "newTitle": "New carrier connection",
+      "editTitle": "Carrier connection",
+      "subtitle": "Credentials are stored encrypted and never shown again",
+      "close": "Close",
+      "connection": "Connection",
+      "provider": "Provider",
+      "providerLocked": "The provider cannot be changed later: the credentials and every barcode issued belong to it.",
+      "displayName": "Display name",
+      "displayNameRequired": "Display name is required",
+      "isActive": "Active",
+      "isTestMode": "Carrier's test environment",
+      "credentials": "Credentials",
+      "noCredentials": "This provider asks for no credentials.",
+      "secretHint": "Left blank, the stored value is kept.",
+      "senderAddress": "Default sender address",
+      "senderAddressHint": "Used when a shipment carries no address. Saved only when complete.",
+      "settings": "Settings",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saved": "Connection saved"
+    },
+    "address": {
+      "fullName": "Name / company",
+      "phone": "Phone",
+      "line1": "Address",
+      "line2": "Address line 2",
+      "district": "District",
+      "city": "City",
+      "postalCode": "Postal code",
+      "countryCode": "Country code"
+    },
+    "settings": {
+      "labelFormat": "Label format",
+      "desiDivisor": "Desi divisor",
+      "desiDivisorHint": "The divisor in your contract (usually 3000 or 5000). Blank uses the default.",
+      "cutoffTime": "Cut-off time",
+      "defaultServiceLevel": "Default service",
+      "none": "Not set"
+    },
+    "serviceLevel": {
+      "standard": "Standard",
+      "express": "Express",
+      "same_day": "Same day",
+      "freight": "Freight"
+    }
   }
 }

@@ -4,6 +4,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { encrypt } from '../../common/utils/encryption.util';
 import { CarrierConnectorFactory } from '../../integrations/carriers/core/CarrierConnectorFactory';
+import { CarrierCredentialService } from '../../integrations/carriers/core/CarrierCredentialService';
 import { CarrierTrackingWorker } from './carrier-tracking.worker';
 import { WmsModule } from '../wms/wms.module';
 import { ShipmentModule } from './shipment.module';
@@ -181,7 +182,14 @@ describe('F-4: shipment idempotency against the real database', () => {
 
     // The carrier permissions are in prisma/seed.ts but this database has not
     // been re-seeded since, so they are created here and removed again.
-    const permissionNames = ['shipments.read', 'shipments.create', 'wms.labels.create'];
+    const permissionNames = [
+      'shipments.read',
+      'shipments.create',
+      'wms.labels.create',
+      'carriers.read',
+      'carriers.create',
+      'carriers.update',
+    ];
     const permissions = [];
     for (const name of permissionNames) {
       const existing = await prisma.permission.findUnique({ where: { name } });
@@ -642,6 +650,107 @@ describe('F-4: shipment idempotency against the real database', () => {
         await call(`/api/shipments?q=ORD-${suffix}-FOREIGNNO`)
       ).json()) as any;
       expect(listed.total).toBe(0);
+    }, 60000);
+  });
+
+  /**
+   * The carrier connection API, from the setup screen's point of view.
+   *
+   * The claim is about what leaves the server, so it is asserted on the raw
+   * response text rather than on a parsed field: a secret that reappears under
+   * some other key, or inside a nested settings blob, still fails here.
+   */
+  describe('carrier connection setup', () => {
+    const SECRET = `p4ssw0rd-${suffix}`;
+    const madeIds: string[] = [];
+    // Its own store: the fixture already holds the one MOCK connection this
+    // agency's main store is allowed, and a second would be the duplicate the
+    // service refuses.
+    let setupStoreId: string;
+
+    beforeAll(async () => {
+      const store = await prisma.store.create({
+        data: { agencyId, name: `F4 setup store ${suffix}` },
+      });
+      setupStoreId = store.id;
+    });
+
+    afterAll(async () => {
+      await prisma.store.deleteMany({ where: { id: setupStoreId } });
+    });
+
+    const connectionBody = (over: any = {}) => ({
+      provider: 'MOCK',
+      displayName: `Kurulum ${suffix}`,
+      credentials: { username: 'depo-kullanici', password: SECRET },
+      isTestMode: true,
+      ...over,
+    });
+
+    afterEach(async () => {
+      if (madeIds.length) {
+        await prisma.carrierIntegration.deleteMany({ where: { id: { in: madeIds.splice(0) } } });
+      }
+    });
+
+    it('names the providers a form may offer, with the fields each one needs', async () => {
+      const response = await call('/api/carriers/providers');
+      expect(response.status).toBe(200);
+
+      const providers = (await response.json()) as any[];
+      // MOCK is the only connector that exists; a provider without one must not
+      // be offerable, or the form collects credentials nothing can use.
+      expect(providers.map((p) => p.provider)).toEqual(['MOCK']);
+      expect(Array.isArray(providers[0].requiredFields)).toBe(true);
+    }, 60000);
+
+    it('never returns the stored secret, on create or on read', async () => {
+      const created = await call('/api/carriers', {
+        method: 'POST',
+        body: connectionBody(),
+        store: setupStoreId,
+      });
+      expect(created.status).toBe(201);
+      const createdText = await created.text();
+      madeIds.push(JSON.parse(createdText).id);
+
+      const fetched = await call(`/api/carriers/${madeIds[0]}`, { store: setupStoreId });
+      const fetchedText = await fetched.text();
+      const listed = await (await call('/api/carriers', { store: setupStoreId })).text();
+
+      for (const body of [createdText, fetchedText, listed]) {
+        expect(body).not.toContain(SECRET);
+      }
+
+      const one = JSON.parse(fetchedText);
+      expect(one.credentials.password).not.toBe(SECRET);
+      // The username is a connection identifier, not a secret: masking it would
+      // leave the screen unable to show which account is connected.
+      expect(one.credentials.username).toBe('depo-kullanici');
+    }, 60000);
+
+    it('keeps the stored secret when the form posts the mask back', async () => {
+      const created = await call('/api/carriers', {
+        method: 'POST',
+        body: connectionBody(),
+        store: setupStoreId,
+      });
+      const { id, credentials } = (await created.json()) as any;
+      madeIds.push(id);
+
+      // Exactly what a form would send if it round-tripped the masked value.
+      const patched = await call(`/api/carriers/${id}`, {
+        method: 'PATCH',
+        body: { displayName: 'Yeni ad', credentials: { password: credentials.password } },
+        store: setupStoreId,
+      });
+      expect(patched.status).toBe(200);
+
+      const row = await prisma.carrierIntegration.findUnique({ where: { id } });
+      const stored = app.get(CarrierCredentialService).decrypt(row!.credentials);
+      // Written through, this would have replaced a live credential with bullets.
+      expect(stored.password).toBe(SECRET);
+      expect(row!.displayName).toBe('Yeni ad');
     }, 60000);
   });
 

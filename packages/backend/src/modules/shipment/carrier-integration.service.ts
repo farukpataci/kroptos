@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { maskCredentials, stripMaskedCredentials } from '@kroptos/shared';
+import { isSecretCredentialKey, maskCredentials, stripMaskedCredentials } from '@kroptos/shared';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { CarrierConnector } from '../../integrations/carriers/core/CarrierConnector';
 import { CarrierConnectorFactory } from '../../integrations/carriers/core/CarrierConnectorFactory';
@@ -88,6 +88,25 @@ export class CarrierIntegrationService {
     } catch (error) {
       console.error('Failed to write CarrierIntegration audit log:', error);
     }
+  }
+
+  /**
+   * What the setup form may offer, and what each option has to collect.
+   *
+   * Read from the factory and the credential service rather than restated in
+   * the client: a provider whose connector does not exist yet must not be
+   * offerable, and a connector that gains a credential field must not leave the
+   * form collecting yesterday's set. `secret` marks the fields the API will
+   * hand back masked, so the form knows which inputs to treat as write-only.
+   */
+  providers() {
+    return this.connectors.supportedProviders().map((provider) => ({
+      provider,
+      requiredFields: this.credentials.requiredFields(provider).map((name) => ({
+        name,
+        secret: isSecretCredentialKey(name),
+      })),
+    }));
   }
 
   async list(scope: TenantScope) {

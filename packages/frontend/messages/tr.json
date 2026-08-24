@@ -3754,5 +3754,83 @@
       "cancelled": "Gönderi iptal edildi.",
       "cancelledCarrierLive": "KroptOS'ta iptal edildi, taşıyıcıda barkod hâlâ canlı — taşıyıcı panelinden elle kapatın."
     }
+  },
+  "carriers": {
+    "title": "Taşıyıcı bağlantıları",
+    "subtitle": "Kargo hesaplarınızı burada tanımlarsınız; gönderiler bu bağlantılar üzerinden çıkar",
+    "reload": "Yenile",
+    "new": "Yeni bağlantı",
+    "noProviders": "Bağlanabilir taşıyıcı yok: hiçbir sağlayıcının connector'ı hazır değil",
+    "empty": "Tanımlı taşıyıcı bağlantısı yok. Gönderi oluşturmak için en az bir tane gerekiyor.",
+    "active": "Aktif",
+    "inactive": "Pasif",
+    "testMode": "Test modu",
+    "edit": "Ayarlar",
+    "test": {
+      "run": "Bağlantıyı test et",
+      "ok": "Bağlantı doğrulandı",
+      "failed": "Bağlantı doğrulanamadı",
+      "last": "Son test",
+      "never": "hiç",
+      "neverRun": "Henüz test edilmedi"
+    },
+    "toggle": {
+      "activate": "Aktifleştir",
+      "deactivate": "Pasifleştir",
+      "activated": "Bağlantı aktifleştirildi",
+      "deactivated": "Bağlantı pasifleştirildi, yeni gönderi çıkmaz"
+    },
+    "errors": {
+      "load": "Taşıyıcı bağlantıları yüklenemedi",
+      "test": "Bağlantı testi yapılamadı",
+      "toggle": "Bağlantı durumu değiştirilemedi",
+      "save": "Bağlantı kaydedilemedi"
+    },
+    "form": {
+      "newTitle": "Yeni taşıyıcı bağlantısı",
+      "editTitle": "Taşıyıcı bağlantısı",
+      "subtitle": "Kimlik bilgileri şifreli saklanır ve bir daha ekrana gelmez",
+      "close": "Kapat",
+      "connection": "Bağlantı",
+      "provider": "Sağlayıcı",
+      "providerLocked": "Sağlayıcı sonradan değiştirilemez: kimlik bilgileri ve çıkmış barkodlar ona bağlı.",
+      "displayName": "Görünen ad",
+      "displayNameRequired": "Görünen ad zorunlu",
+      "isActive": "Aktif",
+      "isTestMode": "Taşıyıcının test ortamı",
+      "credentials": "Kimlik bilgileri",
+      "noCredentials": "Bu sağlayıcı kimlik bilgisi istemiyor.",
+      "secretHint": "Boş bırakılırsa kayıtlı değer korunur.",
+      "senderAddress": "Varsayılan gönderici adresi",
+      "senderAddressHint": "Gönderide adres verilmezse bu kullanılır. Eksik doldurulursa kaydedilmez.",
+      "settings": "Ayarlar",
+      "cancel": "Vazgeç",
+      "save": "Kaydet",
+      "saved": "Bağlantı kaydedildi"
+    },
+    "address": {
+      "fullName": "Ad soyad / unvan",
+      "phone": "Telefon",
+      "line1": "Adres",
+      "line2": "Adres (devam)",
+      "district": "İlçe",
+      "city": "İl",
+      "postalCode": "Posta kodu",
+      "countryCode": "Ülke kodu"
+    },
+    "settings": {
+      "labelFormat": "Etiket formatı",
+      "desiDivisor": "Desi böleni",
+      "desiDivisorHint": "Sözleşmenizdeki bölen (genellikle 3000 veya 5000). Boşsa varsayılan kullanılır.",
+      "cutoffTime": "Son kabul saati",
+      "defaultServiceLevel": "Varsayılan servis",
+      "none": "Seçilmedi"
+    },
+    "serviceLevel": {
+      "standard": "Standart",
+      "express": "Hızlı",
+      "same_day": "Aynı gün",
+      "freight": "Yük"
+    }
   }
 }
