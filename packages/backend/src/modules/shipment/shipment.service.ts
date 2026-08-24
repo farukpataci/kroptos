@@ -327,11 +327,23 @@ export class ShipmentService {
     if (dto.referenceCode) return dto.referenceCode;
 
     const base = this.baseReferenceFor(dto);
-    const prior = await this.prisma.shipment.count({
-      where: this.priorShipmentWhere(agencyId, storeId, dto),
+    // Cancelled attempts only.
+    //
+    // Counting live rows too made the suffix depend on when this request read
+    // the table: two concurrent calls for the same order both pass the "no live
+    // shipment" check, then the slower one counts the faster one's claim and
+    // computes `<order>:2` — a different reference code, so the unique index
+    // has nothing to catch and the order gets a second barcode. The six-way race
+    // test caught it twice in five runs; six runs after this change, never.
+    //
+    // With cancelled rows alone the key is the same for both, the loser hits
+    // P2002 and is handed the winner. The suffix still does its job: a
+    // cancelled attempt keeps its number and the next attempt gets the next.
+    const cancelled = await this.prisma.shipment.count({
+      where: { ...this.priorShipmentWhere(agencyId, storeId, dto), status: 'cancelled' },
     });
 
-    return prior === 0 ? base : `${base}:${prior + 1}`;
+    return cancelled === 0 ? base : `${base}:${cancelled + 1}`;
   }
 
   /**

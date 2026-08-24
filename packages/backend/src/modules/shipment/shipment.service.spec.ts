@@ -114,6 +114,13 @@ describe('ShipmentService.create — idempotency', () => {
     await service.create(dto(), scope);
 
     expect(prisma.shipment.create.mock.calls[0][0].data.referenceCode).toBe('ord-7:2');
+    // Only cancelled attempts are counted. Counting live ones made the suffix
+    // depend on timing, and two concurrent calls then wrote two different
+    // reference codes — two barcodes for one order.
+    expect(prisma.shipment.count.mock.calls[0][0].where).toMatchObject({
+      orderId: 'ord-7',
+      status: 'cancelled',
+    });
   });
 
   it('writes the claim row before the carrier is called, with no tracking number', async () => {
