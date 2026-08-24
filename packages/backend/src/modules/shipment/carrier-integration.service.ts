@@ -119,6 +119,69 @@ export class CarrierIntegrationService {
     return this.toResponse(await this.findOneOrFail(id, scope));
   }
 
+  /**
+   * Which carrier a shipment goes out with, when nobody has said.
+   *
+   * The rule engine does not exist yet, so this is the whole of the selection
+   * logic and the only place it lives — when CarrierRule arrives, this method
+   * changes and its callers do not.
+   *
+   *   none          NO_ACTIVE_CARRIER, a configuration gap, not a server fault
+   *   exactly one   that one
+   *   several       AMBIGUOUS_CARRIER, with the choices, unless the caller named one
+   *
+   * Both refusals carry a machine-readable `code` and a `messageKey`: a client
+   * that string-matches a Turkish sentence breaks the first time the wording is
+   * improved. AMBIGUOUS_CARRIER also returns the candidates, because telling
+   * someone to pick one without showing the list sends them off to another
+   * screen to find it. Those entries carry id, displayName and provider and
+   * nothing else — never the credentials.
+   *
+   * Picking the first of several is deliberately not an option: a label bought
+   * from the wrong carrier is only noticed when the parcel is handed to the
+   * wrong van.
+   */
+  async resolveCarrierIntegration(scope: TenantScope, requestedId?: string) {
+    if (requestedId) {
+      // Named explicitly. Validated in the tenant's own scope, so an id
+      // borrowed from another tenant answers "not found" rather than
+      // "forbidden" — the second reply confirms the id exists.
+      const row = await this.findOneOrFail(requestedId, scope);
+      if (!row.isActive) {
+        throw new NotFoundException(`Taşıyıcı bağlantısı bulunamadı: ${requestedId}`);
+      }
+      return row;
+    }
+
+    const active = await this.prisma.carrierIntegration.findMany({
+      where: { ...this.scopeWhere(scope), isActive: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    if (active.length === 0) {
+      throw new BadRequestException({
+        code: 'NO_ACTIVE_CARRIER',
+        messageKey: 'shipping.errors.noActiveCarrier',
+        message: 'Bu mağaza için tanımlı aktif kargo bağlantısı yok.',
+      });
+    }
+
+    if (active.length > 1) {
+      throw new BadRequestException({
+        code: 'AMBIGUOUS_CARRIER',
+        messageKey: 'shipping.errors.ambiguousCarrier',
+        message: 'Birden fazla aktif kargo bağlantısı var, istekte birini belirtin.',
+        carriers: active.map((row) => ({
+          id: row.id,
+          displayName: row.displayName,
+          provider: row.provider,
+        })),
+      });
+    }
+
+    return active[0];
+  }
+
   async create(
     dto: CreateCarrierIntegrationDto,
     scope: TenantScope,
