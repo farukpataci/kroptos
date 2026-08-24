@@ -706,6 +706,40 @@ describe('F-4: shipment idempotency against the real database', () => {
       expect(after?.carrierStatusCode).toBe('MOCK_OUT');
     }, 60000);
 
+    it('keeps following the return leg, and stops once the parcel is back', async () => {
+      // undelivered -> returning -> returned runs entirely through the two
+      // statuses that were left out of the first cut of this list. A parcel
+      // that failed delivery has to stay in the sweep, or nobody sees it come
+      // back to the warehouse.
+      const failed = await prisma.shipment.create({
+        data: pollRow('undelivered', { status: 'undelivered' }),
+      });
+      const goingBack = await prisma.shipment.create({
+        data: pollRow('returning', { status: 'returning' }),
+      });
+      const back = await prisma.shipment.create({
+        data: pollRow('returned', { status: 'returned' }),
+      });
+      sweptIds.push(failed.id, goingBack.id, back.id);
+
+      answerWith((trackingNumber) => ({
+        trackingNumber,
+        status: 'returning',
+        carrierStatusCode: 'MOCK_RETURNING',
+        events: [event({ status: 'returning', carrierStatusCode: 'MOCK_RETURNING' })],
+      }));
+
+      await app.get(CarrierTrackingWorker).sweep();
+
+      const asked = track.mock.calls
+        .flatMap((args: any[]) => args[0])
+        .filter((n: string) => n.startsWith(`TRK-${suffix}-SW-`));
+      expect(asked).toContain(failed.trackingNumber);
+      expect(asked).toContain(goingBack.trackingNumber);
+      // Terminal: the parcel is home, there is nothing left to ask about.
+      expect(asked).not.toContain(back.trackingNumber);
+    }, 60000);
+
     it('collapses the same event onto one row across two sweeps', async () => {
       const row = await prisma.shipment.create({ data: pollRow('dupe') });
       sweptIds.push(row.id);

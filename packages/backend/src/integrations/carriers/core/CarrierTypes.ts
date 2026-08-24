@@ -79,16 +79,17 @@ export const TERMINAL_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
  * has nothing to report yet, and asking about a barcode that was never handed
  * over spends quota on a "not found" every half hour.
  *
- * `undelivered` and `returning` are also out, and that one is a decision rather
- * than a fact: both are non-terminal and both still change at the carrier, so a
- * parcel that fails delivery stops being polled here and someone has to press
- * the button on it. Widening this list is the only change needed if that turns
- * out to be the wrong call.
+ * `undelivered` and `returning` ARE in, and that is the return leg: the chain
+ * undelivered -> returning -> returned runs entirely through these two. Leaving
+ * them out froze a failed delivery at "undelivered" and nobody saw the parcel
+ * come back to the warehouse.
  */
 export const POLLABLE_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
   'handed_over',
   'in_transit',
   'out_for_delivery',
+  'undelivered',
+  'returning',
 ];
 
 /**
