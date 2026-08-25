@@ -36,6 +36,29 @@ function buildSha() {
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  experimental: {
+    /**
+     * Renders `getStaticPaths` in a worker THREAD instead of a forked process.
+     *
+     * `next dev` forks a full Node.js child process for every App Router
+     * request whose route has a dynamic segment — base-server.js does it under
+     * `if (isAppPath && isDynamic)`, with no check for whether the route
+     * actually exports `generateStaticParams`. No route here does, so the fork
+     * computes an empty list and exits. Measured cost of one: ~140MB.
+     *
+     * This machine has 6GB and sits around 400MB free with the backend, the
+     * dev server and Postgres up. When the fork cannot get its memory it dies,
+     * and because Next gives that worker `maxRetries: 1` the browser shows
+     * "Jest worker encountered 2 child process exceptions, exceeding retry
+     * limit" — the real error is never surfaced, which is why `next build`
+     * passing says nothing about it.
+     *
+     * A thread shares the process rather than duplicating it. The flag also
+     * switches the static-generation worker `next build` uses; the build was
+     * re-run after this to confirm it still passes.
+     */
+    workerThreads: true,
+  },
   env: {
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api',
     NEXT_PUBLIC_BUILD_SHA: buildSha(),
