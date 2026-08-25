@@ -443,7 +443,42 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
       // Currency comes from the payload wherever Trendyol sends it; the fallback
       // only covers a response that omits it entirely.
       currency: raw.currencyCode ?? raw.currency ?? this.fallbackCurrency,
+      cargoProviderName: String(raw.cargoProviderName ?? '').trim() || undefined,
+      cargoTrackingNumber: TrendyolBaseConnector.trackingNumber(raw.cargoTrackingNumber),
+      cargoTrackingLink: String(raw.cargoTrackingLink ?? '').trim() || undefined,
+      shippedAt: TrendyolBaseConnector.shippedAt(raw.packageHistories),
     };
+  }
+
+  /**
+   * Trendyol sends the tracking number as a JSON number, and sends `0` for a
+   * package that has not been given one yet. Importing that as "0" would put a
+   * barcode that does not exist on a label and in a search index.
+   */
+  private static trackingNumber(value: unknown): string | undefined {
+    const text = String(value ?? '').trim();
+    return text && text !== '0' ? text : undefined;
+  }
+
+  /**
+   * The first moment the package entered `Shipped`, from its own history.
+   *
+   * The history is the only place the payload states this. Measured on stage:
+   * 57 of 162 packages have a Shipped entry, which is exactly the number whose
+   * status is Shipped, Delivered, AtCollectionPoint or UnDeliveredAndReturned —
+   * every state reached by way of shipping, and no others.
+   */
+  private static shippedAt(histories: unknown): Date | undefined {
+    if (!Array.isArray(histories)) return undefined;
+
+    const stamps = histories
+      .filter((entry) => String(entry?.status ?? '').trim().toLowerCase() === 'shipped')
+      .map((entry) => Number(entry?.createdDate))
+      .filter((stamp) => Number.isFinite(stamp) && stamp > 0);
+
+    // Earliest: a package can be shipped, come back and be shipped again, and
+    // the question "when did it leave" is about the first departure.
+    return stamps.length ? new Date(Math.min(...stamps)) : undefined;
   }
 
   /** Country stamped on an address the payload left blank. */

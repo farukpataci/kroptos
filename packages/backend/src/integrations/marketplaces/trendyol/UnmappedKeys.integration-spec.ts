@@ -7,7 +7,9 @@ import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
 import { TrendyolConnector } from './TrendyolConnector';
 
 /**
- * 14.2's acceptance: run a provider's read for real and see the keys it drops.
+ * Run a provider's read for real: see the keys it drops, and see the cargo
+ * block filled from the same body. The two halves belong together — a mapping
+ * that is added and a key that leaves the dropped list are one fact.
  *
  * Not a mocked payload. A mock would be written from the same reading of the
  * documentation as the narrow function, so the two would agree about a field
@@ -21,7 +23,7 @@ import { TrendyolConnector } from './TrendyolConnector';
  *
  * Read-only against Trendyol — one GET on the orders/shipment-packages list.
  */
-describe('14.2: unmapped keys from a live Trendyol read', () => {
+describe('unmapped keys and the cargo block, from a live Trendyol read', () => {
   loadEnv({ path: join(__dirname, '../../../../.env') });
 
   const prisma = new PrismaService();
@@ -92,9 +94,18 @@ describe('14.2: unmapped keys from a live Trendyol read', () => {
 
     const listed = orderRows.flatMap((row) => (row.errorMessage ?? '').split(': ')[1].split(', '));
 
-    // The cargo block this whole step is about: Trendyol sends it, the mapper
-    // does not read it. Measured on stage, 50/50 packages carried all three.
-    expect(listed).toEqual(expect.arrayContaining(['cargoProviderName', 'cargoTrackingNumber']));
+    // Fields Trendyol sends and nothing reads. Both measured present on every
+    // package, so their absence here would mean the recorder had stopped
+    // working rather than that the payload had changed.
+    expect(listed).toEqual(expect.arrayContaining(['agreedDeliveryDate', 'lines[].vatRate']));
+
+    // And the other half of the loop: the cargo keys used to be on this list,
+    // 14.3 mapped them, so they must be off it. This is what stops the mapping
+    // from being quietly reverted.
+    expect(listed).not.toContain('cargoProviderName');
+    expect(listed).not.toContain('cargoTrackingNumber');
+    expect(listed).not.toContain('cargoTrackingLink');
+    expect(listed).not.toContain('packageHistories');
 
     // Names only. Every entry has to look like a key path — a value with a
     // space, a digit run, an @ or a + in it would fail here.
@@ -104,6 +115,40 @@ describe('14.2: unmapped keys from a live Trendyol read', () => {
     // And the payload is real, so these would be present if a value leaked.
     const dump = JSON.stringify(rows);
     expect(dump).not.toMatch(/\+90|@|Musteri/i);
+  }, 120000);
+
+  it('fills the shipping block from what the live payload carried', async () => {
+    const orders = await connector().getOrders();
+
+    const withParcel = orders.filter((order) => order.shipping !== undefined);
+    if (withParcel.length === 0) {
+      throw new Error('Stage hesabından kargo bilgisi olan paket gelmedi; ölçecek bir şey yok.');
+    }
+
+    for (const order of withParcel) {
+      // Every measured package had a carrier name, so the block is never just
+      // an empty shell.
+      expect(typeof order.shipping!.carrierName).toBe('string');
+      expect(order.shipping!.carrierName!.length).toBeGreaterThan(0);
+
+      if (order.shipping!.trackingNumber !== undefined) {
+        // A string, and never the "0" the gateway sends for "no barcode yet".
+        expect(typeof order.shipping!.trackingNumber).toBe('string');
+        expect(order.shipping!.trackingNumber).not.toBe('0');
+      }
+      if (order.shipping!.shippedAt !== undefined) {
+        expect(order.shipping!.shippedAt).toBeInstanceOf(Date);
+        expect(Number.isFinite(order.shipping!.shippedAt!.getTime())).toBe(true);
+      }
+    }
+
+    // shippedAt only on parcels that actually left. Measured on stage: the 57
+    // packages with a Shipped history are exactly the shipped/delivered/
+    // collection-point/returned ones, and nothing earlier than that carries it.
+    const stillHere = orders.filter((order) => ['pending', 'processing'].includes(order.status));
+    for (const order of stillHere) {
+      expect(order.shipping?.shippedAt).toBeUndefined();
+    }
   }, 120000);
 
   it('does not write the same finding again on the next round', async () => {

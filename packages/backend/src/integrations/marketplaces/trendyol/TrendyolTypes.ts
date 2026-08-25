@@ -34,6 +34,30 @@ export interface TrendyolOrder {
   status: string; // 'Created', 'Delivered', 'Cancelled', etc.
   totalPrice: number;
   currency: string;
+  /**
+   * What Trendyol already knows about the parcel. Measured on the stage seller
+   * account, 162 packages, 2026-08-25:
+   *
+   *   cargoProviderName    162/162 filled
+   *   cargoTrackingNumber  162/162 present, one of them 0 — Trendyol's way of
+   *                        saying "no barcode yet", so it is dropped rather
+   *                        than imported as the string "0"
+   *   cargoTrackingLink     79/162
+   *
+   * Carried as strings: a tracking number is an identifier, and the gateway
+   * sends it as a JSON number.
+   */
+  cargoProviderName?: string;
+  cargoTrackingNumber?: string;
+  cargoTrackingLink?: string;
+  /**
+   * When the parcel actually left, read from `packageHistories`.
+   *
+   * NOT `originShipmentDate`, which looks like the answer and is not: it is
+   * filled on all 162 packages including the 105 that never shipped, and it
+   * matched the Shipped history entry on 0 of the 57 that did.
+   */
+  shippedAt?: Date;
 }
 
 export interface TrendyolProductImage {

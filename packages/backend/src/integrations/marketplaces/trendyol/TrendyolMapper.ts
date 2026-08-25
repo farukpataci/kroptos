@@ -1,4 +1,9 @@
-import { MarketplaceOrder, MarketplaceProduct, MarketplaceOrderItem } from '../core/MarketplaceTypes';
+import {
+  MarketplaceOrder,
+  MarketplaceOrderItem,
+  MarketplaceOrderShipping,
+  MarketplaceProduct,
+} from '../core/MarketplaceTypes';
 import { TrendyolOrder, TrendyolProduct } from './TrendyolTypes';
 
 /**
@@ -63,6 +68,18 @@ export class TrendyolMapper {
 
     const status = STATUS_MAP[String(order.status ?? '').trim().toLowerCase()] ?? 'pending';
 
+    // Only when Trendyol actually said something. An all-undefined block would
+    // read as "we looked and there is no parcel", which is a different claim
+    // from "this order has not been dispatched yet".
+    const shipping: MarketplaceOrderShipping = {
+      trackingNumber: order.cargoTrackingNumber,
+      carrierName: order.cargoProviderName,
+      trackingUrl: order.cargoTrackingLink,
+      packageId: order.packageId || undefined,
+      shippedAt: order.shippedAt,
+    };
+    const shipped = Object.values(shipping).some((value) => value !== undefined);
+
     return {
       orderNumber: TrendyolMapper.packageKey(order),
       // The number the seller and the buyer quote; `orderNumber` above is
@@ -78,6 +95,7 @@ export class TrendyolMapper {
       currency: order.currency || context.fallbackCurrency,
       source: context.source,
       items,
+      ...(shipped ? { shipping } : {}),
     };
   }
 

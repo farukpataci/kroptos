@@ -189,6 +189,78 @@ describe('TrendyolConnector', () => {
       lines: [{ barcode: '869', merchantSku: 'SKU-1', quantity: 2, price: 50, productName: 'Ürün' }],
     });
 
+    /**
+     * The branches around the cargo block, which the live suite covers only on
+     * its happy path. Shapes here are the measured ones — see TrendyolTypes.
+     */
+    describe('the cargo block', () => {
+      const shipped = (over: any = {}) => ({
+        ...order('TY-C', 'Shipped'),
+        shipmentPackageId: 987,
+        cargoProviderName: 'Trendyol Express',
+        cargoTrackingNumber: 7280123456789,
+        cargoTrackingLink: 'https://ty.gl/abc',
+        packageHistories: [
+          { status: 'Created', createdDate: 1_756_000_000_000 },
+          { status: 'Shipped', createdDate: 1_756_100_000_000 },
+        ],
+        ...over,
+      });
+
+      const first = async (raw: any) => {
+        httpClient.request.mockResolvedValue({ content: [raw], totalPages: 1 });
+        const [unified] = await build({ 'orders.importStatuses': [] }).getOrders();
+        return unified;
+      };
+
+      it('carries the tracking number as a string, not the JSON number', async () => {
+        const unified = await first(shipped());
+
+        expect(unified.shipping).toEqual({
+          trackingNumber: '7280123456789',
+          carrierName: 'Trendyol Express',
+          trackingUrl: 'https://ty.gl/abc',
+          packageId: '987',
+          shippedAt: new Date(1_756_100_000_000),
+        });
+      });
+
+      it('drops a tracking number of 0, which means no barcode yet', async () => {
+        const unified = await first(shipped({ cargoTrackingNumber: 0 }));
+        expect(unified.shipping?.trackingNumber).toBeUndefined();
+        // The rest of the block is still there; only the absent part is absent.
+        expect(unified.shipping?.carrierName).toBe('Trendyol Express');
+      });
+
+      it('takes the first departure when a package shipped twice', async () => {
+        const unified = await first(
+          shipped({
+            packageHistories: [
+              { status: 'Shipped', createdDate: 1_756_300_000_000 },
+              { status: 'Returned', createdDate: 1_756_200_000_000 },
+              { status: 'Shipped', createdDate: 1_756_100_000_000 },
+            ],
+          }),
+        );
+        expect(unified.shipping?.shippedAt).toEqual(new Date(1_756_100_000_000));
+      });
+
+      it('leaves shippedAt out when the package never shipped', async () => {
+        const unified = await first(
+          shipped({ packageHistories: [{ status: 'Picking', createdDate: 1_756_000_000_000 }] }),
+        );
+        expect(unified.shipping?.shippedAt).toBeUndefined();
+        expect(unified.shipping?.trackingNumber).toBe('7280123456789');
+      });
+
+      it('omits the block entirely when Trendyol said nothing about a parcel', async () => {
+        const unified = await first(order('TY-P', 'Created'));
+        // Not an all-undefined block: "no parcel yet" and "we did not look" are
+        // different claims and a consumer has to be able to tell them apart.
+        expect(unified.shipping).toBeUndefined();
+      });
+    });
+
     it('should walk every page and merge the results', async () => {
       httpClient.request
         .mockResolvedValueOnce({ content: [order('TY-1', 'Created')], totalPages: 2 })
