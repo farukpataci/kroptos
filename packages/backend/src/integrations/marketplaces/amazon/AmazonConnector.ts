@@ -253,7 +253,7 @@ export class AmazonConnector extends MarketplaceConnector {
     const orders: AmazonOrder[] = [];
     for (const raw of selected) {
       const items = await this.fetchOrderItems(String(raw.AmazonOrderId ?? ''));
-      orders.push(this.toAmazonOrder(raw, items));
+      orders.push(this.observeUnmapped('orders', raw, (row) => this.toAmazonOrder(row, items)));
     }
 
     return orders.map((order) => AmazonMapper.toUnifiedOrder(order));
@@ -301,7 +301,11 @@ export class AmazonConnector extends MarketplaceConnector {
       }),
     );
 
-    return raw.map((product) => AmazonMapper.toUnifiedProduct(this.toAmazonProduct(product)));
+    return raw.map((product) =>
+      AmazonMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toAmazonProduct(row)),
+      ),
+    );
   }
 
   /**

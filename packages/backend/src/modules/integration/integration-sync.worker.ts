@@ -1,4 +1,5 @@
 import { Injectable, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { createHash } from 'crypto';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
@@ -101,6 +102,53 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     if (Number.isFinite(cap) && cap > 0 && available > cap) available = cap;
 
     return available;
+  }
+
+  /**
+   * One `warning` row per endpoint and key set, listing key NAMES only.
+   *
+   * Never values: the payloads these keys come from carry the buyer's name,
+   * phone and address, and a log written to make a bug visible must not be the
+   * bigger leak. `severity: 'warning'` and the default `pending` status put it
+   * in the same queue as anything else waiting for a person — an operator can
+   * resolve or ignore it through the existing endpoints once it is mapped.
+   *
+   * The connector already deduplicates within one run. This adds the second
+   * half: an unresolved row with the same fingerprint means the same finding is
+   * already open, so half-hourly syncs do not fill the table with copies.
+   */
+  private async recordUnmappedKeys(
+    tenantId: string,
+    provider: string,
+    connector: MarketplaceConnector,
+  ) {
+    for (const finding of connector.consumeUnmappedKeys()) {
+      const fingerprint = createHash('sha1').update(finding.keys.join(',')).digest('hex').slice(0, 12);
+      const errorCode = `unmapped_keys:${fingerprint}`;
+
+      const open = await this.prisma.integrationLog.findFirst({
+        where: { tenantId, provider, errorCode, status: 'pending' },
+        select: { id: true },
+      });
+      if (open) continue;
+
+      await this.prisma.integrationLog.create({
+        data: {
+          tenantId,
+          integrationType: 'marketplace',
+          provider,
+          operation: `${finding.endpoint}.unmapped_keys`,
+          severity: 'warning',
+          errorCode,
+          errorMessage:
+            `${provider} ${finding.endpoint} yanıtında eşlenmeyen ${finding.keys.length} alan: ` +
+            finding.keys.join(', '),
+          suggestedAction:
+            'Bu alanlar pazaryerinden geliyor ama dönüştürme fonksiyonu okumuyor. ' +
+            'Gerekliyse eşleyin, gerekmiyorsa kaydı yok sayın.',
+        },
+      });
+    }
   }
 
   private async processJob(data: {
@@ -587,6 +635,12 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         if (rotated) {
           await this.credentialService.persistRotatedCredentials(integrationId, rotated);
         }
+
+        // Fields the marketplace sent and the mapping never read. Written here
+        // rather than inside the connector because this is where the tenant is
+        // known — and written at all because the alternative is what happened
+        // three times: the field arrives, nothing reads it, nobody finds out.
+        await this.recordUnmappedKeys(integration.agencyId, integration.provider, rotatingConnector);
       }
 
       // 4. Update queue status and integration sync time

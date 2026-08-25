@@ -263,7 +263,7 @@ export class PazaramaConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
 
     return raw
-      .map((order) => this.toPazaramaOrder(order))
+      .map((order) => this.observeUnmapped('orders', order, (row) => this.toPazaramaOrder(row)))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(this.settingsStatus(order.status)))
       .map((order) => {
         const unified = PazaramaMapper.toUnifiedOrder(order);
@@ -283,7 +283,11 @@ export class PazaramaConnector extends MarketplaceConnector {
       query: { Approved: this.onlyApproved },
     });
 
-    return raw.map((product) => PazaramaMapper.toUnifiedProduct(this.toPazaramaProduct(product)));
+    return raw.map((product) =>
+      PazaramaMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toPazaramaProduct(row)),
+      ),
+    );
   }
 
   /** Pazarama addresses inventory by the seller's stock code. */

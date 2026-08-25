@@ -229,7 +229,7 @@ export class EtsyConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
 
     return raw
-      .map((receipt) => this.toEtsyReceipt(receipt))
+      .map((receipt) => this.observeUnmapped('receipts', receipt, (row) => this.toEtsyReceipt(row)))
       .filter((receipt) => wantedSet.size === 0 || wantedSet.has(this.settingsStatus(receipt)))
       .map((receipt) => EtsyMapper.toUnifiedOrder(receipt));
   }
@@ -241,7 +241,11 @@ export class EtsyConnector extends MarketplaceConnector {
       state: this.setting<string>('etsy.listingState', 'active'),
     });
 
-    return raw.map((listing) => EtsyMapper.toUnifiedProduct(this.toEtsyListing(listing)));
+    return raw.map((listing) =>
+      EtsyMapper.toUnifiedProduct(
+        this.observeUnmapped('listings', listing, (row) => this.toEtsyListing(row)),
+      ),
+    );
   }
 
   /**

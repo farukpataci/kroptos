@@ -130,7 +130,7 @@ export class PttAvmConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
 
     return raw
-      .map((order) => this.toPttAvmOrder(order))
+      .map((order) => this.observeUnmapped('orders', order, (row) => this.toPttAvmOrder(row)))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(this.settingsStatus(order.status)))
       .map((order) => PttAvmMapper.toUnifiedOrder(order));
   }
@@ -140,7 +140,11 @@ export class PttAvmConnector extends MarketplaceConnector {
 
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(), {});
 
-    return raw.map((product) => PttAvmMapper.toUnifiedProduct(this.toPttAvmProduct(product)));
+    return raw.map((product) =>
+      PttAvmMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toPttAvmProduct(row)),
+      ),
+    );
   }
 
   /** PttAVM addresses inventory by the seller's stock code. */

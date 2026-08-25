@@ -132,7 +132,7 @@ export class CicekSepetiConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
 
     return raw
-      .map((order) => this.toCicekSepetiOrder(order))
+      .map((order) => this.observeUnmapped('orders', order, (row) => this.toCicekSepetiOrder(row)))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(order.status.toLowerCase()))
       .map((order) => CicekSepetiMapper.toUnifiedOrder(order));
   }
@@ -142,7 +142,11 @@ export class CicekSepetiConnector extends MarketplaceConnector {
 
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(), 'productList', {});
 
-    return raw.map((product) => CicekSepetiMapper.toUnifiedProduct(this.toCicekSepetiProduct(product)));
+    return raw.map((product) =>
+      CicekSepetiMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toCicekSepetiProduct(row)),
+      ),
+    );
   }
 
   /** ÇiçekSepeti addresses inventory by the seller's stock code. */

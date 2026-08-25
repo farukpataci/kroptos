@@ -167,7 +167,7 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
 
     return raw
-      .map((order) => this.toTrendyolOrder(order))
+      .map((order) => this.observeUnmapped('orders', order, (row) => this.toTrendyolOrder(row)))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(order.status.toLowerCase()))
       .map((order) => {
         const unified = TrendyolMapper.toUnifiedOrder(order, {
@@ -191,7 +191,11 @@ export abstract class TrendyolBaseConnector extends MarketplaceConnector {
 
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(sellerId), {});
 
-    return raw.map((product) => TrendyolMapper.toUnifiedProduct(this.toTrendyolProduct(product)));
+    return raw.map((product) =>
+      TrendyolMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toTrendyolProduct(row)),
+      ),
+    );
   }
 
   /**

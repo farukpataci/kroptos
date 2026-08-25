@@ -9,6 +9,7 @@ import {
 } from './MarketplaceTypes';
 import { MarketplaceHttpClient, MarketplaceHttpError } from './MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from './MarketplaceRateLimiter';
+import { UnmappedKeyFinding, UnmappedKeyRecorder } from './UnmappedKeys';
 
 export abstract class MarketplaceConnector {
   protected constructor(
@@ -62,6 +63,47 @@ export abstract class MarketplaceConnector {
     const rotated = this.rotatedCredentials;
     this.rotatedCredentials = undefined;
     return rotated && Object.keys(rotated).length > 0 ? rotated : undefined;
+  }
+
+  // --------------------------------------------------------------------------
+  // Fields the payload had and the mapping did not
+  //
+  // Three times now a marketplace has been sending a field that the narrow
+  // function turning its body into our own type never read. Nothing failed;
+  // the value simply never arrived, and it took a seller to notice.
+  //
+  // Same handover as the rotated credentials above, for the same reason: a
+  // connector has no database and no tenant context. It records what it
+  // dropped, the caller collects and writes it. See UnmappedKeys for why this
+  // is a recording proxy rather than a list of known keys.
+  // --------------------------------------------------------------------------
+
+  private readonly unmappedKeys = new UnmappedKeyRecorder(this.provider);
+
+  /**
+   * Wraps one narrow call. `endpoint` names the read the body came from, so a
+   * finding says which response is losing the field.
+   *
+   *   return this.observeUnmapped('orders', raw, (row) => this.toOrder(row));
+   *
+   * A provider whose body is already `Record<string, any>` wraps it as is; one
+   * that casts to a typed interface wraps the raw object BEFORE the cast —
+   * after it, the keys the type does not declare are invisible here too.
+   */
+  protected observeUnmapped<TRaw extends object, TOut>(
+    endpoint: string,
+    raw: TRaw,
+    narrow: (watched: TRaw) => TOut,
+  ): TOut {
+    return this.unmappedKeys.observe(endpoint, raw, narrow);
+  }
+
+  /**
+   * What this connector's narrow functions did not read, deduplicated per
+   * endpoint and key set. Key names only — never values. Clears on read.
+   */
+  consumeUnmappedKeys(): UnmappedKeyFinding[] {
+    return this.unmappedKeys.consume();
   }
 
   /**

@@ -138,7 +138,7 @@ export class IdefixConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => status.toLowerCase()));
 
     return raw
-      .map((order) => this.toIdefixOrder(order))
+      .map((order) => this.observeUnmapped('orders', order, (row) => this.toIdefixOrder(row)))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(this.settingsStatus(order.status)))
       .map((order) => IdefixMapper.toUnifiedOrder(order));
   }
@@ -148,7 +148,11 @@ export class IdefixConnector extends MarketplaceConnector {
 
     const raw = await this.fetchAllPages<Record<string, any>>(PATHS.products(this.vendorId), {});
 
-    return raw.map((product) => IdefixMapper.toUnifiedProduct(this.toIdefixProduct(product)));
+    return raw.map((product) =>
+      IdefixMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toIdefixProduct(row)),
+      ),
+    );
   }
 
   /** idefix addresses inventory by the merchant's own SKU. */

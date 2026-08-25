@@ -151,7 +151,7 @@ export class HepsiburadaConnector extends MarketplaceConnector {
     const wantedSet = new Set(wanted.map((status) => this.normaliseStatus(status)));
 
     return raw
-      .map((order) => this.toHepsiburadaOrder(order))
+      .map((order) => this.observeUnmapped('orders', order, (row) => this.toHepsiburadaOrder(row)))
       .filter((order) => wantedSet.size === 0 || wantedSet.has(this.normaliseStatus(order.status)))
       .map((order) => HepsiburadaMapper.toUnifiedOrder(order));
   }
@@ -162,7 +162,9 @@ export class HepsiburadaConnector extends MarketplaceConnector {
     const raw = await this.fetchAll<Record<string, any>>('listing', PATHS.listings(merchantId), {});
 
     return raw.map((product) =>
-      HepsiburadaMapper.toUnifiedProduct(this.toHepsiburadaProduct(product)),
+      HepsiburadaMapper.toUnifiedProduct(
+        this.observeUnmapped('products', product, (row) => this.toHepsiburadaProduct(row)),
+      ),
     );
   }
 
