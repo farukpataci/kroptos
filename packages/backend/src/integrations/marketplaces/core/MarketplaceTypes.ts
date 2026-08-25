@@ -33,6 +33,29 @@ export interface MarketplaceOrderItem {
   totalPrice: number;
 }
 
+/**
+ * What the marketplace already knows about the parcel, when it arranges the
+ * carrier itself. Every field optional: a marketplace that has not dispatched
+ * the order yet sends none of them, and a provider that was never measured
+ * leaves the whole block undefined rather than having a value guessed for it.
+ *
+ * Deliberately NOT a copy of the raw payload. A `raw` passthrough would reach
+ * every log line and DTO that spreads an order, and the raw shipment package
+ * carries the recipient's name, phone and address — see the address fields
+ * above, which are handed over one at a time for exactly that reason.
+ */
+export interface MarketplaceOrderShipping {
+  /** The carrier's own tracking number. String even where the payload sends a
+   * number: it is an identifier, not a quantity, and leading zeros matter. */
+  trackingNumber?: string;
+  /** Carrier as the marketplace names it, e.g. 'Trendyol Express'. */
+  carrierName?: string;
+  trackingUrl?: string;
+  /** The marketplace's id for the parcel, when the parcel has its own id. */
+  packageId?: string;
+  shippedAt?: Date;
+}
+
 export interface MarketplaceOrder extends MarketplaceModeStamp {
   /**
    * The number this order is stored and deduplicated under. For a marketplace
@@ -77,6 +100,14 @@ export interface MarketplaceOrder extends MarketplaceModeStamp {
   currency: string;
   source: string; // provider name, e.g., 'trendyol', 'hepsiburada', etc.
   items: MarketplaceOrderItem[];
+  /**
+   * Carrier details the marketplace fulfils on its own. Not the shipping
+   * address — that stays in the `shipping*` fields above.
+   *
+   * Nothing consumes this yet; the field exists so a provider that has the
+   * data can carry it instead of dropping it on the floor.
+   */
+  shipping?: MarketplaceOrderShipping;
 }
 
 export interface StockUpdateResult extends MarketplaceModeStamp {
