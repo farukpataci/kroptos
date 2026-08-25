@@ -11,6 +11,7 @@ import {
   isShipmentStatus,
   LabelFormat,
   RateQuote,
+  OWN_CARRIER_SHIPMENT,
   ShipmentProblem,
   STUCK_CLAIM_MINUTES,
 } from '../../integrations/carriers/core/CarrierTypes';
@@ -112,15 +113,20 @@ export class ShipmentService {
    * filter and the counter cannot drift apart about what "stuck" means.
    */
   private problemWhere(problem: ShipmentProblem): Prisma.ShipmentWhereInput {
+    // Both buckets describe a carrier call of ours that went wrong, so both are
+    // restricted to parcels we bought — see OWN_CARRIER_SHIPMENT. Without it a
+    // marketplace parcel lands in an operator queue nobody can act on: there is
+    // no barcode of ours to chase and no carrier panel to close it from.
     if (problem === 'stuck_claim') {
       return {
+        ...OWN_CARRIER_SHIPMENT,
         status: 'created',
         trackingNumber: null,
         createdAt: { lt: new Date(Date.now() - STUCK_CLAIM_MINUTES * 60_000) },
       };
     }
     // Cancelled here, not at the carrier: the barcode is live and will be billed.
-    return { carrierCancelError: { not: null }, carrierCancelledAt: null };
+    return { ...OWN_CARRIER_SHIPMENT, carrierCancelError: { not: null }, carrierCancelledAt: null };
   }
 
   /**

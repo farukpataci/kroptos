@@ -2,7 +2,10 @@ import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { Queue, Worker } from 'bullmq';
 import { Shipment } from '@prisma/client';
-import { POLLABLE_SHIPMENT_STATUSES } from '../../integrations/carriers/core/CarrierTypes';
+import {
+  OWN_CARRIER_SHIPMENT,
+  POLLABLE_SHIPMENT_STATUSES,
+} from '../../integrations/carriers/core/CarrierTypes';
 import { CarrierIntegrationService } from './carrier-integration.service';
 import { ShipmentService } from './shipment.service';
 import { TenantScope } from './tenant-scope';
@@ -115,9 +118,15 @@ export class CarrierTrackingWorker implements OnModuleInit, OnModuleDestroy {
     const pollable = await this.prisma.shipment.findMany({
       where: {
         deletedAt: null,
+        // The source filter, and the one that matters: only parcels we bought a
+        // barcode for. A marketplace parcel carries a tracking number too, and
+        // once it reaches handed_over the status list below would wave it
+        // through — into a carrier we have no account with for that barcode.
+        ...OWN_CARRIER_SHIPMENT,
+        // Quota, not correctness: a parcel still on our side of the counter has
+        // nothing for the carrier to report yet.
         status: { in: [...POLLABLE_SHIPMENT_STATUSES] },
         trackingNumber: { not: null },
-        carrierIntegrationId: { not: null },
       },
       select: {
         id: true,

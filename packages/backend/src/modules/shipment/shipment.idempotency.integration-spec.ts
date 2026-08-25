@@ -439,6 +439,9 @@ describe('F-4: shipment idempotency against the real database', () => {
       publicId: `shp_${suffix}_${label}`,
       agencyId,
       storeId,
+      // Every shipment the service creates has one; a row without it is not
+      // ours to chase — see the marketplace case at the end of this block.
+      carrierIntegrationId,
       provider: 'MOCK',
       status: 'created',
       paymentType: 'sender_pays',
@@ -513,6 +516,37 @@ describe('F-4: shipment idempotency against the real database', () => {
 
       const counts = (await (await call('/api/shipments/problems')).json()) as any;
       expect(counts.carrierCancelFailed).toBe(0);
+    }, 60000);
+
+    it('leaves a marketplace parcel out of both buckets', async () => {
+      // Trendyol Express sold this barcode, not us: carrierIntegrationId null.
+      // Both rows would qualify on every other condition, so if either bucket
+      // counted them the filter would be the status/error pair alone.
+      const foreignCancel = await prisma.shipment.create({
+        data: {
+          ...claimRow('mpcancel', 1),
+          carrierIntegrationId: null,
+          status: 'cancelled',
+          trackingNumber: `TRK-${suffix}-mp`,
+          cancelledAt: new Date(),
+          carrierCancelledAt: null,
+          carrierCancelError: 'Pazaryeri iptali bize kapali',
+        },
+      });
+      const foreignClaim = await prisma.shipment.create({
+        data: { ...claimRow('mpclaim', 16), carrierIntegrationId: null },
+      });
+      stuckIds.push(foreignCancel.id, foreignClaim.id);
+
+      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      expect(counts.carrierCancelFailed).toBe(0);
+      expect(counts.stuckClaims).toBe(0);
+      expect(counts.total).toBe(0);
+
+      const cancels = (await (await call('/api/shipments?problem=carrier_cancel_failed')).json()) as any;
+      expect(cancels.items).toHaveLength(0);
+      const claims = (await (await call('/api/shipments?problem=stuck_claim')).json()) as any;
+      expect(claims.items).toHaveLength(0);
     }, 60000);
 
     it('rejects a problem filter it does not know', async () => {
@@ -1039,6 +1073,38 @@ describe('F-4: shipment idempotency against the real database', () => {
       const after = await prisma.shipment.findUnique({ where: { id: first.id } });
       expect(after?.status).toBe('out_for_delivery');
       expect(after?.carrierStatusCode).toBe('MOCK_OUT');
+    }, 60000);
+
+    it('never asks a carrier about a parcel the marketplace shipped', async () => {
+      // handed_over is in POLLABLE_SHIPMENT_STATUSES, so status alone would put
+      // this row in the batch. What keeps it out is having no connection of
+      // ours — nobody here bought this barcode and no carrier of ours knows it.
+      const ours = await prisma.shipment.create({ data: pollRow('mine', { status: 'handed_over' }) });
+      const marketplace = await prisma.shipment.create({
+        data: pollRow('mp', { status: 'handed_over', carrierIntegrationId: null }),
+      });
+      sweptIds.push(ours.id, marketplace.id);
+
+      answerWith((trackingNumber) => ({
+        trackingNumber,
+        status: 'in_transit',
+        carrierStatusCode: 'MOCK_TRANSFER',
+        events: [event()],
+      }));
+
+      await app.get(CarrierTrackingWorker).sweep();
+
+      const batches = track.mock.calls.filter((args: any[]) =>
+        args[0].some((n: string) => n.startsWith(`TRK-${suffix}-SW-`)),
+      );
+      expect(batches).toHaveLength(1);
+      expect(batches[0][0]).toContain(ours.trackingNumber);
+      expect(batches[0][0]).not.toContain(marketplace.trackingNumber);
+
+      // And the row itself is untouched: no status written from a carrier that
+      // was never asked.
+      const after = await prisma.shipment.findUnique({ where: { id: marketplace.id } });
+      expect(after?.status).toBe('handed_over');
     }, 60000);
 
     it('keeps following the return leg, and stops once the parcel is back', async () => {

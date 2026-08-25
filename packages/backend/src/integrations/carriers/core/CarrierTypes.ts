@@ -104,6 +104,22 @@ export const POLLABLE_SHIPMENT_STATUSES: readonly ShipmentStatus[] = [
  * `carrier_cancel_failed` we cancelled, the carrier did not. The barcode is
  *                         live at the carrier and will be invoiced.
  */
+/**
+ * A parcel that went out through one of OUR carrier connections, as a where
+ * fragment. `carrierIntegrationId` is null exactly when nobody here bought the
+ * barcode — a marketplace that ships the order on its own fills the tracking
+ * fields but never a CarrierIntegration row.
+ *
+ * This, not the status list, is what keeps a marketplace parcel out of the
+ * carrier machinery. Status is a quota filter: it stops us asking about a
+ * parcel that has nothing to report yet. Statuses change — a marketplace parcel
+ * reaching `handed_over` would walk straight into a sweep filtered by status
+ * alone, and we would be asking Yurtiçi about a barcode Trendyol Express sold.
+ * The same reasoning covers the problem buckets: a `carrierCancelError` on a
+ * row we never bought is not a live barcode we are being billed for.
+ */
+export const OWN_CARRIER_SHIPMENT = { carrierIntegrationId: { not: null } };
+
 export const SHIPMENT_PROBLEMS = ['stuck_claim', 'carrier_cancel_failed'] as const;
 export type ShipmentProblem = (typeof SHIPMENT_PROBLEMS)[number];
 
