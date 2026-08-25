@@ -87,13 +87,26 @@ export class MockCarrierConnector extends CarrierConnector {
     this.assertTestMode();
     await this.throttle();
 
+    const now = Date.now();
+
+    // Two events, not one, and with their own codes: the event's stored unique
+    // key is built from carrierStatusCode, so sample data that repeats a single
+    // code would model a shape no real carrier produces and would let a mapper
+    // that collapses history look correct here.
     return trackingNumbers.map((trackingNumber) => ({
       trackingNumber,
       status: 'in_transit',
       carrierStatusCode: 'MOCK_IN_TRANSIT',
       events: [
         {
-          at: new Date(),
+          at: new Date(now - 3 * 60 * 60 * 1000),
+          status: 'handed_over',
+          carrierStatusCode: 'MOCK_ACCEPTED',
+          description: 'Gönderi taşıyıcıya teslim edildi (örnek veri)',
+          location: 'Tuzla',
+        },
+        {
+          at: new Date(now),
           status: 'in_transit',
           carrierStatusCode: 'MOCK_IN_TRANSIT',
           description: 'Gönderi transfer merkezinde (örnek veri)',

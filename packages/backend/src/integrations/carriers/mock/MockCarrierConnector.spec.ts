@@ -1,7 +1,30 @@
 import { ServiceUnavailableException } from '@nestjs/common';
 import { CarrierHttpClient } from '../core/CarrierHttpClient';
 import { CarrierRateLimiter } from '../core/CarrierRateLimiter';
+import { describeCarrierConformance } from '../core/__tests__/connector-conformance';
 import { MockCarrierConnector } from './MockCarrierConnector';
+
+/**
+ * The shared contract. The mock is the first subject on purpose: if the suite
+ * cannot pass against a connector with no upstream at all, the clauses are
+ * wrong and every real carrier would inherit that.
+ */
+describeCarrierConformance({
+  provider: 'MOCK',
+  create: (ctx) =>
+    new MockCarrierConnector(ctx.credentials, ctx.httpClient, ctx.rateLimiter, ctx.isTestMode),
+  credentials: {},
+  // Genuinely none: there is nothing upstream to authenticate against. Any real
+  // carrier listing `[]` here is skipping a clause it should be passing.
+  requiredCredentials: [],
+  // No upstream codes exist, so everything the mock could ever be handed is
+  // unknown — and unknown means in_transit.
+  normalizeStatus: () => 'in_transit',
+  capabilities: {
+    simulationOnly: true,
+    findByReference: true,
+  },
+});
 
 /**
  * The mock refuses to run outside test mode.

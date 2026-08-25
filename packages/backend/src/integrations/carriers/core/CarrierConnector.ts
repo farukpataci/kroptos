@@ -1,3 +1,4 @@
+import { BadRequestException } from '@nestjs/common';
 import { CarrierHttpClient, CarrierHttpError } from './CarrierHttpClient';
 import { CarrierRateLimiter } from './CarrierRateLimiter';
 import {
@@ -66,7 +67,12 @@ export abstract class CarrierConnector {
     }
 
     if (missing.length > 0) {
-      throw new Error(`${this.displayName} kimlik bilgileri eksik: ${missing.join(', ')}`);
+      // BadRequestException, not Error: the operator left a field blank, and a
+      // bare Error surfaces to them as a 500 "sunucu hatası" for something they
+      // can fix in the connection form in ten seconds.
+      throw new BadRequestException(
+        `${this.displayName} kimlik bilgileri eksik: ${missing.join(', ')}`,
+      );
     }
 
     return resolved;
