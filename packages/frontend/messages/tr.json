@@ -3929,241 +3929,238 @@
     }
   },
   "productStock": {
-  "title": "Stok Kontrolü",
-  "subtitle": "SKU bazında stok durumu, kritik eşikler ve hızlı stok düzeltme.",
-  "loadFailed": "Stok bilgisi yüklenemedi.",
-  "storeRequired": {
-    "title": "Mağaza Seçimi Gerekli",
-    "desc": "Stok kayıtları mağaza bazlıdır. Devam etmek için üst menüden bir mağaza seçin."
-  },
-  "kpi": {
-    "totalSkus": "Toplam SKU",
-    "critical": "Kritik Stok",
-    "outOfStock": "Tükenen",
-    "reserved": "Rezerve"
-  },
-  "filters": {
-    "search": "Ara",
-    "searchHint": "Ürün adı, SKU veya barkod",
-    "warehouse": "Depo",
-    "allWarehouses": "Tüm depolar",
-    "category": "Kategori",
-    "allCategories": "Tüm kategoriler",
-    "onlyCritical": "Yalnız kritik altı"
-  },
-  "actions": {
-    "selectAll": "Tümünü seç",
-    "adjust": "Hızlı stok düzeltme",
-    "bulkUpdate": "Toplu stok güncelle",
-    "bulkSoon": "Toplu güncelleme için sunucu ucu henüz yok."
-  },
-  "columns": {
-    "image": "Görsel",
-    "name": "Ürün Adı",
-    "sku": "SKU",
-    "barcode": "Barkod",
-    "total": "Toplam Stok",
-    "reserved": "Rezerve",
-    "available": "Kullanılabilir",
-    "reorderLevel": "Kritik Eşik",
-    "warehouses": "Depo Dağılımı",
-    "lastMovement": "Son Hareket"
-  },
-  "level": {
-    "out": "Tükendi",
-    "critical": "Kritik",
-    "healthy": "Yeterli"
-  },
-  "empty": {
-    "loading": "Stok bilgisi yükleniyor…",
-    "title": "Kayıt bulunamadı",
-    "desc": "Bu mağazada filtrelerinize uyan stok kaydı yok."
-  },
-  "pagination": {
-    "showing": "{total} kayıttan {from}-{to} arası",
-    "next": "İleri"
-  },
-  "adjust": {
-    "title": "Hızlı Stok Düzeltme",
-    "type": "Hareket Türü",
-    "types": {
-      "Inbound": "Giriş",
-      "Outbound": "Çıkış",
-      "Transfer": "Transfer",
-      "Damage": "Hasar",
-      "Lost": "Kayıp",
-      "Cycle_Count": "Sayım"
+    "title": "Stok Kontrolü",
+    "subtitle": "SKU bazında stok durumu, kritik eşikler ve hızlı stok düzeltme.",
+    "loadFailed": "Stok bilgisi yüklenemedi.",
+    "storeRequired": {
+      "title": "Mağaza Seçimi Gerekli",
+      "desc": "Stok kayıtları mağaza bazlıdır. Devam etmek için üst menüden bir mağaza seçin."
     },
-    "quantity": "Miktar",
-    "quantityHint": "Örn. 25",
-    "reason": "Sebep",
-    "reasonHint": "Örn. Sayım farkı",
-    "note": "Not",
-    "submit": "Stoku Güncelle",
-    "failed": "Stok düzeltmesi kaydedilemedi."
-  }
+    "kpi": {
+      "totalSkus": "Toplam SKU",
+      "critical": "Kritik Stok",
+      "outOfStock": "Tükenen",
+      "reserved": "Rezerve"
+    },
+    "filters": {
+      "search": "Ara",
+      "searchHint": "Ürün adı, SKU veya barkod",
+      "category": "Kategori",
+      "allCategories": "Tüm kategoriler",
+      "onlyCritical": "Yalnız kritik altı"
+    },
+    "actions": {
+      "selectAll": "Tümünü seç",
+      "adjust": "Hızlı stok düzeltme",
+      "bulkUpdate": "Toplu stok güncelle",
+      "bulkSoon": "Toplu güncelleme için sunucu ucu henüz yok."
+    },
+    "columns": {
+      "image": "Görsel",
+      "name": "Ürün Adı",
+      "sku": "SKU",
+      "barcode": "Barkod",
+      "total": "Toplam Stok",
+      "reserved": "Rezerve",
+      "available": "Kullanılabilir",
+      "reorderLevel": "Kritik Eşik",
+      "updatedAt": "Güncellenme"
+    },
+    "level": {
+      "out": "Tükendi",
+      "critical": "Kritik",
+      "healthy": "Yeterli"
+    },
+    "empty": {
+      "loading": "Stok bilgisi yükleniyor…",
+      "title": "Kayıt bulunamadı",
+      "desc": "Bu mağazada filtrelerinize uyan stok kaydı yok."
+    },
+    "pagination": {
+      "showing": "{total} kayıttan {from}-{to} arası",
+      "next": "İleri"
+    },
+    "adjust": {
+      "title": "Hızlı Stok Düzeltme",
+      "type": "Hareket Türü",
+      "types": {
+        "Inbound": "Giriş",
+        "Outbound": "Çıkış",
+        "Transfer": "Transfer",
+        "Damage": "Hasar",
+        "Lost": "Kayıp",
+        "Cycle_Count": "Sayım"
+      },
+      "quantity": "Miktar",
+      "quantityHint": "Örn. 25",
+      "reason": "Sebep",
+      "reasonHint": "Örn. Sayım farkı",
+      "note": "Not",
+      "submit": "Stoku Güncelle",
+      "failed": "Stok düzeltmesi kaydedilemedi."
+    }
   },
   "productAutomation": {
-  "title": "Otomasyonlar",
-  "subtitle": "Ürün ve stok tetikleyicileriyle kendiliğinden çalışan kurallar.",
-  "storeRequired": {
-    "title": "Mağaza Seçimi Gerekli",
-    "desc": "Otomasyon kuralları mağaza bazlıdır. Üst menüden bir mağaza seçin."
-  },
-  "actions": {
-    "newRule": "Yeni Kural"
-  },
-  "empty": {
-    "title": "Henüz kural yok",
-    "desc": "Kural listesi sunucudan gelir; bu uç henüz kurulmadı. Uydurma kart basılmıyor."
-  },
-  "scopeNote": "Buradaki kurallar ürün ve stok tetikleyicileridir. Sipariş kuralları ayrı sayfadadır.",
-  "triggers": {
-    "stock_below": "Stok eşiğin altına düştü",
-    "price_changed": "Fiyat değişti",
-    "product_created": "Yeni ürün eklendi",
-    "marketplace_stock_diff": "Pazaryeri stok farkı"
-  },
-  "conditionFields": {
-    "category": "Kategori",
-    "brand": "Marka",
-    "warehouse": "Depo",
-    "price_range": "Fiyat aralığı"
-  },
-  "actionsList": {
-    "unpublish_marketplace": "Pazaryerinde yayından kaldır",
-    "update_price": "Fiyat güncelle",
-    "add_tag": "Etiket ekle",
-    "send_notification": "Bildirim gönder",
-    "create_purchase_request": "Tedarik talebi oluştur"
-  },
-  "modal": {
-    "title": "Kural Oluştur",
-    "subtitle": "Eğer koşul sağlanırsa aksiyon çalışır.",
-    "name": "Kural Adı",
-    "nameHint": "Örn. Kritik stokta yayından kaldır",
-    "trigger": "Tetikleyici",
-    "conditions": "Koşullar",
-    "addCondition": "Koşul ekle",
-    "conditionField": "Alan",
-    "conditionValue": "Değer",
-    "removeCondition": "Koşulu kaldır",
-    "action": "Aksiyon",
-    "notWired": "Bu formun arkasında sunucu ucu yok; kaydetme kapalı."
-  }
+    "title": "Otomasyonlar",
+    "subtitle": "Ürün ve stok tetikleyicileriyle kendiliğinden çalışan kurallar.",
+    "storeRequired": {
+      "title": "Mağaza Seçimi Gerekli",
+      "desc": "Otomasyon kuralları mağaza bazlıdır. Üst menüden bir mağaza seçin."
+    },
+    "actions": {
+      "newRule": "Yeni Kural"
+    },
+    "empty": {
+      "title": "Henüz kural yok",
+      "desc": "Kural listesi sunucudan gelir; bu uç henüz kurulmadı. Uydurma kart basılmıyor."
+    },
+    "scopeNote": "Buradaki kurallar ürün ve stok tetikleyicileridir. Sipariş kuralları ayrı sayfadadır.",
+    "triggers": {
+      "stock_below": "Stok eşiğin altına düştü",
+      "price_changed": "Fiyat değişti",
+      "product_created": "Yeni ürün eklendi",
+      "marketplace_stock_diff": "Pazaryeri stok farkı"
+    },
+    "conditionFields": {
+      "category": "Kategori",
+      "brand": "Marka",
+      "warehouse": "Depo",
+      "price_range": "Fiyat aralığı"
+    },
+    "actionsList": {
+      "unpublish_marketplace": "Pazaryerinde yayından kaldır",
+      "update_price": "Fiyat güncelle",
+      "add_tag": "Etiket ekle",
+      "send_notification": "Bildirim gönder",
+      "create_purchase_request": "Tedarik talebi oluştur"
+    },
+    "modal": {
+      "title": "Kural Oluştur",
+      "subtitle": "Eğer koşul sağlanırsa aksiyon çalışır.",
+      "name": "Kural Adı",
+      "nameHint": "Örn. Kritik stokta yayından kaldır",
+      "trigger": "Tetikleyici",
+      "conditions": "Koşullar",
+      "addCondition": "Koşul ekle",
+      "conditionField": "Alan",
+      "conditionValue": "Değer",
+      "removeCondition": "Koşulu kaldır",
+      "action": "Aksiyon",
+      "notWired": "Bu formun arkasında sunucu ucu yok; kaydetme kapalı."
+    }
   },
   "productTransfer": {
-  "title": "İçe/Dışa Aktarma",
-  "subtitle": "Ürünleri dosyadan içe aktarın veya mevcut kataloğu dışa aktarın.",
-  "storeRequired": {
-    "title": "Mağaza Seçimi Gerekli",
-    "desc": "Aktarma işlemleri mağaza bazlıdır. Üst menüden bir mağaza seçin."
-  },
-  "notWired": "Bu adımın arkasında sunucu ucu yok; gönderim kapalı.",
-  "tabs": {
-    "import": "İçe Aktar",
-    "export": "Dışa Aktar"
-  },
-  "import": {
-    "steps": {
-      "upload": "Dosya Yükleme",
-      "mapping": "Kolon Eşleme",
-      "review": "Doğrulama"
+    "title": "İçe/Dışa Aktarma",
+    "subtitle": "Ürünleri dosyadan içe aktarın veya mevcut kataloğu dışa aktarın.",
+    "storeRequired": {
+      "title": "Mağaza Seçimi Gerekli",
+      "desc": "Aktarma işlemleri mağaza bazlıdır. Üst menüden bir mağaza seçin."
     },
-    "dropzone": "Dosya seçin veya sürükleyip bırakın",
-    "dropzoneHint": "CSV, XLSX veya XML",
-    "downloadTemplate": "Örnek şablonu indir",
-    "noColumns": "Dosya kolonları sunucuda okunur. Bu uç kurulana kadar eşleme tablosu boş kalır.",
-    "fileColumn": "Dosya Kolonu",
-    "targetField": "KroptOS Alanı",
-    "fields": {
-      "sku": "SKU",
-      "name": "Ürün Adı",
-      "barcode": "Barkod",
-      "price": "Fiyat",
-      "stockQuantity": "Stok",
-      "categoryId": "Kategori",
-      "ignore": "Yok say"
+    "notWired": "Bu adımın arkasında sunucu ucu yok; gönderim kapalı.",
+    "tabs": {
+      "import": "İçe Aktar",
+      "export": "Dışa Aktar"
     },
-    "validRows": "Geçerli satır",
-    "invalidRows": "Hatalı satır",
-    "previous": "Geri",
-    "next": "İleri",
-    "submit": "İçe Aktar"
-  },
-  "export": {
-    "from": "Başlangıç",
-    "to": "Bitiş",
-    "status": "Durum",
-    "allStatuses": "Tüm durumlar",
-    "statusActive": "Aktif",
-    "statusPassive": "Pasif",
-    "columns": "Kolonlar",
-    "column": {
-      "sku": "SKU",
-      "name": "Ürün Adı",
-      "barcode": "Barkod",
-      "price": "Fiyat",
-      "costPrice": "Maliyet",
-      "stockQuantity": "Stok",
-      "category": "Kategori",
+    "import": {
+      "steps": {
+        "upload": "Dosya Yükleme",
+        "mapping": "Kolon Eşleme",
+        "review": "Doğrulama"
+      },
+      "dropzone": "Dosya seçin veya sürükleyip bırakın",
+      "dropzoneHint": "CSV, XLSX veya XML",
+      "downloadTemplate": "Örnek şablonu indir",
+      "noColumns": "Dosya kolonları sunucuda okunur. Bu uç kurulana kadar eşleme tablosu boş kalır.",
+      "fileColumn": "Dosya Kolonu",
+      "targetField": "KroptOS Alanı",
+      "fields": {
+        "sku": "SKU",
+        "name": "Ürün Adı",
+        "barcode": "Barkod",
+        "price": "Fiyat",
+        "stockQuantity": "Stok",
+        "categoryId": "Kategori",
+        "ignore": "Yok say"
+      },
+      "validRows": "Geçerli satır",
+      "invalidRows": "Hatalı satır",
+      "previous": "Geri",
+      "next": "İleri",
+      "submit": "İçe Aktar"
+    },
+    "export": {
+      "from": "Başlangıç",
+      "to": "Bitiş",
       "status": "Durum",
-      "createdAt": "Oluşturulma"
-    },
-    "format": "Format",
-    "submit": "Dışa Aktar",
-    "history": "Geçmiş Aktarımlar",
-    "historyEmpty": "Aktarım geçmişi sunucuda tutulur; bu uç henüz kurulmadı."
-  }
+      "allStatuses": "Tüm durumlar",
+      "statusActive": "Aktif",
+      "statusPassive": "Pasif",
+      "columns": "Kolonlar",
+      "column": {
+        "sku": "SKU",
+        "name": "Ürün Adı",
+        "barcode": "Barkod",
+        "price": "Fiyat",
+        "costPrice": "Maliyet",
+        "stockQuantity": "Stok",
+        "category": "Kategori",
+        "status": "Durum",
+        "createdAt": "Oluşturulma"
+      },
+      "format": "Format",
+      "submit": "Dışa Aktar",
+      "history": "Geçmiş Aktarımlar",
+      "historyEmpty": "Aktarım geçmişi sunucuda tutulur; bu uç henüz kurulmadı."
+    }
   },
   "productSettings": {
-  "title": "Ürün Ayarları",
-  "subtitle": "Katalog, stok, fiyatlandırma ve görsel kuralları.",
-  "storeRequired": {
-    "title": "Mağaza Seçimi Gerekli",
-    "desc": "Ürün ayarları mağaza bazlıdır. Üst menüden bir mağaza seçin."
-  },
-  "notWired": "Bu ayarların arkasında sunucu ucu yok; kaydetme kapalı ve değerler yenilemede sıfırlanır.",
-  "tabs": {
-    "general": "Genel",
-    "stock": "Stok",
-    "pricing": "Fiyatlandırma",
-    "media": "Görsel & Medya",
-    "categoryMapping": "Kategori Eşleme"
-  },
-  "general": {
-    "currency": "Varsayılan Para Birimi",
-    "taxRate": "Varsayılan KDV Oranı (%)",
-    "skuTemplate": "SKU / Barkod Format Şablonu",
-    "skuTemplateHint": "{CATEGORY} ve {SEQ} yer tutucuları kullanılabilir.",
-    "nameMaxLength": "Ürün Adı Karakter Limiti"
-  },
-  "stock": {
-    "reorderLevel": "Varsayılan Kritik Stok Eşiği",
-    "reorderLevelHint": "Yeni ürünlere uygulanır; satır bazında değiştirilebilir.",
-    "outOfStockBehaviour": "Stok Yetersizken Pazaryerinde",
-    "behaviourUnpublish": "Yayından kaldır",
-    "behaviourZeroStock": "Stok 0 gönder",
-    "allowNegative": "Negatif stoka izin ver",
-    "autoReserve": "Sipariş alındığında otomatik rezervasyon"
-  },
-  "pricing": {
-    "margin": "Varsayılan Kâr Marjı (%)",
-    "rounding": "Yuvarlama Kuralı",
-    "roundNone": "Yuvarlama yok",
-    "round099": "En yakın ,99",
-    "roundInt": "En yakın tam sayı",
-    "commission": "Pazaryeri Komisyon Varsayılanı (%)"
-  },
-  "media": {
-    "maxImages": "Maksimum Görsel Sayısı",
-    "minResolution": "Minimum Çözünürlük (px)",
-    "minResolutionHint": "Altında kalan görseller için uyarı gösterilir.",
-    "requirePrimaryImage": "Ana görsel zorunlu"
-  },
-  "categoryMapping": {
-    "desc": "Kategori eşleme ekranı entegrasyon tarafında yaşar. Burada kopyası tutulmaz.",
-    "open": "Kategori eşlemeyi aç"
-  }
+    "title": "Ürün Ayarları",
+    "subtitle": "Katalog, stok, fiyatlandırma ve görsel kuralları.",
+    "storeRequired": {
+      "title": "Mağaza Seçimi Gerekli",
+      "desc": "Ürün ayarları mağaza bazlıdır. Üst menüden bir mağaza seçin."
+    },
+    "notWired": "Bu ayarların arkasında sunucu ucu yok; kaydetme kapalı ve değerler yenilemede sıfırlanır.",
+    "tabs": {
+      "general": "Genel",
+      "stock": "Stok",
+      "pricing": "Fiyatlandırma",
+      "media": "Görsel & Medya",
+      "categoryMapping": "Kategori Eşleme"
+    },
+    "general": {
+      "currency": "Varsayılan Para Birimi",
+      "taxRate": "Varsayılan KDV Oranı (%)",
+      "skuTemplate": "SKU / Barkod Format Şablonu",
+      "skuTemplateHint": "{CATEGORY} ve {SEQ} yer tutucuları kullanılabilir.",
+      "nameMaxLength": "Ürün Adı Karakter Limiti"
+    },
+    "stock": {
+      "reorderLevel": "Varsayılan Kritik Stok Eşiği",
+      "reorderLevelHint": "Yeni ürünlere uygulanır; satır bazında değiştirilebilir.",
+      "outOfStockBehaviour": "Stok Yetersizken Pazaryerinde",
+      "behaviourUnpublish": "Yayından kaldır",
+      "behaviourZeroStock": "Stok 0 gönder",
+      "allowNegative": "Negatif stoka izin ver",
+      "autoReserve": "Sipariş alındığında otomatik rezervasyon"
+    },
+    "pricing": {
+      "margin": "Varsayılan Kâr Marjı (%)",
+      "rounding": "Yuvarlama Kuralı",
+      "roundNone": "Yuvarlama yok",
+      "round099": "En yakın ,99",
+      "roundInt": "En yakın tam sayı",
+      "commission": "Pazaryeri Komisyon Varsayılanı (%)"
+    },
+    "media": {
+      "maxImages": "Maksimum Görsel Sayısı",
+      "minResolution": "Minimum Çözünürlük (px)",
+      "minResolutionHint": "Altında kalan görseller için uyarı gösterilir.",
+      "requirePrimaryImage": "Ana görsel zorunlu"
+    },
+    "categoryMapping": {
+      "desc": "Kategori eşleme ekranı entegrasyon tarafında yaşar. Burada kopyası tutulmaz.",
+      "open": "Kategori eşlemeyi aç"
+    }
   }
 }

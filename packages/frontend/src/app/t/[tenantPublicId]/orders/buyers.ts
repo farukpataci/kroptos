@@ -69,9 +69,12 @@ export function groupBuyers(orders: BuyerSourceOrder[]): Buyer[] {
     existing.orderCount += 1;
     existing.totalsByCurrency[order.currency] =
       (existing.totalsByCurrency[order.currency] || 0) + amount;
-    // Keep whichever contact details the buyer eventually supplied: grouped by
-    // phone, the first order may have had no email at all.
-    existing.email = existing.email || order.customerEmail?.trim() || null;
+    // Fill in a detail a later order supplied. Only `phone` can actually be
+    // filled: `buyerKey` prefers email, so an email-keyed group already has one
+    // and a phone-keyed group can never acquire one — the moment an order
+    // carries an email it is keyed by it and lands in a different group. The
+    // matching `email` line was dead in all three key shapes and is gone.
+    // Whether those two groups should be one buyer is docs/kararlar.md madde 2.
     existing.phone = existing.phone || order.customerPhone?.trim() || null;
     if (order.createdAt > existing.lastOrderAt) {
       existing.lastOrderAt = order.createdAt;

@@ -32,9 +32,13 @@ import { useAuth } from '@/lib/auth-context';
  * on the product), `Inventory` (per store) and the warehouse-level movements
  * are THREE separate sources of stock, and which one is authoritative has not
  * been decided. Picking a source for this column silently picks it for the
- * system. That decision is its own db/prisma task — do not settle it here.
+ * system. That decision is its own db/prisma task — do not settle it here, and
+ * see docs/kararlar.md madde 1.
  *
- * Until then the column renders the single store-level entry it has.
+ * Until it is decided the column and the warehouse filter are GONE, not empty:
+ * a "Depo Dağılımı" header over a dash on every row claims a breakdown exists
+ * and is merely missing today, which is the opposite of true. Bring both back
+ * with the query above once there is one.
  */
 
 /** One `/api/inventory` row, as the backend actually returns it. */
@@ -53,7 +57,6 @@ interface InventoryRow {
     barcode?: string | null;
     image?: string | null;
     categoryId?: string | null;
-    warehouseName?: string | null;
     category?: { id: string; name: string } | null;
   } | null;
 }
@@ -74,12 +77,12 @@ export interface StockRow {
   defectiveQty: number;
   reorderLevel: number;
   /**
-   * Always a single store-level entry today — see the TODO at the top of this
-   * file for why there is no live per-warehouse split to put here. A list so
-   * the column does not have to be rebuilt once there is one.
+   * `Inventory.updatedAt`, and named for what it is. Not "last movement": the
+   * column moves on any field change — a reorder level edit, a reservation —
+   * and `ensureInventoriesExist` upserts every row on every list call. The
+   * last actual stock movement lives in `StockMovement`.
    */
-  warehouses: string[];
-  lastMovementAt: string | null;
+  updatedAt: string | null;
 }
 
 export interface Category {
@@ -89,7 +92,6 @@ export interface Category {
 
 export interface StockFilters {
   search: string;
-  warehouse: string;
   categoryId: string;
   onlyCritical: boolean;
 }
@@ -116,7 +118,6 @@ export function useProductStock() {
 
   const [filters, setFilters] = useState<StockFilters>({
     search: '',
-    warehouse: 'all',
     categoryId: 'all',
     onlyCritical: false,
   });
@@ -135,26 +136,22 @@ export function useProductStock() {
     try {
       const data = await apiFetch<InventoryRow[]>('/inventory');
       setRows(
-        (data || []).map((item) => {
-          const warehouse = item.product?.warehouseName?.trim();
-          return {
-            inventoryId: item.id,
-            productId: item.productId,
-            sku: item.product?.sku || '—',
-            name: item.product?.name || '—',
-            barcode: item.product?.barcode || null,
-            image: item.product?.image || null,
-            categoryId: item.product?.category?.id ?? item.product?.categoryId ?? null,
-            categoryName: item.product?.category?.name ?? null,
-            totalQty: (item.availableQty || 0) + (item.reservedQty || 0),
-            reservedQty: item.reservedQty || 0,
-            availableQty: item.availableQty || 0,
-            defectiveQty: item.defectiveQty || 0,
-            reorderLevel: item.reorderLevel ?? 0,
-            warehouses: warehouse ? [warehouse] : [],
-            lastMovementAt: item.updatedAt || null,
-          };
-        }),
+        (data || []).map((item) => ({
+          inventoryId: item.id,
+          productId: item.productId,
+          sku: item.product?.sku || '—',
+          name: item.product?.name || '—',
+          barcode: item.product?.barcode || null,
+          image: item.product?.image || null,
+          categoryId: item.product?.category?.id ?? item.product?.categoryId ?? null,
+          categoryName: item.product?.category?.name ?? null,
+          totalQty: (item.availableQty || 0) + (item.reservedQty || 0),
+          reservedQty: item.reservedQty || 0,
+          availableQty: item.availableQty || 0,
+          defectiveQty: item.defectiveQty || 0,
+          reorderLevel: item.reorderLevel ?? 0,
+          updatedAt: item.updatedAt || null,
+        })),
       );
     } catch (err: any) {
       setError(err?.message || t('loadFailed'));
@@ -182,10 +179,6 @@ export function useProductStock() {
     setCurrentPage(1);
   }, [filters]);
 
-  const warehouseOptions = useMemo(
-    () => Array.from(new Set(rows.flatMap((r) => r.warehouses))).sort(),
-    [rows],
-  );
 
   const filtered = useMemo(
     () =>
@@ -199,7 +192,6 @@ export function useProductStock() {
           if (!hit) return false;
         }
         if (filters.categoryId !== 'all' && r.categoryId !== filters.categoryId) return false;
-        if (filters.warehouse !== 'all' && !r.warehouses.includes(filters.warehouse)) return false;
         if (filters.onlyCritical && !isCritical(r) && !isOutOfStock(r)) return false;
         return true;
       }),
@@ -244,7 +236,6 @@ export function useProductStock() {
     allRows: rows,
     totalFiltered: filtered.length,
     categories,
-    warehouseOptions,
     isLoading,
     error,
     filters,

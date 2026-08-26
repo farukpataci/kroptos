@@ -325,241 +325,238 @@
     }
   },
   "productStock": {
-  "title": "Stock Control",
-  "subtitle": "Stock per SKU, critical thresholds and quick adjustments.",
-  "loadFailed": "Stock could not be loaded.",
-  "storeRequired": {
-    "title": "Store Selection Required",
-    "desc": "Stock records are per store. Pick a store from the top menu to continue."
-  },
-  "kpi": {
-    "totalSkus": "Total SKUs",
-    "critical": "Critical Stock",
-    "outOfStock": "Out of Stock",
-    "reserved": "Reserved"
-  },
-  "filters": {
-    "search": "Search",
-    "searchHint": "Product name, SKU or barcode",
-    "warehouse": "Warehouse",
-    "allWarehouses": "All warehouses",
-    "category": "Category",
-    "allCategories": "All categories",
-    "onlyCritical": "Only below critical"
-  },
-  "actions": {
-    "selectAll": "Select all",
-    "adjust": "Quick stock adjustment",
-    "bulkUpdate": "Bulk stock update",
-    "bulkSoon": "No server endpoint for bulk updates yet."
-  },
-  "columns": {
-    "image": "Image",
-    "name": "Product Name",
-    "sku": "SKU",
-    "barcode": "Barcode",
-    "total": "Total Stock",
-    "reserved": "Reserved",
-    "available": "Available",
-    "reorderLevel": "Critical Threshold",
-    "warehouses": "Warehouse Split",
-    "lastMovement": "Last Movement"
-  },
-  "level": {
-    "out": "Out",
-    "critical": "Critical",
-    "healthy": "Healthy"
-  },
-  "empty": {
-    "loading": "Loading stock…",
-    "title": "No records found",
-    "desc": "No stock record in this store matches your filters."
-  },
-  "pagination": {
-    "showing": "Showing {from}-{to} of {total}",
-    "next": "Next"
-  },
-  "adjust": {
-    "title": "Quick Stock Adjustment",
-    "type": "Movement Type",
-    "types": {
-      "Inbound": "Inbound",
-      "Outbound": "Outbound",
-      "Transfer": "Transfer",
-      "Damage": "Damage",
-      "Lost": "Lost",
-      "Cycle_Count": "Cycle Count"
+    "title": "Stock Control",
+    "subtitle": "Stock per SKU, critical thresholds and quick adjustments.",
+    "loadFailed": "Stock could not be loaded.",
+    "storeRequired": {
+      "title": "Store Selection Required",
+      "desc": "Stock records are per store. Pick a store from the top menu to continue."
     },
-    "quantity": "Quantity",
-    "quantityHint": "e.g. 25",
-    "reason": "Reason",
-    "reasonHint": "e.g. Count discrepancy",
-    "note": "Note",
-    "submit": "Update Stock",
-    "failed": "The stock adjustment could not be saved."
-  }
+    "kpi": {
+      "totalSkus": "Total SKUs",
+      "critical": "Critical Stock",
+      "outOfStock": "Out of Stock",
+      "reserved": "Reserved"
+    },
+    "filters": {
+      "search": "Search",
+      "searchHint": "Product name, SKU or barcode",
+      "category": "Category",
+      "allCategories": "All categories",
+      "onlyCritical": "Only below critical"
+    },
+    "actions": {
+      "selectAll": "Select all",
+      "adjust": "Quick stock adjustment",
+      "bulkUpdate": "Bulk stock update",
+      "bulkSoon": "No server endpoint for bulk updates yet."
+    },
+    "columns": {
+      "image": "Image",
+      "name": "Product Name",
+      "sku": "SKU",
+      "barcode": "Barcode",
+      "total": "Total Stock",
+      "reserved": "Reserved",
+      "available": "Available",
+      "reorderLevel": "Critical Threshold",
+      "updatedAt": "Aggiornato"
+    },
+    "level": {
+      "out": "Out",
+      "critical": "Critical",
+      "healthy": "Healthy"
+    },
+    "empty": {
+      "loading": "Loading stock…",
+      "title": "No records found",
+      "desc": "No stock record in this store matches your filters."
+    },
+    "pagination": {
+      "showing": "Showing {from}-{to} of {total}",
+      "next": "Next"
+    },
+    "adjust": {
+      "title": "Quick Stock Adjustment",
+      "type": "Movement Type",
+      "types": {
+        "Inbound": "Inbound",
+        "Outbound": "Outbound",
+        "Transfer": "Transfer",
+        "Damage": "Damage",
+        "Lost": "Lost",
+        "Cycle_Count": "Cycle Count"
+      },
+      "quantity": "Quantity",
+      "quantityHint": "e.g. 25",
+      "reason": "Reason",
+      "reasonHint": "e.g. Count discrepancy",
+      "note": "Note",
+      "submit": "Update Stock",
+      "failed": "The stock adjustment could not be saved."
+    }
   },
   "productAutomation": {
-  "title": "Automations",
-  "subtitle": "Rules that run by themselves on product and stock triggers.",
-  "storeRequired": {
-    "title": "Store Selection Required",
-    "desc": "Automation rules are per store. Pick a store from the top menu."
-  },
-  "actions": {
-    "newRule": "New Rule"
-  },
-  "empty": {
-    "title": "No rules yet",
-    "desc": "The rule list comes from the server; that endpoint does not exist yet. No invented cards are shown."
-  },
-  "scopeNote": "Rules here are product and stock triggers. Order rules live on their own page.",
-  "triggers": {
-    "stock_below": "Stock fell below threshold",
-    "price_changed": "Price changed",
-    "product_created": "New product added",
-    "marketplace_stock_diff": "Marketplace stock mismatch"
-  },
-  "conditionFields": {
-    "category": "Category",
-    "brand": "Brand",
-    "warehouse": "Warehouse",
-    "price_range": "Price range"
-  },
-  "actionsList": {
-    "unpublish_marketplace": "Unpublish from marketplace",
-    "update_price": "Update price",
-    "add_tag": "Add tag",
-    "send_notification": "Send notification",
-    "create_purchase_request": "Create purchase request"
-  },
-  "modal": {
-    "title": "Create Rule",
-    "subtitle": "If the condition holds, the action runs.",
-    "name": "Rule Name",
-    "nameHint": "e.g. Unpublish when critical",
-    "trigger": "Trigger",
-    "conditions": "Conditions",
-    "addCondition": "Add condition",
-    "conditionField": "Field",
-    "conditionValue": "Value",
-    "removeCondition": "Remove condition",
-    "action": "Action",
-    "notWired": "No server endpoint stands behind this form; saving is disabled."
-  }
+    "title": "Automations",
+    "subtitle": "Rules that run by themselves on product and stock triggers.",
+    "storeRequired": {
+      "title": "Store Selection Required",
+      "desc": "Automation rules are per store. Pick a store from the top menu."
+    },
+    "actions": {
+      "newRule": "New Rule"
+    },
+    "empty": {
+      "title": "No rules yet",
+      "desc": "The rule list comes from the server; that endpoint does not exist yet. No invented cards are shown."
+    },
+    "scopeNote": "Rules here are product and stock triggers. Order rules live on their own page.",
+    "triggers": {
+      "stock_below": "Stock fell below threshold",
+      "price_changed": "Price changed",
+      "product_created": "New product added",
+      "marketplace_stock_diff": "Marketplace stock mismatch"
+    },
+    "conditionFields": {
+      "category": "Category",
+      "brand": "Brand",
+      "warehouse": "Warehouse",
+      "price_range": "Price range"
+    },
+    "actionsList": {
+      "unpublish_marketplace": "Unpublish from marketplace",
+      "update_price": "Update price",
+      "add_tag": "Add tag",
+      "send_notification": "Send notification",
+      "create_purchase_request": "Create purchase request"
+    },
+    "modal": {
+      "title": "Create Rule",
+      "subtitle": "If the condition holds, the action runs.",
+      "name": "Rule Name",
+      "nameHint": "e.g. Unpublish when critical",
+      "trigger": "Trigger",
+      "conditions": "Conditions",
+      "addCondition": "Add condition",
+      "conditionField": "Field",
+      "conditionValue": "Value",
+      "removeCondition": "Remove condition",
+      "action": "Action",
+      "notWired": "No server endpoint stands behind this form; saving is disabled."
+    }
   },
   "productTransfer": {
-  "title": "Import / Export",
-  "subtitle": "Import products from a file, or export the current catalogue.",
-  "storeRequired": {
-    "title": "Store Selection Required",
-    "desc": "Transfers are per store. Pick a store from the top menu."
-  },
-  "notWired": "No server endpoint stands behind this step; submitting is disabled.",
-  "tabs": {
-    "import": "Import",
-    "export": "Export"
-  },
-  "import": {
-    "steps": {
-      "upload": "File Upload",
-      "mapping": "Column Mapping",
-      "review": "Validation"
+    "title": "Import / Export",
+    "subtitle": "Import products from a file, or export the current catalogue.",
+    "storeRequired": {
+      "title": "Store Selection Required",
+      "desc": "Transfers are per store. Pick a store from the top menu."
     },
-    "dropzone": "Choose a file or drop it here",
-    "dropzoneHint": "CSV, XLSX or XML",
-    "downloadTemplate": "Download sample template",
-    "noColumns": "File columns are read on the server. The mapping table stays empty until that endpoint exists.",
-    "fileColumn": "File Column",
-    "targetField": "KroptOS Field",
-    "fields": {
-      "sku": "SKU",
-      "name": "Product Name",
-      "barcode": "Barcode",
-      "price": "Price",
-      "stockQuantity": "Stock",
-      "categoryId": "Category",
-      "ignore": "Ignore"
+    "notWired": "No server endpoint stands behind this step; submitting is disabled.",
+    "tabs": {
+      "import": "Import",
+      "export": "Export"
     },
-    "validRows": "Valid rows",
-    "invalidRows": "Invalid rows",
-    "previous": "Back",
-    "next": "Next",
-    "submit": "Import"
-  },
-  "export": {
-    "from": "From",
-    "to": "To",
-    "status": "Status",
-    "allStatuses": "All statuses",
-    "statusActive": "Active",
-    "statusPassive": "Passive",
-    "columns": "Columns",
-    "column": {
-      "sku": "SKU",
-      "name": "Product Name",
-      "barcode": "Barcode",
-      "price": "Price",
-      "costPrice": "Cost",
-      "stockQuantity": "Stock",
-      "category": "Category",
+    "import": {
+      "steps": {
+        "upload": "File Upload",
+        "mapping": "Column Mapping",
+        "review": "Validation"
+      },
+      "dropzone": "Choose a file or drop it here",
+      "dropzoneHint": "CSV, XLSX or XML",
+      "downloadTemplate": "Download sample template",
+      "noColumns": "File columns are read on the server. The mapping table stays empty until that endpoint exists.",
+      "fileColumn": "File Column",
+      "targetField": "KroptOS Field",
+      "fields": {
+        "sku": "SKU",
+        "name": "Product Name",
+        "barcode": "Barcode",
+        "price": "Price",
+        "stockQuantity": "Stock",
+        "categoryId": "Category",
+        "ignore": "Ignore"
+      },
+      "validRows": "Valid rows",
+      "invalidRows": "Invalid rows",
+      "previous": "Back",
+      "next": "Next",
+      "submit": "Import"
+    },
+    "export": {
+      "from": "From",
+      "to": "To",
       "status": "Status",
-      "createdAt": "Created"
-    },
-    "format": "Format",
-    "submit": "Export",
-    "history": "Past Exports",
-    "historyEmpty": "Export history is kept on the server; that endpoint does not exist yet."
-  }
+      "allStatuses": "All statuses",
+      "statusActive": "Active",
+      "statusPassive": "Passive",
+      "columns": "Columns",
+      "column": {
+        "sku": "SKU",
+        "name": "Product Name",
+        "barcode": "Barcode",
+        "price": "Price",
+        "costPrice": "Cost",
+        "stockQuantity": "Stock",
+        "category": "Category",
+        "status": "Status",
+        "createdAt": "Created"
+      },
+      "format": "Format",
+      "submit": "Export",
+      "history": "Past Exports",
+      "historyEmpty": "Export history is kept on the server; that endpoint does not exist yet."
+    }
   },
   "productSettings": {
-  "title": "Product Settings",
-  "subtitle": "Catalogue, stock, pricing and media rules.",
-  "storeRequired": {
-    "title": "Store Selection Required",
-    "desc": "Product settings are per store. Pick a store from the top menu."
-  },
-  "notWired": "No server endpoint stands behind these settings; saving is disabled and values reset on reload.",
-  "tabs": {
-    "general": "General",
-    "stock": "Stock",
-    "pricing": "Pricing",
-    "media": "Media",
-    "categoryMapping": "Category Mapping"
-  },
-  "general": {
-    "currency": "Default Currency",
-    "taxRate": "Default VAT Rate (%)",
-    "skuTemplate": "SKU / Barcode Template",
-    "skuTemplateHint": "The {CATEGORY} and {SEQ} placeholders are available.",
-    "nameMaxLength": "Product Name Character Limit"
-  },
-  "stock": {
-    "reorderLevel": "Default Critical Threshold",
-    "reorderLevelHint": "Applied to new products; can be overridden per row.",
-    "outOfStockBehaviour": "When Out of Stock, on Marketplaces",
-    "behaviourUnpublish": "Unpublish",
-    "behaviourZeroStock": "Send zero stock",
-    "allowNegative": "Allow negative stock",
-    "autoReserve": "Auto-reserve on order"
-  },
-  "pricing": {
-    "margin": "Default Margin (%)",
-    "rounding": "Rounding Rule",
-    "roundNone": "No rounding",
-    "round099": "Nearest .99",
-    "roundInt": "Nearest integer",
-    "commission": "Default Marketplace Commission (%)"
-  },
-  "media": {
-    "maxImages": "Maximum Image Count",
-    "minResolution": "Minimum Resolution (px)",
-    "minResolutionHint": "A warning is shown for images below this.",
-    "requirePrimaryImage": "Primary image required"
-  },
-  "categoryMapping": {
-    "desc": "The category mapping screen lives on the integration side. No copy is kept here.",
-    "open": "Open category mapping"
-  }
+    "title": "Product Settings",
+    "subtitle": "Catalogue, stock, pricing and media rules.",
+    "storeRequired": {
+      "title": "Store Selection Required",
+      "desc": "Product settings are per store. Pick a store from the top menu."
+    },
+    "notWired": "No server endpoint stands behind these settings; saving is disabled and values reset on reload.",
+    "tabs": {
+      "general": "General",
+      "stock": "Stock",
+      "pricing": "Pricing",
+      "media": "Media",
+      "categoryMapping": "Category Mapping"
+    },
+    "general": {
+      "currency": "Default Currency",
+      "taxRate": "Default VAT Rate (%)",
+      "skuTemplate": "SKU / Barcode Template",
+      "skuTemplateHint": "The {CATEGORY} and {SEQ} placeholders are available.",
+      "nameMaxLength": "Product Name Character Limit"
+    },
+    "stock": {
+      "reorderLevel": "Default Critical Threshold",
+      "reorderLevelHint": "Applied to new products; can be overridden per row.",
+      "outOfStockBehaviour": "When Out of Stock, on Marketplaces",
+      "behaviourUnpublish": "Unpublish",
+      "behaviourZeroStock": "Send zero stock",
+      "allowNegative": "Allow negative stock",
+      "autoReserve": "Auto-reserve on order"
+    },
+    "pricing": {
+      "margin": "Default Margin (%)",
+      "rounding": "Rounding Rule",
+      "roundNone": "No rounding",
+      "round099": "Nearest .99",
+      "roundInt": "Nearest integer",
+      "commission": "Default Marketplace Commission (%)"
+    },
+    "media": {
+      "maxImages": "Maximum Image Count",
+      "minResolution": "Minimum Resolution (px)",
+      "minResolutionHint": "A warning is shown for images below this.",
+      "requirePrimaryImage": "Primary image required"
+    },
+    "categoryMapping": {
+      "desc": "The category mapping screen lives on the integration side. No copy is kept here.",
+      "open": "Open category mapping"
+    }
   }
 }

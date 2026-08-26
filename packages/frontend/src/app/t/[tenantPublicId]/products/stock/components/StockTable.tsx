@@ -70,8 +70,7 @@ export default function StockTable({
               <th className="text-right">{t('columns.reserved')}</th>
               <th className="text-right">{t('columns.available')}</th>
               <th className="text-right">{t('columns.reorderLevel')}</th>
-              <th>{t('columns.warehouses')}</th>
-              <th>{t('columns.lastMovement')}</th>
+              <th>{t('columns.updatedAt')}</th>
               <th className="w-10" />
             </tr>
           </thead>
@@ -113,21 +112,8 @@ export default function StockTable({
                 <td className="text-right text-kp-text-secondary">{row.reservedQty}</td>
                 <td className="text-right text-kp-text-secondary">{row.availableQty}</td>
                 <td className="text-right text-kp-text-tertiary">{row.reorderLevel}</td>
-                <td>
-                  {row.warehouses.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {row.warehouses.map((w) => (
-                        <span key={w} className="badge badge--accent">
-                          {w}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-kp-text-tertiary">—</span>
-                  )}
-                </td>
                 <td className="text-kp-text-tertiary">
-                  {row.lastMovementAt ? new Date(row.lastMovementAt).toLocaleString() : '—'}
+                  {row.updatedAt ? new Date(row.updatedAt).toLocaleString() : '—'}
                 </td>
                 <td>
                   <button

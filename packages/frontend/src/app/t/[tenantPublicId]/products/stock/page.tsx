@@ -58,7 +58,6 @@ export default function ProductStockPage() {
     rows,
     totalFiltered,
     categories,
-    warehouseOptions,
     isLoading,
     error,
     filters,
@@ -129,20 +128,9 @@ export default function ProductStockPage() {
           />
         </div>
 
-        <select
-          value={filters.warehouse}
-          onChange={(e) => setFilters({ ...filters, warehouse: e.target.value })}
-          aria-label={t('filters.warehouse')}
-          className="rounded-kp-md border border-kp-border bg-kp-bg-primary/40 px-3 py-2 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
-        >
-          <option value="all">{t('filters.allWarehouses')}</option>
-          {warehouseOptions.map((w) => (
-            <option key={w} value={w}>
-              {w}
-            </option>
-          ))}
-        </select>
-
+        {/* No warehouse filter: `Inventory` has no warehouseId, so there is
+            nothing to filter on. See the TODO in useProductStock.ts and
+            docs/kararlar.md madde 1. */}
         <select
           value={filters.categoryId}
           onChange={(e) => setFilters({ ...filters, categoryId: e.target.value })}
