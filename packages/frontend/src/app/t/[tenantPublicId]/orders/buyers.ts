@@ -79,7 +79,21 @@ export function groupBuyers(orders: BuyerSourceOrder[]): Buyer[] {
     }
   }
 
-  return [...byKey.values()].sort((a, b) => (a.lastOrderAt < b.lastOrderAt ? 1 : -1));
+  // Newest first, and it has to return 0 for a tie. The previous comparator
+  // answered -1 to both compare(a,b) and compare(b,a) when the timestamps
+  // matched, which is not a valid ordering: buyers whose most recent order
+  // shares a createdAt — routine, because a bulk marketplace import writes one
+  // timestamp across the batch — landed in an arbitrary order that could differ
+  // between renders of the same data. With 0 the sort is stable and their
+  // grouping order is kept.
+  //
+  // `lastOrderAt` is typed non-null, but it comes from untyped `/api/orders`
+  // JSON; a missing value sorts last rather than poisoning every comparison.
+  return [...byKey.values()].sort((a, b) => {
+    if (!a.lastOrderAt) return b.lastOrderAt ? 1 : 0;
+    if (!b.lastOrderAt) return -1;
+    return b.lastOrderAt.localeCompare(a.lastOrderAt);
+  });
 }
 
 /** Matches a buyer against a free-text search over name, email and phone. */

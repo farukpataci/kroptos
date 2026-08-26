@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { UsersIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { pageWindow } from '@/lib/pagination';
-import { SubPageShell } from '../components/SubPageShell';
+import { SubPageShell } from '@/components/layout/SubPageShell';
 import { Buyer, BuyerSourceOrder, buyerMatches, groupBuyers } from '../buyers';
 
 const PAGE_SIZE = 25;
@@ -27,6 +27,11 @@ export default function OrderCustomersPage() {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
 
+  /** The request still in flight, so a newer one can cancel it. */
+  const inFlight = useRef<AbortController | null>(null);
+  /** Monotonic ticket: only the newest request may write to state. */
+  const latestRequest = useRef(0);
+
   const load = useCallback(async () => {
     if (!tenantContext.storeId) {
       // Buyers are rolled up out of orders, and orders only list under a store.
@@ -34,17 +39,31 @@ export default function OrderCustomersPage() {
       setOrders([]);
       return;
     }
+
+    // One request and no debounce here, so a race is unlikely — but the guard
+    // is three lines and keeping the three Orders pages on one shape is worth
+    // more than the lines saved by leaving this one different.
+    inFlight.current?.abort();
+    const controller = new AbortController();
+    inFlight.current = controller;
+    const ticket = ++latestRequest.current;
+
     setIsLoading(true);
     setError(null);
     try {
-      setOrders((await api.get<BuyerSourceOrder[]>('/api/orders')) || []);
+      const list = await api.get<BuyerSourceOrder[]>('/api/orders', {
+        signal: controller.signal,
+      });
+      if (ticket !== latestRequest.current) return;
+      setOrders(list || []);
     } catch (e: any) {
+      if (e?.name === 'AbortError' || ticket !== latestRequest.current) return;
       // Shown, not swallowed: a 403 here means the role lacks orders.read, and
       // an empty table would read as "no buyers" instead of "not yours".
       setError(e?.message || t('loadFailed'));
       setOrders([]);
     } finally {
-      setIsLoading(false);
+      if (ticket === latestRequest.current) setIsLoading(false);
     }
   }, [tenantContext.storeId, t]);
 

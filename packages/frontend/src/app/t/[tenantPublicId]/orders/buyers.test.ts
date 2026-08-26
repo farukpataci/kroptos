@@ -66,12 +66,38 @@ describe('groupBuyers', () => {
   });
 
   it('fills in contact details a later order supplied', () => {
+    // Same key both times — that is the only way the fill-in runs. `buyerKey`
+    // prefers email, so two orders merge only when they agree on it.
     const [buyer] = groupBuyers([
-      order({ customerPhone: '5551112233' }),
-      order({ customerPhone: '5551112233', customerEmail: 'a@b.com' }),
+      order({ customerEmail: 'a@b.com' }),
+      order({ customerEmail: 'a@b.com', customerPhone: '5551112233' }),
     ]);
     expect(buyer.email).toBe('a@b.com');
     expect(buyer.phone).toBe('5551112233');
+  });
+
+  /**
+   * Documents real behaviour, not desired behaviour.
+   *
+   * `buyerKey` prefers email, so an order carrying one is keyed by email while
+   * the same person's earlier phone-only order is keyed by phone: they are two
+   * buyers, and the "keep whichever contact details the buyer eventually
+   * supplied" line in groupBuyers can never fill in an email — by the time an
+   * email exists the order has already been keyed by it.
+   *
+   * This test previously asserted the opposite and passed, because the sort
+   * comparator was invalid and happened to put the email-keyed row first.
+   * Fixing the comparator exposed it. Merging the two is a real change to who
+   * counts as one buyer, so it is left as a decision rather than made here.
+   */
+  it('does not merge a phone-only order with the same buyer once they supply an email', () => {
+    const rows = groupBuyers([
+      order({ customerPhone: '5551112233' }),
+      order({ customerPhone: '5551112233', customerEmail: 'a@b.com' }),
+    ]);
+
+    expect(rows).toHaveLength(2);
+    expect(rows.map((r) => r.key).sort()).toEqual(['email:a@b.com', 'phone:5551112233']);
   });
 
   it('does not merge two buyers who share nothing', () => {
@@ -93,6 +119,38 @@ describe('groupBuyers', () => {
 
   it('survives an empty list', () => {
     expect(groupBuyers([])).toEqual([]);
+  });
+
+  /**
+   * The comparator used to answer -1 in both directions on a tie, so buyers
+   * sharing a timestamp came out in an arbitrary order. A bulk marketplace
+   * import writes one createdAt across the batch, so ties are the normal case,
+   * not an edge one.
+   */
+  it('orders buyers sharing a timestamp deterministically', () => {
+    const sameInstant = '2026-08-01T10:00:00.000Z';
+    const input = [
+      order({ customerEmail: 'a@b.com', createdAt: sameInstant }),
+      order({ customerEmail: 'b@b.com', createdAt: sameInstant }),
+      order({ customerEmail: 'c@b.com', createdAt: sameInstant }),
+    ];
+
+    const first = groupBuyers(input).map((r) => r.email);
+    const second = groupBuyers(input).map((r) => r.email);
+
+    expect(first).toEqual(second);
+    // Stable: the tie keeps the order the buyers were grouped in.
+    expect(first).toEqual(['a@b.com', 'b@b.com', 'c@b.com']);
+  });
+
+  it('still sorts newest first when the timestamps differ', () => {
+    const rows = groupBuyers([
+      order({ customerEmail: 'old@b.com', createdAt: '2026-07-01T10:00:00.000Z' }),
+      order({ customerEmail: 'new@b.com', createdAt: '2026-08-20T10:00:00.000Z' }),
+      order({ customerEmail: 'mid@b.com', createdAt: '2026-08-01T10:00:00.000Z' }),
+    ]);
+
+    expect(rows.map((r) => r.email)).toEqual(['new@b.com', 'mid@b.com', 'old@b.com']);
   });
 });
 

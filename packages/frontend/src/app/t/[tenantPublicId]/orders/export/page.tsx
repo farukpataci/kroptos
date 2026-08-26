@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { ArrowDownTrayIcon } from '@heroicons/react/24/outline';
-import { SubPageShell, NotBuiltYet } from '../components/SubPageShell';
+import { SubPageShell, NotBuiltYet } from '@/components/layout/SubPageShell';
 
 // TODO(backend): POST /api/orders/export — bu sayfanin arkasinda hicbir ucu yok.
 // Kasitli olarak sahte satir uretilmiyor; dolu gorunen bir tablo calisan

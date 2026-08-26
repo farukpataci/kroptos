@@ -1,11 +1,11 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { PlusIcon, QueueListIcon } from '@heroicons/react/24/outline';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-import { SubPageShell } from '../components/SubPageShell';
+import { SubPageShell } from '@/components/layout/SubPageShell';
 
 /**
  * The statuses the system itself writes, in the order an order moves through
@@ -31,26 +31,42 @@ export default function OrderStatusesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /** The request still in flight, so a newer one can cancel it. */
+  const inFlight = useRef<AbortController | null>(null);
+  /** Monotonic ticket: only the newest request may write to state. */
+  const latestRequest = useRef(0);
+
   const load = useCallback(async () => {
     if (!tenantContext.storeId) {
       setIsLoading(false);
       setCounts({});
       return;
     }
+
+    // Same guard as the other two Orders pages — see customers/page.tsx.
+    inFlight.current?.abort();
+    const controller = new AbortController();
+    inFlight.current = controller;
+    const ticket = ++latestRequest.current;
+
     setIsLoading(true);
     setError(null);
     try {
-      const orders = await api.get<{ status: string }[]>('/api/orders');
+      const orders = await api.get<{ status: string }[]>('/api/orders', {
+        signal: controller.signal,
+      });
+      if (ticket !== latestRequest.current) return;
       const tally: Record<string, number> = {};
       for (const order of orders || []) {
         tally[order.status] = (tally[order.status] || 0) + 1;
       }
       setCounts(tally);
     } catch (e: any) {
+      if (e?.name === 'AbortError' || ticket !== latestRequest.current) return;
       setError(e?.message || t('loadFailed'));
       setCounts({});
     } finally {
-      setIsLoading(false);
+      if (ticket === latestRequest.current) setIsLoading(false);
     }
   }, [tenantContext.storeId, t]);
 
