@@ -20,6 +20,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { Order, OrderFilters } from '../hooks/useOrders';
 import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge, OrderModeBadge } from './OrderStatusBadge';
+import { pageWindow } from '@/lib/pagination';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -621,13 +622,7 @@ export default function OrdersTable({
             >
               <ChevronLeftIcon className="h-3.5 w-3.5" />
             </button>
-            {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-              let page = i + 1;
-              if (totalPages > 7) {
-                if (currentPage <= 4) page = i + 1;
-                else if (currentPage >= totalPages - 3) page = totalPages - 6 + i;
-                else page = currentPage - 3 + i;
-              }
+            {pageWindow(currentPage, totalPages).map((page) => {
               return (
                 <button
                   key={page}

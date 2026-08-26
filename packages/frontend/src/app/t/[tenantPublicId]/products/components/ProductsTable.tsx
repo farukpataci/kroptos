@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { Product, Category, ProductFilters } from '../hooks/useProducts';
 import { ProductStatusBadge, StockBadge, MarginBadge, getProductImage } from './ProductStatusBadge';
 import { useToast } from '@/components/ui/Toast';
+import { pageWindow } from '@/lib/pagination';
 
 interface ProductsTableProps {
   products: Product[];
@@ -81,6 +82,8 @@ export default function ProductsTable({
   const tc = useTranslations('common');
   const toast = useToast();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const pagesShown = pageWindow(currentPage, totalPages);
 
   // Bulk Modals States
   const [isBulkLocationModalOpen, setIsBulkLocationModalOpen] = useState(false);
@@ -563,9 +566,10 @@ export default function ProductsTable({
         </table>
       </div>
 
-      {/* Pagination Bar */}
+      {/* Pagination Bar. Three columns so the buttons sit centred on the page
+          rather than drifting with the width of the summary text beside them. */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between pt-2">
+        <div className="grid grid-cols-3 items-center pt-2">
           <p className="text-xs text-kp-text-tertiary">
             {t.rich('pagination', {
               total: totalFiltered,
@@ -575,7 +579,7 @@ export default function ProductsTable({
             })}
           </p>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center justify-center gap-1.5">
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
@@ -584,8 +588,7 @@ export default function ProductsTable({
               <ChevronLeftIcon className="h-3.5 w-3.5" />
             </button>
 
-            {Array.from({ length: totalPages }).map((_, idx) => {
-              const pageNum = idx + 1;
+            {pagesShown.map((pageNum) => {
               const isActive = pageNum === currentPage;
               return (
                 <button
