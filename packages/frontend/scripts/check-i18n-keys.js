@@ -55,17 +55,31 @@ function collect(file) {
 
   const pairs = [];
   const dynamic = [];
+
   // Which alias maps to which namespace: `const t = useTranslations('x')`.
+  //
+  // Scoped by position, not file-wide. One file may redeclare the SAME alias for
+  // several namespaces — src/app/[locale]/industry/[slug]/page.tsx declares
+  // `const t` five times, once per mockup component. Scanning the whole file per
+  // declaration attributes every key to all five namespaces and manufactures
+  // four false gaps for each real one, which buries the genuine ones.
   const aliases = [...src.matchAll(/const\s+(\w+)\s*=\s*useTranslations\(\s*'([^']+)'\s*\)/g)];
-  for (const [, alias, ns] of aliases) {
+
+  for (let i = 0; i < aliases.length; i++) {
+    const [, alias, ns] = aliases[i];
+    const start = aliases[i].index;
+    // Up to the next redeclaration of this same alias; other aliases don't end it.
+    const next = aliases.slice(i + 1).find((a) => a[1] === alias);
+    const region = src.slice(start, next ? next.index : src.length);
+
     const call = new RegExp(`\\b${alias}\\(\\s*(['\`])([^'\`]*)\\1`, 'g');
-    for (const m of src.matchAll(call)) {
+    for (const m of region.matchAll(call)) {
       if (m[1] === '`' && m[2].includes('${')) dynamic.push({ file, ns, raw: m[2] });
       else pairs.push({ file, ns, key: m[2] });
     }
     // Template keys with interpolation, e.g. t(`level.${k}`) — record the prefix.
     const tpl = new RegExp(`\\b${alias}\\(\\s*\`([^\`]*\\$\\{[^\`]*)\``, 'g');
-    for (const m of src.matchAll(tpl)) dynamic.push({ file, ns, raw: m[1] });
+    for (const m of region.matchAll(tpl)) dynamic.push({ file, ns, raw: m[1] });
   }
   return { pairs, dynamic };
 }
