@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import * as HeroIcons from '@heroicons/react/24/outline';
 import {
@@ -85,14 +86,19 @@ export function IntegrationSettingsDrawer({
     if (ok) onConfigured?.();
   };
 
-  return (
-    <SettingsFieldContext.Provider value={{ integrationId }}>
-      <div className="fixed inset-0 z-50 flex justify-end bg-black/40 animate-fade-in">
-        <div className="flex-1" onClick={requestClose} />
+  // Rendered into <body>. Inline, this sits inside the page's `space-y-*`
+  // wrapper, which puts a `margin-top` on every child — including a
+  // `position:fixed` one — and pushed the overlay ~22px down the screen.
+  if (typeof document === 'undefined') return null;
 
-        <div className="flex h-full w-full max-w-4xl flex-col bg-kp-bg-secondary shadow-kp-dropdown">
+  return createPortal(
+    <SettingsFieldContext.Provider value={{ integrationId }}>
+      {/* Full screen, same shell as the product form and detail views. No scrim
+          and no click-outside: at this size there is no "outside" to click. */}
+      <div className="fixed inset-0 z-[60] flex h-screen w-screen overflow-hidden bg-kp-bg-secondary animate-fade-in">
+        <div className="flex h-full w-full flex-col">
           {/* Header */}
-          <header className="flex items-center justify-between gap-3 border-b border-kp-border px-5 py-4">
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-kp-border bg-kp-bg-primary/20 px-8 py-5">
             <div className="flex min-w-0 items-center gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-kp-md bg-kp-accent/10 text-kp-accent">
                 <Cog6ToothIcon className="h-4 w-4" />
@@ -199,24 +205,27 @@ export function IntegrationSettingsDrawer({
                 })}
               </nav>
 
-              {/* Active tab content */}
-              <div className="min-w-0 flex-1 overflow-y-auto p-5">
-                {error && (
-                  <div className="mb-4 flex gap-2 rounded-kp-md border border-kp-danger/20 bg-kp-danger/10 p-3 text-xs text-kp-danger">
-                    <ExclamationTriangleIcon className="h-4 w-4 shrink-0" />
-                    <span>{error}</span>
-                  </div>
-                )}
+              {/* Active tab content. Capped and centred like the product form:
+                  full-bleed settings fields would stretch unreadably wide. */}
+              <div className="min-w-0 flex-1 overflow-y-auto p-8">
+                <div className="mx-auto w-full max-w-4xl">
+                  {error && (
+                    <div className="mb-4 flex gap-2 rounded-kp-md border border-kp-danger/20 bg-kp-danger/10 p-3 text-xs text-kp-danger">
+                      <ExclamationTriangleIcon className="h-4 w-4 shrink-0" />
+                      <span>{error}</span>
+                    </div>
+                  )}
 
-                <SettingsSchemaRenderer
-                  manifest={manifest}
-                  sections={activeSections}
-                  values={values}
-                  errors={errors}
-                  disabled={isSaving}
-                  onChange={setValue}
-                  onResetSection={resetSection}
-                />
+                  <SettingsSchemaRenderer
+                    manifest={manifest}
+                    sections={activeSections}
+                    values={values}
+                    errors={errors}
+                    disabled={isSaving}
+                    onChange={setValue}
+                    onResetSection={resetSection}
+                  />
+                </div>
               </div>
             </div>
           )}
@@ -231,9 +240,11 @@ export function IntegrationSettingsDrawer({
           )}
         </div>
 
-        {/* Unsaved-changes guard */}
+        {/* Unsaved-changes guard. z-[70] keeps it above the full-screen shell;
+            `z-60` was not a real class in Tailwind 3.4 and only worked by DOM
+            order. */}
         {confirmingClose && (
-          <div className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 p-4 backdrop-blur-xs">
             <div className="w-full max-w-sm overflow-hidden rounded-kp-lg border border-kp-border bg-kp-bg-secondary shadow-kp-elevated animate-scale-in">
               <div className="px-6 py-5">
                 <h3 className="flex items-center gap-2 text-sm font-bold text-kp-text-primary">
@@ -268,6 +279,7 @@ export function IntegrationSettingsDrawer({
           </div>
         )}
       </div>
-    </SettingsFieldContext.Provider>
+    </SettingsFieldContext.Provider>,
+    document.body,
   );
 }
