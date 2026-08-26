@@ -124,7 +124,15 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       id: 'products',
       label: t('products'),
       icon: TagIcon,
-      href: `/t/${tenantPublicId}/products`,
+      children: [
+        // exact: the list shares its prefix with every sub-route below, so
+        // without this it stays highlighted on all of them.
+        { label: t('products_list'), href: `/t/${tenantPublicId}/products`, exact: true },
+        { label: t('products_stock'), href: `/t/${tenantPublicId}/products/stock` },
+        { label: t('products_automation'), href: `/t/${tenantPublicId}/products/automation` },
+        { label: t('products_transfer'), href: `/t/${tenantPublicId}/products/transfer` },
+        { label: t('products_settings'), href: `/t/${tenantPublicId}/products/settings` },
+      ],
     },
     {
       id: 'inventory',
