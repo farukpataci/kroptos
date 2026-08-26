@@ -1,10 +1,26 @@
 #!/usr/bin/env node
 /**
- * Every t('…') a page asks for must exist in every locale file.
+ * Every t('…') a page asks for must actually resolve at runtime.
  *
- * next-intl does not fail the build on a missing key — it renders the key path
- * as visible text, so the gap only shows up as `productStock.columns.sku` sitting
- * in a table header in production. This is the check that catches it first.
+ * "Resolve" is the important word, and it is not the same as "is in the locale
+ * file". I18nProvider hands next-intl a merged dictionary:
+ *
+ *     deepMerge(deepMerge(tr, enUS), messagesMap[activeLocale])
+ *
+ * so `tr` is the base layer for EVERY locale, `en-US` sits on top of it, and the
+ * active locale only overrides what it happens to define. Comparing each locale
+ * file in isolation therefore reports thousands of keys that render perfectly
+ * well — only `tr` is fully populated, and that is by design.
+ *
+ * This script models the real merge, and separates the two things that actually
+ * matter and have completely different urgency:
+ *
+ *   KIRIK (broken)        the key resolves in NO layer. next-intl renders the
+ *                         key path as visible text — `products.table.columns.sku`
+ *                         sitting in a table header in production. A bug.
+ *   CEVRILMEMIS           resolves, but only through the tr/en-US base. The user
+ *   (untranslated)        sees Turkish or English on a Polish screen. Debt, not
+ *                         a bug — and the normal state of this repo today.
  *
  * Usage: node scripts/check-i18n-keys.js [namespace ...]
  *        no arguments = check every namespace referenced in src/
@@ -63,6 +79,9 @@ const parsed = Object.fromEntries(
   locales.map((f) => [f, JSON.parse(fs.readFileSync(path.join(MESSAGES, f), 'utf8'))]),
 );
 
+/** The two base layers I18nProvider merges under every locale, in its order. */
+const BASE_LAYERS = ['tr.json', 'en-US.json'];
+
 const allPairs = [];
 const allDynamic = [];
 for (const file of walk(SRC)) {
@@ -75,23 +94,34 @@ const scoped = only.length
   ? allPairs.filter((p) => only.includes(p.ns))
   : allPairs;
 
-const problems = [];
+const resolves = (locale, dotted) => {
+  for (const layer of [locale, ...BASE_LAYERS]) {
+    const value = get(parsed[layer], dotted);
+    if (typeof value === 'string') return layer;
+  }
+  return null;
+};
+
+const broken = [];
+const untranslated = [];
 for (const { file, ns, key } of scoped) {
   const dotted = `${ns}.${key}`;
   for (const locale of locales) {
-    const value = get(parsed[locale], dotted);
-    if (value === undefined || typeof value === 'object') {
-      problems.push(`${locale}  ${dotted}   (${path.relative(ROOT, file)})`);
-    }
+    const via = resolves(locale, dotted);
+    const where = `${locale}  ${dotted}   (${path.relative(ROOT, file)})`;
+    if (via === null) broken.push(where);
+    else if (via !== locale) untranslated.push(`${locale}  ${dotted}  -> ${via}`);
   }
 }
 
-const uniq = [...new Set(problems)].sort();
+const uniq = [...new Set(broken)].sort();
+const uniqUntranslated = [...new Set(untranslated)];
 const checked = new Set(scoped.map((p) => `${p.ns}.${p.key}`)).size;
 
 console.log(`locale dosyasi : ${locales.length}`);
 console.log(`kontrol edilen anahtar: ${checked}`);
 console.log(`toplam kontrol : ${checked * locales.length}`);
+console.log(`cevrilmemis (tr/en-US tabanindan cozuluyor): ${uniqUntranslated.length}`);
 
 const dyn = allDynamic.filter((d) => !only.length || only.includes(d.ns));
 if (dyn.length) {
@@ -100,8 +130,8 @@ if (dyn.length) {
 }
 
 if (uniq.length) {
-  console.log(`\nEKSIK: ${uniq.length}`);
+  console.log(`\nKIRIK (hicbir katmanda cozulmuyor): ${uniq.length}`);
   for (const p of uniq) console.log('  ' + p);
   process.exit(1);
 }
-console.log('\nEKSIK ANAHTAR YOK');
+console.log('\nKIRIK ANAHTAR YOK');
