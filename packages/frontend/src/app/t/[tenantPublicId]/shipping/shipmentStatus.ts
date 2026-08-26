@@ -8,6 +8,10 @@ export interface Shipment {
   status: string;
   trackingNumber: string | null;
   barcode: string | null;
+  /// Nullable on the model: a shipment can be raised before it is tied to an
+  /// order. Nothing joins it to the order number or the buyer, so a page that
+  /// wants those has to read the orders list and index it by this.
+  orderId: string | null;
   referenceCode: string | null;
   paymentType: string | null;
   codAmount: number | null;
