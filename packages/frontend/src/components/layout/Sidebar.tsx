@@ -5,6 +5,7 @@ import { usePathname, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
 import { useTranslations } from 'next-intl';
+import { isNavItemActive } from '@/lib/nav-active';
 import {
   Squares2X2Icon,
   BuildingStorefrontIcon,
@@ -25,6 +26,10 @@ import {
 interface SubNavItem {
   label: string;
   href: string;
+  /** Match the path itself, not its subtree. A parent route that also has
+   *  children ("/orders" alongside "/orders/invoices") needs this or it
+   *  highlights on every one of them. */
+  exact?: boolean;
   badge?: string;
   badgeType?: 'new' | 'count';
 }
@@ -36,6 +41,7 @@ interface NavGroup {
   badge?: string;
   badgeType?: 'new' | 'count';
   href?: string;
+  exact?: boolean;
   children?: SubNavItem[];
 }
 
@@ -77,6 +83,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       label: t('dashboard'),
       icon: Squares2X2Icon,
       href: `/t/${tenantPublicId}/dashboard`,
+      exact: true,
     },
     ...(!isSpecificBrand
       ? [
@@ -100,9 +107,18 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       id: 'orders',
       label: t('orders'),
       icon: ShoppingCartIcon,
-      badge: '12',
-      badgeType: 'count',
-      href: `/t/${tenantPublicId}/orders`,
+      children: [
+        { label: t('orders_list'), href: `/t/${tenantPublicId}/orders`, exact: true },
+        { label: t('orders_invoices'), href: `/t/${tenantPublicId}/orders/invoices` },
+        { label: t('orders_returns'), href: `/t/${tenantPublicId}/orders/returns` },
+        { label: t('orders_customers'), href: `/t/${tenantPublicId}/orders/customers` },
+        { label: t('orders_statuses'), href: `/t/${tenantPublicId}/orders/statuses` },
+        { label: t('orders_templates'), href: `/t/${tenantPublicId}/orders/templates` },
+        { label: t('orders_automation'), href: `/t/${tenantPublicId}/orders/automation` },
+        { label: t('orders_export'), href: `/t/${tenantPublicId}/orders/export` },
+        { label: t('orders_import'), href: `/t/${tenantPublicId}/orders/import` },
+        { label: t('orders_settings'), href: `/t/${tenantPublicId}/orders/settings` },
+      ],
     },
     {
       id: 'products',
@@ -149,21 +165,12 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
     },
   ];
 
-  const isChildActive = (href: string) => {
-    if (href.includes('?')) {
-      const [basePath, search] = href.split('?');
-      if (pathname !== basePath) return false;
-      const targetTab = new URLSearchParams(search).get('tab');
-      const currentTab = searchParams?.get('tab') || 'settings';
-      return targetTab === currentTab;
-    }
-    if (href === `/t/${tenantPublicId}/dashboard`) return pathname === `/t/${tenantPublicId}/dashboard`;
-    return pathname.startsWith(href);
-  };
+  const isChildActive = (href: string, exact?: boolean) =>
+    isNavItemActive(pathname, searchParams, href, exact);
 
   const isGroupActive = (group: NavGroup) => {
-    if (group.href) return isChildActive(group.href);
-    return group.children?.some((child) => isChildActive(child.href)) || false;
+    if (group.href) return isChildActive(group.href, group.exact);
+    return group.children?.some((child) => isChildActive(child.href, child.exact)) || false;
   };
 
   // Auto-expand group if current pathname matches any child route
@@ -172,7 +179,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       const updated = { ...prev };
       let changed = false;
       navGroups.forEach((group) => {
-        if (group.children?.some((child) => isChildActive(child.href))) {
+        if (group.children?.some((child) => isChildActive(child.href, child.exact))) {
           if (!updated[group.id]) {
             updated[group.id] = true;
             changed = true;
@@ -225,7 +232,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
           const hasChildren = Boolean(group.children && group.children.length > 0);
 
           if (group.href) {
-            const active = isChildActive(group.href);
+            const active = isChildActive(group.href, group.exact);
             return (
               <div key={group.id}>
                 <Link
@@ -269,11 +276,17 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
               {/* Group Header Button */}
               <button
                 onClick={() => {
-                  if (hasChildren && !isCollapsed) {
-                    toggleGroup(group.id);
+                  if (!hasChildren) return;
+                  if (isCollapsed) {
+                    onToggleCollapse();
+                    setOpenGroups((prev) => ({ ...prev, [group.id]: true }));
+                    return;
                   }
+                  toggleGroup(group.id);
                 }}
                 title={isCollapsed ? group.label : undefined}
+                aria-expanded={hasChildren ? Boolean(isOpen) : undefined}
+                aria-controls={hasChildren ? `nav-group-${group.id}` : undefined}
                 className={`
                   group w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium
                   transition-all duration-150 text-left
@@ -313,9 +326,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
 
               {/* Sub-Items Collapsible Container */}
               {hasChildren && isOpen && !isCollapsed && (
-                <div className="space-y-0.5 py-0.5 animate-fade-in">
+                <div id={`nav-group-${group.id}`} className="space-y-0.5 py-0.5 animate-fade-in">
                   {group.children!.map((child) => {
-                    const active = isChildActive(child.href);
+                    const active = isChildActive(child.href, child.exact);
                     return (
                       <Link
                         key={child.href + child.label}
