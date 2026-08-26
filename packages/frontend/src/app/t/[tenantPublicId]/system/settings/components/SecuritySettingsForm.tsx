@@ -53,7 +53,7 @@ export function SecuritySettingsForm() {
   if (!formData) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSave} className="space-y-6 w-full">
       <div>
         <h3 className="text-lg font-medium leading-6 text-gray-900">Workspace Security Policy</h3>
         <p className="mt-1 text-sm text-gray-500">Enforce global login attempts, session expiration timers, and 2FA policies.</p>

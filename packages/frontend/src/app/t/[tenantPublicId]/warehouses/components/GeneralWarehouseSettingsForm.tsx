@@ -56,7 +56,7 @@ export function GeneralWarehouseSettingsForm() {
   if (!formData) return <div className="animate-pulse h-64 bg-gray-50 rounded-lg"></div>;
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 max-w-3xl">
+    <form onSubmit={handleSave} className="space-y-6 w-full">
       <div>
         <h3 className="text-lg font-medium leading-6 text-gray-900">General Warehouse Settings</h3>
         <p className="mt-1 text-sm text-gray-500">Configure how warehouses operate and their default stock statuses in the system.</p>

@@ -71,7 +71,7 @@ export function GeneralSettingsForm() {
   const selectedLang = languages.find((l) => l.code === formData.defaultLanguage) || languages.find((l) => l.code === 'en-US') || languages[0];
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 max-w-3xl">
+    <form onSubmit={handleSave} className="space-y-6 w-full">
       <div>
         <h3 className="text-lg font-medium leading-6 text-gray-900">{t('title')}</h3>
         <p className="mt-1 text-sm text-gray-500">{t('description')}</p>

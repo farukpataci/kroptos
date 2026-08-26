@@ -113,19 +113,19 @@ export default function IntegrationsParentPage() {
       <IntegrationTree />
 
       {/* Action Bar Box */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-slate-900 to-indigo-950 p-5 rounded-2xl border border-slate-800 text-white shadow-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-blue-600 to-indigo-600 p-5 rounded-2xl border border-indigo-500 text-white shadow-lg">
         <div className="space-y-1">
           <h1 className="text-base font-bold">Entegrasyon Merkezi</h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-blue-100">
             Sisteme bağlı aktif entegrasyonlarınızı yönetin veya yeni entegrasyon ekleyin.
           </p>
         </div>
 
         <button
           onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 text-xs font-bold shadow-lg shadow-emerald-500/20 transition-all hover:scale-105 whitespace-nowrap"
+          className="flex items-center justify-center gap-2 rounded-xl bg-white hover:bg-slate-100 text-indigo-700 px-6 py-3 text-sm font-bold shadow-lg shadow-black/10 transition-all hover:scale-105 whitespace-nowrap"
         >
-          <PlusIcon className="h-4 w-4 stroke-[3]" />
+          <PlusIcon className="h-5 w-5 stroke-[3]" />
           <span>Entegrasyon Ekle</span>
         </button>
       </div>

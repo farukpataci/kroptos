@@ -116,9 +116,9 @@ export default function Header({ onOpenMobileSidebar }: HeaderProps) {
     ? rawStores.filter((t: any) => t.agencyId === tenantContext.agencyId)
     : rawStores;
 
-  // Add "Tüm Markalar (Havuz)" option at top
+  // Add "Tüm Markalar" option at top
   const stores = [
-    { id: 'all', name: 'Tüm Markalar (Havuz)', publicId: agencyPublicId },
+    { id: 'all', name: 'Tüm Markalar', publicId: agencyPublicId },
     ...availableStores,
   ];
 

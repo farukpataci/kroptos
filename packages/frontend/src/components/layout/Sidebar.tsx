@@ -323,7 +323,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
                         prefetch={true}
                         onClick={onCloseMobile}
                         className={`
-                          flex items-center justify-between rounded-md py-1.5 px-3 pl-10 text-xs font-medium
+                          flex items-center justify-between rounded-md py-1.5 px-3 pl-10 text-sm font-medium
                           transition-all duration-150
                           ${active
                             ? 'text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/30 font-semibold'

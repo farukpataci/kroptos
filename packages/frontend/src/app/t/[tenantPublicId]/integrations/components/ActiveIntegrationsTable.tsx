@@ -96,10 +96,10 @@ export function ActiveIntegrationsTable({
   return (
     <div className="w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden animate-fade-in">
       {/* Section title bar */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3.5 text-white flex items-center justify-between">
+      <div className="bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-6 py-3.5 text-slate-700 dark:text-slate-200 flex items-center justify-between">
         <h3 className="text-xs font-bold uppercase tracking-wider font-mono">Bağlı Entegrasyonlar</h3>
         {items.length > 0 && (
-          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[0.6875rem] font-bold">
+          <span className="rounded-full bg-slate-200 dark:bg-slate-700 px-2.5 py-0.5 text-[0.6875rem] font-bold">
             {activeCount} aktif / {items.length} bağlantı
           </span>
         )}

@@ -65,7 +65,7 @@ export function WarehouseSettingsForm() {
   if (!formData) return <div className="animate-pulse h-64 bg-gray-100 rounded-lg"></div>;
 
   return (
-    <form onSubmit={handleSave} className="space-y-6 max-w-2xl">
+    <form onSubmit={handleSave} className="space-y-6 w-full">
       <div>
         <h3 className="text-lg font-medium leading-6 text-gray-900">Warehouse & Inventory Settings</h3>
         <p className="mt-1 text-sm text-gray-500">Manage default stock fulfillment hubs and inventory buffer thresholds.</p>

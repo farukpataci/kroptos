@@ -35,18 +35,20 @@ export default function WarehousesPage() {
         <p className="text-gray-500">{t('subtitle')}</p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-6 mt-6">
+      <div className="flex flex-col gap-6 mt-6">
         {/* Navigation Tabs */}
-        <div className="w-full lg:w-64 flex-shrink-0">
-          <nav className="flex lg:flex-col space-x-2 lg:space-x-0 lg:space-y-1 overflow-x-auto pb-2 lg:pb-0">
+        <div className="border-b border-gray-200">
+          {/* Nine tabs do not fit a narrow viewport; they scroll sideways
+              rather than wrapping into a block that pushes the panel down. */}
+          <nav className="flex gap-1 overflow-x-auto -mb-px">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`whitespace-nowrap px-4 py-2 text-sm font-medium rounded-lg transition-colors text-left ${
+                className={`whitespace-nowrap px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-indigo-50 text-indigo-700'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'border-indigo-600 text-indigo-700'
+                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
                 }`}
               >
                 {t(tab.labelKey)}
@@ -56,7 +58,7 @@ export default function WarehousesPage() {
         </div>
 
         {/* Content Panel */}
-        <div className="flex-1 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px]">
+        <div className="w-full bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px]">
           {activeTab === 'general' && <GeneralWarehouseSettingsForm />}
           {activeTab === 'warehouses' && <WarehousesTable />}
           {activeTab === 'zones' && <WarehouseZonesTable />}
