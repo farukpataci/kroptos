@@ -5,6 +5,38 @@ import { useTranslations } from 'next-intl';
 import { apiFetch } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
+/*
+ * TODO(backend): per-warehouse stock split for the "Depo Dağılımı" column.
+ *
+ * There is no endpoint to add here yet, because the schema does not hold the
+ * number the column wants. Four tables carry stock and none of them is a live
+ * per-warehouse total (verified against packages/backend/prisma/schema.prisma):
+ *
+ *   Inventory          @@unique([storeId, productId]) — no warehouseId at all.
+ *                      This is the live figure, and it is per STORE. It cannot
+ *                      be split by warehouse, however the query is written.
+ *   InventorySnapshot  has warehouseId, but @@unique([agencyId, date,
+ *                      productId, warehouseId]) with `date @db.Date` — it is a
+ *                      DAILY snapshot. Reading a split from it answers "as of
+ *                      yesterday", never "right now". Showing that in a column
+ *                      an operator uses to decide what to pick is worse than
+ *                      showing nothing.
+ *   StockMovement      has warehouseId, locationId, previousQty and newQty. A
+ *                      live split is derivable here and only here: take the
+ *                      newQty of the LATEST movement per (productId,
+ *                      warehouseId) pair. That is the query to write.
+ *   StockReservation   has warehouseId — needed to turn that split into an
+ *                      available-per-warehouse figure rather than a total.
+ *
+ * And the larger question first: `Product.stockQuantity` (a denormalised total
+ * on the product), `Inventory` (per store) and the warehouse-level movements
+ * are THREE separate sources of stock, and which one is authoritative has not
+ * been decided. Picking a source for this column silently picks it for the
+ * system. That decision is its own db/prisma task — do not settle it here.
+ *
+ * Until then the column renders the single store-level entry it has.
+ */
+
 /** One `/api/inventory` row, as the backend actually returns it. */
 interface InventoryRow {
   id: string;
@@ -42,9 +74,9 @@ export interface StockRow {
   defectiveQty: number;
   reorderLevel: number;
   /**
-   * Always a single entry today. `Inventory` is keyed by (storeId, productId)
-   * and carries no warehouseId, so there is no per-warehouse split to show.
-   * Kept as a list so the column does not have to be rebuilt when there is.
+   * Always a single store-level entry today — see the TODO at the top of this
+   * file for why there is no live per-warehouse split to put here. A list so
+   * the column does not have to be rebuilt once there is one.
    */
   warehouses: string[];
   lastMovementAt: string | null;
