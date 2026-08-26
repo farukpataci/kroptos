@@ -196,7 +196,9 @@ export class ShipmentService {
 
     const where: Prisma.ShipmentWhereInput = {
       ...this.scopeWhere(scope),
-      ...(query.status ? { status: query.status } : {}),
+      // `in` for one value too: a single-element list is the same query plan,
+      // and branching on the length is a second code path to keep correct.
+      ...(query.status?.length ? { status: { in: query.status } } : {}),
       ...(query.provider ? { provider: query.provider.toUpperCase() } : {}),
       ...(query.problem ? this.problemWhere(query.problem as ShipmentProblem) : {}),
       ...(query.from || query.to

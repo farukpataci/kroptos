@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowUturnLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import StatusBadge from '@/components/ui/StatusBadge';
@@ -8,7 +8,7 @@ import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 import { pageWindow } from '@/lib/pagination';
 import { Shipment, badgeType } from '../../shipping/shipmentStatus';
-import { SubPageShell } from '../components/SubPageShell';
+import { SubPageShell } from '@/components/layout/SubPageShell';
 
 /**
  * The return leg of a shipment, as the carrier reports it. There is no Return
@@ -50,6 +50,11 @@ export default function OrderReturnsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  /** The request still in flight, so a newer one can cancel it. */
+  const inFlight = useRef<AbortController | null>(null);
+  /** Monotonic ticket: only the newest request may write to state. */
+  const latestRequest = useRef(0);
+
   // Typing hits the API, so it waits for the typist to stop. Filtering the page
   // in hand instead would answer "no such return" for anything off page one.
   useEffect(() => {
@@ -65,32 +70,47 @@ export default function OrderReturnsPage() {
       setIsLoading(false);
       return;
     }
+
+    // Cancel whatever is still in flight, and remember which request this is.
+    // Without both, typing and then paging can land the older answer last and
+    // overwrite the newer one while the UI shows the new page selected.
+    inFlight.current?.abort();
+    const controller = new AbortController();
+    inFlight.current = controller;
+    const ticket = ++latestRequest.current;
+
     setIsLoading(true);
     setError(null);
     try {
-      // One status at a time: the endpoint takes a single value, so "all
-      // returns" is three calls rather than a filter the API does not offer.
-      const wanted = status ? [status] : RETURN_STATUSES;
-      const pages = await Promise.all(
-        wanted.map((s) =>
-          api.get<ListResponse>('/api/shipments', {
-            params: { page, pageSize, status: s, q: query || undefined },
-          }),
-        ),
-      );
-      const items = pages.flatMap((p) => p.items);
-      items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-      setRows(items);
-      setTotal(pages.reduce((sum, p) => sum + p.total, 0));
-      setPageSize(pages[0]?.pageSize ?? pageSize);
+      // One request. The endpoint takes a comma-separated status list, so the
+      // server does the filtering, the counting and the ordering — the three
+      // things a client-side merge of three separate queries got wrong.
+      const result = await api.get<ListResponse>('/api/shipments', {
+        params: {
+          page,
+          pageSize,
+          status: (status ? [status] : RETURN_STATUSES).join(','),
+          q: query || undefined,
+        },
+        signal: controller.signal,
+      });
+      if (ticket !== latestRequest.current) return;
+
+      // No client-side sort: `total` and the ordering are the server's, and
+      // re-sorting the page in hand would only ever reorder 50 rows out of N.
+      setRows(result.items);
+      setTotal(result.total);
+      setPageSize(result.pageSize ?? pageSize);
     } catch (e: any) {
+      // An aborted request is not a failure — it is the previous keystroke.
+      if (e?.name === 'AbortError' || ticket !== latestRequest.current) return;
       // Shown, not swallowed: a 403 here means the role lacks shipments.read,
       // and an empty table would read as "no returns" instead of "not yours".
       setError(e?.message || t('loadFailed'));
       setRows([]);
       setTotal(0);
     } finally {
-      setIsLoading(false);
+      if (ticket === latestRequest.current) setIsLoading(false);
     }
   }, [tenantContext.storeId, tenantContext.agencyId, page, pageSize, status, query, t]);
 

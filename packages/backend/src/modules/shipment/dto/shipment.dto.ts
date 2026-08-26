@@ -231,10 +231,37 @@ export class HandoverShipmentsDto {
 }
 
 export class ListShipmentsQueryDto {
-  @ApiPropertyOptional({ enum: SHIPMENT_STATUSES })
-  @IsIn(SHIPMENT_STATUSES as readonly string[])
+  /**
+   * One status, or several separated by commas.
+   *
+   * The list exists because a return is not a status — it is the chain
+   * undelivered -> returning -> returned, and a screen showing "returns" has to
+   * ask for all three. Asking three times and merging in the browser breaks the
+   * page count (three pages of 50 concatenate to 150 rows on "page 1") and the
+   * ordering (each query is sorted only within itself).
+   *
+   * A single value still validates and behaves exactly as before.
+   */
+  @ApiPropertyOptional({
+    description: `One of ${SHIPMENT_STATUSES.join(', ')} — or several, comma separated.`,
+    example: 'undelivered,returning,returned',
+  })
+  @Transform(({ value }) =>
+    typeof value === 'string'
+      ? value
+          .split(',')
+          .map((part) => part.trim())
+          .filter(Boolean)
+      : value,
+  )
+  @IsArray()
+  // `?status=` with nothing after it was a 400 before this change and stays one.
+  @ArrayMinSize(1)
+  // Per element, so one bad value in the list is rejected rather than silently
+  // widening the query to every shipment the tenant owns.
+  @IsIn(SHIPMENT_STATUSES as readonly string[], { each: true })
   @IsOptional()
-  status?: string;
+  status?: string[];
 
   @ApiPropertyOptional()
   @IsString()
