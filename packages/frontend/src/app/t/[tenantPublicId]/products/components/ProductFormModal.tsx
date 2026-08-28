@@ -415,15 +415,38 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
     <div className="fixed inset-0 z-[70] bg-kp-bg-secondary flex flex-col h-screen w-screen overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="flex items-center justify-between px-8 py-5 border-b border-kp-border bg-kp-bg-primary/20 flex-shrink-0">
-        <div>
+        {/* Identity of the record being edited. Read off `product`, the saved
+            row, not `form`: the header says which product this is, and echoing
+            a half-typed name there would claim an edit that is not stored yet.
+            The modal closes on save, so reopening shows the new values. */}
+        <div className="min-w-0 flex-1">
           <h3 className="text-base font-bold text-kp-text-primary">
             {isEdit ? t('editTitle') : t('createTitle')}
           </h3>
-          <p className="text-xs text-kp-text-tertiary mt-0.5">
-            {isEdit ? `SKU: ${product?.sku}` : t('createSubtitle')}
-          </p>
+          {isEdit ? (
+            <>
+              <p
+                className="mt-0.5 truncate text-xs font-medium text-kp-text-secondary"
+                title={product?.name}
+              >
+                {product?.name || '—'}
+              </p>
+              <p className="mt-0.5 font-mono text-[0.6875rem] text-kp-text-tertiary">
+                <span>SKU: {product?.sku}</span>
+                {/* Omitted rather than shown empty: most rows carry no barcode,
+                    and "Barkod: —" on every one of them is noise. */}
+                {product?.barcode && (
+                  <span className="ml-2 border-l border-kp-border pl-2">
+                    {t('accounting.barcode')}: {product.barcode}
+                  </span>
+                )}
+              </p>
+            </>
+          ) : (
+            <p className="mt-0.5 text-xs text-kp-text-tertiary">{t('createSubtitle')}</p>
+          )}
         </div>
-        <button onClick={onClose} className="rounded-kp-md p-1.5 hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
+        <button onClick={onClose} className="ml-4 flex-shrink-0 rounded-kp-md p-1.5 hover:bg-kp-bg-hover text-kp-text-tertiary hover:text-kp-text-primary transition-colors">
           <XMarkIcon className="h-5 w-5" />
         </button>
       </div>
