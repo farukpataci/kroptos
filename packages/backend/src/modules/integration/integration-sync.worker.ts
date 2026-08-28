@@ -7,6 +7,7 @@ import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/cor
 import type { MarketplaceConnector } from '../../integrations/marketplaces/core/MarketplaceConnector';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
 import { decrypt } from '../../common/utils/encryption.util';
+import { generatePublicId } from '../../common/utils/id-generator';
 import { syncEventEmitter } from './integration-queue.service';
 import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 import { Worker, Job } from 'bullmq';
@@ -563,6 +564,12 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
                   agencyId: integration.agencyId,
                   clientId,
                   storeId,
+                  // Our own identifier for the order, independent of whatever
+                  // the marketplace called it. Manually created orders have had
+                  // one since day one (OrderService.create); this path did not,
+                  // so 147 of 162 rows had no id of ours at all and `get()` —
+                  // which already accepts a publicId — could not find them by it.
+                  publicId: generatePublicId('ord', 12),
                   orderNumber: o.orderNumber,
                   // Set only by marketplaces that split an order across
                   // shipments; `orderNumber` is then composite and this keeps

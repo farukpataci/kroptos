@@ -25,6 +25,10 @@ export interface OrderTimeline {
 
 export interface Order {
   id: string;
+  /** Our own identifier, independent of the marketplace's number. Optional
+   *  because rows imported before the sync worker started writing it have
+   *  none until the backfill runs. */
+  publicId?: string;
   orderNumber: string;
   customerName: string;
   customerEmail?: string;
@@ -135,7 +139,8 @@ export function useOrders() {
       const matchesName = order.customerName?.toLowerCase().includes(q);
       const matchesNumber = order.orderNumber?.toLowerCase().includes(q);
       const matchesEmail = order.customerEmail?.toLowerCase().includes(q);
-      if (!matchesName && !matchesNumber && !matchesEmail) return false;
+      const matchesPublicId = order.publicId?.toLowerCase().includes(q);
+      if (!matchesName && !matchesNumber && !matchesEmail && !matchesPublicId) return false;
     }
 
     // Status filter

@@ -465,6 +465,7 @@ export default function OrdersTable({
                   className="rounded border-kp-border text-kp-accent focus:ring-0 cursor-pointer h-3.5 w-3.5 bg-kp-bg-primary"
                 />
               </th>
+              <th className="py-3 px-4">{t('columns.kroptosId')}</th>
               <th className="py-3 px-4">{t('columns.orderNo')}</th>
               <th className="py-3 px-4">{t('columns.customer')}</th>
               <th className="py-3 px-4">{t('columns.products')}</th>
@@ -482,7 +483,7 @@ export default function OrdersTable({
                   <td className="py-4 px-4 w-10">
                     <div className="h-3.5 w-3.5 rounded bg-kp-bg-tertiary animate-pulse" />
                   </td>
-                  {Array.from({ length: 8 }).map((_, j) => (
+                  {Array.from({ length: 9 }).map((_, j) => (
                     <td key={j} className="py-4 px-4">
                       <div className="h-3 rounded bg-kp-bg-tertiary animate-pulse" style={{ width: `${60 + Math.random() * 40}%` }} />
                     </td>
@@ -491,7 +492,7 @@ export default function OrdersTable({
               ))
             ) : orders.length === 0 ? (
               <tr>
-                <td colSpan={9} className="py-16 text-center">
+                <td colSpan={10} className="py-16 text-center">
                   <div className="flex flex-col items-center gap-2">
                     <span className="text-3xl">📦</span>
                     <p className="text-sm font-medium text-kp-text-secondary">{t('empty.title')}</p>
@@ -517,6 +518,11 @@ export default function OrdersTable({
                       onChange={(e) => toggleSelectOrder(order.id, e as any)}
                       className="rounded border-kp-border text-kp-accent focus:ring-0 cursor-pointer h-3.5 w-3.5 bg-kp-bg-primary"
                     />
+                  </td>
+                  <td className="py-3.5 px-4">
+                    <span className="font-mono text-[0.6875rem] text-kp-text-secondary">
+                      {order.publicId || '—'}
+                    </span>
                   </td>
                   <td className="py-3.5 px-4">
                     <div className="flex items-center gap-2">

@@ -656,6 +656,7 @@
       "manualStore": "Manuel Mağaza",
       "paginationSummary": "/ {total} sipariş",
       "columns": {
+        "kroptosId": "KroptOS ID",
         "orderNo": "Sipariş No",
         "customer": "Müşteri",
         "products": "Ürünler",
@@ -931,6 +932,56 @@
       "deleteModal": {
         "title": "Depo Bölgesini Sil",
         "desc": "<b>{name}</b> bölgesini silmek istediğinize emin misiniz? Bu bölgeye bağlı raflar ve lokasyonlar etkilenebilir."
+      }
+    },
+    "locations": {
+      "title": "Raf & Adres Yönetimi",
+      "subtitle": "Depolarınızın içindeki Koridor, Raf, Göz ve Kat seviyesindeki hücresel adresleri yönetin",
+      "addLocation": "Yeni Lokasyon Ekle",
+      "searchPlaceholder": "Adres kodu, barkod veya raf ile ara...",
+      "warehouseFilter": "Depo:",
+      "allWarehouses": "Tüm Depolar",
+      "zoneFilter": "Bölge:",
+      "allZones": "Tüm Bölgeler",
+      "colCodeBarcode": "Adres Kodu & Barkod",
+      "colWarehouseZone": "Bağlı Depo & Bölge",
+      "colHierarchy": "Hiyerarşi (A/R/G/L)",
+      "colCapacity": "Kapasite",
+      "colPickPriority": "Toplama Önceliği",
+      "colStatus": "Durum",
+      "colActions": "İşlemler",
+      "loading": "Lokasyonlar yükleniyor...",
+      "loadFailed": "Veriler yüklenirken bir hata oluştu.",
+      "empty": "Eşleşen lokasyon adresi bulunamadı.",
+      "zonePrefix": "Bölge",
+      "desiUnit": "Desi",
+      "fillRequired": "Lütfen bağlı depo, bölge ve lokasyon kodunu doldurun.",
+      "updateSuccess": "Lokasyon bilgisi başarıyla güncellendi.",
+      "createSuccess": "Yeni lokasyon adresi başarıyla oluşturuldu.",
+      "saveFailed": "Lokasyon kaydedilemedi.",
+      "deleteSuccess": "Lokasyon adresi başarıyla silindi.",
+      "deleteFailed": "Lokasyon silinemedi.",
+      "modal": {
+        "editTitle": "Lokasyon Adresi Düzenle",
+        "createTitle": "Yeni Lokasyon Adresi Ekle",
+        "warehouseLabel": "Bağlı Depo *",
+        "zoneLabel": "Bağlı Bölge *",
+        "aisle": "Koridor (Ais)",
+        "shelf": "Raf (Rack)",
+        "bin": "Göz (Bin)",
+        "level": "Kat (Lvl)",
+        "codeLabel": "Adres Kodu *",
+        "barcodeLabel": "Adres Barkodu",
+        "capacityLabel": "Kapasite (Desi) *",
+        "pickPriorityLabel": "Toplama Önceliği (1-100) *",
+        "statusLabel": "Durumu",
+        "discard": "Vazgeç",
+        "saveChanges": "Değişiklikleri Kaydet",
+        "createLocation": "Lokasyon Oluştur"
+      },
+      "deleteModal": {
+        "title": "Lokasyon Adresini Sil",
+        "desc": "<b>{name}</b> lokasyon adresini silmek istediğinize emin misiniz?"
       }
     }
   },
