@@ -483,7 +483,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
       <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
         <div className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-4xl mx-auto w-full space-y-6">
+          <div className="w-full space-y-6">
             {error && (
               <div className="flex items-start gap-2 p-3 text-xs rounded-kp-md bg-kp-danger/10 border border-kp-danger/20 text-kp-danger">
                 <ExclamationTriangleIcon className="h-4 w-4 flex-shrink-0 mt-0.5" />
@@ -669,7 +669,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
 
             {/* ── BASIC TAB ── */}
             {activeTab === 'basic' && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div>
                   <label className={labelCls}>{t('basic.nameLabel')} <span className="text-kp-danger">*</span></label>
                   <input type="text" required value={form.name} onChange={(e) => set('name', e.target.value)} placeholder={t('basic.namePlaceholder')} className={inputCls} />
@@ -678,7 +678,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                   <label className={labelCls}>{t('basic.skuLabel')} <span className="text-kp-danger">*</span></label>
                   <input type="text" required value={form.sku} onChange={(e) => set('sku', e.target.value)} placeholder={t('basic.skuPlaceholder')} className={`${inputCls} font-mono`} />
                 </div>
-                <div className="col-span-2">
+                <div className="col-span-full">
                   <label className={labelCls}>{t('basic.descriptionLabel')}</label>
                   <textarea rows={3} value={form.description} onChange={(e) => set('description', e.target.value)} placeholder={t('basic.descriptionPlaceholder')} className={`${inputCls} resize-none`} />
                 </div>
@@ -1018,7 +1018,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
             {/* ── PRICING TAB ── */}
             {activeTab === 'pricing' && (
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   <div>
                     <label className={labelCls}>{t('pricing.priceLabel')} <span className="text-kp-danger">*</span></label>
                     <div className="relative">
@@ -1085,14 +1085,13 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                 <p className="text-xs text-kp-text-tertiary">
                   {t('dimensions.desc')}
                 </p>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <label className={labelCls}>{t('dimensions.weightLabel')}</label>
                     <input type="number" step="0.001" value={form.weight} onChange={(e) => set('weight', e.target.value)} placeholder={t('dimensions.weightPlaceholder')} className={inputCls} />
                   </div>
-                  <div />
                 </div>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <div>
                     <label className={labelCls}>{t('dimensions.widthLabel')}</label>
                     <input type="number" step="0.1" value={form.width} onChange={(e) => set('width', e.target.value)} placeholder="0.0" className={inputCls} />
@@ -1127,7 +1126,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
                   {t('images.desc')}
                 </p>
 
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-6">
                   {images.map((img, idx) => (
                     <div
                       key={idx}
@@ -1216,7 +1215,7 @@ export default function ProductFormModal({ product, categories, onClose, onSubmi
         {/* Footer */}
         {activeTab !== 'integrations' && (
           <div className="border-t border-kp-border bg-kp-bg-primary/30 flex-shrink-0">
-            <div className="max-w-4xl mx-auto w-full flex items-center justify-end gap-3 px-8 py-4">
+            <div className="w-full flex items-center justify-end gap-3 px-8 py-4">
               <button type="button" onClick={onClose} className="rounded-kp-md border border-kp-border px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary transition-colors">
                 {tc('actions.cancel')}
               </button>
