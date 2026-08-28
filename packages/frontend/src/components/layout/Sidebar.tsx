@@ -111,6 +111,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         { label: t('orders_list'), href: `/t/${tenantPublicId}/orders`, exact: true },
         { label: t('orders_invoices'), href: `/t/${tenantPublicId}/orders/invoices` },
         { label: t('orders_returns'), href: `/t/${tenantPublicId}/orders/returns` },
+        { label: t('shipping'), href: `/t/${tenantPublicId}/shipping` },
         { label: t('orders_customers'), href: `/t/${tenantPublicId}/orders/customers` },
         { label: t('orders_statuses'), href: `/t/${tenantPublicId}/orders/statuses` },
         { label: t('orders_templates'), href: `/t/${tenantPublicId}/orders/templates` },
@@ -129,25 +130,11 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         // without this it stays highlighted on all of them.
         { label: t('products_list'), href: `/t/${tenantPublicId}/products`, exact: true },
         { label: t('products_stock'), href: `/t/${tenantPublicId}/products/stock` },
+        { label: t('inventory'), href: `/t/${tenantPublicId}/inventory` },
         { label: t('products_automation'), href: `/t/${tenantPublicId}/products/automation` },
         { label: t('products_transfer'), href: `/t/${tenantPublicId}/products/transfer` },
         { label: t('products_settings'), href: `/t/${tenantPublicId}/products/settings` },
       ],
-    },
-    {
-      id: 'inventory',
-      label: t('inventory'),
-      icon: CubeIcon,
-      href: `/t/${tenantPublicId}/inventory`,
-    },
-    // Sits between stock and the integration/system groups because that is
-    // where it sits in the day: an order is picked from inventory, then handed
-    // to a carrier. Everything below this line is configuration, not daily work.
-    {
-      id: 'shipping',
-      label: t('shipping'),
-      icon: TruckIcon,
-      href: `/t/${tenantPublicId}/shipping`,
     },
     {
       id: 'integrations',
@@ -204,11 +191,11 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       <div className="flex h-header items-center justify-between border-b border-kp-border px-5">
         <Link href={`/t/${tenantPublicId}/dashboard`} prefetch={true} className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-kp-md bg-kp-accent shadow-kp-glow">
-            <span className="text-sm font-bold text-white">K</span>
+            <span className="text-sm font-bold text-white">A</span>
           </div>
           {!isCollapsed && (
             <div className="animate-fade-in">
-              <h1 className="text-sm font-bold text-kp-text-primary tracking-tight">KroptOS</h1>
+              <h1 className="text-sm font-bold text-kp-text-primary tracking-tight">Alqora</h1>
               <p className="text-[0.625rem] font-semibold text-kp-text-tertiary uppercase tracking-widest">Commerce OS</p>
             </div>
           )}

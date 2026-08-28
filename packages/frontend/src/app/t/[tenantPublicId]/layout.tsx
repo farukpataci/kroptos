@@ -64,9 +64,9 @@ export default function DashboardGroupLayout({
       <div className="flex min-h-screen items-center justify-center bg-kp-bg-primary">
         <div className="flex flex-col items-center gap-4 animate-pulse">
           <div className="flex h-12 w-12 items-center justify-center rounded-kp-lg bg-kp-accent shadow-kp-glow">
-            <span className="text-lg font-bold text-white">K</span>
+            <span className="text-lg font-bold text-white">A</span>
           </div>
-          <p className="text-sm text-kp-text-tertiary">Loading KroptOS...</p>
+          <p className="text-sm text-kp-text-tertiary">Loading Alqora...</p>
         </div>
       </div>
     );

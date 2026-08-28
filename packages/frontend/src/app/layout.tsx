@@ -19,7 +19,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata = {
-  title: 'KroptOS — Commerce Operating System',
+  title: 'Alqora — Commerce Operating System',
   description: 'Multi-tenant commerce management platform for agencies, clients, and stores',
   keywords: 'commerce, operating system, multi-tenant, e-commerce, marketplace',
 };

@@ -57,7 +57,7 @@ describe('MarketplaceConnectorFactory / registry agreement', () => {
    * now covers it, which is the stronger check of the two.
    */
   it('allows a connector to exist without a registry entry', () => {
-    for (const provider of ['zalando', 'aliexpress', 'woocommerce', 'shopify']) {
+    for (const provider of ['woocommerce', 'shopify']) {
       expect(registry.isSupported(provider)).toBe(false);
       // The connector is reachable, so enabling the provider stays a one-line
       // registry change rather than a rewrite.

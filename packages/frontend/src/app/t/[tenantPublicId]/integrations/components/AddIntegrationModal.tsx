@@ -205,13 +205,13 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeBg: 'bg-slate-800/10 border-slate-800/20 text-slate-800 dark:text-slate-200',
     badgeText: 'Zalando',
     description:
-      'Avrupa moda pazaryeri (zDirect Partner Programme). Sipariş çekme ve stok gönderimi yazıldı; gerçek bir satıcı hesabında doğrulanmadığı için henüz etkinleştirilmedi.',
+      'Avrupa moda pazaryeri (zDirect Partner Programme). OAuth2 kimlik doğrulama, sipariş çekme, GTIN-13 EAN ile stok gönderimi ve kategori/outline eşleştirmesi.',
     // No "Varyantlar": there is no product or variant support at all — Zalando
     // publishes no article spec, so getProducts refuses. Listing a capability
     // the integration does not have is how a seller ends up trusting a sync
     // that never happens.
-    capabilities: ['Siparişler', 'Stok'],
-    status: 'coming_soon',
+    capabilities: ['Siparişler', 'Stok', 'Kategoriler'],
+    status: 'beta',
   },
   {
     id: 'allegro',
@@ -236,9 +236,10 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Pazaryeri',
     badgeBg: 'bg-red-500/10 border-red-500/20 text-red-600',
     badgeText: 'AliExpress',
-    description: 'Alibaba’nın küresel perakende pazaryeri. Sipariş ve stok akışı planlanıyor.',
-    capabilities: ['Siparişler', 'Stok', 'Fiyatlar'],
-    status: 'coming_soon',
+    description:
+      'Alibaba’nın küresel perakende pazaryeri (AliExpress Open Platform). App Key, App Secret ve Access Token ile sipariş çekme ve imza doğrulaması.',
+    capabilities: ['Siparişler'],
+    status: 'beta',
   },
   {
     id: 'emag',

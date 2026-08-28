@@ -82,9 +82,9 @@ describe('AddIntegrationModal', () => {
   });
 
   describe('planned marketplaces', () => {
-    // `allegro` and `temu` deliberately left out: their manifests are
+    // `allegro`, `temu`, `zalando` and `aliexpress` deliberately left out: their manifests are
     // registered, so those cards are connectable and neither is a planned entry.
-    const PLANNED = ['zalando', 'aliexpress', 'emag', 'kaufland', 'otto', 'bol'];
+    const PLANNED = ['emag', 'kaufland', 'otto', 'bol'];
 
     it.each(PLANNED)('lists %s in the catalogue', (id) => {
       expect(CATALOG_PROVIDERS.map((p) => p.id)).toContain(id);
@@ -105,10 +105,10 @@ describe('AddIntegrationModal', () => {
       open();
 
       await waitFor(() => {
-        expect(within(cardFor('Zalando')).getByRole('button')).toHaveTextContent('Çok yakında');
+        expect(within(cardFor('eMAG')).getByRole('button')).toHaveTextContent('Çok yakında');
       });
 
-      for (const name of ['AliExpress', 'eMAG', 'Kaufland Marketplace', 'OTTO Market', 'Bol']) {
+      for (const name of ['Kaufland Marketplace', 'OTTO Market', 'Bol']) {
         expect(within(cardFor(name)).getByRole('button')).toHaveTextContent('Çok yakında');
       }
     });
@@ -117,7 +117,7 @@ describe('AddIntegrationModal', () => {
       open();
 
       await waitFor(() => {
-        expect(within(cardFor('Zalando')).getByRole('button')).toBeDisabled();
+        expect(within(cardFor('eMAG')).getByRole('button')).toBeDisabled();
       });
     });
 

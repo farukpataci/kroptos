@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-@theme {
-  --font-outfit: 'Outfit', sans-serif;
-}
-
 /* ============================================
    KroptOS Commerce Operating System
    Global Design System

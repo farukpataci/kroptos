@@ -100,9 +100,8 @@ const UNREGISTERED: Array<[string, ProviderSettingsOverride]> = [
   //
   // emag was never in this list: it went straight into `OVERRIDES` on
   // 2026-08-14, so the registry loop covers it. Its dictionary entries landed on
-  // 2026-08-21, so the case above is green for `emag` too.
-  ['zalando', zalandoOverride],
-  ['aliexpress', aliexpressOverride],
+  // aliexpress moved out on 2026-08-28: it is registered now, so the loop over
+  // `registry.listProviders()` above covers it.
 ];
 
 describe('provider manifests have translations', () => {
@@ -139,12 +138,14 @@ describe('provider manifests have translations', () => {
      * soon. Their translations are checked anyway so that enabling one stays a
      * one-line change instead of turning into a screen full of raw keys.
      */
-    it.each(UNREGISTERED)('resolves every key the unregistered %s references', (_name, override) => {
-      const missing = (override.credentials ?? [])
-        .flatMap(fieldKeys)
-        .filter((key) => !resolves(dictionary, key));
+    if (UNREGISTERED.length > 0) {
+      it.each(UNREGISTERED)('resolves every key the unregistered %s references', (_name, override) => {
+        const missing = (override.credentials ?? [])
+          .flatMap(fieldKeys)
+          .filter((key) => !resolves(dictionary, key));
 
-      expect(missing).toEqual([]);
-    });
+        expect(missing).toEqual([]);
+      });
+    }
   });
 });
