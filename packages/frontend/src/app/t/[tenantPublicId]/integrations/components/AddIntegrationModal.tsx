@@ -426,7 +426,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Sendeo',
     description: 'Sendeo Kargo hızlı paket teslimat ve durum bildirimi entegrasyonu.',
     capabilities: ['Anlık Takip', 'Zamanlı Teslimat'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'hepsijet',
