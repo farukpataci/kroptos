@@ -415,7 +415,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'MNG Kargo',
     description: 'MNG Kargo entegrasyonu ile otomatik irsaliye ve kargo etiketi senkronizasyonu.',
     capabilities: ['Kargo Takip', 'Barkod Basımı'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'sendeo',

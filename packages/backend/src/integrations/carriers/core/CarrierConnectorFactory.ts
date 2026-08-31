@@ -7,6 +7,7 @@ import { HepsijetConnector } from '../hepsijet/HepsijetConnector';
 import { YurticiConnector } from '../yurtici/YurticiConnector';
 import { ArasConnector } from '../aras/ArasConnector';
 import { DhlConnector } from '../dhl/DhlConnector';
+import { MngConnector } from '../mng/MngConnector';
 
 @Injectable()
 export class CarrierConnectorFactory {
@@ -31,6 +32,8 @@ export class CarrierConnectorFactory {
         return new ArasConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       case 'DHL':
         return new DhlConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      case 'MNG':
+        return new MngConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       default:
         // Every other CarrierProvider value is declared in CarrierTypes but has
         // no connector yet. Refusing beats falling back to the mock: a silent
@@ -41,6 +44,6 @@ export class CarrierConnectorFactory {
 
   /** Providers that can actually be selected today. */
   supportedProviders(): string[] {
-    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL'];
+    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG'];
   }
 }
