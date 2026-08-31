@@ -470,7 +470,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'DPD EU',
     description: 'Almanya, Fransa, Polonya ve Hollanda başta olmak üzere Avrupa genelinde Amazon, Allegro ve eMAG kargo otomasyonu.',
     capabilities: ['Almanya/Fransa/Polonya', 'Allegro & eMAG', 'Barkod Basımı'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'gls',

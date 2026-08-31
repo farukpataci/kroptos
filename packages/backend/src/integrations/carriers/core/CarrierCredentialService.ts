@@ -23,6 +23,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   MNG: ['customerNumber', 'username', 'password'],
   SENDEO: ['username', 'password', 'customerCode'],
   PTT: ['username', 'password', 'customerCode'],
+  DPD: ['apiKey', 'accountNumber'],
 };
 
 @Injectable()
