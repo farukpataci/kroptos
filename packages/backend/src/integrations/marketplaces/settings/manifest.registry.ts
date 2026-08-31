@@ -21,6 +21,7 @@ import { temuOverride } from './providers/temu.settings';
 import { emagOverride } from './providers/emag.settings';
 import { zalandoOverride } from './providers/zalando.settings';
 import { aliexpressOverride } from './providers/aliexpress.settings';
+import { farmazonOverride } from './providers/farmazon.settings';
 
 /**
  * The one place a marketplace is registered. Adding a provider is this list
@@ -44,6 +45,7 @@ const OVERRIDES: ProviderSettingsOverride[] = [
   emagOverride,
   zalandoOverride,
   aliexpressOverride,
+  farmazonOverride,
 ];
 
 @Injectable()

@@ -2252,6 +2252,16 @@
           "passwordHelp": "API kullanıcısının şifresi. Şifrelenerek saklanır ve kaydedildikten sonra bir daha gösterilmez.",
           "ipWhitelist": "Sunucu IP adresi eMAG’de tanımlı olmalı",
           "ipWhitelistHelp": "eMAG, kayıtlı olmayan bir IP’den gelen isteği yanlış şifreyle aynı 401 hatasıyla reddeder. Bağlantı testi doğru bilgilere rağmen başarısız oluyorsa, sunucunuzun çıkış IP’sini eMAG destek ekibine bildirip beyaz listeye ekletin."
+        },
+        "farmazon": {
+          "username": "Farmazon Kullanıcı Adı",
+          "usernameHelp": "Farmazon’a giriş yaptığınız kullanıcı adı. Her isteğe eklenen User-Agent başlığı da bu addan üretilir.",
+          "password": "Farmazon Şifresi",
+          "clientName": "Client Name",
+          "clientNameHelp": "API başvurunuz onaylandığında Farmazon’un verdiği entegrasyon adı. Yardım merkezindeki sohbetten talep edilir.",
+          "clientSecretKey": "Client Secret Key",
+          "stagingHours": "Test ortamı hafta içi 08:00-20:00 arası açıktır",
+          "stagingHoursHelp": "Ortam olarak “Test” seçiliyse, bu saatlerin dışında bağlantı testi kimlik bilgileriniz doğru olsa da başarısız olur. Canlı ortam bu kısıttan etkilenmez."
         }
       },
       "mapping": {

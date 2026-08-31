@@ -18,6 +18,7 @@ import { ZalandoConnector } from '../zalando/ZalandoConnector';
 import { AllegroConnector } from '../allegro/AllegroConnector';
 import { AliExpressConnector } from '../aliexpress/AliExpressConnector';
 import { EmagConnector } from '../emag/EmagConnector';
+import { FarmazonConnector } from '../farmazon/FarmazonConnector';
 import { WooCommerceConnector } from '../../ecommerce/woocommerce/WooCommerceConnector';
 import { ShopifyConnector } from '../../ecommerce/shopify/ShopifyConnector';
 
@@ -72,6 +73,8 @@ export class MarketplaceConnectorFactory {
         return new AliExpressConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'EMAG':
         return new EmagConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'FARMAZON':
+        return new FarmazonConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'WOOCOMMERCE':
         return new WooCommerceConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'SHOPIFY':
