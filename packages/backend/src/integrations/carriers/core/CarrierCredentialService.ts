@@ -17,6 +17,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   // The mock has no upstream account, so it requires nothing.
   MOCK: [],
   HEPSIJET: ['userName', 'password', 'companyShortName'],
+  YURTICI: ['wsUserName', 'wsPassword'],
 };
 
 @Injectable()
