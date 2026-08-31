@@ -18,6 +18,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   MOCK: [],
   HEPSIJET: ['userName', 'password', 'companyShortName'],
   YURTICI: ['wsUserName', 'wsPassword'],
+  ARAS: ['userName', 'password', 'customerCode'],
 };
 
 @Injectable()

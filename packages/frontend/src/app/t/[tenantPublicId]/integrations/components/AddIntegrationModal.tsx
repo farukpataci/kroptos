@@ -404,7 +404,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Aras Kargo',
     description: 'Aras Kargo Web Servisleri ile kargo gönderisi oluşturma ve takip akışı.',
     capabilities: ['Etiket Oluşturma', 'Kargo Takip No'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'mng',
