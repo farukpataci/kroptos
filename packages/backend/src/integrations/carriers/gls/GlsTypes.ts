@@ -4,6 +4,7 @@ export const GLS_GATEWAY = {
 } as const;
 
 export const GLS_SHIPMENTS_PATH = '/backend/rs/shipments';
+export const GLS_TRACKING_PATH = '/backend/rs/tracking';
 
 export interface GlsCredentials {
   username: string;
