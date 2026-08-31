@@ -981,10 +981,10 @@ export function AddIntegrationModal({
 
   const isConnectable = (provider: CatalogProvider) => {
     if (provider.category === 'marketplace') {
-      return supportedMarketplaces?.has(provider.id) ?? false;
+      return supportedMarketplaces?.has(provider.id.toLowerCase()) ?? false;
     }
     if (provider.category === 'carrier') {
-      return supportedCarriers?.has(provider.id) ?? false;
+      return (supportedCarriers?.has(provider.id.toLowerCase()) ?? false) || provider.status === 'active';
     }
     return false;
   };
@@ -1153,7 +1153,10 @@ export function AddIntegrationModal({
                   {catGroup.items.map((provider) => {
                     const isConnected = connectedProviderIds.includes(provider.id);
                     const connectable = isConnectable(provider);
-                    const isPending = supportedMarketplaces === null;
+                    const isPending =
+                      provider.category === 'marketplace'
+                        ? supportedMarketplaces === null
+                        : supportedCarriers === null;
 
                     return (
                       <div
