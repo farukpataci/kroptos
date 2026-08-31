@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -11,6 +12,9 @@ import { IntegrationSettingsDrawer } from './marketplace/components/IntegrationS
 import { IntegrationSetupWizard } from './marketplace/components/IntegrationSetupWizard';
 
 export default function IntegrationsParentPage() {
+  const router = useRouter();
+  const params = useParams();
+  const tenantPublicId = params?.tenantPublicId as string;
   const toast = useToast();
   const [integrations, setIntegrations] = useState<ActiveIntegrationItem[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -35,6 +39,10 @@ export default function IntegrationsParentPage() {
   }, []);
 
   const handleSelectProvider = (provider: CatalogProvider) => {
+    if (provider.category === 'carrier') {
+      router.push(`/t/${tenantPublicId}/integrations/carrier`);
+      return;
+    }
     // Check if an integration for this provider already exists
     const existing = integrations.find((i) => i.provider.toLowerCase() === provider.id.toLowerCase());
     if (existing) {

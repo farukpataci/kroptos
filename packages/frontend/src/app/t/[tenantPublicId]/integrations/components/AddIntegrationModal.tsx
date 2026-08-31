@@ -253,6 +253,35 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'coming_soon',
   },
   {
+    id: 'farmazon',
+    name: 'Farmazon',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-teal-500/10 border-teal-500/20 text-teal-600',
+    badgeText: 'Farmazon',
+    description:
+      'Eczaneler arası pazaryeri; üyelik GLN numarası ile açılır. Sipariş çekme, listing okuma ve stok gönderimi yazıldı; gerçek bir satıcı hesabında henüz doğrulanmadığı için beta.',
+    // "Fiyatlar" ve "Kategoriler" bilerek yok: fiyat gönderen kod yazılmadı,
+    // kategori uç noktasını da Farmazon dokümanı yayımlamıyor.
+    capabilities: ['Siparişler', 'Ürünler', 'Stok'],
+    status: 'beta',
+  },
+  {
+    id: 'toptantr',
+    name: 'ToptanTR',
+    category: 'marketplace',
+    categoryLabel: 'Pazaryeri',
+    badgeBg: 'bg-amber-500/10 border-amber-500/20 text-amber-600',
+    // ToptanTR API dokümanını herkese açık yayımlamıyor; satıcı panelinde
+    // Satıcı Bilgileri > Entegrasyon altından alınıyor. Uç noktalar eldeki
+    // dokümanla doğrulanana kadar connector yazılmadı — uydurulmuş bir uç nokta,
+    // hiç olmayandan kötüdür.
+    badgeText: 'ToptanTR',
+    description: 'Toptan satış pazaryeri. API dokümanı satıcı panelinden alındığında bağlanacak.',
+    capabilities: ['Siparişler', 'Ürünler', 'Stok'],
+    status: 'coming_soon',
+  },
+  {
     id: 'kaufland',
     name: 'Kaufland Marketplace',
     category: 'marketplace',
@@ -896,11 +925,9 @@ export function AddIntegrationModal({
   // `null` while the registry is still loading: until it answers we cannot tell
   // a connectable provider from one that only exists in this list.
   const [supportedMarketplaces, setSupportedMarketplaces] = useState<Set<string> | null>(null);
+  const [supportedCarriers, setSupportedCarriers] = useState<Set<string> | null>(null);
 
-  // The backend registry is the authority on which marketplaces can actually be
-  // connected. The catalogue used to assert this itself, which is how entries
-  // with no manifest kept offering a "Bağlantı Kur" button that dead-ended in a
-  // 400 from the schema endpoint.
+  // The backend registry is the authority on which marketplaces & carriers can actually be connected.
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
@@ -911,9 +938,16 @@ export function AddIntegrationModal({
         setSupportedMarketplaces(new Set(providers.map((p) => p.provider.toLowerCase())));
       })
       .catch(() => {
-        // A failed lookup must not present everything as connectable; an empty
-        // set degrades to "coming soon", which is the safe direction.
         if (!cancelled) setSupportedMarketplaces(new Set());
+      });
+
+    apiFetch<Array<{ provider: string }>>('/carriers/providers')
+      .then((providers) => {
+        if (cancelled) return;
+        setSupportedCarriers(new Set(providers.map((p) => p.provider.toLowerCase())));
+      })
+      .catch(() => {
+        if (!cancelled) setSupportedCarriers(new Set());
       });
 
     return () => {
@@ -923,14 +957,15 @@ export function AddIntegrationModal({
 
   if (!isOpen) return null;
 
-  /**
-   * Only marketplaces can be connected through this modal — the setup wizard
-   * resolves its form from the marketplace manifest registry, so an ERP, cargo,
-   * accounting or e-commerce entry has no schema to render. Those are shown as
-   * upcoming rather than removed, so the catalogue still says what is planned.
-   */
-  const isConnectable = (provider: CatalogProvider) =>
-    provider.category === 'marketplace' && (supportedMarketplaces?.has(provider.id) ?? false);
+  const isConnectable = (provider: CatalogProvider) => {
+    if (provider.category === 'marketplace') {
+      return supportedMarketplaces?.has(provider.id) ?? false;
+    }
+    if (provider.category === 'carrier') {
+      return supportedCarriers?.has(provider.id) ?? false;
+    }
+    return false;
+  };
 
   const CATEGORY_TABS: { id: CategoryTab; label: string; icon: any; count: number }[] = [
     {
