@@ -32,6 +32,7 @@ describe('F-4: shipment idempotency against the real database', () => {
 
   const createShipment = jest.fn();
   const track = jest.fn();
+  const cancelShipment = jest.fn();
   const suffix = `it${Date.now()}`;
 
   // Everything created here is torn down in afterAll; the counts are compared
@@ -128,7 +129,7 @@ describe('F-4: shipment idempotency against the real database', () => {
           createShipment,
           getLabel: jest.fn(),
           track,
-          cancelShipment: jest.fn(),
+          cancelShipment,
           testConnection: jest.fn(),
         }),
         supportedProviders: () => ['MOCK'],
@@ -190,6 +191,7 @@ describe('F-4: shipment idempotency against the real database', () => {
       'carriers.create',
       'carriers.update',
       'shipments.handover',
+      'shipments.cancel',
     ];
     const permissions = [];
     for (const name of permissionNames) {
@@ -403,6 +405,60 @@ describe('F-4: shipment idempotency against the real database', () => {
     expect(a.publicId).toBe(b.publicId);
     expect(createShipment).toHaveBeenCalledTimes(1);
     expect(await prisma.shipment.count({ where: { agencyId, orderId } })).toBe(1);
+  }, 60000);
+
+  /**
+   * The other half of the suffix rule.
+   *
+   * `nextReferenceCode` counts an order's cancelled attempts, so a reshipped
+   * order asks the carrier under `<orderId>:2`. The race test above pins the
+   * count staying at zero while six requests are in flight; this pins it
+   * actually moving once an attempt is genuinely cancelled. A change that froze
+   * the suffix would pass that test and fail this one, which is why both are
+   * needed: the bug guarded against was a suffix that moved when it must not.
+   */
+  it('gives the next attempt its own reference code once the first is cancelled', async () => {
+    const orderId = `ord-${suffix}-reship`;
+
+    const created = await call('/api/shipments', { method: 'POST', body: shipmentBody(orderId) });
+    const firstShipment = (await created.json()) as any;
+    expect(created.status).toBe(201);
+    expect(firstShipment.referenceCode).toBe(orderId);
+
+    // The carrier confirms the void. Without this the row would count as a
+    // cancel the carrier refused — a real state, but a different test's.
+    cancelShipment.mockResolvedValue({ success: true });
+    const cancelled = await call(`/api/shipments/${firstShipment.id}/cancel`, {
+      method: 'POST',
+      body: { reason: 'reship test' },
+    });
+    expect(cancelled.status).toBe(200);
+    const closedRow = await prisma.shipment.findUnique({ where: { id: firstShipment.id } });
+    expect(closedRow!.status).toBe('cancelled');
+
+    // The same order again. findLiveShipment excludes cancelled rows, so this
+    // is not a repeat: the first barcode is void and the parcel still has to
+    // reach the buyer, so the order has to be shippable a second time.
+    const again = await call('/api/shipments', { method: 'POST', body: shipmentBody(orderId) });
+    const secondShipment = (await again.json()) as any;
+    expect(again.status).toBe(201);
+    expect(secondShipment.publicId).not.toBe(firstShipment.publicId);
+    expect(secondShipment.referenceCode).toBe(`${orderId}:2`);
+
+    // One barcode per attempt. Same assertion as the race test but pointing the
+    // other way — here a second call is correct, so "never calls twice" cannot
+    // be how this passes.
+    expect(createShipment).toHaveBeenCalledTimes(2);
+    expect(createShipment.mock.calls.map((args: any[]) => args[0].referenceCode)).toEqual([
+      orderId,
+      `${orderId}:2`,
+    ]);
+
+    const rows = await prisma.shipment.findMany({
+      where: { agencyId, orderId },
+      orderBy: { createdAt: 'asc' },
+    });
+    expect(rows.map((row) => row.status)).toEqual(['cancelled', 'label_ready']);
   }, 60000);
 
   it('hides another tenant\'s shipment behind a 404, not a 403', async () => {
