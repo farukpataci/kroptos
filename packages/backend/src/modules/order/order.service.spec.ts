@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { OrderService } from './order.service';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 describe('OrderService', () => {
@@ -87,15 +87,45 @@ describe('OrderService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if order storeId context mismatch', async () => {
-      mockPrismaService.order.findFirst.mockResolvedValue({
-        id: 'order-1',
-        storeId: 'store-different',
-      });
+    /**
+     * Replaces a test that mocked findFirst into returning a foreign-store row
+     * and expected a ForbiddenException. That row can no longer exist: the
+     * scope is in the where clause, so the database never hands it back, and a
+     * mock that produces one is asserting against a state the code has stopped
+     * being able to reach.
+     *
+     * What a mock can still pin is the shape of the query — specifically that
+     * the scope sits OUTSIDE the OR. Folded in as `OR: [{ id, agencyId }, ...]`
+     * the publicId branch would be unscoped, which reads as a working fix and
+     * leaks rows. That the scoping actually keeps tenants apart is proven in
+     * order.tenant-scope.integration-spec.ts, against a real database with two
+     * real tenants; CLAUDE.md §7 is explicit that this assertion here is not
+     * that proof.
+     */
+    it('puts the tenant scope in the where clause, outside the OR', async () => {
+      mockPrismaService.order.findFirst.mockResolvedValue({ id: 'order-1' });
 
-      await expect(
-        service.get('order-1', 'agency-1', 'client-1', 'store-1', false),
-      ).rejects.toThrow(ForbiddenException);
+      await service.get('order-1', 'agency-1', 'client-1', 'store-1', false);
+
+      const { where } = mockPrismaService.order.findFirst.mock.calls.at(-1)[0];
+      expect(where).toMatchObject({
+        agencyId: 'agency-1',
+        clientId: 'client-1',
+        storeId: 'store-1',
+        deletedAt: null,
+      });
+      // The lookup keys carry no scope of their own — it applies to both.
+      expect(where.OR).toEqual([{ id: 'order-1' }, { publicId: 'order-1' }]);
+    });
+
+    it('leaves the query unscoped for a super admin', async () => {
+      mockPrismaService.order.findFirst.mockResolvedValue({ id: 'order-1' });
+
+      await service.get('order-1', 'agency-1', 'client-1', 'store-1', true);
+
+      const { where } = mockPrismaService.order.findFirst.mock.calls.at(-1)[0];
+      expect(where.agencyId).toBeUndefined();
+      expect(where.storeId).toBeUndefined();
     });
   });
 

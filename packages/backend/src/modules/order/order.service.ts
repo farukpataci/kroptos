@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { Prisma } from '@prisma/client';
@@ -87,8 +87,36 @@ export class OrderService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
+    if (!activeStoreId && !isSuperAdmin) {
+      throw new BadRequestException('Active store context is required (x-store-id header)');
+    }
+
+    // The scope goes in `where`, not in a comparison after the read.
+    //
+    // Reading the row unscoped and then checking `order.storeId !== activeStoreId`
+    // never returned another tenant's data, but it did answer whether their id
+    // exists: a real id belonging to someone else came back 403 while an
+    // invented one came back 404. That difference is an id-validation oracle,
+    // and it is what CLAUDE.md's first rule forbids.
+    //
+    // The scope stays OUTSIDE the OR on purpose. Folding it in as
+    // `OR: [{ id, agencyId }, { publicId: id }]` would leave the publicId
+    // branch unscoped, turning an existence leak into a real one.
+    //
+    // `items` and `timeline` carry no tenant column of their own — they hang
+    // off the order by a cascading FK — so scoping the order is the whole of
+    // scoping them. There is no per-include filter to add here.
+    const scope: Prisma.OrderWhereInput = isSuperAdmin
+      ? {}
+      : {
+          ...(activeAgencyId ? { agencyId: activeAgencyId } : {}),
+          ...(activeClientId ? { clientId: activeClientId } : {}),
+          ...(activeStoreId ? { storeId: activeStoreId } : {}),
+        };
+
     const order = await this.prisma.order.findFirst({
       where: {
+        ...scope,
         OR: [
           { id },
           { publicId: id },
@@ -101,18 +129,9 @@ export class OrderService {
       },
     });
 
+    // Out of scope and non-existent are the same answer on purpose.
     if (!order) {
       throw new NotFoundException(`Order with ID '${id}' not found or soft-deleted`);
-    }
-
-    if (!activeStoreId && !isSuperAdmin) {
-      throw new BadRequestException('Active store context is required (x-store-id header)');
-    }
-
-    if (!isSuperAdmin) {
-      if (order.storeId !== activeStoreId) {
-        throw new ForbiddenException('Access denied. Order belongs to a different store context.');
-      }
     }
 
     return order;
