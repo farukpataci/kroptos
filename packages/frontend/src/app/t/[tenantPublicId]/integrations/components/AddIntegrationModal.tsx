@@ -962,7 +962,11 @@ export function AddIntegrationModal({
       return supportedMarketplaces?.has(provider.id) ?? false;
     }
     if (provider.category === 'carrier') {
-      return supportedCarriers?.has(provider.id) ?? false;
+      return (
+        provider.status === 'active' ||
+        provider.status === 'beta' ||
+        (supportedCarriers?.has(provider.id) ?? false)
+      );
     }
     return false;
   };
