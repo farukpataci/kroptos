@@ -25,7 +25,7 @@ export interface CatalogProvider {
   badgeText: string;
   description: string;
   capabilities: string[];
-  status?: 'active' | 'beta' | 'coming_soon';
+  status?: 'active' | 'beta' | 'coming_soon' | 'planned';
 }
 
 export const CATALOG_PROVIDERS: CatalogProvider[] = [

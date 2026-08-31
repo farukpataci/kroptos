@@ -25,6 +25,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   PTT: ['username', 'password', 'customerCode'],
   DPD: ['apiKey', 'accountNumber'],
   SURAT: ['userName', 'password', 'customerCode'],
+  GLS: ['username', 'password', 'shipperId'],
 };
 
 @Injectable()

@@ -252,7 +252,7 @@ export default function IntegrationsParentPage() {
       {/* Carrier Connection Drawer */}
       {isCarrierDrawerOpen && (
         <CarrierConnectionDrawer
-          connection={activeCarrierConnection?.id ? activeCarrierConnection : null}
+          connection={activeCarrierConnection}
           providers={carrierProviders}
           onClose={() => {
             setIsCarrierDrawerOpen(false);
