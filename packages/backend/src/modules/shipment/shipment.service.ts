@@ -793,6 +793,24 @@ export class ShipmentService {
     // own reference before concluding there is nothing to void. Carriers that
     // cannot be queried by reference simply do not implement this, and the
     // shipment closes on our side alone.
+    //
+    // DEFERRED: this lookup carries no account scope, and one day it will need
+    // one. Today a connection is one account, so a reference code is unique
+    // within everything the connector can see. DHL Express, UPS and FedEx all
+    // let a single credential address several export accounts, with the account
+    // number travelling inside the request — and two accounts may each hold the
+    // same reference code. Resolving a stuck claim would then void the wrong
+    // parcel: no exception, no empty result, nothing in the log, just a
+    // shipment cancelled that nobody asked to cancel.
+    //
+    // Not fixed here because it is not one line. The signature has to become
+    // findByReference(ref, account) across the CarrierConnector interface, the
+    // mock and the conformance pack, and the pack needs a case asserting that a
+    // connector does not answer with another account's identical reference.
+    // That belongs in the change that introduces multi-account credentials,
+    // where it can be tested against a carrier that actually has two accounts;
+    // doing it now would add an argument every connector ignores and a
+    // conformance case nothing can fail.
     if (!trackingNumber && shipment.referenceCode && connector?.findByReference) {
       try {
         const found = await connector.findByReference(shipment.referenceCode);
