@@ -22,14 +22,10 @@ export interface ActiveIntegrationItem {
   lastSyncAt?: string;
   store?: { id: string; name: string } | null;
   setting?: { isConfigured: boolean; completedSteps: string[] } | null;
-  /**
-   * Whether this integration talks to the marketplace or serves its connector's
-   * own sample data. Resolved by the backend, never guessed here: a simulated
-   * integration that looks identical to a live one is how invented orders get
-   * believed.
-   */
   mode?: 'live' | 'simulation';
   modeSource?: 'setting' | 'env' | 'default';
+  isCarrier?: boolean;
+  rawCarrier?: any;
 }
 
 interface ActiveIntegrationsTableProps {

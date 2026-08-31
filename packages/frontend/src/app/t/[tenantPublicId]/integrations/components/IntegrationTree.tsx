@@ -26,8 +26,20 @@ export function IntegrationTree() {
 
   const fetchIntegrations = async () => {
     try {
-      const data = await apiFetch<Integration[]>('/integrations');
-      setIntegrations(data || []);
+      const [marketplaces, carriers] = await Promise.all([
+        apiFetch<Integration[]>('/integrations').catch(() => []),
+        apiFetch<any[]>('/carriers').catch(() => []),
+      ]);
+
+      const carrierNodes: Integration[] = (carriers || []).map((c: any) => ({
+        id: c.id,
+        name: c.displayName,
+        provider: c.provider,
+        providerType: 'shipping',
+        status: c.isActive ? 'active' : 'inactive',
+      }));
+
+      setIntegrations([...(marketplaces || []), ...carrierNodes]);
     } catch (err) {
       console.error('Failed to fetch integrations for tree', err);
     } finally {

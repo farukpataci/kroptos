@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -10,14 +9,19 @@ import { AddIntegrationModal, CatalogProvider } from './components/AddIntegratio
 import { ActiveIntegrationsTable, ActiveIntegrationItem } from './components/ActiveIntegrationsTable';
 import { IntegrationSettingsDrawer } from './marketplace/components/IntegrationSettingsDrawer';
 import { IntegrationSetupWizard } from './marketplace/components/IntegrationSetupWizard';
+import CarrierConnectionDrawer from './carrier/components/CarrierConnectionDrawer';
+import type { CarrierConnection, CarrierProviderOption } from './carrier/types';
 
 export default function IntegrationsParentPage() {
-  const router = useRouter();
-  const params = useParams();
-  const tenantPublicId = params?.tenantPublicId as string;
   const toast = useToast();
   const [integrations, setIntegrations] = useState<ActiveIntegrationItem[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
+  // Carrier Drawer State
+  const [carrierConnections, setCarrierConnections] = useState<CarrierConnection[]>([]);
+  const [carrierProviders, setCarrierProviders] = useState<CarrierProviderOption[]>([]);
+  const [activeCarrierConnection, setActiveCarrierConnection] = useState<CarrierConnection | null>(null);
+  const [isCarrierDrawerOpen, setIsCarrierDrawerOpen] = useState(false);
 
   // Drawer / Wizard State
   const [activeDrawerIntegration, setActiveDrawerIntegration] = useState<any>(null);
@@ -27,8 +31,28 @@ export default function IntegrationsParentPage() {
 
   const fetchIntegrations = async () => {
     try {
-      const data = await apiFetch<any[]>('/integrations');
-      setIntegrations(data || []);
+      const [marketplaces, carriers, providerOptions] = await Promise.all([
+        apiFetch<any[]>('/integrations').catch(() => []),
+        apiFetch<CarrierConnection[]>('/carriers').catch(() => []),
+        apiFetch<CarrierProviderOption[]>('/carriers/providers').catch(() => []),
+      ]);
+
+      const rawCarriers = carriers || [];
+      setCarrierConnections(rawCarriers);
+      setCarrierProviders(providerOptions || []);
+
+      const carrierItems: ActiveIntegrationItem[] = rawCarriers.map((c) => ({
+        id: c.id,
+        name: c.displayName,
+        provider: c.provider,
+        providerType: 'carrier',
+        status: c.isActive ? 'active' : 'inactive',
+        lastSyncAt: c.lastTestedAt ?? undefined,
+        isCarrier: true,
+        rawCarrier: c,
+      }));
+
+      setIntegrations([...(marketplaces || []), ...carrierItems]);
     } catch (err) {
       console.error('Failed to fetch integrations', err);
     }
@@ -40,11 +64,32 @@ export default function IntegrationsParentPage() {
 
   const handleSelectProvider = (provider: CatalogProvider) => {
     if (provider.category === 'carrier') {
-      router.push(`/t/${tenantPublicId}/integrations/carrier`);
+      const existingCarrier = carrierConnections.find(
+        (c) => c.provider.toLowerCase() === provider.id.toLowerCase(),
+      );
+      if (existingCarrier) {
+        setActiveCarrierConnection(existingCarrier);
+      } else {
+        setActiveCarrierConnection({
+          id: '',
+          provider: provider.id.toUpperCase(),
+          displayName: provider.name,
+          isActive: true,
+          isTestMode: true,
+          credentials: {},
+          senderAddress: {},
+          settings: {},
+          lastTestedAt: null,
+          lastTestOk: null,
+        } as any);
+      }
+      setIsCarrierDrawerOpen(true);
       return;
     }
-    // Check if an integration for this provider already exists
-    const existing = integrations.find((i) => i.provider.toLowerCase() === provider.id.toLowerCase());
+
+    const existing = integrations.find(
+      (i) => !i.isCarrier && i.provider.toLowerCase() === provider.id.toLowerCase(),
+    );
     if (existing) {
       setActiveDrawerIntegration(existing);
     } else {
@@ -52,46 +97,74 @@ export default function IntegrationsParentPage() {
     }
   };
 
+  const handleOpenSettings = (item: ActiveIntegrationItem) => {
+    if (item.isCarrier) {
+      setActiveCarrierConnection(item.rawCarrier);
+      setIsCarrierDrawerOpen(true);
+    } else {
+      setActiveDrawerIntegration(item);
+    }
+  };
+
   const handleSync = async (id: string) => {
+    const item = integrations.find((i) => i.id === id);
     setSyncingId(id);
     try {
-      const res = await apiFetch<any>(`/integrations/${id}/sync`, { method: 'POST' });
-      if (res.success) {
-        // A simulated run finishes with nothing imported, by design. Announcing
-        // it as a plain success is how "0 sipariş" gets read as a broken
-        // integration, so the mode decides which toast the user sees.
-        if (res.mode === 'simulation') {
-          toast.warning(res.message, 9000);
+      if (item?.isCarrier) {
+        const res = await apiFetch<any>(`/carriers/${id}/test`, { method: 'POST' });
+        if (res.success) {
+          toast.success(res.message || 'Kargo bağlantı testi başarılı');
         } else {
-          toast.success('Senkronizasyon başlatıldı');
+          toast.error(res.message || 'Kargo bağlantı testi başarısız');
         }
-        fetchIntegrations();
+        await fetchIntegrations();
         window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
       } else {
-        toast.error(res.message || 'Senkronizasyon başarısız oldu');
+        const res = await apiFetch<any>(`/integrations/${id}/sync`, { method: 'POST' });
+        if (res.success) {
+          if (res.mode === 'simulation') {
+            toast.warning(res.message, 9000);
+          } else {
+            toast.success('Senkronizasyon başlatıldı');
+          }
+          fetchIntegrations();
+          window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+        } else {
+          toast.error(res.message || 'Senkronizasyon başarısız oldu');
+        }
       }
     } catch (err: any) {
-      toast.error(err.message || 'Senkronizasyon sırasında hata oluştu');
+      toast.error(err.message || 'İşlem sırasında hata oluştu');
     } finally {
       setSyncingId(null);
     }
   };
 
   const handleToggleStatus = async (item: ActiveIntegrationItem) => {
-    // 'error' is a system state, not a user choice: turning the switch on from
-    // there means "try again", so it maps to active like a passive row does.
     const nextStatus = item.status === 'active' ? 'inactive' : 'active';
     setTogglingId(item.id);
     try {
-      await apiFetch(`/integrations/${item.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: nextStatus }),
-      });
-      toast.success(
-        nextStatus === 'active'
-          ? `${item.name} aktifleştirildi`
-          : `${item.name} pasifleştirildi, senkronizasyon durduruldu`,
-      );
+      if (item.isCarrier) {
+        await apiFetch(`/carriers/${item.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ isActive: nextStatus === 'active' }),
+        });
+        toast.success(
+          nextStatus === 'active'
+            ? `${item.name} kargo bağlantısı aktifleştirildi`
+            : `${item.name} kargo bağlantısı pasifleştirildi`,
+        );
+      } else {
+        await apiFetch(`/integrations/${item.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: nextStatus }),
+        });
+        toast.success(
+          nextStatus === 'active'
+            ? `${item.name} aktifleştirildi`
+            : `${item.name} pasifleştirildi, senkronizasyon durduruldu`,
+        );
+      }
       await fetchIntegrations();
       window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
     } catch (err: any) {
@@ -103,8 +176,13 @@ export default function IntegrationsParentPage() {
 
   const handleDelete = async (id: string) => {
     if (!window.confirm('Bu entegrasyonu kaldırmak istediğinizden emin misiniz?')) return;
+    const item = integrations.find((i) => i.id === id);
     try {
-      await apiFetch(`/integrations/${id}`, { method: 'DELETE' });
+      if (item?.isCarrier) {
+        await apiFetch(`/carriers/${id}`, { method: 'DELETE' });
+      } else {
+        await apiFetch(`/integrations/${id}`, { method: 'DELETE' });
+      }
       toast.success('Entegrasyon silindi');
       fetchIntegrations();
       window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
@@ -141,7 +219,7 @@ export default function IntegrationsParentPage() {
       {/* Active Integrations Management Table */}
       <ActiveIntegrationsTable
         items={integrations}
-        onOpenSettings={(item) => setActiveDrawerIntegration(item)}
+        onOpenSettings={handleOpenSettings}
         onSync={handleSync}
         onDelete={handleDelete}
         onToggleStatus={handleToggleStatus}
@@ -157,7 +235,7 @@ export default function IntegrationsParentPage() {
         onSelectProvider={handleSelectProvider}
       />
 
-      {/* Settings Drawer */}
+      {/* Marketplace Settings Drawer */}
       {activeDrawerIntegration && (
         <IntegrationSettingsDrawer
           integrationId={activeDrawerIntegration.id}
@@ -165,6 +243,24 @@ export default function IntegrationsParentPage() {
           status={activeDrawerIntegration.status}
           onClose={() => {
             setActiveDrawerIntegration(null);
+            fetchIntegrations();
+            window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+          }}
+        />
+      )}
+
+      {/* Carrier Connection Drawer */}
+      {isCarrierDrawerOpen && (
+        <CarrierConnectionDrawer
+          connection={activeCarrierConnection?.id ? activeCarrierConnection : null}
+          providers={carrierProviders}
+          onClose={() => {
+            setIsCarrierDrawerOpen(false);
+            setActiveCarrierConnection(null);
+          }}
+          onSaved={() => {
+            setIsCarrierDrawerOpen(false);
+            setActiveCarrierConnection(null);
             fetchIntegrations();
             window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
           }}
