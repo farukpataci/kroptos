@@ -811,9 +811,29 @@ export class ShipmentService {
     if (trackingNumber && connector) {
       try {
         const result = await connector.cancelShipment(trackingNumber);
-        carrierCancelled = result.success;
-        if (!result.success) {
-          carrierError = result.message ?? 'Taşıyıcı iptal isteğini reddetti.';
+
+        // A connector that answers with something other than a CancelResult is
+        // treated as a refusal, deliberately: an answer we cannot read is not
+        // evidence the barcode was voided, and the safe reading of "unknown" is
+        // that it is still live and billable. That was already the behaviour —
+        // reading `.success` off a malformed answer threw into the catch below
+        // and landed on the same side — and it is not being changed here.
+        //
+        // What changes is the sentence. `carrierCancelError` is shown to the
+        // operator who has to go and close the barcode by hand, and it was
+        // being handed "Cannot read properties of undefined (reading
+        // 'success')". The raw shape stays, in the log, where whoever wrote the
+        // connector will look.
+        if (typeof result?.success !== 'boolean') {
+          console.warn(
+            `[shipment] ${shipment.provider} cancelShipment returned an unreadable answer for ${trackingNumber}: ${JSON.stringify(result)}`,
+          );
+          carrierError = 'Taşıyıcı geçersiz bir iptal cevabı döndürdü.';
+        } else {
+          carrierCancelled = result.success;
+          if (!result.success) {
+            carrierError = result.message ?? 'Taşıyıcı iptal isteğini reddetti.';
+          }
         }
       } catch (error: any) {
         carrierError = error?.message ?? 'Taşıyıcı iptal isteği başarısız oldu.';

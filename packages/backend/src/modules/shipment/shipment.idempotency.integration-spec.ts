@@ -461,6 +461,39 @@ describe('F-4: shipment idempotency against the real database', () => {
     expect(rows.map((row) => row.status)).toEqual(['cancelled', 'label_ready']);
   }, 60000);
 
+  /**
+   * A connector that answers with nothing readable.
+   *
+   * The outcome is the safe one and always was: the cancel is treated as
+   * refused, so the row keeps `carrierCancelledAt` empty and stays in the
+   * problem queue for someone to close by hand. What is pinned here is the
+   * sentence that operator reads — it used to be the raw
+   * "Cannot read properties of undefined (reading 'success')", which names a
+   * variable in our code rather than anything they can act on.
+   */
+  it('records an unreadable cancel answer as a sentence, not a TypeError', async () => {
+    const orderId = `ord-${suffix}-badcancel`;
+
+    const created = await call('/api/shipments', { method: 'POST', body: shipmentBody(orderId) });
+    const shipment = (await created.json()) as any;
+    expect(created.status).toBe(201);
+
+    // Neither a CancelResult nor a throw: the shape the check is about.
+    cancelShipment.mockResolvedValue(undefined);
+    const cancelled = await call(`/api/shipments/${shipment.id}/cancel`, {
+      method: 'POST',
+      body: { reason: 'bad shape' },
+    });
+    expect(cancelled.status).toBe(200);
+
+    const row = await prisma.shipment.findUnique({ where: { id: shipment.id } });
+    expect(row!.status).toBe('cancelled');
+    // Not voided as far as we know, so the barcode may still be live.
+    expect(row!.carrierCancelledAt).toBeNull();
+    expect(row!.carrierCancelError).toBe('Taşıyıcı geçersiz bir iptal cevabı döndürdü.');
+    expect(row!.carrierCancelError).not.toMatch(/Cannot read properties|undefined|TypeError/);
+  }, 60000);
+
   it('hides another tenant\'s shipment behind a 404, not a 403', async () => {
     const orderId = `ord-${suffix}-tenant`;
     const created = await call('/api/shipments', { method: 'POST', body: shipmentBody(orderId) });
