@@ -93,12 +93,17 @@ export function IntegrationSettingsDrawer({
 
   return createPortal(
     <SettingsFieldContext.Provider value={{ integrationId }}>
-      {/* Full screen, same shell as the product form and detail views. No scrim
-          and no click-outside: at this size there is no "outside" to click. */}
-      <div className="fixed inset-0 z-[60] flex h-screen w-screen overflow-hidden bg-kp-bg-secondary animate-fade-in">
-        <div className="flex h-full w-full flex-col">
+      {/* Right slide-over drawer shell, identical to CarrierConnectionDrawer */}
+      <div
+        className="fixed inset-0 z-40 flex justify-end bg-black/60 backdrop-blur-sm animate-fade-in"
+        onClick={requestClose}
+      >
+        <div
+          className="flex h-full w-full max-w-3xl flex-col border-l border-kp-border bg-kp-bg-secondary shadow-kp-elevated animate-slide-in-right overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
+        >
           {/* Header */}
-          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-kp-border bg-kp-bg-primary/20 px-8 py-5">
+          <header className="flex shrink-0 items-center justify-between gap-3 border-b border-kp-border bg-kp-bg-primary/40 px-6 py-4">
             <div className="flex min-w-0 items-center gap-2.5">
               <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-kp-md bg-kp-accent/10 text-kp-accent">
                 <Cog6ToothIcon className="h-4 w-4" />
@@ -128,7 +133,7 @@ export function IntegrationSettingsDrawer({
                   href={manifest.docsUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex items-center gap-1.5 rounded-kp-md border border-kp-border px-3 py-2 text-[0.6875rem] font-semibold text-kp-text-secondary transition-colors hover:text-kp-text-primary"
+                  className="flex items-center gap-1.5 rounded-kp-md border border-kp-border px-3 py-1.5 text-[0.6875rem] font-semibold text-kp-text-secondary transition-colors hover:text-kp-text-primary"
                 >
                   <ArrowTopRightOnSquareIcon className="h-3.5 w-3.5" />
                   {t('integrations.settings.actions.docs')}
@@ -139,7 +144,7 @@ export function IntegrationSettingsDrawer({
                   type="button"
                   onClick={onTestConnection}
                   disabled={isTesting}
-                  className="flex items-center gap-1.5 rounded-kp-md border border-kp-border px-3 py-2 text-[0.6875rem] font-semibold text-kp-text-secondary transition-colors hover:text-kp-accent disabled:opacity-50"
+                  className="flex items-center gap-1.5 rounded-kp-md border border-kp-border px-3 py-1.5 text-[0.6875rem] font-semibold text-kp-text-secondary transition-colors hover:text-kp-accent disabled:opacity-50"
                 >
                   {isTesting ? (
                     <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
@@ -152,7 +157,7 @@ export function IntegrationSettingsDrawer({
               <button
                 type="button"
                 onClick={requestClose}
-                className="rounded-kp-md p-2 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary"
+                className="rounded-kp-md p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary"
               >
                 <XMarkIcon className="h-5 w-5" />
               </button>
@@ -177,7 +182,7 @@ export function IntegrationSettingsDrawer({
           ) : (
             <div className="flex min-h-0 flex-1">
               {/* Vertical tab rail */}
-              <nav className="w-52 shrink-0 overflow-y-auto border-r border-kp-border bg-kp-bg-primary/20 py-3">
+              <nav className="w-48 shrink-0 overflow-y-auto border-r border-kp-border bg-kp-bg-primary/20 py-3">
                 {manifest.tabs.map((tab) => {
                   const isActive = tab.id === activeTabId;
                   const state = tabStatus[tab.id];
@@ -186,7 +191,7 @@ export function IntegrationSettingsDrawer({
                       key={tab.id}
                       type="button"
                       onClick={() => setActiveTabId(tab.id)}
-                      className={`flex w-full items-center gap-2.5 border-l-2 px-4 py-2.5 text-left text-[0.6875rem] font-semibold transition-colors ${
+                      className={`flex w-full items-center gap-2 border-l-2 px-3 py-2 text-left text-[0.6875rem] font-semibold transition-colors ${
                         isActive
                           ? 'border-kp-accent bg-kp-accent/5 text-kp-accent'
                           : 'border-transparent text-kp-text-tertiary hover:bg-kp-bg-hover hover:text-kp-text-primary'
@@ -205,10 +210,9 @@ export function IntegrationSettingsDrawer({
                 })}
               </nav>
 
-              {/* Active tab content. Capped and centred like the product form:
-                  full-bleed settings fields would stretch unreadably wide. */}
-              <div className="min-w-0 flex-1 overflow-y-auto p-8">
-                <div className="mx-auto w-full max-w-4xl">
+              {/* Active tab content */}
+              <div className="min-w-0 flex-1 overflow-y-auto p-6">
+                <div className="w-full">
                   {error && (
                     <div className="mb-4 flex gap-2 rounded-kp-md border border-kp-danger/20 bg-kp-danger/10 p-3 text-xs text-kp-danger">
                       <ExclamationTriangleIcon className="h-4 w-4 shrink-0" />
