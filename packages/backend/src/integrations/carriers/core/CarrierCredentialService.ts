@@ -19,6 +19,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   HEPSIJET: ['userName', 'password', 'companyShortName'],
   YURTICI: ['wsUserName', 'wsPassword'],
   ARAS: ['userName', 'password', 'customerCode'],
+  DHL: ['apiKey', 'apiSecret', 'accountNumber'],
 };
 
 @Injectable()

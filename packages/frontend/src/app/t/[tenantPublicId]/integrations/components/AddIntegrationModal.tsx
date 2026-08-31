@@ -448,7 +448,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'DHL DE/EU',
     description: 'Almanya ve Avrupa geneli teslimat ağı. Amazon, eBay ve Kaufland pazaryeri kargo etiketleri ve canlı takip.',
     capabilities: ['Almanya & Avrupa', 'Amazon/eBay/Kaufland', 'Canlı Takip'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'dpd',
