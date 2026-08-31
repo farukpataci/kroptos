@@ -3,6 +3,7 @@ import { CarrierConnector } from './CarrierConnector';
 import { CarrierHttpClient } from './CarrierHttpClient';
 import { CarrierRateLimiter } from './CarrierRateLimiter';
 import { MockCarrierConnector } from '../mock/MockCarrierConnector';
+import { HepsijetConnector } from '../hepsijet/HepsijetConnector';
 
 @Injectable()
 export class CarrierConnectorFactory {
@@ -19,6 +20,8 @@ export class CarrierConnectorFactory {
     switch (provider.toUpperCase()) {
       case 'MOCK':
         return new MockCarrierConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      case 'HEPSIJET':
+        return new HepsijetConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       default:
         // Every other CarrierProvider value is declared in CarrierTypes but has
         // no connector yet. Refusing beats falling back to the mock: a silent
@@ -29,6 +32,6 @@ export class CarrierConnectorFactory {
 
   /** Providers that can actually be selected today. */
   supportedProviders(): string[] {
-    return ['MOCK'];
+    return ['MOCK', 'HEPSIJET'];
   }
 }
