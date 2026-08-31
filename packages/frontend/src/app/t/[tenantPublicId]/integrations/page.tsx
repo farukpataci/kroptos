@@ -10,6 +10,7 @@ import { ActiveIntegrationsTable, ActiveIntegrationItem } from './components/Act
 import { IntegrationSettingsDrawer } from './marketplace/components/IntegrationSettingsDrawer';
 import { IntegrationSetupWizard } from './marketplace/components/IntegrationSetupWizard';
 import CarrierConnectionDrawer from './carrier/components/CarrierConnectionDrawer';
+import { CarrierSetupWizard } from './carrier/components/CarrierSetupWizard';
 import type { CarrierConnection, CarrierProviderOption } from './carrier/types';
 
 export default function IntegrationsParentPage() {
@@ -17,13 +18,17 @@ export default function IntegrationsParentPage() {
   const [integrations, setIntegrations] = useState<ActiveIntegrationItem[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Carrier Drawer State
+  // Carrier Drawer & Wizard State
   const [carrierConnections, setCarrierConnections] = useState<CarrierConnection[]>([]);
   const [carrierProviders, setCarrierProviders] = useState<CarrierProviderOption[]>([]);
   const [activeCarrierConnection, setActiveCarrierConnection] = useState<CarrierConnection | null>(null);
   const [isCarrierDrawerOpen, setIsCarrierDrawerOpen] = useState(false);
+  const [carrierSetupProvider, setCarrierSetupProvider] = useState<{
+    option: CarrierProviderOption;
+    presetName: string;
+  } | null>(null);
 
-  // Drawer / Wizard State
+  // Marketplace Drawer / Wizard State
   const [activeDrawerIntegration, setActiveDrawerIntegration] = useState<any>(null);
   const [wizardProvider, setWizardProvider] = useState<CatalogProvider | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
@@ -68,22 +73,20 @@ export default function IntegrationsParentPage() {
         (c) => c.provider.toLowerCase() === provider.id.toLowerCase(),
       );
       if (existingCarrier) {
+        // Connected -> Open Settings Drawer directly
         setActiveCarrierConnection(existingCarrier);
+        setIsCarrierDrawerOpen(true);
       } else {
-        setActiveCarrierConnection({
-          id: '',
+        // Not connected -> Open Setup Wizard Modal in center
+        const option = carrierProviders.find(
+          (p) => p.provider.toLowerCase() === provider.id.toLowerCase(),
+        );
+        const fallbackOption: CarrierProviderOption = option || {
           provider: provider.id.toUpperCase(),
-          displayName: provider.name,
-          isActive: true,
-          isTestMode: true,
-          credentials: {},
-          senderAddress: {},
-          settings: {},
-          lastTestedAt: null,
-          lastTestOk: null,
-        } as any);
+          requiredFields: [],
+        };
+        setCarrierSetupProvider({ option: fallbackOption, presetName: provider.name });
       }
-      setIsCarrierDrawerOpen(true);
       return;
     }
 
@@ -249,7 +252,7 @@ export default function IntegrationsParentPage() {
         />
       )}
 
-      {/* Carrier Connection Drawer */}
+      {/* Carrier Connection Settings Drawer */}
       {isCarrierDrawerOpen && (
         <CarrierConnectionDrawer
           connection={activeCarrierConnection}
@@ -267,7 +270,24 @@ export default function IntegrationsParentPage() {
         />
       )}
 
-      {/* Setup Wizard Modal */}
+      {/* Carrier Setup Wizard Center Modal */}
+      {carrierSetupProvider && (
+        <CarrierSetupWizard
+          provider={carrierSetupProvider.option}
+          presetName={carrierSetupProvider.presetName}
+          onClose={() => setCarrierSetupProvider(null)}
+          onCreated={(createdCarrier) => {
+            setCarrierSetupProvider(null);
+            fetchIntegrations();
+            window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+            // Seamlessly open Settings Drawer for the newly created carrier connection
+            setActiveCarrierConnection(createdCarrier);
+            setIsCarrierDrawerOpen(true);
+          }}
+        />
+      )}
+
+      {/* Marketplace Setup Wizard Modal */}
       {wizardProvider && (
         <IntegrationSetupWizard
           provider={wizardProvider.id}
