@@ -404,7 +404,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Aras Kargo',
     description: 'Aras Kargo Web Servisleri ile kargo gönderisi oluşturma ve takip akışı.',
     capabilities: ['Etiket Oluşturma', 'Kargo Takip No'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'mng',
@@ -415,7 +415,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'MNG Kargo',
     description: 'MNG Kargo entegrasyonu ile otomatik irsaliye ve kargo etiketi senkronizasyonu.',
     capabilities: ['Kargo Takip', 'Barkod Basımı'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'sendeo',
@@ -426,7 +426,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Sendeo',
     description: 'Sendeo Kargo hızlı paket teslimat ve durum bildirimi entegrasyonu.',
     capabilities: ['Anlık Takip', 'Zamanlı Teslimat'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'hepsijet',
@@ -448,7 +448,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'DHL DE/EU',
     description: 'Almanya ve Avrupa geneli teslimat ağı. Amazon, eBay ve Kaufland pazaryeri kargo etiketleri ve canlı takip.',
     capabilities: ['Almanya & Avrupa', 'Amazon/eBay/Kaufland', 'Canlı Takip'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'dpd',
@@ -459,7 +459,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'DPD EU',
     description: 'Almanya, Fransa, Polonya ve Hollanda başta olmak üzere Avrupa genelinde Amazon, Allegro ve eMAG kargo otomasyonu.',
     capabilities: ['Almanya/Fransa/Polonya', 'Allegro & eMAG', 'Barkod Basımı'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'gls',
@@ -470,7 +470,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'GLS EU',
     description: 'Avrupa geneli parsiyel paket dağıtımı. Amazon, eBay ve Allegro siparişleri için kargo takip entegrasyonu.',
     capabilities: ['Avrupa Geneli', 'Amazon/eBay/Allegro', 'Kargo Takip'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'ups',
@@ -481,7 +481,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'UPS Global',
     description: 'Avrupa ve uluslararası express kargo gönderileri. Amazon ve eBay mağazaları için otomatik etiket üretimi.',
     capabilities: ['Uluslararası Kargo', 'Amazon & eBay', 'Express Teslimat'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'inpost',
@@ -492,7 +492,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'InPost PL/UK/FR',
     description: 'Polonya, İngiltere, Fransa, İtalya ve İspanya kargo otomatı (Paczkomaty) ve kurye teslimat entegrasyonu. Allegro uyumlu.',
     capabilities: ['Polonya & İngiltere & Fransa', 'Paczkomaty Otomat', 'Allegro Entegre'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'postnl',
@@ -503,7 +503,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'PostNL NL',
     description: 'Hollanda ve Benelüks bölgesinin lider kargo altyapısı. Bol.com ve e-ticaret siteleri için kargo etiketleri.',
     capabilities: ['Hollanda (NL)', 'bol.com Uyumlu', 'Otomatik Etiket'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'royal_mail',
@@ -514,7 +514,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Royal Mail UK',
     description: 'İngiltere ulusal kargo servisi. Amazon UK, eBay UK ve bağımsız e-ticaret mağazaları için takip ve etiketleme.',
     capabilities: ['İngiltere (UK)', 'Amazon UK & eBay UK', '2D Barkod'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'evri',
@@ -525,7 +525,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Evri UK',
     description: 'İngiltere’nin önde gelen kapıdan kapıya kargo servisi. Amazon, eBay ve e-ticaret siteleri için hızlı gönderi servisi.',
     capabilities: ['İngiltere (UK)', 'Amazon & eBay UK', 'Parsel Takip'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'colissimo',
@@ -536,7 +536,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Colissimo FR',
     description: 'Fransa ulusal posta ve paket servisi. Cdiscount, Fnac ve Fransa e-ticaret siparişleri için kargo takip entegrasyonu.',
     capabilities: ['Fransa (FR)', 'Cdiscount & Fnac', 'Fransa İçi Dağıtım'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'chronopost',
@@ -547,7 +547,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Chronopost FR',
     description: 'Fransa hızlı kurye ve express teslimat servisi. Cdiscount, Fnac ve ertesi gün teslimat paketleri.',
     capabilities: ['Fransa Express', 'Cdiscount & Fnac', '24 Saat Teslimat'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'sameday',
@@ -558,7 +558,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Sameday RO/HU/BG',
     description: 'Romanya, Macaristan ve Bulgaristan bölgesi kargo ve Easybox otomat ağı. eMAG pazaryeri ile tam entegre.',
     capabilities: ['Romanya & Macaristan & Bulgaristan', 'eMAG Uyumlu', 'Easybox Otomat'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'fan_courier',
@@ -569,7 +569,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'FAN Courier RO',
     description: 'Romanya’nın 1 numaralı kargo şirketi. eMAG siparişleri ve Romanya içi hızlı teslimat servisleri.',
     capabilities: ['Romanya (RO)', 'eMAG Pazaryeri', 'AWB Oluşturma'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'cargus',
@@ -580,7 +580,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Cargus RO',
     description: 'Romanya kargo ve kurye hizmetleri. eMAG ve bölgesel e-ticaret siteleri için kargo barkod ve takip entegrasyonu.',
     capabilities: ['Romanya (RO)', 'eMAG Entegrasyonu', 'Kargo Takip'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'packeta',
@@ -591,7 +591,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Packeta CZ/SK',
     description: 'Çekya, Slovakya ve Orta Avrupa teslimat ve gel-al noktası ağı. Kaufland ve Avrupa e-ticaret gönderileri.',
     capabilities: ['Çekya & Slovakya', 'Kaufland Uyumlu', 'Gel-Al Noktaları'],
-    status: 'active',
+    status: 'planned',
   },
   {
     id: 'pocztex',
@@ -602,7 +602,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Pocztex PL',
     description: 'Polonya Ulusal Posta servisi kargo ağı. Allegro siparişleri ve Polonya içi adrese/noktaya teslimat.',
     capabilities: ['Polonya (PL)', 'Allegro Uyumlu', 'Adrese Teslimat'],
-    status: 'active',
+    status: 'planned',
   },
 
   // 💼 MUHASEBE ENTEGRASYONU (ERP & STOK & E-FATURA)
@@ -962,11 +962,7 @@ export function AddIntegrationModal({
       return supportedMarketplaces?.has(provider.id) ?? false;
     }
     if (provider.category === 'carrier') {
-      return (
-        provider.status === 'active' ||
-        provider.status === 'beta' ||
-        (supportedCarriers?.has(provider.id) ?? false)
-      );
+      return supportedCarriers?.has(provider.id) ?? false;
     }
     return false;
   };
