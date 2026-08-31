@@ -27,6 +27,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   SURAT: ['userName', 'password', 'customerCode'],
   GLS: ['username', 'password', 'shipperId'],
   UPS: ['clientId', 'clientSecret', 'accountNumber'],
+  FEDEX: ['apiKey', 'secretKey', 'accountNumber'],
 };
 
 @Injectable()

@@ -495,6 +495,17 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
+    id: 'fedex',
+    name: 'FedEx Express',
+    category: 'carrier',
+    categoryLabel: 'Kargo & Lojistik',
+    badgeBg: 'bg-purple-600/10 border-purple-600/20 text-purple-700 dark:text-purple-300',
+    badgeText: 'FedEx Global',
+    description: 'Uluslararası ekspres gönderi ve etiket üretimi. Otomatik kurye çağırma, canlı takip ve navlun hesaplama.',
+    capabilities: ['Uluslararası Express', 'Kurye Çağırma', 'Canlı Takip'],
+    status: 'active',
+  },
+  {
     id: 'inpost',
     name: 'InPost (Paczkomaty)',
     category: 'carrier',

@@ -14,6 +14,7 @@ import { DpdConnector } from '../dpd/DpdConnector';
 import { SuratConnector } from '../surat/SuratConnector';
 import { GlsConnector } from '../gls/GlsConnector';
 import { UpsConnector } from '../ups/UpsConnector';
+import { FedexConnector } from '../fedex/FedexConnector';
 
 @Injectable()
 export class CarrierConnectorFactory {
@@ -52,6 +53,8 @@ export class CarrierConnectorFactory {
         return new GlsConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       case 'UPS':
         return new UpsConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      case 'FEDEX':
+        return new FedexConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       default:
         // Every other CarrierProvider value is declared in CarrierTypes but has
         // no connector yet. Refusing beats falling back to the mock: a silent
@@ -62,6 +65,6 @@ export class CarrierConnectorFactory {
 
   /** Providers that can actually be selected today. */
   supportedProviders(): string[] {
-    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS'];
+    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX'];
   }
 }

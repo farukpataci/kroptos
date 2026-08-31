@@ -11,6 +11,7 @@ export const CARRIER_PROVIDERS = [
   'SURAT',
   'PTT',
   'UPS',
+  'FEDEX',
   'DHL',
   'DPD',
   'GLS',
