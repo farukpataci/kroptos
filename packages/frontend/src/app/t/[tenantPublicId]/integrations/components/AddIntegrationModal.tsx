@@ -481,7 +481,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'GLS EU',
     description: 'Avrupa geneli parsiyel paket dağıtımı. Amazon, eBay ve Allegro siparişleri için kargo takip entegrasyonu.',
     capabilities: ['Avrupa Geneli', 'Amazon/eBay/Allegro', 'Kargo Takip'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'ups',
@@ -492,7 +492,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'UPS Global',
     description: 'Avrupa ve uluslararası express kargo gönderileri. Amazon ve eBay mağazaları için otomatik etiket üretimi.',
     capabilities: ['Uluslararası Kargo', 'Amazon & eBay', 'Express Teslimat'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'inpost',
