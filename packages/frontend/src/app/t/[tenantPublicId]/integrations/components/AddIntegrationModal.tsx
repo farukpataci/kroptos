@@ -451,6 +451,17 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
+    id: 'ptt',
+    name: 'PTT Kargo',
+    category: 'carrier',
+    categoryLabel: 'Kargo & Lojistik',
+    badgeBg: 'bg-amber-500/10 border-amber-500/20 text-amber-600',
+    badgeText: 'PTT Kargo',
+    description: 'PTT Kargo web servisleri ile gönderi kabul, etiket basımı ve canlı takip.',
+    capabilities: ['Barkod Oluşturma', 'PTT Kabul', 'Canlı Takip'],
+    status: 'active',
+  },
+  {
     id: 'dpd',
     name: 'DPD Logistics',
     category: 'carrier',

@@ -22,6 +22,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   DHL: ['apiKey', 'apiSecret', 'accountNumber'],
   MNG: ['customerNumber', 'username', 'password'],
   SENDEO: ['username', 'password', 'customerCode'],
+  PTT: ['username', 'password', 'customerCode'],
 };
 
 @Injectable()
