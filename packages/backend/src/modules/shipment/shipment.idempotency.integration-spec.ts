@@ -491,10 +491,65 @@ describe('F-4: shipment idempotency against the real database', () => {
   describe('the shipments someone has to chase', () => {
     const stuckIds: string[] = [];
 
+    /**
+     * This block gets a store of its own, and every count below is read through
+     * it.
+     *
+     * These assertions are absolute — "one stuck claim", "no failed cancels" —
+     * so they hold only while nothing else in the suite leaves a problem row in
+     * the store being counted. That is not a safe assumption: it has already
+     * broken once, when a cancel test elsewhere left a carrier_cancel_failed
+     * row behind, and any future test that legitimately cancels a shipment
+     * would break it again.
+     *
+     * Delta assertions (count, act, count, compare the difference) were the
+     * other way out. They were not taken because the list checks below cannot
+     * be expressed as a delta without weakening: `items).toHaveLength(1)` would
+     * have to become "the list contains the row I made", which stops noticing a
+     * filter that returns everything. An isolated store keeps every assertion
+     * exactly as strong as it is and makes the leak impossible instead of
+     * tolerable.
+     */
+    let chaseStoreId: string;
+    /** A legitimate problem row in the SHARED store, never cleaned up between
+     *  tests: if any count below can see it, the isolation is not working. */
+    let noiseId: string;
+
+    beforeAll(async () => {
+      const store = await prisma.store.create({
+        data: { agencyId, name: `chase ${suffix}`, slug: `chase-${suffix}` },
+      });
+      chaseStoreId = store.id;
+      made.storeIds.push(store.id);
+
+      const noise = await prisma.shipment.create({
+        data: {
+          publicId: `shp_${suffix}_noise`,
+          agencyId,
+          storeId,
+          carrierIntegrationId,
+          provider: 'MOCK',
+          status: 'cancelled',
+          paymentType: 'sender_pays',
+          referenceCode: `ref-${suffix}-noise`,
+          trackingNumber: `TRK-${suffix}-noise`,
+          cancelledAt: new Date(),
+          carrierCancelledAt: null,
+          carrierCancelError: 'Baska bir testin birakabilecegi mesru bir satir',
+          isTestMode: true,
+        },
+      });
+      noiseId = noise.id;
+    }, 60000);
+
+    afterAll(async () => {
+      await prisma.shipment.deleteMany({ where: { id: noiseId } });
+    }, 60000);
+
     const claimRow = (label: string, minutesAgo: number) => ({
       publicId: `shp_${suffix}_${label}`,
       agencyId,
-      storeId,
+      storeId: chaseStoreId,
       // Every shipment the service creates has one; a row without it is not
       // ours to chase — see the marketplace case at the end of this block.
       carrierIntegrationId,
@@ -521,11 +576,11 @@ describe('F-4: shipment idempotency against the real database', () => {
       const younger = await prisma.shipment.create({ data: claimRow('young', 14) });
       stuckIds.push(older.id, younger.id);
 
-      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      const counts = (await (await call('/api/shipments/problems', { store: chaseStoreId })).json()) as any;
       expect(counts.stuckClaims).toBe(1);
       expect(counts.stuckClaimAfterMinutes).toBe(15);
 
-      const listed = (await (await call('/api/shipments?problem=stuck_claim')).json()) as any;
+      const listed = (await (await call('/api/shipments?problem=stuck_claim', { store: chaseStoreId })).json()) as any;
       expect(listed.items).toHaveLength(1);
       expect(listed.items[0].publicId).toBe(older.publicId);
     }, 60000);
@@ -544,11 +599,11 @@ describe('F-4: shipment idempotency against the real database', () => {
       });
       stuckIds.push(live.id);
 
-      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      const counts = (await (await call('/api/shipments/problems', { store: chaseStoreId })).json()) as any;
       expect(counts.carrierCancelFailed).toBe(1);
       expect(counts.total).toBe(counts.stuckClaims + counts.carrierCancelFailed);
 
-      const listed = (await (await call('/api/shipments?problem=carrier_cancel_failed')).json()) as any;
+      const listed = (await (await call('/api/shipments?problem=carrier_cancel_failed', { store: chaseStoreId })).json()) as any;
       expect(listed.items).toHaveLength(1);
       // Both halves survive the projection; either one alone says nothing.
       expect(listed.items[0].carrierCancelError).toContain('toplanmis');
@@ -570,7 +625,7 @@ describe('F-4: shipment idempotency against the real database', () => {
       });
       stuckIds.push(clean.id);
 
-      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      const counts = (await (await call('/api/shipments/problems', { store: chaseStoreId })).json()) as any;
       expect(counts.carrierCancelFailed).toBe(0);
     }, 60000);
 
@@ -594,19 +649,19 @@ describe('F-4: shipment idempotency against the real database', () => {
       });
       stuckIds.push(foreignCancel.id, foreignClaim.id);
 
-      const counts = (await (await call('/api/shipments/problems')).json()) as any;
+      const counts = (await (await call('/api/shipments/problems', { store: chaseStoreId })).json()) as any;
       expect(counts.carrierCancelFailed).toBe(0);
       expect(counts.stuckClaims).toBe(0);
       expect(counts.total).toBe(0);
 
-      const cancels = (await (await call('/api/shipments?problem=carrier_cancel_failed')).json()) as any;
+      const cancels = (await (await call('/api/shipments?problem=carrier_cancel_failed', { store: chaseStoreId })).json()) as any;
       expect(cancels.items).toHaveLength(0);
-      const claims = (await (await call('/api/shipments?problem=stuck_claim')).json()) as any;
+      const claims = (await (await call('/api/shipments?problem=stuck_claim', { store: chaseStoreId })).json()) as any;
       expect(claims.items).toHaveLength(0);
     }, 60000);
 
     it('rejects a problem filter it does not know', async () => {
-      const response = await call('/api/shipments?problem=whatever');
+      const response = await call('/api/shipments?problem=whatever', { store: chaseStoreId });
       expect(response.status).toBe(400);
     }, 60000);
   });
