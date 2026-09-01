@@ -525,7 +525,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'PostNL NL',
     description: 'Hollanda ve Benelüks bölgesinin lider kargo altyapısı. Bol.com ve e-ticaret siteleri için kargo etiketleri.',
     capabilities: ['Hollanda (NL)', 'bol.com Uyumlu', 'Otomatik Etiket'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'royal_mail',

@@ -16,6 +16,7 @@ export const CARRIER_PROVIDERS = [
   'DPD',
   'GLS',
   'INPOST',
+  'POSTNL',
   'TRENDYOL_EXPRESS',
   'HEPSIJET',
   'SENDEO',
