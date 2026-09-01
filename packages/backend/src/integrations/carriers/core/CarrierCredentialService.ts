@@ -30,6 +30,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   FEDEX: ['apiKey', 'secretKey', 'accountNumber'],
   INPOST: ['apiToken', 'organizationId'],
   POSTNL: ['apiKey', 'customerCode', 'customerNumber'],
+  ROYAL_MAIL: ['apiKey'],
 };
 
 @Injectable()

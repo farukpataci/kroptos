@@ -17,6 +17,7 @@ export const CARRIER_PROVIDERS = [
   'GLS',
   'INPOST',
   'POSTNL',
+  'ROYAL_MAIL',
   'TRENDYOL_EXPRESS',
   'HEPSIJET',
   'SENDEO',

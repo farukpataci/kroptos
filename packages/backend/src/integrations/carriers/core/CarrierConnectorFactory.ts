@@ -17,6 +17,7 @@ import { UpsConnector } from '../ups/UpsConnector';
 import { FedexConnector } from '../fedex/FedexConnector';
 import { InpostConnector } from '../inpost/InpostConnector';
 import { PostnlConnector } from '../postnl/PostnlConnector';
+import { RoyalmailConnector } from '../royalmail/RoyalmailConnector';
 
 @Injectable()
 export class CarrierConnectorFactory {
@@ -61,6 +62,8 @@ export class CarrierConnectorFactory {
         return new InpostConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       case 'POSTNL':
         return new PostnlConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      case 'ROYAL_MAIL':
+        return new RoyalmailConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       default:
         // Every other CarrierProvider value is declared in CarrierTypes but has
         // no connector yet. Refusing beats falling back to the mock: a silent
@@ -71,6 +74,6 @@ export class CarrierConnectorFactory {
 
   /** Providers that can actually be selected today. */
   supportedProviders(): string[] {
-    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX', 'INPOST', 'POSTNL'];
+    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX', 'INPOST', 'POSTNL', 'ROYAL_MAIL'];
   }
 }

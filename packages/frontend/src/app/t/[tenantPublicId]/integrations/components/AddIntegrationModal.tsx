@@ -536,7 +536,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Royal Mail UK',
     description: 'İngiltere ulusal kargo servisi. Amazon UK, eBay UK ve bağımsız e-ticaret mağazaları için takip ve etiketleme.',
     capabilities: ['İngiltere (UK)', 'Amazon UK & eBay UK', '2D Barkod'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'evri',
