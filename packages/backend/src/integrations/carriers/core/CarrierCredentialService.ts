@@ -35,6 +35,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   COLISSIMO: ['contractNumber', 'password', 'apiKey'],
   CHRONOPOST: ['accountNumber', 'password'],
   SAMEDAY: ['username', 'password'],
+  FAN_COURIER: ['clientId', 'username', 'password'],
 };
 
 @Injectable()

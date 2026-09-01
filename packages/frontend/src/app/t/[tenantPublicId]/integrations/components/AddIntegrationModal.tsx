@@ -591,7 +591,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'FAN Courier RO',
     description: 'Romanya’nın 1 numaralı kargo şirketi. eMAG siparişleri ve Romanya içi hızlı teslimat servisleri.',
     capabilities: ['Romanya (RO)', 'eMAG Pazaryeri', 'AWB Oluşturma'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'cargus',
