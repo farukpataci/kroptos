@@ -94,6 +94,7 @@ export default function IntegrationsParentPage() {
           sameday: [{ name: 'username', secret: false }, { name: 'password', secret: true }],
           fan_courier: [{ name: 'clientId', secret: false }, { name: 'username', secret: false }, { name: 'password', secret: true }],
           cargus: [{ name: 'subscriptionKey', secret: true }, { name: 'username', secret: false }, { name: 'password', secret: true }],
+          packeta: [{ name: 'apiKey', secret: false }, { name: 'apiSecret', secret: true }, { name: 'eshop', secret: false }],
           yurtici: [{ name: 'wsUserName', secret: false }, { name: 'wsPassword', secret: true }],
           aras: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
           surat: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],

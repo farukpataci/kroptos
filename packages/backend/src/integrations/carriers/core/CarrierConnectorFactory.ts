@@ -24,6 +24,7 @@ import { ChronopostConnector } from '../chronopost/ChronopostConnector';
 import { SamedayConnector } from '../sameday/SamedayConnector';
 import { FanCourierConnector } from '../fancourier/FanCourierConnector';
 import { CargusConnector } from '../cargus/CargusConnector';
+import { PacketaConnector } from '../packeta/PacketaConnector';
 
 @Injectable()
 export class CarrierConnectorFactory {
@@ -82,6 +83,8 @@ export class CarrierConnectorFactory {
         return new FanCourierConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       case 'CARGUS':
         return new CargusConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      case 'PACKETA':
+        return new PacketaConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       default:
         // Every other CarrierProvider value is declared in CarrierTypes but has
         // no connector yet. Refusing beats falling back to the mock: a silent
@@ -92,6 +95,6 @@ export class CarrierConnectorFactory {
 
   /** Providers that can actually be selected today. */
   supportedProviders(): string[] {
-    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX', 'INPOST', 'POSTNL', 'ROYAL_MAIL', 'EVRI', 'COLISSIMO', 'CHRONOPOST', 'SAMEDAY', 'FAN_COURIER', 'CARGUS'];
+    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX', 'INPOST', 'POSTNL', 'ROYAL_MAIL', 'EVRI', 'COLISSIMO', 'CHRONOPOST', 'SAMEDAY', 'FAN_COURIER', 'CARGUS', 'PACKETA'];
   }
 }

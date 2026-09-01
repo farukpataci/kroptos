@@ -37,6 +37,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   SAMEDAY: ['username', 'password'],
   FAN_COURIER: ['clientId', 'username', 'password'],
   CARGUS: ['subscriptionKey', 'username', 'password'],
+  PACKETA: ['apiKey', 'apiSecret', 'eshop'],
 };
 
 @Injectable()

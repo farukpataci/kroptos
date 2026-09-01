@@ -613,7 +613,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Packeta CZ/SK',
     description: 'Çekya, Slovakya ve Orta Avrupa teslimat ve gel-al noktası ağı. Kaufland ve Avrupa e-ticaret gönderileri.',
     capabilities: ['Çekya & Slovakya', 'Kaufland Uyumlu', 'Gel-Al Noktaları'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'pocztex',

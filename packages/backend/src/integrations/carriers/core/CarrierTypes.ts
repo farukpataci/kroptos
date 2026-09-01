@@ -24,6 +24,7 @@ export const CARRIER_PROVIDERS = [
   'SAMEDAY',
   'FAN_COURIER',
   'CARGUS',
+  'PACKETA',
   'TRENDYOL_EXPRESS',
   'HEPSIJET',
   'SENDEO',
