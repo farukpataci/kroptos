@@ -514,7 +514,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'InPost PL/UK/FR',
     description: 'Polonya, İngiltere, Fransa, İtalya ve İspanya kargo otomatı (Paczkomaty) ve kurye teslimat entegrasyonu. Allegro uyumlu.',
     capabilities: ['Polonya & İngiltere & Fransa', 'Paczkomaty Otomat', 'Allegro Entegre'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'postnl',
