@@ -624,7 +624,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Pocztex PL',
     description: 'Polonya Ulusal Posta servisi kargo ağı. Allegro siparişleri ve Polonya içi adrese/noktaya teslimat.',
     capabilities: ['Polonya (PL)', 'Allegro Uyumlu', 'Adrese Teslimat'],
-    status: 'planned',
+    status: 'active',
   },
 
   // 💼 MUHASEBE ENTEGRASYONU (ERP & STOK & E-FATURA)
