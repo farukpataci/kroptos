@@ -81,9 +81,28 @@ export default function IntegrationsParentPage() {
         const option = carrierProviders.find(
           (p) => p.provider.toLowerCase() === provider.id.toLowerCase(),
         );
+        const CARRIER_REQUIRED_FIELDS_MAP: Record<string, { name: string; secret: boolean }[]> = {
+          gls: [{ name: 'username', secret: false }, { name: 'password', secret: true }, { name: 'shipperId', secret: false }],
+          ups: [{ name: 'clientId', secret: false }, { name: 'clientSecret', secret: true }, { name: 'accountNumber', secret: false }],
+          fedex: [{ name: 'apiKey', secret: false }, { name: 'secretKey', secret: true }, { name: 'accountNumber', secret: false }],
+          inpost: [{ name: 'apiToken', secret: true }, { name: 'organizationId', secret: false }],
+          postnl: [{ name: 'apiKey', secret: true }, { name: 'customerCode', secret: false }, { name: 'customerNumber', secret: false }],
+          royal_mail: [{ name: 'apiKey', secret: true }],
+          evri: [{ name: 'apiKey', secret: true }, { name: 'apiSecret', secret: true }, { name: 'clientId', secret: false }, { name: 'clientSecret', secret: true }],
+          yurtici: [{ name: 'wsUserName', secret: false }, { name: 'wsPassword', secret: true }],
+          aras: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
+          surat: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
+          ptt: [{ name: 'username', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
+          mng: [{ name: 'customerNumber', secret: false }, { name: 'username', secret: false }, { name: 'password', secret: true }],
+          dhl: [{ name: 'apiKey', secret: true }, { name: 'apiSecret', secret: true }, { name: 'accountNumber', secret: false }],
+          dpd: [{ name: 'apiKey', secret: true }, { name: 'accountNumber', secret: false }],
+          sendeo: [{ name: 'username', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
+          hepsijet: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'companyShortName', secret: false }],
+        };
+
         const fallbackOption: CarrierProviderOption = option || {
           provider: provider.id.toUpperCase(),
-          requiredFields: [],
+          requiredFields: CARRIER_REQUIRED_FIELDS_MAP[provider.id.toLowerCase()] || [],
         };
         setCarrierSetupProvider({ option: fallbackOption, presetName: provider.name });
       }
