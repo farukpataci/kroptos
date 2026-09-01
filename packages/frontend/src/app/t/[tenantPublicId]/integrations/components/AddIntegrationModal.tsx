@@ -602,7 +602,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Cargus RO',
     description: 'Romanya kargo ve kurye hizmetleri. eMAG ve bölgesel e-ticaret siteleri için kargo barkod ve takip entegrasyonu.',
     capabilities: ['Romanya (RO)', 'eMAG Entegrasyonu', 'Kargo Takip'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'packeta',

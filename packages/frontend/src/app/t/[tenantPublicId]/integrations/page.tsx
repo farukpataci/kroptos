@@ -93,6 +93,7 @@ export default function IntegrationsParentPage() {
           chronopost: [{ name: 'accountNumber', secret: false }, { name: 'password', secret: true }],
           sameday: [{ name: 'username', secret: false }, { name: 'password', secret: true }],
           fan_courier: [{ name: 'clientId', secret: false }, { name: 'username', secret: false }, { name: 'password', secret: true }],
+          cargus: [{ name: 'subscriptionKey', secret: true }, { name: 'username', secret: false }, { name: 'password', secret: true }],
           yurtici: [{ name: 'wsUserName', secret: false }, { name: 'wsPassword', secret: true }],
           aras: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
           surat: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
