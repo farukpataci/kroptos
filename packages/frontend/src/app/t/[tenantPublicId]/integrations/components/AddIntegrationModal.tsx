@@ -580,7 +580,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Sameday RO/HU/BG',
     description: 'Romanya, Macaristan ve Bulgaristan bölgesi kargo ve Easybox otomat ağı. eMAG pazaryeri ile tam entegre.',
     capabilities: ['Romanya & Macaristan & Bulgaristan', 'eMAG Uyumlu', 'Easybox Otomat'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'fan_courier',

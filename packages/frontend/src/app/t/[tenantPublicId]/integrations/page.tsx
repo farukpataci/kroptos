@@ -91,6 +91,7 @@ export default function IntegrationsParentPage() {
           evri: [{ name: 'apiKey', secret: true }, { name: 'apiSecret', secret: true }, { name: 'clientId', secret: false }, { name: 'clientSecret', secret: true }],
           colissimo: [{ name: 'contractNumber', secret: false }, { name: 'password', secret: true }, { name: 'apiKey', secret: true }],
           chronopost: [{ name: 'accountNumber', secret: false }, { name: 'password', secret: true }],
+          sameday: [{ name: 'username', secret: false }, { name: 'password', secret: true }],
           yurtici: [{ name: 'wsUserName', secret: false }, { name: 'wsPassword', secret: true }],
           aras: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
           surat: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],

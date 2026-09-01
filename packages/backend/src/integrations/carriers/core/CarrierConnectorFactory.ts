@@ -21,6 +21,7 @@ import { RoyalmailConnector } from '../royalmail/RoyalmailConnector';
 import { EvriConnector } from '../evri/EvriConnector';
 import { ColissimoConnector } from '../colissimo/ColissimoConnector';
 import { ChronopostConnector } from '../chronopost/ChronopostConnector';
+import { SamedayConnector } from '../sameday/SamedayConnector';
 
 @Injectable()
 export class CarrierConnectorFactory {
@@ -73,6 +74,8 @@ export class CarrierConnectorFactory {
         return new ColissimoConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       case 'CHRONOPOST':
         return new ChronopostConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
+      case 'SAMEDAY':
+        return new SamedayConnector(credentials, this.httpClient, this.rateLimiter, isTestMode);
       default:
         // Every other CarrierProvider value is declared in CarrierTypes but has
         // no connector yet. Refusing beats falling back to the mock: a silent
@@ -83,6 +86,6 @@ export class CarrierConnectorFactory {
 
   /** Providers that can actually be selected today. */
   supportedProviders(): string[] {
-    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX', 'INPOST', 'POSTNL', 'ROYAL_MAIL', 'EVRI', 'COLISSIMO', 'CHRONOPOST'];
+    return ['MOCK', 'HEPSIJET', 'YURTICI', 'ARAS', 'DHL', 'MNG', 'SENDEO', 'PTT', 'DPD', 'SURAT', 'GLS', 'UPS', 'FEDEX', 'INPOST', 'POSTNL', 'ROYAL_MAIL', 'EVRI', 'COLISSIMO', 'CHRONOPOST', 'SAMEDAY'];
   }
 }

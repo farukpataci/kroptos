@@ -21,6 +21,7 @@ export const CARRIER_PROVIDERS = [
   'EVRI',
   'COLISSIMO',
   'CHRONOPOST',
+  'SAMEDAY',
   'TRENDYOL_EXPRESS',
   'HEPSIJET',
   'SENDEO',
