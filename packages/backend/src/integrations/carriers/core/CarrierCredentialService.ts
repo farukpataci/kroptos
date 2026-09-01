@@ -33,6 +33,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   ROYAL_MAIL: ['apiKey'],
   EVRI: ['apiKey', 'apiSecret', 'clientId', 'clientSecret'],
   COLISSIMO: ['contractNumber', 'password', 'apiKey'],
+  CHRONOPOST: ['accountNumber', 'password'],
 };
 
 @Injectable()

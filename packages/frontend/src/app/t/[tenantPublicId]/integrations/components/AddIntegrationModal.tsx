@@ -569,7 +569,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Chronopost FR',
     description: 'Fransa hızlı kurye ve express teslimat servisi. Cdiscount, Fnac ve ertesi gün teslimat paketleri.',
     capabilities: ['Fransa Express', 'Cdiscount & Fnac', '24 Saat Teslimat'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'sameday',
