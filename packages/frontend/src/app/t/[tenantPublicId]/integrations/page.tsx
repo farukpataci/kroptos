@@ -89,6 +89,7 @@ export default function IntegrationsParentPage() {
           postnl: [{ name: 'apiKey', secret: true }, { name: 'customerCode', secret: false }, { name: 'customerNumber', secret: false }],
           royal_mail: [{ name: 'apiKey', secret: true }],
           evri: [{ name: 'apiKey', secret: true }, { name: 'apiSecret', secret: true }, { name: 'clientId', secret: false }, { name: 'clientSecret', secret: true }],
+          colissimo: [{ name: 'contractNumber', secret: false }, { name: 'password', secret: true }, { name: 'apiKey', secret: true }],
           yurtici: [{ name: 'wsUserName', secret: false }, { name: 'wsPassword', secret: true }],
           aras: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],
           surat: [{ name: 'userName', secret: false }, { name: 'password', secret: true }, { name: 'customerCode', secret: false }],

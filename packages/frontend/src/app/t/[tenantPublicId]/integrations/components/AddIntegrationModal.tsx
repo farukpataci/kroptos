@@ -558,7 +558,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Colissimo FR',
     description: 'Fransa ulusal posta ve paket servisi. Cdiscount, Fnac ve Fransa e-ticaret siparişleri için kargo takip entegrasyonu.',
     capabilities: ['Fransa (FR)', 'Cdiscount & Fnac', 'Fransa İçi Dağıtım'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'chronopost',
