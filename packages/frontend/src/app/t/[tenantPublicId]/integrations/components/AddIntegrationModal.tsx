@@ -547,7 +547,7 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeText: 'Evri UK',
     description: 'İngiltere’nin önde gelen kapıdan kapıya kargo servisi. Amazon, eBay ve e-ticaret siteleri için hızlı gönderi servisi.',
     capabilities: ['İngiltere (UK)', 'Amazon & eBay UK', 'Parsel Takip'],
-    status: 'planned',
+    status: 'active',
   },
   {
     id: 'colissimo',

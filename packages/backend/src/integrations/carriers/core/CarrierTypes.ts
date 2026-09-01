@@ -18,6 +18,7 @@ export const CARRIER_PROVIDERS = [
   'INPOST',
   'POSTNL',
   'ROYAL_MAIL',
+  'EVRI',
   'TRENDYOL_EXPRESS',
   'HEPSIJET',
   'SENDEO',

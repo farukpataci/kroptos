@@ -31,6 +31,7 @@ const REQUIRED_CREDENTIALS: Partial<Record<CarrierProvider, string[]>> = {
   INPOST: ['apiToken', 'organizationId'],
   POSTNL: ['apiKey', 'customerCode', 'customerNumber'],
   ROYAL_MAIL: ['apiKey'],
+  EVRI: ['apiKey', 'apiSecret', 'clientId', 'clientSecret'],
 };
 
 @Injectable()
