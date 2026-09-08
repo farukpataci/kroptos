@@ -46,6 +46,20 @@ export class AccountingHttpClient {
     return pairs.filter(Boolean).join('&');
   }
 
+  static enforceHttps(url: string): string {
+    if (url.startsWith('http://')) {
+      try {
+        const parsed = new URL(url);
+        if (parsed.hostname !== 'localhost' && parsed.hostname !== '127.0.0.1') {
+          return url.replace(/^http:\/\//i, 'https://');
+        }
+      } catch {
+        return url.replace(/^http:\/\//i, 'https://');
+      }
+    }
+    return url;
+  }
+
   private async request<T = any>(
     method: string,
     url: string,
@@ -56,7 +70,7 @@ export class AccountingHttpClient {
     const timeoutMs = options.timeoutMs || this.defaultTimeoutMs;
     const contentType = options.contentType || 'json';
 
-    let fullUrl = url;
+    let fullUrl = AccountingHttpClient.enforceHttps(url);
     if (options.params) {
       const searchParams = new URLSearchParams();
       for (const [key, value] of Object.entries(options.params)) {

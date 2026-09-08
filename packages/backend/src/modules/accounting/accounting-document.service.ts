@@ -3,9 +3,11 @@ import {
   Injectable,
   Logger,
   NotFoundException,
+  Optional,
 } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { AuditLogService } from '../audit/audit.service';
 import {
   AccountingAmountMismatchError,
   AccountingIdempotencyError,
@@ -19,6 +21,8 @@ import {
 } from '../../integrations/accounting/core/AccountingTypes';
 import {
   AccountingQueryDto,
+  AttachExternalDto,
+  CancelLocallyDto,
   CreateAccountingInvoiceDocumentDto,
   CreateAccountingPaymentDocumentDto,
 } from './dto/accounting.dto';
@@ -34,6 +38,7 @@ export class AccountingDocumentService {
     private readonly connectorFactory: AccountingConnectorFactory,
     private readonly credentialsService: AccountingCredentialService,
     private readonly mappingService: AccountingMappingService,
+    @Optional() private readonly auditLogService?: AuditLogService,
   ) {}
 
   /**
@@ -384,4 +389,114 @@ export class AccountingDocumentService {
       data: { status: 'cancelled' },
     });
   }
+
+  /**
+   * Cancel document locally when provider does not support remote cancellation (e.g. BizimHesap).
+   */
+  async cancelLocally(
+    id: string,
+    dto: CancelLocallyDto,
+    scope: AccountingScope,
+    userContext?: { id?: string; email?: string; name?: string; ip?: string },
+  ) {
+    if (dto.acknowledgeManualCancel !== true) {
+      throw new BadRequestException('Sağlayıcı panelinden elle iptal edildiği/edileceği onaylanmalıdır.');
+    }
+
+    const doc = await this.prisma.accountingDocument.findFirst({
+      where: { id, agencyId: scope.agencyId },
+    });
+
+    if (!doc) throw new NotFoundException('Belge bulunamadı.');
+
+    const updated = await this.prisma.accountingDocument.update({
+      where: { id },
+      data: {
+        status: 'cancelled',
+        errorMessage: dto.reason
+          ? `[yerel iptal] ${dto.reason}`
+          : 'sağlayıcıda iptal edilmedi — BizimHesap panelinden elle iptal edilmeli',
+      },
+    });
+
+    if (this.auditLogService) {
+      await this.auditLogService.createLog({
+        tenantId: scope.agencyId,
+        userId: userContext?.id,
+        userEmail: userContext?.email,
+        userName: userContext?.name,
+        action: 'accounting.document.cancel_locally',
+        module: 'accounting',
+        entityType: 'AccountingDocument',
+        entityId: doc.id,
+        entityDisplayName: doc.referenceCode,
+        description: `Belge yerel olarak iptal edildi (${doc.referenceCode})`,
+        metadata: {
+          documentId: doc.id,
+          reason: dto.reason,
+          acknowledged: true,
+          externalId: doc.externalId,
+        },
+        ipAddress: userContext?.ip,
+        severity: 'warning',
+      });
+    }
+
+    return updated;
+  }
+
+  /**
+   * Attach external document ID (e.g. after timeout/5xx when document was created on provider).
+   */
+  async attachExternal(
+    id: string,
+    dto: AttachExternalDto,
+    scope: AccountingScope,
+    userContext?: { id?: string; email?: string; name?: string; ip?: string },
+  ) {
+    if (!dto.externalId?.trim()) {
+      throw new BadRequestException('Harici belge GUID / ID bilgisi zorunludur.');
+    }
+
+    const doc = await this.prisma.accountingDocument.findFirst({
+      where: { id, agencyId: scope.agencyId },
+    });
+
+    if (!doc) throw new NotFoundException('Belge bulunamadı.');
+
+    const updated = await this.prisma.accountingDocument.update({
+      where: { id },
+      data: {
+        status: 'created',
+        externalId: dto.externalId.trim(),
+        ...(dto.externalNumber?.trim() ? { externalNumber: dto.externalNumber.trim() } : {}),
+        errorMessage: null,
+      },
+    });
+
+    if (this.auditLogService) {
+      await this.auditLogService.createLog({
+        tenantId: scope.agencyId,
+        userId: userContext?.id,
+        userEmail: userContext?.email,
+        userName: userContext?.name,
+        action: 'accounting.document.attach_external',
+        module: 'accounting',
+        entityType: 'AccountingDocument',
+        entityId: doc.id,
+        entityDisplayName: doc.referenceCode,
+        description: `Harici belge bilgisi bağlandı (${dto.externalId})`,
+        metadata: {
+          documentId: doc.id,
+          externalId: dto.externalId.trim(),
+          externalNumber: dto.externalNumber?.trim(),
+        },
+        ipAddress: userContext?.ip,
+        severity: 'info',
+      });
+    }
+
+    return updated;
+  }
 }
+

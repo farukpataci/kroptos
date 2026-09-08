@@ -83,7 +83,9 @@ export default function AccountingIntegrationsPage() {
     }
   };
 
-  const allCompanies: AccountingCompanyItem[] = integrations.flatMap((i) => i.companies || []);
+  const allCompanies: AccountingCompanyItem[] = integrations.flatMap((i) =>
+    (i.companies || []).map((c) => ({ ...c, provider: i.provider })),
+  );
   const activeIntegration = integrations[0];
 
   return (

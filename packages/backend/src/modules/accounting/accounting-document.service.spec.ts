@@ -162,4 +162,91 @@ describe('AccountingDocumentService (Reservation-First Idempotency)', () => {
       }),
     );
   });
+
+  describe('cancelLocally', () => {
+    it('should throw BadRequestException if acknowledgeManualCancel is false', async () => {
+      await expect(
+        service.cancelLocally(
+          'doc-1',
+          { acknowledgeManualCancel: false },
+          { agencyId: 'ag-1' },
+        ),
+      ).rejects.toThrow('Sağlayıcı panelinden elle iptal edildiği/edileceği onaylanmalıdır.');
+    });
+
+    it('should cancel locally and record note when acknowledged', async () => {
+      mockPrisma.accountingDocument.findFirst.mockResolvedValue({
+        id: 'doc-1',
+        agencyId: 'ag-1',
+        referenceCode: 'INV-001',
+        externalId: 'ext-001',
+      });
+      mockPrisma.accountingDocument.update.mockResolvedValue({
+        id: 'doc-1',
+        status: 'cancelled',
+      });
+
+      const res = await service.cancelLocally(
+        'doc-1',
+        { acknowledgeManualCancel: true, reason: 'Müşteri iptal talebi' },
+        { agencyId: 'ag-1' },
+      );
+
+      expect(res.status).toBe('cancelled');
+      expect(mockPrisma.accountingDocument.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'doc-1' },
+          data: expect.objectContaining({
+            status: 'cancelled',
+            errorMessage: '[yerel iptal] Müşteri iptal talebi',
+          }),
+        }),
+      );
+    });
+  });
+
+  describe('attachExternal', () => {
+    it('should throw BadRequestException if externalId is empty', async () => {
+      await expect(
+        service.attachExternal(
+          'doc-1',
+          { externalId: '   ' },
+          { agencyId: 'ag-1' },
+        ),
+      ).rejects.toThrow('Harici belge GUID / ID bilgisi zorunludur.');
+    });
+
+    it('should attach externalId and externalNumber and mark created', async () => {
+      mockPrisma.accountingDocument.findFirst.mockResolvedValue({
+        id: 'doc-1',
+        agencyId: 'ag-1',
+        referenceCode: 'INV-001',
+      });
+      mockPrisma.accountingDocument.update.mockResolvedValue({
+        id: 'doc-1',
+        status: 'created',
+        externalId: 'bh-guid-888',
+        externalNumber: 'BH-INV-001',
+      });
+
+      const res = await service.attachExternal(
+        'doc-1',
+        { externalId: 'bh-guid-888', externalNumber: 'BH-INV-001' },
+        { agencyId: 'ag-1' },
+      );
+
+      expect(res.status).toBe('created');
+      expect(mockPrisma.accountingDocument.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'doc-1' },
+          data: expect.objectContaining({
+            status: 'created',
+            externalId: 'bh-guid-888',
+            externalNumber: 'BH-INV-001',
+            errorMessage: null,
+          }),
+        }),
+      );
+    });
+  });
 });

@@ -60,6 +60,27 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'BIZIMHESAP',
+    displayName: 'BizimHesap',
+    country: 'TR',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'VERIFIED',
+    credentialSchema: {
+      provider: 'BIZIMHESAP',
+      name: 'BizimHesap',
+      fields: [
+        { key: 'firmId', label: 'Firma ID / Kod (firmId)', type: 'password', required: true, secret: true },
+        { key: 'key', label: 'API Anahtarı (key)', type: 'password', required: true, secret: true },
+        { key: 'token', label: 'API Belirteci (token)', type: 'password', required: true, secret: true },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'SUPPORTED' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 export default function AddAccountingModal({

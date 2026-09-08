@@ -8,6 +8,8 @@ export const accountingSyncEventEmitter = new EventEmitter();
 export interface AccountingJobData {
   jobType: 'create_invoice' | 'record_payment';
   payload: any;
+  provider?: string;
+  attempts?: number;
   scope: {
     agencyId: string;
     clientId?: string;
@@ -59,10 +61,17 @@ export class AccountingQueueService implements OnModuleInit {
   }
 
   async addJob(data: AccountingJobData): Promise<void> {
+    const maxAttempts =
+      data.attempts !== undefined
+        ? data.attempts
+        : data.provider?.toUpperCase() === 'BIZIMHESAP'
+          ? 1
+          : 3;
+
     if (this.isRedisAvailable && this.queue) {
       try {
         await this.queue.add(data.jobType, data, {
-          attempts: 3,
+          attempts: maxAttempts,
           backoff: {
             type: 'exponential',
             delay: 5000,

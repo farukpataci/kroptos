@@ -12,6 +12,7 @@ export interface AccountingCompanyItem {
   invoiceSeries?: string;
   defaultRetailContactId?: string | null;
   defaultAccountCodes?: Record<string, any>;
+  provider?: string;
   createdAt: string;
 }
 

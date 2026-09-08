@@ -60,6 +60,9 @@ export default function AccountingMappingList({ companies }: AccountingMappingLi
     fetchMappings();
   }, [fetchMappings]);
 
+  const selectedCompany = companies.find((c) => c.id === selectedCompanyId);
+  const isBizimHesap = selectedCompany?.provider === 'BIZIMHESAP';
+
   return (
     <div className="space-y-4">
       {/* Top Controls */}
@@ -145,15 +148,26 @@ export default function AccountingMappingList({ companies }: AccountingMappingLi
                       {c.externalContactId}
                     </td>
                     <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
-                        {t('mappings.matched')}
-                      </span>
+                      {isBizimHesap ? (
+                        <span className="inline-flex items-center rounded-full bg-blue-500/10 px-2 py-0.5 text-[11px] font-medium text-blue-400 border border-blue-500/20">
+                          {t('mappings.createdWithInvoice')}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 border border-emerald-500/20">
+                          {t('mappings.matched')}
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))
               )}
             </tbody>
           </table>
+        ) : isBizimHesap ? (
+          <div className="p-8 text-center text-xs text-kp-text-muted space-y-2">
+            <p className="font-semibold text-kp-text-secondary">{t('mappings.bizimhesapNoProductSync')}</p>
+            <p>{t('mappings.bizimhesapNoProductSyncDesc')}</p>
+          </div>
         ) : (
           <table className="min-w-full divide-y divide-kp-border text-left text-xs">
             <thead className="bg-kp-bg-muted/50 text-kp-text-secondary">

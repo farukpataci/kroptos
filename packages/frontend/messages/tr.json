@@ -4282,7 +4282,7 @@
   "accounting": {
     "page": {
       "title": "Muhasebe & Ön Muhasebe",
-      "subtitle": "Paraşüt ve KolayBi' ön muhasebe entegrasyonları, fatura taslakları, tahsilat ve cari/ürün eşlemeleri"
+      "subtitle": "Paraşüt, KolayBi' ve BizimHesap ön muhasebe entegrasyonları, fatura taslakları, tahsilat ve cari/ürün eşlemeleri"
     },
     "actions": {
       "addIntegration": "Yeni Entegrasyon Ekle",
@@ -4295,6 +4295,11 @@
       "delete": "Sil",
       "refresh": "Yenile",
       "viewPayload": "Ham Yanıtı Gör",
+      "viewInProvider": "BizimHesap'ta Görüntüle",
+      "cancelLocally": "Yerel İptal",
+      "confirmCancelLocally": "Yerel Olarak İptal Et",
+      "attachExternal": "Harici Belge Bağla",
+      "confirmAttachExternal": "Belgeyi Bağla",
       "cancelClaim": "İptal Et"
     },
     "tabs": {
@@ -4319,12 +4324,12 @@
     },
     "banner": {
       "mockReadyTitle": "MOCK_READY Entegrasyon",
-      "mockReadyDesc": "Canlı muhasebe API erişimi güvenli şekilde simüle edilmektedir (Paraşüt / KolayBi'). TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
+      "mockReadyDesc": "Canlı muhasebe API erişimi güvenli şekilde simüle edilmektedir (Paraşüt / KolayBi' / BizimHesap). TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
     },
     "modals": {
       "createTitle": "Yeni Muhasebe Entegrasyonu",
       "editTitle": "Muhasebe Entegrasyonunu Düzenle",
-      "subtitle": "Muhasebe sağlayıcısı (Paraşüt / KolayBi') API kimlik ve firma bilgilerini girin"
+      "subtitle": "Muhasebe sağlayıcısı (Paraşüt / KolayBi' / BizimHesap) API kimlik ve firma bilgilerini girin"
     },
     "fields": {
       "provider": "Muhasebe Sağlayıcısı",
@@ -4352,7 +4357,7 @@
     },
     "empty": {
       "title": "Henüz Yapılandırılmış Muhasebe Entegrasyonu Yok",
-      "subtitle": "Paraşüt veya KolayBi' hesabınızı bağlayarak satış faturalarınızı ve tahsilatlarınızı yönetmeye başlayın."
+      "subtitle": "Paraşüt, KolayBi' veya BizimHesap hesabınızı bağlayarak satış faturalarınızı ve tahsilatlarınızı yönetmeye başlayın."
     },
     "documents": {
       "colType": "Belge Tipi",
@@ -4366,6 +4371,19 @@
       "noRecords": "Henüz oluşturulmuş muhasebe belgesi bulunmuyor.",
       "cancelConfirm": "Bu devam eden fatura rezervasyonunu iptal etmek istediğinizden emin misiniz?",
       "cancelSuccess": "Rezervasyon iptal edildi.",
+      "cancelLocallySuccess": "Belge yerel olarak iptal edildi.",
+      "cancelLocallyTitle": "Yerel Fatura İptali (Local Cancel)",
+      "cancelLocallyWarning": "DİKKAT: BizimHesap API'si faturayı uzaktan iptal etmeyi desteklemez. Lütfen önce BizimHesap web paneline girerek faturayı manuel olarak iptal edin veya silin. Ardından bu onayı veriniz.",
+      "cancelReasonLabel": "İptal Nedeni (İsteğe Bağlı)",
+      "cancelReasonPlaceholder": "Örn: Müşteri siparişi iptal etti / iade",
+      "cancelLocallyAckLabel": "Bu faturanın BizimHesap panelinden elle iptal edildiğini veya edileceğini onaylıyorum.",
+      "attachExternalTitle": "Harici Belge Bağla (Attach External)",
+      "attachExternalDesc": "Zaman aşımı veya ağ hatası alan siparişlerde mükerrerliği önlemek için sistem yeniden denemez. BizimHesap panelinizde fatura oluşmuşsa GUID ve numarasını buraya girerek siparişle eşleştirebilirsiniz.",
+      "attachExternalSuccess": "Harici belge başarıyla bağlandı ve durum güncellendi.",
+      "attachGuidLabel": "BizimHesap GUID / Belge ID",
+      "attachInvoiceNoLabel": "Fatura Numarası (İsteğe Bağlı)",
+      "operatorTipTitle": "BizimHesap Operatör Bilgisi",
+      "operatorTipDesc": "BizimHesap API'si uzaktan fatura iptalini desteklemez; iptaller için önce BizimHesap panelinden işlem yapılıp ardından 'Yerel İptal' verilmelidir. Zaman aşımı alan faturalarda mükerrerliği engellemek için yeniden deneme kapalıdır (attempts: 1); paneli kontrol edip oluşan faturayı 'Harici Belge Bağla' ile bağlayabilirsiniz.",
       "rawTitle": "Belge Detayı & Ham Yanıt"
     },
     "mappings": {
@@ -4384,7 +4402,10 @@
       "loading": "Eşlemeler yükleniyor...",
       "noContacts": "Henüz eşleşmiş cari kaydı bulunmuyor.",
       "noProducts": "Henüz eşleşmiş ürün kaydı bulunmuyor.",
-      "matched": "Eşleşti"
+      "matched": "Eşleşti",
+      "createdWithInvoice": "Faturayla Birlikte Oluşturuldu",
+      "bizimhesapNoProductSync": "BizimHesap Bağımsız Ürün Kaydı Desteklemez",
+      "bizimhesapNoProductSyncDesc": "BizimHesap API'sinde bağımsız ürün/stok kartı açma servisi bulunmamaktadır. Ürün bilgileri ve fatura kalemleri satış faturası gönderildiği anda BizimHesap tarafından otomatik olarak işlenir."
     },
     "companies": {
       "title": "Firma & Şube Yönetimi",

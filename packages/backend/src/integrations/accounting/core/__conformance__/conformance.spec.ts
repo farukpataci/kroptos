@@ -4,6 +4,7 @@ import { CapabilityStatus } from '../AccountingTypes';
 // Ensure registered providers are loaded
 import '../../parasut';
 import '../../kolaybi';
+import '../../bizimhesap';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
@@ -94,6 +95,7 @@ describe('Accounting Provider Conformance Suite', () => {
         currency: 'TRY',
         contact: {
           name: 'Test Customer',
+          address: 'Test Adres No:1',
           taxNumber: '1234567890',
         },
         items: [
@@ -115,28 +117,38 @@ describe('Accounting Provider Conformance Suite', () => {
       expect(res.externalId).toBeDefined();
     });
 
-    it('13. mock client syncContact should return externalId', async () => {
+    it('13. mock client syncContact behavior matches capability', async () => {
       const connector = new descriptor.connectorClass({}, 'MOCK');
-      const res = await connector.syncContact({
+      const contactReq = {
         companyId: 'comp-1',
         kroptosKey: 'cust-1',
         name: 'Mock Customer',
         taxNumber: '12345678901',
-      });
-      expect(res.externalId).toBeDefined();
+      };
+      if (descriptor.capabilities.contactSync === 'NOT_SUPPORTED') {
+        await expect(connector.syncContact(contactReq)).rejects.toThrow();
+      } else {
+        const res = await connector.syncContact(contactReq);
+        expect(res.externalId).toBeDefined();
+      }
     });
 
-    it('14. mock client recordPayment should return payment result', async () => {
+    it('14. mock client recordPayment behavior matches capability', async () => {
       const connector = new descriptor.connectorClass({}, 'MOCK');
-      const res = await connector.recordPayment({
+      const payReq = {
         companyId: 'comp-1',
         invoiceExternalId: 'inv-1',
         referenceCode: 'PAY-1',
         amount: 120,
         currency: 'TRY',
         paymentDate: '2026-09-08',
-      });
-      expect(res.externalId).toBeDefined();
+      };
+      if (descriptor.capabilities.payment === 'NOT_SUPPORTED') {
+        await expect(connector.recordPayment(payReq)).rejects.toThrow();
+      } else {
+        const res = await connector.recordPayment(payReq);
+        expect(res.externalId).toBeDefined();
+      }
     });
   });
 });

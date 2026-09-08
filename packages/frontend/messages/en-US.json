@@ -562,7 +562,7 @@
   "accounting": {
     "page": {
       "title": "Accounting Integrations",
-      "subtitle": "Paraşüt and KolayBi' accounting integrations, invoice drafts, payment records, and contact/product mappings"
+      "subtitle": "Paraşüt, KolayBi', and BizimHesap accounting integrations, invoice drafts, payment records, and contact/product mappings"
     },
     "actions": {
       "addIntegration": "Add New Integration",
@@ -575,6 +575,11 @@
       "delete": "Delete",
       "refresh": "Refresh",
       "viewPayload": "View Raw Payload",
+      "viewInProvider": "View in BizimHesap",
+      "cancelLocally": "Local Cancel",
+      "confirmCancelLocally": "Cancel Document Locally",
+      "attachExternal": "Attach External Document",
+      "confirmAttachExternal": "Attach Document",
       "cancelClaim": "Cancel Claim"
     },
     "tabs": {
@@ -599,12 +604,12 @@
     },
     "banner": {
       "mockReadyTitle": "MOCK_READY Integration",
-      "mockReadyDesc": "Live accounting API access is simulated in a safe mock environment (Paraşüt / KolayBi'). TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
+      "mockReadyDesc": "Live accounting API access is simulated in a safe mock environment (Paraşüt / KolayBi' / BizimHesap). TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
     },
     "modals": {
       "createTitle": "New Accounting Integration",
       "editTitle": "Edit Accounting Integration",
-      "subtitle": "Enter accounting provider (Paraşüt / KolayBi') credentials and company information"
+      "subtitle": "Enter accounting provider (Paraşüt / KolayBi' / BizimHesap) credentials and company information"
     },
     "fields": {
       "provider": "Accounting Provider",
@@ -632,7 +637,7 @@
     },
     "empty": {
       "title": "No Accounting Integrations Configured",
-      "subtitle": "Connect your Paraşüt or KolayBi' account to start managing your invoices and payments."
+      "subtitle": "Connect your Paraşüt, KolayBi', or BizimHesap account to start managing your invoices and payments."
     },
     "documents": {
       "colType": "Document Type",
@@ -646,6 +651,19 @@
       "noRecords": "No accounting documents created yet.",
       "cancelConfirm": "Are you sure you want to cancel this pending invoice reservation?",
       "cancelSuccess": "Reservation cancelled.",
+      "cancelLocallySuccess": "Document cancelled locally.",
+      "cancelLocallyTitle": "Local Invoice Cancellation",
+      "cancelLocallyWarning": "WARNING: BizimHesap API does not support remote invoice cancellation. Please manually cancel or delete this invoice in the BizimHesap web portal first before confirming here.",
+      "cancelReasonLabel": "Cancellation Reason (Optional)",
+      "cancelReasonPlaceholder": "e.g. Customer cancelled order / return",
+      "cancelLocallyAckLabel": "I acknowledge that this invoice has been or will be manually cancelled in the BizimHesap portal.",
+      "attachExternalTitle": "Attach External Document",
+      "attachExternalDesc": "Retries are disabled upon timeout to prevent duplicate invoice emissions. If the invoice was created in BizimHesap, enter its GUID and invoice number here to link it.",
+      "attachExternalSuccess": "External document linked successfully.",
+      "attachGuidLabel": "BizimHesap GUID / Document ID",
+      "attachInvoiceNoLabel": "Invoice Number (Optional)",
+      "operatorTipTitle": "BizimHesap Operator Notice",
+      "operatorTipDesc": "BizimHesap API does not support remote cancellation; cancellations must be performed on the BizimHesap portal and confirmed via 'Local Cancel'. Retries are disabled on timeout (attempts: 1) to prevent duplicate invoices; verify your BizimHesap portal and link created invoices using 'Attach External'.",
       "rawTitle": "Document Details & Raw Payload"
     },
     "mappings": {
@@ -664,7 +682,10 @@
       "loading": "Loading mappings...",
       "noContacts": "No matched contact records found.",
       "noProducts": "No matched product records found.",
-      "matched": "Matched"
+      "matched": "Matched",
+      "createdWithInvoice": "Created with Invoice",
+      "bizimhesapNoProductSync": "BizimHesap Does Not Support Standalone Product Sync",
+      "bizimhesapNoProductSyncDesc": "BizimHesap has no standalone product/stock creation endpoint. Products and line items are automatically created and mapped upon sales invoice submission."
     },
     "companies": {
       "title": "Company & Branch Management",

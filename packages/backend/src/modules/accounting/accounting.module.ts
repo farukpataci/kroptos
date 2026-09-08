@@ -20,6 +20,7 @@ import { AccountingSyncWorker } from './accounting-sync.worker';
 // Providers
 import '../../integrations/accounting/parasut';
 import '../../integrations/accounting/kolaybi';
+import '../../integrations/accounting/bizimhesap';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

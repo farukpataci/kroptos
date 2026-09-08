@@ -381,3 +381,26 @@ export class AccountingQueryDto {
   @IsOptional()
   storeId?: string;
 }
+
+export class CancelLocallyDto {
+  @ApiProperty({ description: 'Acknowledge manual cancellation on provider portal', example: true })
+  @IsBoolean()
+  acknowledgeManualCancel: boolean;
+
+  @ApiPropertyOptional({ description: 'Cancellation reason', example: 'Müşteri siparişi iptal etti' })
+  @IsString()
+  @IsOptional()
+  reason?: string;
+}
+
+export class AttachExternalDto {
+  @ApiProperty({ description: 'External document GUID / ID from provider portal', example: 'bh-guid-12345' })
+  @IsString()
+  externalId: string;
+
+  @ApiPropertyOptional({ description: 'External document number (invoice number)', example: 'BH-2026-0001' })
+  @IsString()
+  @IsOptional()
+  externalNumber?: string;
+}
+

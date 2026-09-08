@@ -18,6 +18,8 @@ import { AccountingDocumentService } from './accounting-document.service';
 import { AccountingScope } from './accounting.service';
 import {
   AccountingQueryDto,
+  AttachExternalDto,
+  CancelLocallyDto,
   CreateAccountingInvoiceDocumentDto,
   CreateAccountingPaymentDocumentDto,
 } from './dto/accounting.dto';
@@ -86,5 +88,43 @@ export class AccountingDocumentController {
   async cancelClaim(@Param('id') id: string, @Req() req: Request) {
     const scope = this.extractScope(req);
     return this.documentService.cancelDocumentClaim(id, scope);
+  }
+
+  @Post(':id/cancel-locally')
+  @HttpCode(200)
+  @RequirePermission('accounting.manage')
+  @ApiOperation({ summary: 'Cancel document locally when provider lacks API cancellation' })
+  async cancelLocally(
+    @Param('id') id: string,
+    @Body() dto: CancelLocallyDto,
+    @Req() req: Request,
+  ) {
+    const scope = this.extractScope(req);
+    const user = (req as any).user;
+    return this.documentService.cancelLocally(id, dto, scope, {
+      id: user?.id,
+      email: user?.email,
+      name: user?.name,
+      ip: req.ip,
+    });
+  }
+
+  @Post(':id/attach-external')
+  @HttpCode(200)
+  @RequirePermission('accounting.manage')
+  @ApiOperation({ summary: 'Manually attach external ID/number to stuck document' })
+  async attachExternal(
+    @Param('id') id: string,
+    @Body() dto: AttachExternalDto,
+    @Req() req: Request,
+  ) {
+    const scope = this.extractScope(req);
+    const user = (req as any).user;
+    return this.documentService.attachExternal(id, dto, scope, {
+      id: user?.id,
+      email: user?.email,
+      name: user?.name,
+      ip: req.ip,
+    });
   }
 }
