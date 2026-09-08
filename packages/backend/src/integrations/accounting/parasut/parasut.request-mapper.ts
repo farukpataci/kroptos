@@ -1,6 +1,4 @@
-import {
-  AccountingAmountMismatchError,
-} from '../core/AccountingErrors';
+import { assertTotalsMatch } from '../core/AccountingAmount.util';
 import {
   AccountingContactRequest,
   AccountingInvoiceRequest,
@@ -24,17 +22,7 @@ export class ParasutRequestMapper {
     request: AccountingInvoiceRequest,
     externalContactId?: string,
   ): ParasutJsonApiResource<ParasutSalesInvoiceAttributes> {
-    const computedItemsTotal = request.items.reduce((sum, item) => sum + item.totalAmount, 0);
-    const discount = request.discountTotal || 0;
-    const computedGrandTotal = Number((computedItemsTotal - discount).toFixed(4));
-    const declaredGrandTotal = Number(request.grandTotal.toFixed(4));
-
-    // Tolerance 0.02 for rounding differences across multi-line tax calculations
-    if (Math.abs(computedGrandTotal - declaredGrandTotal) > 0.02) {
-      throw new AccountingAmountMismatchError(
-        `Fatura tutar uyumsuzluğu: Kalemler toplamı (${computedGrandTotal}) ile genel toplam (${declaredGrandTotal}) eşleşmiyor.`,
-      );
-    }
+    assertTotalsMatch(request);
 
     const details: ParasutJsonApiResource<ParasutInvoiceItemAttributes>[] = request.items.map(
       (item) => ({

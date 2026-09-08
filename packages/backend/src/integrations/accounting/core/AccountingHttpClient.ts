@@ -6,6 +6,7 @@ export interface AccountingHttpRequestOptions {
   params?: Record<string, string | number | boolean | undefined>;
   timeoutMs?: number;
   provider?: string;
+  contentType?: 'json' | 'form';
 }
 
 @Injectable()
@@ -29,6 +30,22 @@ export class AccountingHttpClient {
     return this.request<T>('DELETE', url, undefined, options);
   }
 
+  private encodeFormBody(obj: any, prefix = ''): string {
+    if (!obj || typeof obj !== 'object') return String(obj ?? '');
+    const pairs: string[] = [];
+    for (const key of Object.keys(obj)) {
+      const val = obj[key];
+      if (val === undefined || val === null) continue;
+      const propKey = prefix ? `${prefix}[${key}]` : key;
+      if (typeof val === 'object' && !(val instanceof Date)) {
+        pairs.push(this.encodeFormBody(val, propKey));
+      } else {
+        pairs.push(`${encodeURIComponent(propKey)}=${encodeURIComponent(String(val))}`);
+      }
+    }
+    return pairs.filter(Boolean).join('&');
+  }
+
   private async request<T = any>(
     method: string,
     url: string,
@@ -37,6 +54,7 @@ export class AccountingHttpClient {
   ): Promise<T> {
     const provider = options.provider || 'ACCOUNTING';
     const timeoutMs = options.timeoutMs || this.defaultTimeoutMs;
+    const contentType = options.contentType || 'json';
 
     let fullUrl = url;
     if (options.params) {
@@ -53,7 +71,7 @@ export class AccountingHttpClient {
     }
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
+      'Content-Type': contentType === 'form' ? 'application/x-www-form-urlencoded' : 'application/json',
       Accept: 'application/json',
       ...options.headers,
     };
@@ -64,11 +82,22 @@ export class AccountingHttpClient {
     const safeUrl = this.sanitizeUrl(fullUrl);
     this.logger.debug(`[${provider}] ${method} ${safeUrl}`);
 
+    let body: string | undefined;
+    if (data !== undefined && data !== null) {
+      if (typeof data === 'string') {
+        body = data;
+      } else if (contentType === 'form') {
+        body = this.encodeFormBody(data);
+      } else {
+        body = JSON.stringify(data);
+      }
+    }
+
     try {
       const response = await fetch(fullUrl, {
         method,
         headers,
-        body: data ? (typeof data === 'string' ? data : JSON.stringify(data)) : undefined,
+        body,
         signal: controller.signal,
       });
 

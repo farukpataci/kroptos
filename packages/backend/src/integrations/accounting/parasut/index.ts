@@ -9,3 +9,4 @@ export * from './parasut.request-mapper';
 export * from './parasut.response-mapper';
 export * from './parasut.error-mapper';
 export * from './parasut.connector';
+export * from './parasut.descriptor';

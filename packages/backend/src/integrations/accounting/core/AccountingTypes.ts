@@ -18,15 +18,49 @@ export type AccountingDocumentType =
 
 export type AccountingDocumentStatus = 'pending' | 'created' | 'failed' | 'cancelled';
 
+export interface CredentialFieldDefinition {
+  key: string;
+  label: string;
+  type: 'text' | 'password';
+  required: boolean;
+  secret?: boolean;
+  description?: string;
+  defaultValue?: string;
+}
+
+export interface AccountingProviderSchema {
+  provider: string;
+  name: string;
+  fields: CredentialFieldDefinition[];
+}
+
+export interface AccountingProviderDescriptor {
+  id: string;
+  displayName: string;
+  country: string;
+  protocol: 'rest' | 'jsonapi' | 'soap';
+  readiness: AccountingReadiness;
+  documentationStatus: 'VERIFIED' | 'PARTIAL' | 'DOCUMENTATION_REQUIRED';
+  credentialSchema: AccountingProviderSchema;
+  capabilities: AccountingCapabilities;
+  supportsMock: boolean;
+  supportsTest: boolean;
+  supportsProduction: boolean;
+  lastVerifiedAt: string | null;
+  connectorClass: any;
+}
+
 export interface AccountingCapabilities {
   salesInvoice: CapabilityStatus;
   payment: CapabilityStatus;
   contactSync: CapabilityStatus;
   productMapping: CapabilityStatus;
-  stockSync: CapabilityStatus; // Paraşüt: strictly NOT_SUPPORTED
+  stockSync: CapabilityStatus; // Paraşüt & KolayBi: strictly NOT_SUPPORTED
   eInvoiceOfficialSend: CapabilityStatus; // strictly NOT_SUPPORTED in Phase 1
   cancelInvoice: CapabilityStatus;
   findInvoiceByReference: CapabilityStatus;
+  multiCompany?: CapabilityStatus;
+  eDocument?: CapabilityStatus;
 }
 
 export interface AccountingInvoiceItem {

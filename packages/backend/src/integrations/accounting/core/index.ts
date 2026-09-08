@@ -6,3 +6,5 @@ export * from './AccountingTokenStore';
 export * from './AccountingCredentialService';
 export * from './AccountingConnector';
 export * from './AccountingConnectorFactory';
+export * from './AccountingProviderRegistry';
+export * from './AccountingAmount.util';

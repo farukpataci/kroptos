@@ -1,34 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { decrypt, encrypt } from '../../../common/utils/encryption.util';
+import { AccountingProviderSchema } from './AccountingTypes';
+import { AccountingProviderRegistry } from './AccountingProviderRegistry';
 
-export interface CredentialFieldDefinition {
-  key: string;
-  label: string;
-  type: 'text' | 'password';
-  required: boolean;
-  description?: string;
-}
-
-export interface AccountingProviderSchema {
-  provider: string;
-  name: string;
-  fields: CredentialFieldDefinition[];
-}
-
-const PROVIDER_SCHEMAS: Record<string, AccountingProviderSchema> = {
-  PARASUT: {
-    provider: 'PARASUT',
-    name: 'Paraşüt',
-    fields: [
-      { key: 'clientId', label: 'Client ID (Uygulama ID)', type: 'text', required: true },
-      { key: 'clientSecret', label: 'Client Secret (İstemci Gizli Anahtarı)', type: 'password', required: true },
-      { key: 'username', label: 'Kullanıcı Adı (E-posta)', type: 'text', required: true },
-      { key: 'password', label: 'Şifre', type: 'password', required: true },
-      { key: 'companyId', label: 'Firma ID (Company ID)', type: 'text', required: true },
-      { key: 'redirectUri', label: 'Redirect URI', type: 'text', required: false, description: 'urn:ietf:wg:oauth:2.0:oob (Varsayılan)' },
-    ],
-  },
-};
+export { AccountingProviderSchema } from './AccountingTypes';
 
 @Injectable()
 export class AccountingCredentialService {
@@ -45,7 +20,10 @@ export class AccountingCredentialService {
   }
 
   getSchema(provider: string): AccountingProviderSchema | undefined {
-    return PROVIDER_SCHEMAS[provider.toUpperCase()];
+    if (AccountingProviderRegistry.has(provider)) {
+      return AccountingProviderRegistry.get(provider).credentialSchema;
+    }
+    return undefined;
   }
 
   validate(provider: string, credentials: Record<string, any>): void {
@@ -73,14 +51,14 @@ export class AccountingCredentialService {
 
     if (schema) {
       for (const field of schema.fields) {
-        if (field.type === 'password' && masked[field.key]) {
+        if ((field.type === 'password' || field.secret) && masked[field.key]) {
           const val = String(masked[field.key]);
           masked[field.key] = val.length > 4 ? `****${val.slice(-4)}` : '****';
         }
       }
     } else {
       for (const key of Object.keys(masked)) {
-        if (/secret|password|token/i.test(key)) {
+        if (/secret|password|token|key/i.test(key) && !/channel|url/i.test(key)) {
           masked[key] = '****';
         }
       }

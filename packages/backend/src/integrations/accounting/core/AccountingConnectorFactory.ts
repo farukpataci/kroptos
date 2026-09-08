@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { AccountingConnector } from './AccountingConnector';
 import { AccountingEnvironment } from './AccountingTypes';
-import { ParasutConnector } from '../parasut/parasut.connector';
+import { AccountingProviderRegistry } from './AccountingProviderRegistry';
 
 @Injectable()
 export class AccountingConnectorFactory {
@@ -10,12 +10,8 @@ export class AccountingConnectorFactory {
     credentials: Record<string, any>,
     environment: AccountingEnvironment = 'MOCK',
   ): AccountingConnector {
-    const p = provider.toUpperCase();
-    switch (p) {
-      case 'PARASUT':
-        return new ParasutConnector(credentials, environment);
-      default:
-        throw new BadRequestException(`Desteklenmeyen muhasebe sağlayıcısı: ${provider}`);
-    }
+    const descriptor = AccountingProviderRegistry.get(provider);
+    const ConnectorClass = descriptor.connectorClass;
+    return new ConnectorClass(credentials, environment);
   }
 }
