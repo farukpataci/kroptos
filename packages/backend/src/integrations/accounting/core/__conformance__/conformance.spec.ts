@@ -5,6 +5,7 @@ import { CapabilityStatus } from '../AccountingTypes';
 import '../../parasut';
 import '../../kolaybi';
 import '../../bizimhesap';
+import '../../sap-s4hana-cloud';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
@@ -27,7 +28,7 @@ describe('Accounting Provider Conformance Suite', () => {
     });
 
     it('3. should have valid protocol', () => {
-      expect(['jsonapi', 'rest', 'custom']).toContain(descriptor.protocol);
+      expect(['jsonapi', 'rest', 'custom', 'soap', 'odata']).toContain(descriptor.protocol);
     });
 
     it('4. should have valid readiness status', () => {
@@ -86,9 +87,9 @@ describe('Accounting Provider Conformance Suite', () => {
       }
     });
 
-    it('12. mock client createInvoice should return valid invoice result', async () => {
+    it('12. mock client createInvoice behavior matches capability', async () => {
       const connector = new descriptor.connectorClass({}, 'MOCK');
-      const res = await connector.createInvoice({
+      const invoiceReq = {
         companyId: 'comp-1',
         referenceCode: 'INV-101',
         issueDate: '2026-09-08',
@@ -112,9 +113,14 @@ describe('Accounting Provider Conformance Suite', () => {
         subtotal: 100,
         vatTotal: 20,
         grandTotal: 120,
-      });
+      };
 
-      expect(res.externalId).toBeDefined();
+      if (descriptor.capabilities.salesInvoice === 'NOT_SUPPORTED') {
+        await expect(connector.createInvoice(invoiceReq)).rejects.toThrow();
+      } else {
+        const res = await connector.createInvoice(invoiceReq);
+        expect(res.externalId).toBeDefined();
+      }
     });
 
     it('13. mock client syncContact behavior matches capability', async () => {
@@ -148,6 +154,13 @@ describe('Accounting Provider Conformance Suite', () => {
       } else {
         const res = await connector.recordPayment(payReq);
         expect(res.externalId).toBeDefined();
+      }
+    });
+
+    it('15. sandboxVerifiedAt must not enable supportsTest (§6)', () => {
+      if (descriptor.sandboxVerifiedAt) {
+        expect(descriptor.supportsTest).toBe(false);
+        expect(descriptor.supportsProduction).toBe(false);
       }
     });
   });

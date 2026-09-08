@@ -1,0 +1,98 @@
+{
+  "d": {
+    "results": [
+      {
+        "__metadata": {
+          "id": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner('1000000')",
+          "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner('1000000')",
+          "type": "API_BUSINESS_PARTNER.A_BusinessPartnerType"
+        },
+        "BusinessPartner": "1000000",
+        "Customer": "1000000",
+        "Supplier": "",
+        "AcademicTitle": "",
+        "AuthorizationGroup": "",
+        "BusinessPartnerCategory": "1",
+        "BusinessPartnerFullName": "Ahmet Yılmaz",
+        "BusinessPartnerGrouping": "BPCUST",
+        "BusinessPartnerName": "Ahmet Yılmaz",
+        "CorrespondenceLanguage": "TR",
+        "FirstName": "Ahmet",
+        "LastName": "Yılmaz",
+        "LegalForm": "",
+        "OrganizationBPName1": "",
+        "OrganizationBPName2": "",
+        "SearchTerm1": "TCKN-12345678901",
+        "SearchTerm2": "KROPTOS-CUST-1",
+        "to_BusinessPartnerAddress": {
+          "results": [
+            {
+              "BusinessPartner": "1000000",
+              "AddressID": "20001",
+              "CityName": "İstanbul",
+              "Country": "TR",
+              "PostalCode": "34710",
+              "StreetName": "Bağdat Caddesi No: 42",
+              "District": "Kadıköy"
+            }
+          ]
+        },
+        "to_BusinessPartnerTaxNumber": {
+          "results": [
+            {
+              "BusinessPartner": "1000000",
+              "BPTaxType": "TR2",
+              "BPTaxNumber": "12345678901"
+            }
+          ]
+        }
+      },
+      {
+        "__metadata": {
+          "id": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner('1000001')",
+          "uri": "https://sandbox.api.sap.com/s4hanacloud/sap/opu/odata/sap/API_BUSINESS_PARTNER/A_BusinessPartner('1000001')",
+          "type": "API_BUSINESS_PARTNER.A_BusinessPartnerType"
+        },
+        "BusinessPartner": "1000001",
+        "Customer": "1000001",
+        "Supplier": "",
+        "AcademicTitle": "",
+        "AuthorizationGroup": "",
+        "BusinessPartnerCategory": "2",
+        "BusinessPartnerFullName": "Kroptos Bilişim A.Ş.",
+        "BusinessPartnerGrouping": "BP01",
+        "BusinessPartnerName": "Kroptos Bilişim A.Ş.",
+        "CorrespondenceLanguage": "TR",
+        "FirstName": "",
+        "LastName": "",
+        "LegalForm": "",
+        "OrganizationBPName1": "Kroptos Bilişim",
+        "OrganizationBPName2": "Anonim Şirketi",
+        "SearchTerm1": "VKN-9876543210",
+        "SearchTerm2": "KROPTOS-CUST-2",
+        "to_BusinessPartnerAddress": {
+          "results": [
+            {
+              "BusinessPartner": "1000001",
+              "AddressID": "20002",
+              "CityName": "Ankara",
+              "Country": "TR",
+              "PostalCode": "06510",
+              "StreetName": "Eskişehir Yolu No: 100",
+              "District": "Çankaya"
+            }
+          ]
+        },
+        "to_BusinessPartnerTaxNumber": {
+          "results": [
+            {
+              "BusinessPartner": "1000001",
+              "BPTaxType": "TR1",
+              "BPTaxNumber": "9876543210"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

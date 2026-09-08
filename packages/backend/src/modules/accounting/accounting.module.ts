@@ -21,6 +21,7 @@ import { AccountingSyncWorker } from './accounting-sync.worker';
 import '../../integrations/accounting/parasut';
 import '../../integrations/accounting/kolaybi';
 import '../../integrations/accounting/bizimhesap';
+import '../../integrations/accounting/sap-s4hana-cloud';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

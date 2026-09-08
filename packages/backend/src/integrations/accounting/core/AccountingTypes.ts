@@ -38,7 +38,7 @@ export interface AccountingProviderDescriptor {
   id: string;
   displayName: string;
   country: string;
-  protocol: 'rest' | 'jsonapi' | 'soap';
+  protocol: 'rest' | 'jsonapi' | 'soap' | 'odata';
   readiness: AccountingReadiness;
   documentationStatus: 'VERIFIED' | 'PARTIAL' | 'DOCUMENTATION_REQUIRED';
   credentialSchema: AccountingProviderSchema;
@@ -47,6 +47,7 @@ export interface AccountingProviderDescriptor {
   supportsTest: boolean;
   supportsProduction: boolean;
   lastVerifiedAt: string | null;
+  sandboxVerifiedAt?: string | null;
   connectorClass: any;
 }
 
