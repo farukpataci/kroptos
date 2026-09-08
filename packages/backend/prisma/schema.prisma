@@ -1533,3 +1533,116 @@ model CarrierWebhookEvent {
   @@index([provider])
   @@index([processedAt])
 }
+
+// ==================== Accounting Models ====================
+
+// Kimlik (provider + credential + ortam) — firma ekseninden AYRI
+model AccountingIntegration {
+  id               String    @id @default(cuid())
+  publicId         String    @unique
+  agencyId         String
+  clientId         String?
+  storeId          String?
+  provider         String    // 'parasut' — registry doğrular, enum yapma
+  name             String
+  environment      String    @default("MOCK")   // MOCK | TEST | PRODUCTION
+  status           String    @default("disconnected") // disconnected | connected | failed
+  readiness        String    @default("SCAFFOLDED")   // SCAFFOLDED | MOCK_READY | TEST_READY | PRODUCTION_READY
+  credentials      String?   // encrypt() ile şifreli JSON — ASLA düz metin
+  scopeKey         String    // §4.1 — NULL'lu unique tuzağının çözümü
+  lastVerifiedAt   DateTime?
+  lastSyncAt       DateTime?
+  lastErrorMessage String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  deletedAt        DateTime?
+
+  companies AccountingCompany[]
+
+  @@unique([provider, scopeKey])
+  @@index([agencyId])
+  @@index([storeId])
+}
+
+// Firma / dönem ekseni — Paraşüt'te company_id
+model AccountingCompany {
+  id                  String                @id @default(cuid())
+  integrationId       String
+  integration         AccountingIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+  agencyId            String
+  externalCompanyId   String                // Paraşüt company_id
+  name                String?
+  currency            String                @default("TRY")
+  isDefault           Boolean               @default(false)
+  invoiceSeries       String?
+  defaultAccountCodes Json?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  deletedAt           DateTime?
+
+  @@unique([integrationId, externalCompanyId])
+  @@index([agencyId])
+}
+
+// Giden belge (fatura / tahsilat) — idempotency taşıyıcısı
+model AccountingDocument {
+  id             String   @id @default(cuid())
+  agencyId       String
+  clientId       String?
+  storeId        String
+  integrationId  String
+  companyId      String
+  type           String   // 'sales_invoice' | 'payment'
+  referenceCode  String   // fatura: orderId · tahsilat: <documentId>:pay:<n>
+  status         String   @default("pending") // pending|sent|failed|cancelled|cancel_failed
+  externalId     String?  // Paraşüt kaydının id'si — claim anında NULL
+  externalNumber String?
+  totalAmount    Decimal  @db.Decimal(18, 4)
+  currency       String
+  isTestMode     Boolean  @default(true)
+  errorMessage   String?
+  rawResponse    Json?    // MASKELİ
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([agencyId, storeId, type, referenceCode])   // ← idempotency kilidi, DEĞİŞTİRME
+  @@unique([integrationId, type, externalId])
+  @@index([agencyId])
+  @@index([status])
+}
+
+model AccountingContactMapping {
+  id                String   @id @default(cuid())
+  agencyId          String
+  integrationId     String
+  companyId         String
+  kroptosKey        String   // müşteri kimliği (e-posta/telefon/vergi no'dan türetilen normalize anahtar)
+  externalContactId String
+  displayName       String?
+  taxNumber         String?
+  status            String   @default("matched") // matched | unmatched
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([companyId, kroptosKey])
+  @@unique([companyId, externalContactId])
+  @@index([agencyId])
+}
+
+model AccountingProductMapping {
+  id                String   @id @default(cuid())
+  agencyId          String
+  integrationId     String
+  companyId         String
+  productSku        String
+  externalProductId String
+  externalCode      String?
+  externalName      String?
+  status            String   @default("matched")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([companyId, productSku])
+  @@index([agencyId])
+}
+

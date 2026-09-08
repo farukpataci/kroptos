@@ -2262,6 +2262,61 @@
           "clientSecretKey": "Client Secret Key",
           "stagingHours": "Test ortamı hafta içi 08:00-20:00 arası açıktır",
           "stagingHoursHelp": "Ortam olarak “Test” seçiliyse, bu saatlerin dışında bağlantı testi kimlik bilgileriniz doğru olsa da başarısız olur. Canlı ortam bu kısıttan etkilenmez."
+        },
+        "shopify": {
+          "shopDomain": "Shopify Mağaza Alan Adı (Domain)",
+          "shopDomainHelp": "Shopify mağazanızın .myshopify.com uzantılı alan adı (ör. magazam.myshopify.com).",
+          "accessToken": "Admin API Access Token",
+          "accessTokenHelp": "Shopify Admin > Ayarlar > Uygulamalar > Geliştirilen Uygulamalar bölümünden oluşturulan Admin API erişim belirteci (shpat_...)."
+        },
+        "woocommerce": {
+          "baseUrl": "WooCommerce Mağaza Adresi (URL)",
+          "baseUrlHelp": "WordPress sitenizin HTTPS ile başlayan tam adresi (ör. https://magazam.com).",
+          "baseUrlPlaceholder": "https://magazam.com",
+          "consumerKey": "Consumer Key",
+          "consumerKeyHelp": "WooCommerce > Ayarlar > Gelişmiş > REST API bölümünden oluşturulan Read/Write yetkili anahtar (ck_...).",
+          "consumerSecret": "Consumer Secret",
+          "consumerSecretHelp": "WooCommerce REST API anahtarınıza ait gizli parola (cs_...).",
+          "webhookSecret": "Webhook Secret (Opsiyonel)",
+          "webhookSecretHelp": "WooCommerce webhooks imza doğrulaması için belirlenen güvenlik anahtarı."
+        },
+        "ideasoft": {
+          "storeDomain": "İdeaSoft Mağaza Adresi (Domain)",
+          "storeDomainHelp": "İdeaSoft mağazanızın alan adı (ör. magazam veya magazam.myideasoft.com).",
+          "storeDomainPlaceholder": "magazam.myideasoft.com",
+          "accessToken": "API Access Token (Erişim Belirteci)",
+          "accessTokenHelp": "İdeaSoft panelinden (Entegrasyonlar > API) oluşturulan Bearer erişim belirteci veya OAuth bağlantısı.",
+          "clientId": "Client ID (Uygulama Kimliği)",
+          "clientIdHelp": "İdeaSoft API uygulamanızın Client ID değeri.",
+          "clientSecret": "Client Secret (Uygulama Gizli Anahtarı)",
+          "clientSecretHelp": "İdeaSoft API uygulamanızın Client Secret anahtarı."
+        },
+        "ticimax": {
+          "storeDomain": "Ticimax Mağaza Alan Adı (URL / Domain)",
+          "storeDomainHelp": "Ticimax e-ticaret sitenizin adresi (ör. https://www.magazaniz.com veya magazaniz.com).",
+          "storeDomainPlaceholder": "https://www.magazaniz.com",
+          "uyeKodu": "Web Servis Yetki Kodu (Auth Code)",
+          "uyeKoduHelp": "Ticimax Yönetim Paneli > Ayarlar > WS Yetki Kodu Yönetimi bölümünden oluşturulan Yetki Kodu."
+        },
+        "tsoft": {
+          "storeDomain": "T-Soft Mağaza Alan Adı (URL / Domain)",
+          "storeDomainHelp": "T-Soft e-ticaret sitenizin adresi (ör. https://www.magazaniz.com veya magazaniz.com).",
+          "storeDomainPlaceholder": "https://www.magazaniz.com",
+          "username": "REST API Kullanıcı Adı",
+          "usernameHelp": "T-Soft yönetim panelinde Ayarlar > REST API veya Kullanıcılar bölümünden oluşturulan API kullanıcısı.",
+          "usernamePlaceholder": "api_user",
+          "password": "REST API Şifresi",
+          "passwordHelp": "T-Soft REST API kullanıcısına ait şifre."
+        },
+        "opencart": {
+          "url": "OpenCart Mağaza Adresi (URL)",
+          "urlHelp": "OpenCart e-ticaret sitenizin adresi (ör. https://www.magazaniz.com veya https://magazaniz.com/shop).",
+          "urlPlaceholder": "https://www.magazaniz.com",
+          "username": "API Kullanıcı Adı",
+          "usernameHelp": "OpenCart Yönetim Paneli > Sistem > Kullanıcılar > API bölümünden tanımlanan kullanıcı adı.",
+          "usernamePlaceholder": "api_user",
+          "apiKey": "API Anahtarı / Şifresi",
+          "apiKeyHelp": "OpenCart API kullanıcısına atanmış olan gizli API anahtarı."
         }
       },
       "mapping": {
@@ -4222,6 +4277,124 @@
     "categoryMapping": {
       "desc": "Kategori eşleme ekranı entegrasyon tarafında yaşar. Burada kopyası tutulmaz.",
       "open": "Kategori eşlemeyi aç"
+    }
+  },
+  "accounting": {
+    "page": {
+      "title": "Muhasebe & Ön Muhasebe",
+      "subtitle": "Paraşüt ön muhasebe entegrasyonu, fatura taslakları, tahsilat ve cari/ürün eşlemeleri"
+    },
+    "actions": {
+      "addIntegration": "Yeni Entegrasyon Ekle",
+      "cancel": "İptal",
+      "save": "Kaydet",
+      "saving": "Kaydediliyor...",
+      "testConnection": "Bağlantıyı Test Et",
+      "testing": "Test Ediliyor...",
+      "edit": "Düzenle",
+      "delete": "Sil",
+      "refresh": "Yenile",
+      "viewPayload": "Ham Yanıtı Gör",
+      "cancelClaim": "İptal Et"
+    },
+    "tabs": {
+      "integrations": "Entegrasyonlar",
+      "documents": "Belgeler & Faturalar",
+      "mappings": "Cari & Ürün Eşlemeleri",
+      "companies": "Şube & Firma Yönetimi"
+    },
+    "status": {
+      "created": "Oluşturuldu",
+      "pending": "İşlem Sürüyor",
+      "failed": "Hata Aldı",
+      "cancelled": "İptal Edildi"
+    },
+    "types": {
+      "salesInvoice": "Satış Faturası",
+      "payment": "Tahsilat Kaydı"
+    },
+    "filters": {
+      "allStatuses": "Tüm Durumlar",
+      "allTypes": "Tüm Belge Tipleri"
+    },
+    "banner": {
+      "mockReadyTitle": "MOCK_READY Entegrasyon",
+      "mockReadyDesc": "Canlı Paraşüt API erişimi güvenli şekilde simüle edilmektedir. TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
+    },
+    "modals": {
+      "createTitle": "Yeni Muhasebe Entegrasyonu",
+      "editTitle": "Muhasebe Entegrasyonunu Düzenle",
+      "subtitle": "Paraşüt API v4 kimlik ve firma bilgilerini girin"
+    },
+    "fields": {
+      "name": "Entegrasyon Adı",
+      "environment": "Çalışma Ortamı",
+      "lastVerified": "Son Doğrulama"
+    },
+    "env": {
+      "mock": "MOCK (Geliştirme / Simülasyon)",
+      "test": "TEST (Staging)",
+      "production": "PRODUCTION (Canlı)",
+      "warningNonMock": "TEST ve PRODUCTION modlarında gerçek ağ istekleri engellenmiştir (MOCK_READY seviyesi)."
+    },
+    "messages": {
+      "loadFailed": "Veriler yüklenemedi",
+      "createSuccess": "Muhasebe entegrasyonu başarıyla oluşturuldu",
+      "updateSuccess": "Muhasebe entegrasyonu güncellendi",
+      "deleteSuccess": "Muhasebe entegrasyonu silindi",
+      "deleteConfirm": "Bu muhasebe entegrasyonunu silmek istediğinizden emin misiniz?",
+      "operationFailed": "İşlem sırasında bir hata oluştu",
+      "testSuccess": "Bağlantı testi başarılı!",
+      "testFailed": "Bağlantı testi başarısız",
+      "loading": "Yükleniyor..."
+    },
+    "empty": {
+      "title": "Henüz Yapılandırılmış Muhasebe Entegrasyonu Yok",
+      "subtitle": "Paraşüt hesabınızı bağlayarak satış faturalarınızı ve tahsilatlarınızı yönetmeye başlayın."
+    },
+    "documents": {
+      "colType": "Belge Tipi",
+      "colReference": "Referans Kodu",
+      "colExternalNumber": "Fatura No / Harici ID",
+      "colAmount": "Tutar",
+      "colStatus": "Durum",
+      "colDate": "Kayıt Tarihi",
+      "colActions": "İşlemler",
+      "loading": "Belgeler yükleniyor...",
+      "noRecords": "Henüz oluşturulmuş muhasebe belgesi bulunmuyor.",
+      "cancelConfirm": "Bu devam eden fatura rezervasyonunu iptal etmek istediğinizden emin misiniz?",
+      "cancelSuccess": "Rezervasyon iptal edildi.",
+      "rawTitle": "Belge Detayı & Ham Yanıt"
+    },
+    "mappings": {
+      "tabContacts": "Cari / Müşteri Eşlemeleri",
+      "tabProducts": "Ürün / SKU Eşlemeleri",
+      "selectCompany": "Firma / Şube",
+      "colName": "Müşteri / Cari Adı",
+      "colKroptosKey": "KroptOS Cari Anahtarı",
+      "colTaxNumber": "Vergi / TC No",
+      "colExternalId": "Paraşüt Cari ID",
+      "colSku": "KroptOS SKU",
+      "colProductName": "Ürün Adı",
+      "colExternalProductId": "Paraşüt Ürün ID",
+      "colExternalCode": "Paraşüt Kodu",
+      "colStatus": "Durum",
+      "loading": "Eşlemeler yükleniyor...",
+      "noContacts": "Henüz eşleşmiş cari kaydı bulunmuyor.",
+      "noProducts": "Henüz eşleşmiş ürün kaydı bulunmuyor.",
+      "matched": "Eşleşti"
+    },
+    "companies": {
+      "title": "Firma & Şube Yönetimi",
+      "subtitle": "Muhasebe entegrasyonuna bağlı şirket şubelerini yönetin",
+      "addBtn": "Yeni Firma/Şube Ekle",
+      "default": "Varsayılan",
+      "currency": "Para Birimi",
+      "series": "Fatura Serisi",
+      "addSuccess": "Firma şubesi başarıyla eklendi",
+      "deleteSuccess": "Firma şubesi silindi",
+      "deleteConfirm": "Bu firma şubesini silmek istediğinizden emin misiniz?",
+      "setDefault": "Bu firmayı varsayılan yap"
     }
   }
 }

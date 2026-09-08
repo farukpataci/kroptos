@@ -55,8 +55,10 @@ async function main() {
     { name: 'audit.read', description: 'View audit log records' },
     { name: 'integration.logs.read', description: 'View integration error logs' },
     { name: 'integration.logs.manage', description: 'Resolve, ignore or retry integration errors' },
-    // agencies.write bilincli olarak hicbir role bagli degil: distributor firma
-    // yonetimi PlatformAdminGuard ile kilitli, super_admin de '*:*' ile kapsiyor.
+    { name: 'accounting.read', description: 'View accounting integrations and documents' },
+    { name: 'accounting.manage', description: 'Manage accounting integrations, companies, and emit invoices' },
+    { name: 'accounting.documents.read', description: 'View accounting documents' },
+    { name: 'accounting.documents.create', description: 'Create accounting invoice and payment documents' },
     { name: 'agencies.write', description: 'Update or delete agencies' },
     { name: 'clients.write', description: 'Update or delete clients' },
     { name: 'stores.write', description: 'Update or delete stores' },
@@ -97,6 +99,10 @@ async function main() {
         'integrations.read',
         'integrations.settings.update',
         'accounting.export',
+        'accounting.read',
+        'accounting.manage',
+        'accounting.documents.read',
+        'accounting.documents.create',
         'warehouse.manage',
         'wms.view',
         'wms.manage',

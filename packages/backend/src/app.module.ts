@@ -21,6 +21,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { WarehouseSettingsModule } from './modules/warehouse-settings/warehouse-settings.module';
 import { ProfileModule } from './modules/profile/profile.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
+import { AccountingModule } from './modules/accounting/accounting.module';
 import { FilesController } from './modules/files/files.controller';
 import { HealthController } from './modules/health/health.controller';
 
@@ -50,6 +51,7 @@ import { HealthController } from './modules/health/health.controller';
     WarehouseSettingsModule,
     ProfileModule,
     InventoryModule,
+    AccountingModule,
   ],
   controllers: [FilesController, HealthController],
 })

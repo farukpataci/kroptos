@@ -140,7 +140,13 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       id: 'integrations',
       label: 'Entegrasyon',
       icon: LinkIcon,
-      href: `/t/${tenantPublicId}/integrations`,
+      children: [
+        { label: 'Tüm Entegrasyonlar', href: `/t/${tenantPublicId}/integrations`, exact: true },
+        { label: 'Pazaryerleri', href: `/t/${tenantPublicId}/integrations/marketplace` },
+        { label: 'Kargo & Taşıyıcı', href: `/t/${tenantPublicId}/integrations/carrier` },
+        { label: 'Muhasebe (Ön Muhasebe)', href: `/t/${tenantPublicId}/integrations/accounting` },
+        { label: 'ERP & Ticari', href: `/t/${tenantPublicId}/integrations/erp` },
+      ],
     },
     {
       id: 'support',

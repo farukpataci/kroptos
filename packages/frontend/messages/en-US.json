@@ -558,5 +558,123 @@
       "desc": "The category mapping screen lives on the integration side. No copy is kept here.",
       "open": "Open category mapping"
     }
+  },
+  "accounting": {
+    "page": {
+      "title": "Accounting Integrations",
+      "subtitle": "Paraşüt accounting integration, invoice drafts, payment records, and contact/product mappings"
+    },
+    "actions": {
+      "addIntegration": "Add New Integration",
+      "cancel": "Cancel",
+      "save": "Save",
+      "saving": "Saving...",
+      "testConnection": "Test Connection",
+      "testing": "Testing...",
+      "edit": "Edit",
+      "delete": "Delete",
+      "refresh": "Refresh",
+      "viewPayload": "View Raw Payload",
+      "cancelClaim": "Cancel Claim"
+    },
+    "tabs": {
+      "integrations": "Integrations",
+      "documents": "Documents & Invoices",
+      "mappings": "Contact & Product Mappings",
+      "companies": "Company & Branch Management"
+    },
+    "status": {
+      "created": "Created",
+      "pending": "Pending",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
+    "types": {
+      "salesInvoice": "Sales Invoice",
+      "payment": "Payment Record"
+    },
+    "filters": {
+      "allStatuses": "All Statuses",
+      "allTypes": "All Document Types"
+    },
+    "banner": {
+      "mockReadyTitle": "MOCK_READY Integration",
+      "mockReadyDesc": "Live Paraşüt API access is simulated in a safe mock environment. TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
+    },
+    "modals": {
+      "createTitle": "New Accounting Integration",
+      "editTitle": "Edit Accounting Integration",
+      "subtitle": "Enter Paraşüt API v4 credentials and company information"
+    },
+    "fields": {
+      "name": "Integration Name",
+      "environment": "Environment",
+      "lastVerified": "Last Verified"
+    },
+    "env": {
+      "mock": "MOCK (Safe Simulation)",
+      "test": "TEST (Staging)",
+      "production": "PRODUCTION (Live)",
+      "warningNonMock": "Live network requests are prohibited in TEST and PRODUCTION until verified (MOCK_READY level)."
+    },
+    "messages": {
+      "loadFailed": "Failed to load data",
+      "createSuccess": "Accounting integration created successfully",
+      "updateSuccess": "Accounting integration updated successfully",
+      "deleteSuccess": "Accounting integration deleted",
+      "deleteConfirm": "Are you sure you want to delete this accounting integration?",
+      "operationFailed": "An error occurred during operation",
+      "testSuccess": "Connection test successful!",
+      "testFailed": "Connection test failed",
+      "loading": "Loading..."
+    },
+    "empty": {
+      "title": "No Accounting Integrations Configured",
+      "subtitle": "Connect your Paraşüt account to start managing your invoices and payments."
+    },
+    "documents": {
+      "colType": "Document Type",
+      "colReference": "Reference Code",
+      "colExternalNumber": "Invoice No / External ID",
+      "colAmount": "Amount",
+      "colStatus": "Status",
+      "colDate": "Record Date",
+      "colActions": "Actions",
+      "loading": "Loading documents...",
+      "noRecords": "No accounting documents created yet.",
+      "cancelConfirm": "Are you sure you want to cancel this pending invoice reservation?",
+      "cancelSuccess": "Reservation cancelled.",
+      "rawTitle": "Document Details & Raw Payload"
+    },
+    "mappings": {
+      "tabContacts": "Contact / Customer Mappings",
+      "tabProducts": "Product / SKU Mappings",
+      "selectCompany": "Company / Branch",
+      "colName": "Contact Name",
+      "colKroptosKey": "KroptOS Contact Key",
+      "colTaxNumber": "Tax Number / ID",
+      "colExternalId": "Paraşüt Contact ID",
+      "colSku": "KroptOS SKU",
+      "colProductName": "Product Name",
+      "colExternalProductId": "Paraşüt Product ID",
+      "colExternalCode": "Paraşüt Code",
+      "colStatus": "Status",
+      "loading": "Loading mappings...",
+      "noContacts": "No matched contact records found.",
+      "noProducts": "No matched product records found.",
+      "matched": "Matched"
+    },
+    "companies": {
+      "title": "Company & Branch Management",
+      "subtitle": "Manage company branches connected to your accounting integration",
+      "addBtn": "Add New Company / Branch",
+      "default": "Default",
+      "currency": "Currency",
+      "series": "Invoice Series",
+      "addSuccess": "Company branch added successfully",
+      "deleteSuccess": "Company branch deleted",
+      "deleteConfirm": "Are you sure you want to delete this company branch?",
+      "setDefault": "Set as default company"
+    }
   }
 }
