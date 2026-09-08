@@ -4282,7 +4282,7 @@
   "accounting": {
     "page": {
       "title": "Muhasebe & Ön Muhasebe",
-      "subtitle": "Paraşüt ön muhasebe entegrasyonu, fatura taslakları, tahsilat ve cari/ürün eşlemeleri"
+      "subtitle": "Paraşüt ve KolayBi' ön muhasebe entegrasyonları, fatura taslakları, tahsilat ve cari/ürün eşlemeleri"
     },
     "actions": {
       "addIntegration": "Yeni Entegrasyon Ekle",
@@ -4319,14 +4319,16 @@
     },
     "banner": {
       "mockReadyTitle": "MOCK_READY Entegrasyon",
-      "mockReadyDesc": "Canlı Paraşüt API erişimi güvenli şekilde simüle edilmektedir. TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
+      "mockReadyDesc": "Canlı muhasebe API erişimi güvenli şekilde simüle edilmektedir (Paraşüt / KolayBi'). TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
     },
     "modals": {
       "createTitle": "Yeni Muhasebe Entegrasyonu",
       "editTitle": "Muhasebe Entegrasyonunu Düzenle",
-      "subtitle": "Paraşüt API v4 kimlik ve firma bilgilerini girin"
+      "subtitle": "Muhasebe sağlayıcısı (Paraşüt / KolayBi') API kimlik ve firma bilgilerini girin"
     },
     "fields": {
+      "provider": "Muhasebe Sağlayıcısı",
+      "selectProvider": "Sağlayıcı Seçiniz",
       "name": "Entegrasyon Adı",
       "environment": "Çalışma Ortamı",
       "lastVerified": "Son Doğrulama"
@@ -4350,7 +4352,7 @@
     },
     "empty": {
       "title": "Henüz Yapılandırılmış Muhasebe Entegrasyonu Yok",
-      "subtitle": "Paraşüt hesabınızı bağlayarak satış faturalarınızı ve tahsilatlarınızı yönetmeye başlayın."
+      "subtitle": "Paraşüt veya KolayBi' hesabınızı bağlayarak satış faturalarınızı ve tahsilatlarınızı yönetmeye başlayın."
     },
     "documents": {
       "colType": "Belge Tipi",
@@ -4373,11 +4375,11 @@
       "colName": "Müşteri / Cari Adı",
       "colKroptosKey": "KroptOS Cari Anahtarı",
       "colTaxNumber": "Vergi / TC No",
-      "colExternalId": "Paraşüt Cari ID",
+      "colExternalId": "Harici Cari ID",
       "colSku": "KroptOS SKU",
       "colProductName": "Ürün Adı",
-      "colExternalProductId": "Paraşüt Ürün ID",
-      "colExternalCode": "Paraşüt Kodu",
+      "colExternalProductId": "Harici Ürün ID",
+      "colExternalCode": "Harici Kod",
       "colStatus": "Durum",
       "loading": "Eşlemeler yükleniyor...",
       "noContacts": "Henüz eşleşmiş cari kaydı bulunmuyor.",
@@ -4391,6 +4393,8 @@
       "default": "Varsayılan",
       "currency": "Para Birimi",
       "series": "Fatura Serisi",
+      "retailContact": "Varsayılan Perakende Cari ID (B2C Fallback)",
+      "retailContactHint": "B2C siparişlerde müşteri TCKN/VKN olmadığında KolayBi' için kullanılan yedek cari kimliği",
       "addSuccess": "Firma şubesi başarıyla eklendi",
       "deleteSuccess": "Firma şubesi silindi",
       "deleteConfirm": "Bu firma şubesini silmek istediğinizden emin misiniz?",

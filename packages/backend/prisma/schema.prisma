@@ -1574,6 +1574,7 @@ model AccountingCompany {
   name                String?
   currency            String                @default("TRY")
   isDefault           Boolean               @default(false)
+  defaultRetailContactId String?             // KolayBi' B2C fallback perakende müşteri ID
   invoiceSeries       String?
   defaultAccountCodes Json?
   createdAt           DateTime              @default(now())

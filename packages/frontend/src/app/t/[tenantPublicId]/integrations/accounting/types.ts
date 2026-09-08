@@ -10,8 +10,36 @@ export interface AccountingCompanyItem {
   currency: string;
   isDefault: boolean;
   invoiceSeries?: string;
+  defaultRetailContactId?: string | null;
   defaultAccountCodes?: Record<string, any>;
   createdAt: string;
+}
+
+export interface AccountingProviderField {
+  key: string;
+  label: string;
+  type: string;
+  required: boolean;
+  secret?: boolean;
+  description?: string;
+}
+
+export interface AccountingProviderInfo {
+  id: string;
+  displayName: string;
+  country: string;
+  protocol: string;
+  readiness: AccountingReadiness;
+  documentationStatus: string;
+  credentialSchema: {
+    provider: string;
+    name: string;
+    fields: AccountingProviderField[];
+  };
+  capabilities: Record<string, string>;
+  supportsMock: boolean;
+  supportsTest: boolean;
+  supportsProduction: boolean;
 }
 
 export interface AccountingIntegrationItem {

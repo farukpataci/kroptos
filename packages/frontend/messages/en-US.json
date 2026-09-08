@@ -562,7 +562,7 @@
   "accounting": {
     "page": {
       "title": "Accounting Integrations",
-      "subtitle": "Paraşüt accounting integration, invoice drafts, payment records, and contact/product mappings"
+      "subtitle": "Paraşüt and KolayBi' accounting integrations, invoice drafts, payment records, and contact/product mappings"
     },
     "actions": {
       "addIntegration": "Add New Integration",
@@ -599,14 +599,16 @@
     },
     "banner": {
       "mockReadyTitle": "MOCK_READY Integration",
-      "mockReadyDesc": "Live Paraşüt API access is simulated in a safe mock environment. TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
+      "mockReadyDesc": "Live accounting API access is simulated in a safe mock environment (Paraşüt / KolayBi'). TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
     },
     "modals": {
       "createTitle": "New Accounting Integration",
       "editTitle": "Edit Accounting Integration",
-      "subtitle": "Enter Paraşüt API v4 credentials and company information"
+      "subtitle": "Enter accounting provider (Paraşüt / KolayBi') credentials and company information"
     },
     "fields": {
+      "provider": "Accounting Provider",
+      "selectProvider": "Select Provider",
       "name": "Integration Name",
       "environment": "Environment",
       "lastVerified": "Last Verified"
@@ -630,7 +632,7 @@
     },
     "empty": {
       "title": "No Accounting Integrations Configured",
-      "subtitle": "Connect your Paraşüt account to start managing your invoices and payments."
+      "subtitle": "Connect your Paraşüt or KolayBi' account to start managing your invoices and payments."
     },
     "documents": {
       "colType": "Document Type",
@@ -653,11 +655,11 @@
       "colName": "Contact Name",
       "colKroptosKey": "KroptOS Contact Key",
       "colTaxNumber": "Tax Number / ID",
-      "colExternalId": "Paraşüt Contact ID",
+      "colExternalId": "External Contact ID",
       "colSku": "KroptOS SKU",
       "colProductName": "Product Name",
-      "colExternalProductId": "Paraşüt Product ID",
-      "colExternalCode": "Paraşüt Code",
+      "colExternalProductId": "External Product ID",
+      "colExternalCode": "External Code",
       "colStatus": "Status",
       "loading": "Loading mappings...",
       "noContacts": "No matched contact records found.",
@@ -671,6 +673,8 @@
       "default": "Default",
       "currency": "Currency",
       "series": "Invoice Series",
+      "retailContact": "Default Retail Contact ID (B2C Fallback)",
+      "retailContactHint": "Fallback contact ID used for KolayBi' when customer has no TCKN/VKN in B2C orders",
       "addSuccess": "Company branch added successfully",
       "deleteSuccess": "Company branch deleted",
       "deleteConfirm": "Are you sure you want to delete this company branch?",

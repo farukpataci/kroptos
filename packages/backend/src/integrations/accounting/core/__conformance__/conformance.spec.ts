@@ -1,7 +1,9 @@
 import { AccountingProviderRegistry } from '../AccountingProviderRegistry';
 import { IntegrationNotVerifiedError } from '../AccountingErrors';
+import { CapabilityStatus } from '../AccountingTypes';
 // Ensure registered providers are loaded
 import '../../parasut';
+import '../../kolaybi';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
@@ -46,7 +48,7 @@ describe('Accounting Provider Conformance Suite', () => {
     });
 
     it('7. should declare all core capability statuses', () => {
-      const validStatuses = ['NOT_SUPPORTED', 'DOCUMENTATION_REQUIRED', 'MOCK_ONLY', 'READY'];
+      const validStatuses = Object.values(CapabilityStatus);
       expect(validStatuses).toContain(descriptor.capabilities.salesInvoice);
       expect(validStatuses).toContain(descriptor.capabilities.payment);
       expect(validStatuses).toContain(descriptor.capabilities.contactSync);

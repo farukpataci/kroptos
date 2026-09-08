@@ -17,10 +17,15 @@ import { AccountingMappingService } from './accounting-mapping.service';
 import { AccountingQueueService } from './accounting-queue.service';
 import { AccountingSyncWorker } from './accounting-sync.worker';
 
+// Providers
+import '../../integrations/accounting/parasut';
+import '../../integrations/accounting/kolaybi';
+
 // Controllers
 import { AccountingController } from './accounting.controller';
 import { AccountingDocumentController } from './accounting-document.controller';
 import { AccountingMappingController } from './accounting-mapping.controller';
+import { AccountingProviderController } from './accounting-provider.controller';
 
 @Module({
   imports: [PrismaModule, ConfigModule, AuditModule],
@@ -28,6 +33,7 @@ import { AccountingMappingController } from './accounting-mapping.controller';
     AccountingController,
     AccountingDocumentController,
     AccountingMappingController,
+    AccountingProviderController,
   ],
   providers: [
     AccountingHttpClient,

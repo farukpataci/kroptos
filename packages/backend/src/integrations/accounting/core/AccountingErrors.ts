@@ -50,3 +50,19 @@ export class AccountingApiError extends HttpException {
     this.rawResponse = rawResponse;
   }
 }
+
+export class AccountingAuthError extends HttpException {
+  constructor(provider: string, message: string) {
+    super(`[${provider}] Authentication error: ${message}`, HttpStatus.UNAUTHORIZED);
+    this.name = 'AccountingAuthError';
+  }
+}
+
+export class AccountingNetworkError extends HttpException {
+  constructor(provider: string, message: string) {
+    super(`[${provider}] Network error: ${message}`, HttpStatus.GATEWAY_TIMEOUT);
+    this.name = 'AccountingNetworkError';
+  }
+}
+
+export { AccountingRateLimitExceededError as AccountingRateLimitError };

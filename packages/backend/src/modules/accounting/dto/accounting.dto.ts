@@ -97,6 +97,11 @@ export class CreateAccountingCompanyDto {
   @IsOptional()
   invoiceSeries?: string;
 
+  @ApiPropertyOptional({ example: 'retail-contact-123', description: 'B2C fallback perakende cari ID' })
+  @IsString()
+  @IsOptional()
+  defaultRetailContactId?: string;
+
   @ApiPropertyOptional()
   @IsObject()
   @IsOptional()
@@ -123,6 +128,11 @@ export class UpdateAccountingCompanyDto {
   @IsString()
   @IsOptional()
   invoiceSeries?: string;
+
+  @ApiPropertyOptional({ example: 'retail-contact-123', description: 'B2C fallback perakende cari ID' })
+  @IsString()
+  @IsOptional()
+  defaultRetailContactId?: string;
 
   @ApiPropertyOptional()
   @IsObject()

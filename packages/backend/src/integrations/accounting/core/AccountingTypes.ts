@@ -21,7 +21,7 @@ export type AccountingDocumentStatus = 'pending' | 'created' | 'failed' | 'cance
 export interface CredentialFieldDefinition {
   key: string;
   label: string;
-  type: 'text' | 'password';
+  type: 'text' | 'password' | 'url' | 'number' | 'select';
   required: boolean;
   secret?: boolean;
   description?: string;

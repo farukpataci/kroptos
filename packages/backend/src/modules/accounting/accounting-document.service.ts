@@ -126,6 +126,10 @@ export class AccountingDocumentService {
       ? this.credentialsService.decrypt(integration.credentials)
       : {};
 
+    if (company.defaultRetailContactId) {
+      credentials.defaultRetailContactId = company.defaultRetailContactId;
+    }
+
     const connector = this.connectorFactory.create(
       integration.provider,
       credentials,
@@ -147,6 +151,10 @@ export class AccountingDocumentService {
         externalContactId = contactMapping?.externalContactId;
       } catch (err: any) {
         this.logger.warn(`Cari eşleme uyarısı: ${err.message}`);
+      }
+
+      if (!externalContactId && !dto.contact.taxNumber && company.defaultRetailContactId) {
+        externalContactId = company.defaultRetailContactId;
       }
 
       // Pre-sync / match product SKUs
@@ -172,7 +180,7 @@ export class AccountingDocumentService {
         dueDate: dto.dueDate,
         currency: dto.currency,
         contact: {
-          id: externalContactId,
+          id: externalContactId || company.defaultRetailContactId || undefined,
           name: dto.contact.name,
           taxNumber: dto.contact.taxNumber,
           taxOffice: dto.contact.taxOffice,

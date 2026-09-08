@@ -306,6 +306,7 @@ export class AccountingService {
         currency: dto.currency || 'TRY',
         isDefault: dto.isDefault ?? false,
         invoiceSeries: dto.invoiceSeries,
+        defaultRetailContactId: dto.defaultRetailContactId,
         defaultAccountCodes: dto.defaultAccountCodes,
       },
     });
@@ -347,6 +348,7 @@ export class AccountingService {
         currency: dto.currency,
         isDefault: dto.isDefault,
         invoiceSeries: dto.invoiceSeries,
+        defaultRetailContactId: dto.defaultRetailContactId,
         defaultAccountCodes: dto.defaultAccountCodes,
       },
     });

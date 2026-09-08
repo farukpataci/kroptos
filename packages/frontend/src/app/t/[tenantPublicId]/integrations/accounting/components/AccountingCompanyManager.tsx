@@ -27,6 +27,7 @@ export default function AccountingCompanyManager({
   const [currency, setCurrency] = useState('TRY');
   const [isDefault, setIsDefault] = useState(false);
   const [invoiceSeries, setInvoiceSeries] = useState('');
+  const [defaultRetailContactId, setDefaultRetailContactId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAddCompany = async (e: React.FormEvent) => {
@@ -39,11 +40,14 @@ export default function AccountingCompanyManager({
         currency,
         isDefault,
         invoiceSeries,
+        defaultRetailContactId: defaultRetailContactId || undefined,
       });
       toast.success(t('companies.addSuccess'));
       setIsAdding(false);
       setExternalCompanyId('');
       setName('');
+      setInvoiceSeries('');
+      setDefaultRetailContactId('');
       onRefresh();
     } catch (err: any) {
       toast.error(err.message || t('messages.operationFailed'));
@@ -143,6 +147,22 @@ export default function AccountingCompanyManager({
             </div>
           </div>
 
+          <div>
+            <label className="block text-xs font-medium text-kp-text-secondary mb-1">
+              {t('companies.retailContact')}
+            </label>
+            <input
+              type="text"
+              value={defaultRetailContactId}
+              onChange={(e) => setDefaultRetailContactId(e.target.value)}
+              placeholder="Örn: kb-retail-cari-01"
+              className="w-full rounded-kp-md border border-kp-border bg-kp-bg-input px-3 py-1.5 text-xs text-kp-text-primary focus:border-kp-primary focus:outline-none"
+            />
+            <p className="mt-1 text-[11px] text-kp-text-muted">
+              {t('companies.retailContactHint')}
+            </p>
+          </div>
+
           <div className="flex items-center justify-between pt-2">
             <label className="flex items-center gap-2 text-xs text-kp-text-secondary cursor-pointer">
               <input
@@ -215,6 +235,15 @@ export default function AccountingCompanyManager({
                   {comp.invoiceSeries || '-'}
                 </div>
               </div>
+
+              {comp.defaultRetailContactId && (
+                <div className="mt-2 text-[11px] text-kp-text-secondary border-t border-kp-border/40 pt-1.5">
+                  <span className="text-kp-text-muted">Perakende Cari:</span>{' '}
+                  <span className="font-mono text-xs text-kp-text-primary">
+                    {comp.defaultRetailContactId}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div className="mt-4 flex justify-end border-t border-kp-border/60 pt-2">
