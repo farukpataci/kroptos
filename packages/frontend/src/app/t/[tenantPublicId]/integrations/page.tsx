@@ -103,6 +103,8 @@ export default function IntegrationsParentPage() {
           (p === 'ms_dynamics_bc_online' || p === 'ms-dynamics-bc-online')
         )
           return true;
+        if (pid.includes('sage') && p.includes('sage')) return true;
+        if (pid.includes('xero') && p.includes('xero')) return true;
         return false;
       });
       if (existing) {
@@ -112,6 +114,8 @@ export default function IntegrationsParentPage() {
         let targetProvider = provider.id.toUpperCase();
         if (pid === 'sap') targetProvider = 'SAP_S4HANA_CLOUD';
         if (pid === 'ms_dynamics' || pid === 'dynamics') targetProvider = 'MS_DYNAMICS_BC_ONLINE';
+        if (pid.includes('sage')) targetProvider = 'SAGE-ACCOUNTING';
+        if (pid.includes('xero')) targetProvider = 'XERO';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }
@@ -408,6 +412,7 @@ export default function IntegrationsParentPage() {
 
       {/* Accounting Setup & Settings Modal */}
       <AddAccountingModal
+        key={accountingModalProviderId || editingAccountingItem?.id || 'accounting-modal'}
         isOpen={Boolean(accountingModalProviderId)}
         onClose={() => {
           setAccountingModalProviderId(null);

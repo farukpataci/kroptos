@@ -332,6 +332,27 @@ export default function AddAccountingModal({
     (editingIntegration?.credentials as Record<string, string>) || {},
   );
 
+  useEffect(() => {
+    if (isOpen) {
+      if (editingIntegration) {
+        const resolved = resolveProviderId(editingIntegration.provider);
+        setSelectedProviderId(resolved);
+        setName(editingIntegration.name);
+        setEnvironment(editingIntegration.environment || 'MOCK');
+        setCredentials((editingIntegration.credentials as Record<string, string>) || {});
+      } else if (initialProviderId) {
+        const resolved = resolveProviderId(initialProviderId);
+        setSelectedProviderId(resolved);
+        const match =
+          DEFAULT_PROVIDERS.find((p) => resolveProviderId(p.id) === resolved) ||
+          DEFAULT_PROVIDERS.find((p) => p.id === resolved);
+        setName(match ? `${match.displayName} Muhasebe` : 'Muhasebe Entegrasyonu');
+        setEnvironment('MOCK');
+        setCredentials({});
+      }
+    }
+  }, [isOpen, initialProviderId, editingIntegration]);
+
   const [isStartingOAuth, setIsStartingOAuth] = useState(false);
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [discoveredBusinesses, setDiscoveredBusinesses] = useState<any[]>([]);

@@ -985,7 +985,7 @@ export function AddIntegrationModal({
         setSupportedAccounting(set);
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero']));
       });
 
     return () => {
@@ -1012,7 +1012,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||
