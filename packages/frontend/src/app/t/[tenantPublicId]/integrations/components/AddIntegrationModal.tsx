@@ -783,13 +783,13 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
-    id: 'lexware',
-    name: 'Lexware',
+    id: 'lexware_office',
+    name: 'Lexware Office',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-amber-600/10 border-amber-600/20 text-amber-700',
-    badgeText: 'Lexware DE',
-    description: 'Almanya KOBİ ve küçük işletmeler için Lexware ön muhasebe ve fatura yazılımı.',
+    badgeText: 'Lexware Office',
+    description: 'Almanya KOBİ ve küçük işletmeler için Lexware Office bulut ön muhasebe ve faturalama yazılımı.',
     capabilities: ['Almanya (DE)', 'Ön Muhasebe', 'Sipariş Aktarımı'],
     status: 'active',
   },
@@ -985,7 +985,7 @@ export function AddIntegrationModal({
         setSupportedAccounting(set);
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware']));
       });
 
     return () => {
@@ -1012,7 +1012,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||

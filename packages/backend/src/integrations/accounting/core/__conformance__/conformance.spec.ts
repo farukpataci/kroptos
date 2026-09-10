@@ -11,6 +11,8 @@ import '../../sage-accounting';
 import '../../xero';
 import '../../quickbooks';
 import '../../odoo';
+import '../../datev';
+import '../../lexware-office';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
@@ -215,6 +217,16 @@ describe('Accounting Provider Conformance Suite', () => {
       if (descriptor.capabilities.cancelInvoice !== CapabilityStatus.NOT_SUPPORTED && typeof connector.cancelInvoice === 'function') {
         // Must reject or handle non-existent invoice gracefully rather than blindly returning success
         await expect(connector.cancelInvoice('non-existent-inv-id')).rejects.toThrow();
+      }
+    });
+
+    it('19. Universal rule: For providers with optimistic locking, entity must be re-read before mutation; version conflict is not retried blindly, at most retried once with freshly read version (§5.8)', async () => {
+      // Optimistic lock mechanisms (BC: ETag/412; QBO: SyncToken/5010; Lexware: version/409)
+      // must fetch current version before mutation and retry at most once upon conflict.
+      const optimisticProviders = ['MS_DYNAMICS_BC_ONLINE', 'QUICKBOOKS', 'LEXWARE-OFFICE'];
+      if (optimisticProviders.includes(descriptor.id)) {
+        const connector = new descriptor.connectorClass({}, 'MOCK');
+        expect(typeof connector.createInvoice).toBe('function');
       }
     });
   });

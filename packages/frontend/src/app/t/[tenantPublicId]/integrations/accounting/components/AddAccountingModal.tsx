@@ -267,9 +267,66 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'DATEV',
+    displayName: 'DATEV (EXTF Buchungsstapel)',
+    country: 'DE',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'VERIFIED',
+    credentialSchema: {
+      provider: 'DATEV',
+      name: 'DATEV EXTF Buchungsstapel',
+      fields: [
+        { key: 'beraterNummer', label: 'Berater-Nr (Danışman No: 1001-9999999)', type: 'number', required: true, defaultValue: '1001', description: 'Mali müşavirinizin (Steuerberater) DATEV danışman numarası' },
+        { key: 'mandantenNummer', label: 'Mandanten-Nr (Müşteri No: 1-99999)', type: 'number', required: true, defaultValue: '1', description: 'DATEV sistemindeki müşteri / firma numaranız' },
+        { key: 'wjBeginn', label: 'WJ-Beginn (Mali Yıl Başlangıcı: YYYY-MM-DD)', type: 'text', required: true, defaultValue: '2026-01-01', description: 'Mevcut mali yıl başlangıç tarihi' },
+        { key: 'sachkontenLaenge', label: 'Sachkontenlänge (Hesap Uzunluğu: 4-8)', type: 'number', required: true, defaultValue: '4', description: 'Standart hesap numarası uzunluğu (Standart: 4)' },
+        { key: 'kontenrahmen', label: 'Kontenrahmen (SKR03 veya SKR04)', type: 'text', required: true, defaultValue: 'SKR03', description: 'Hesap planı (SKR03 veya SKR04)' },
+        { key: 'encoding', label: 'Dosya Kodlaması (WINDOWS-1252 veya UTF-8)', type: 'text', required: false, defaultValue: 'WINDOWS-1252', description: 'Karakter kodlaması' },
+        { key: 'festschreibung', label: 'Festschreibung (0 = Taslak, 1 = Kilitli)', type: 'number', required: false, defaultValue: '0', description: 'Kayıt kilitleme durumu' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: true,
+    supportsProduction: true,
+  },
+  {
+    id: 'LEXWARE-OFFICE',
+    displayName: 'Lexware Office',
+    country: 'DE',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'LEXWARE-OFFICE',
+      name: 'Lexware Office',
+      fields: [
+        {
+          key: 'apiKey',
+          label: 'API Anahtarı (API Key)',
+          type: 'password',
+          required: true,
+          secret: true,
+          description: 'Lexware Office profilinizden oluşturulan API anahtarı.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', payment: 'NOT_SUPPORTED' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
+  DATEV: {
+    bg: 'bg-emerald-600/10 text-emerald-600 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-600/20',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    badge: 'DATEV DE',
+    iconLetter: 'D',
+  },
   PARASUT: {
     bg: 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/20',
     text: 'text-emerald-600 dark:text-emerald-400',
@@ -324,6 +381,12 @@ const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string;
     badge: 'Odoo ERP',
     iconLetter: 'O',
   },
+  'LEXWARE-OFFICE': {
+    bg: 'bg-amber-600/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400 border border-amber-500/20',
+    text: 'text-amber-600 dark:text-amber-400',
+    badge: 'Lexware Office',
+    iconLetter: 'L',
+  },
 };
 
 interface AddAccountingModalProps {
@@ -360,6 +423,8 @@ export default function AddAccountingModal({
     if (lower.includes('xero')) return 'XERO';
     if (lower.includes('quickbooks') || lower.includes('qbo')) return 'QUICKBOOKS';
     if (lower.includes('odoo')) return 'ODOO';
+    if (lower.includes('lexware')) return 'LEXWARE-OFFICE';
+    if (lower.includes('datev')) return 'DATEV';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
     if (lower.includes('parasut')) return 'PARASUT';
@@ -439,6 +504,7 @@ export default function AddAccountingModal({
   const isQuickBooks = resolvedProviderKey === 'QUICKBOOKS';
   const isOdoo = resolvedProviderKey === 'ODOO';
   const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
+  const isLexware = resolvedProviderKey === 'LEXWARE-OFFICE';
 
   const isReauthRequired =
     (isSage || isXero || isQuickBooks) &&
@@ -779,6 +845,22 @@ export default function AddAccountingModal({
                   <li><strong>Çift Taşıma Desteği:</strong> Odoo 19+ için modern REST JSON-2 taşıması, Odoo 18 ve öncesi için Classic RPC (/jsonrpc) protokolü otomatik olarak seçilir.</li>
                   <li><strong>API Anahtarı Zorunluluğu:</strong> Güvenlik standardı gereği kullanıcı parolalarıyla bağlantı desteklenmez; Odoo kullanıcı ayarlarından oluşturulan API Anahtarı kullanılır.</li>
                   <li><strong>Taslak ve Mutabakat Akışı:</strong> Faturalar önce taslak (draft) olarak oluşturulur, sunucu hesaplamalı toplam tutar mutabakatı doğrulandıktan sonra onaylanır (action_post).</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Lexware Office Guidance (§1, §3, §7) */}
+            {isLexware && (
+              <div className="rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 p-4 text-xs text-amber-900 dark:text-amber-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-amber-950 dark:text-amber-100">
+                  <InformationCircleIcon className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                  Lexware Office Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-amber-800 dark:text-amber-300">
+                  <li><strong>Almanya Bulut Muhasebesi:</strong> Lexware Office (lexoffice) REST API standardını kullanır. Organizasyona özel tekil API anahtarı ile yetkilendirilir.</li>
+                  <li><strong>Taslak ve Mutabakat Akışı:</strong> Faturalar önce taslak (draft) olarak açılır, sunucu hesaplamalı toplam tutar mutabakatı doğrulandıktan sonra onaylanır (finalize). Finalize işleminde sürüm kilidi (version) kullanılır.</li>
+                  <li><strong>Değişmezlik (Immutability):</strong> Onaylanan faturalar değiştirilemez ve silinemez; düzeltmeler ters kayıt (credit note) ile yapılır.</li>
+                  <li><strong>Ödeme Kaydı:</strong> Lexware Office API&apos;si ödeme oluşturmayı desteklemez (salt okunurdur). Tahsilat kayıtları Lexware Office paneli veya banka eşleştirmesi üzerinden yürütülür.</li>
                 </ul>
               </div>
             )}

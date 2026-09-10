@@ -27,6 +27,8 @@ import '../../integrations/accounting/sage-accounting';
 import '../../integrations/accounting/xero';
 import '../../integrations/accounting/quickbooks';
 import '../../integrations/accounting/odoo';
+import '../../integrations/accounting/datev';
+import '../../integrations/accounting/lexware-office';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

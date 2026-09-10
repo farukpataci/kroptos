@@ -107,6 +107,8 @@ export default function IntegrationsParentPage() {
         if (pid.includes('xero') && p.includes('xero')) return true;
         if ((pid.includes('quickbooks') || pid.includes('qbo')) && (p.includes('quickbooks') || p.includes('qbo'))) return true;
         if (pid.includes('odoo') && p.includes('odoo')) return true;
+        if (pid.includes('datev') && p.includes('datev')) return true;
+        if (pid.includes('lexware') && p.includes('lexware')) return true;
         return false;
       });
       if (existing) {
@@ -120,6 +122,8 @@ export default function IntegrationsParentPage() {
         if (pid.includes('xero')) targetProvider = 'XERO';
         if (pid.includes('quickbooks') || pid.includes('qbo')) targetProvider = 'QUICKBOOKS';
         if (pid.includes('odoo')) targetProvider = 'ODOO';
+        if (pid.includes('datev')) targetProvider = 'DATEV';
+        if (pid.includes('lexware')) targetProvider = 'LEXWARE-OFFICE';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }
