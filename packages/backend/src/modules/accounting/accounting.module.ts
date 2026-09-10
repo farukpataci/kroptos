@@ -34,6 +34,8 @@ import { AccountingDocumentController } from './accounting-document.controller';
 import { AccountingMappingController } from './accounting-mapping.controller';
 import { AccountingProviderController } from './accounting-provider.controller';
 import { AccountingOAuthController } from './accounting-oauth.controller';
+import { DatevExportController } from './datev-export.controller';
+import { DatevExportService } from '../../integrations/accounting/datev/datev.export-service';
 
 @Module({
   imports: [PrismaModule, ConfigModule, AuditModule],
@@ -43,6 +45,7 @@ import { AccountingOAuthController } from './accounting-oauth.controller';
     AccountingDocumentController,
     AccountingMappingController,
     AccountingProviderController,
+    DatevExportController,
   ],
   providers: [
     AccountingHttpClient,
@@ -55,6 +58,7 @@ import { AccountingOAuthController } from './accounting-oauth.controller';
     AccountingMappingService,
     AccountingQueueService,
     AccountingSyncWorker,
+    DatevExportService,
   ],
   exports: [
     AccountingService,
@@ -62,6 +66,7 @@ import { AccountingOAuthController } from './accounting-oauth.controller';
     AccountingMappingService,
     AccountingConnectorFactory,
     AccountingCredentialService,
+    DatevExportService,
   ],
 })
 export class AccountingModule {}
