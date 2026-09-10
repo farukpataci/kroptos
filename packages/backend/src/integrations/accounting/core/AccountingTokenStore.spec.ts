@@ -14,12 +14,28 @@ describe('AccountingTokenStore (§4.1 / §1 Phase 0 Core Promoted Rotating Refre
     rotatesOnRefresh: true,
     previousTokenGraceMs: 0,
     inactivityLimitDays: 31,
+    staleTokenUseIsDestructive: false,
   };
 
   const xeroGraceSemantics: RefreshSemantics = {
     rotatesOnRefresh: true,
     previousTokenGraceMs: 1_800_000, // 30 minutes
     inactivityLimitDays: 60,
+    staleTokenUseIsDestructive: false,
+  };
+
+  const destructiveSemantics: RefreshSemantics = {
+    rotatesOnRefresh: true,
+    previousTokenGraceMs: 0,
+    inactivityLimitDays: 100,
+    staleTokenUseIsDestructive: true,
+  };
+
+  const destructiveWithGraceSemantics: RefreshSemantics = {
+    rotatesOnRefresh: true,
+    previousTokenGraceMs: 1_800_000, // grace is declared but should be overridden by destructive=true
+    inactivityLimitDays: 100,
+    staleTokenUseIsDestructive: true,
   };
 
   it('1. 5 concurrent calls result in single-flight (1 refresh call)', async () => {
@@ -195,4 +211,55 @@ describe('AccountingTokenStore (§4.1 / §1 Phase 0 Core Promoted Rotating Refre
 
     expect(markReauth).toHaveBeenCalledWith('Missing refresh token');
   });
+
+  it('7. staleTokenUseIsDestructive: true -> fails closed immediately without retry and marks reauth required (§2.2, §7.1.2)', async () => {
+    let attempts = 0;
+    const refreshCall = jest.fn(async () => {
+      attempts++;
+      throw new Error('ETIMEDOUT: Connection reset during refresh');
+    });
+
+    const markReauth = jest.fn(async () => {});
+
+    await expect(
+      store.rotateTokenWithPolicy({
+        key: 'int-7',
+        provider: 'quickbooks',
+        semantics: destructiveSemantics,
+        currentRefreshToken: 'qbo-token-1',
+        refreshCall,
+        markReauthRequiredFn: markReauth,
+      }),
+    ).rejects.toThrow(/REAUTHORIZATION_REQUIRED/);
+
+    // Absolutely NO retry with stale token
+    expect(attempts).toBe(1);
+    expect(markReauth).toHaveBeenCalledWith(expect.stringContaining('staleTokenUseIsDestructive'));
+  });
+
+  it('8. staleTokenUseIsDestructive: true overrides previousTokenGraceMs > 0 (§2.2, §7.1.3)', async () => {
+    let attempts = 0;
+    const refreshCall = jest.fn(async () => {
+      attempts++;
+      throw new Error('503 Service Unavailable');
+    });
+
+    const markReauth = jest.fn(async () => {});
+
+    await expect(
+      store.rotateTokenWithPolicy({
+        key: 'int-8',
+        provider: 'quickbooks',
+        semantics: destructiveWithGraceSemantics,
+        currentRefreshToken: 'qbo-token-2',
+        refreshCall,
+        markReauthRequiredFn: markReauth,
+      }),
+    ).rejects.toThrow(/REAUTHORIZATION_REQUIRED/);
+
+    // Overrides grace period, exactly 1 attempt
+    expect(attempts).toBe(1);
+    expect(markReauth).toHaveBeenCalled();
+  });
 });
+

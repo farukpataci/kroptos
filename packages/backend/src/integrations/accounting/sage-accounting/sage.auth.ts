@@ -124,6 +124,7 @@ export class SageAuth {
         rotatesOnRefresh: true,
         previousTokenGraceMs: 0,
         inactivityLimitDays: 31,
+        staleTokenUseIsDestructive: false,
       },
       currentRefreshToken,
       refreshCall: async (refreshToken) => {

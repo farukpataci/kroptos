@@ -20,5 +20,6 @@ export const PARASUT_CAPABILITIES: AccountingCapabilities = {
     rotatesOnRefresh: false,
     previousTokenGraceMs: 0,
     inactivityLimitDays: null,
+    staleTokenUseIsDestructive: false,
   },
 };

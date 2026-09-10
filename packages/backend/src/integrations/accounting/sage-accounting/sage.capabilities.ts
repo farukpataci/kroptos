@@ -18,5 +18,6 @@ export const SAGE_CAPABILITIES: AccountingCapabilities = {
     rotatesOnRefresh: true,
     previousTokenGraceMs: 0,
     inactivityLimitDays: 31,
+    staleTokenUseIsDestructive: false,
   },
 };

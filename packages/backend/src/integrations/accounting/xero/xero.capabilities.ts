@@ -14,5 +14,6 @@ export const XERO_CAPABILITIES: AccountingCapabilities = {
     rotatesOnRefresh: true,
     previousTokenGraceMs: 1_800_000, // 30 minutes grace period on rotated refresh token
     inactivityLimitDays: 60, // 60 days inactivity expiry
+    staleTokenUseIsDestructive: false,
   },
 };

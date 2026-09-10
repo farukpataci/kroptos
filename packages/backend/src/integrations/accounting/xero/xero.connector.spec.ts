@@ -193,6 +193,7 @@ describe('XeroConnector (MOCK_READY)', () => {
         rotatesOnRefresh: true,
         previousTokenGraceMs: 1_800_000,
         inactivityLimitDays: 60,
+        staleTokenUseIsDestructive: false,
       });
     });
   });

@@ -188,9 +188,10 @@ describe('Accounting Provider Conformance Suite', () => {
       expect(invoiceReq.xeroTenantId).toBeUndefined();
       expect(invoiceReq.businessId).toBeUndefined();
       expect(invoiceReq.bcCompanyId).toBeUndefined();
+      expect(invoiceReq.realmId).toBeUndefined();
     });
 
-    it('17. Refresh semantics must be valid if declared in capabilities (§1)', () => {
+    it('17. Refresh semantics must be valid if declared in capabilities (§1, §2.2)', () => {
       if (descriptor.capabilities.refreshSemantics) {
         const sem = descriptor.capabilities.refreshSemantics;
         expect(typeof sem.rotatesOnRefresh).toBe('boolean');
@@ -200,6 +201,18 @@ describe('Accounting Provider Conformance Suite', () => {
           expect(typeof sem.inactivityLimitDays).toBe('number');
           expect(sem.inactivityLimitDays).toBeGreaterThan(0);
         }
+        expect(typeof sem.staleTokenUseIsDestructive).toBe('boolean');
+      }
+    });
+
+    it('18. Universal rule: For cancelable invoice documents, current state must be checked before selecting path (§2.4)', async () => {
+      // In KroptOS architecture, multi-path cancellation (BC: delete vs corrective credit memo;
+      // Xero: delete draft vs void authorised; QBO: delete vs void) must check current status first.
+      // A provider cannot blindly execute a single cancel path or silently write 'cancelled' if rejected.
+      const connector = new descriptor.connectorClass({}, 'MOCK');
+      if (descriptor.capabilities.cancelInvoice !== CapabilityStatus.NOT_SUPPORTED && typeof connector.cancelInvoice === 'function') {
+        // Must reject or handle non-existent invoice gracefully rather than blindly returning success
+        await expect(connector.cancelInvoice('non-existent-inv-id')).rejects.toThrow();
       }
     });
   });

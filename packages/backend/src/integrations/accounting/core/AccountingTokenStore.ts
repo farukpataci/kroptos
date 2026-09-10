@@ -163,6 +163,22 @@ export class AccountingTokenStore {
             );
           }
 
+          // §2.2 Rule: staleTokenUseIsDestructive: true
+          // If destructive, DO NOT retry with old/stale token under ANY condition (overrides previousTokenGraceMs).
+          // Fail closed: immediately mark reauthorization required and abort.
+          if (semantics.staleTokenUseIsDestructive) {
+            console.warn(
+              `[AccountingTokenStore] ${provider} staleTokenUseIsDestructive=true: Token yenileme sırasında hata oluştu (${err?.message || 'unknown'}). Eski/şüpheli token ile tekrar denemek yetkilendirmeyi yıkıcı olarak iptal edebileceğinden deneme yapılmadı, kapalı tarafa düşülüyor.`,
+            );
+            if (markReauthRequiredFn) {
+              await markReauthRequiredFn(`staleTokenUseIsDestructive: ${err?.message || 'Refresh error'}`);
+            }
+            throw new AccountingAuthError(
+              provider,
+              `REAUTHORIZATION_REQUIRED: ${provider} token yenilenemedi ve eski token yıkıcı risk taşıdığından oturum kapatıldı (${err?.message || 'refresh error'}). Lütfen yeniden bağlanın.`,
+            );
+          }
+
           // If no grace period (Sage, semantics.previousTokenGraceMs === 0), do NOT retry with old token!
           if (!semantics.previousTokenGraceMs || semantics.previousTokenGraceMs <= 0) {
             throw err;
