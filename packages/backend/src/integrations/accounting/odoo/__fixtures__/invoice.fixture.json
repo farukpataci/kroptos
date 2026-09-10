@@ -1,0 +1,27 @@
+{
+  "id": 101,
+  "name": "INV/2026/00001",
+  "ref": "ORD-2026-9999",
+  "state": "posted",
+  "move_type": "out_invoice",
+  "partner_id": [1, "Acme International BV"],
+  "invoice_date": "2026-09-10",
+  "invoice_date_due": "2026-10-10",
+  "currency_id": [1, "EUR"],
+  "amount_untaxed": 100.0,
+  "amount_tax": 21.0,
+  "amount_total": 121.0,
+  "amount_residual": 121.0,
+  "invoice_line_ids": [
+    {
+      "id": 501,
+      "name": "Ergonomic Office Chair",
+      "product_id": 12,
+      "quantity": 1,
+      "price_unit": 100.0,
+      "tax_ids": [1],
+      "price_subtotal": 100.0,
+      "price_total": 121.0
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "name": {
+    "type": "char",
+    "string": "Number",
+    "required": true
+  },
+  "ref": {
+    "type": "char",
+    "string": "Reference"
+  },
+  "state": {
+    "type": "selection",
+    "string": "Status",
+    "selection": [
+      ["draft", "Draft"],
+      ["posted", "Posted"],
+      ["cancel", "Cancelled"]
+    ]
+  },
+  "move_type": {
+    "type": "selection",
+    "string": "Type",
+    "selection": [
+      ["out_invoice", "Customer Invoice"],
+      ["out_refund", "Customer Credit Note"]
+    ]
+  },
+  "partner_id": {
+    "type": "many2one",
+    "string": "Partner",
+    "relation": "res.partner"
+  },
+  "invoice_line_ids": {
+    "type": "one2many",
+    "string": "Invoice Lines",
+    "relation": "account.move.line"
+  },
+  "amount_total": {
+    "type": "monetary",
+    "string": "Total"
+  }
+}

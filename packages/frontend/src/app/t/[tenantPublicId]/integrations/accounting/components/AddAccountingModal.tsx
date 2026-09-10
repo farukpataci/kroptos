@@ -243,6 +243,30 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'ODOO',
+    displayName: 'Odoo ERP & Accounting',
+    country: 'BE',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'odoo',
+      name: 'Odoo ERP & Accounting',
+      fields: [
+        { key: 'baseUrl', label: 'Odoo Sunucu URL (Base URL)', type: 'text', required: true, description: 'Odoo sunucu adresi (örn: https://mycompany.odoo.com veya https://erp.local:8069).' },
+        { key: 'database', label: 'Veritabanı Adı (Database Name)', type: 'text', required: true, description: 'Bağlanılacak Odoo veritabanı adı.' },
+        { key: 'apiKey', label: 'API Anahtarı (API Key)', type: 'password', required: true, secret: true, description: 'Odoo kullanıcınızın API anahtarı (Şifre kullanımı desteklenmez).' },
+        { key: 'companyId', label: 'Şirket ID (Company ID - İsteğe Bağlı)', type: 'text', required: false, description: 'Çoklu şirket ortamlarında hedef şirket numarası (örn: 1).' },
+        { key: 'defaultJournalId', label: 'Varsayılan Yevmiye ID (Journal ID - İsteğe Bağlı)', type: 'text', required: false, description: 'Müşteri faturaları için satış yevmiyesi (Journal) ID.' },
+        { key: 'defaultTaxId', label: 'Varsayılan Vergi ID (Tax ID - İsteğe Bağlı)', type: 'text', required: false, description: 'Fatura satırlarına atanacak varsayılan vergi ID.' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
@@ -294,6 +318,12 @@ const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string;
     badge: 'QuickBooks Online',
     iconLetter: 'Q',
   },
+  ODOO: {
+    bg: 'bg-purple-600/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-500/20',
+    text: 'text-purple-700 dark:text-purple-300',
+    badge: 'Odoo ERP',
+    iconLetter: 'O',
+  },
 };
 
 interface AddAccountingModalProps {
@@ -329,6 +359,7 @@ export default function AddAccountingModal({
     if (lower.includes('sage')) return 'SAGE-ACCOUNTING';
     if (lower.includes('xero')) return 'XERO';
     if (lower.includes('quickbooks') || lower.includes('qbo')) return 'QUICKBOOKS';
+    if (lower.includes('odoo')) return 'ODOO';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
     if (lower.includes('parasut')) return 'PARASUT';
@@ -406,6 +437,7 @@ export default function AddAccountingModal({
   const isSage = resolvedProviderKey === 'SAGE-ACCOUNTING';
   const isXero = resolvedProviderKey === 'XERO';
   const isQuickBooks = resolvedProviderKey === 'QUICKBOOKS';
+  const isOdoo = resolvedProviderKey === 'ODOO';
   const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
 
   const isReauthRequired =
@@ -731,6 +763,22 @@ export default function AddAccountingModal({
                   <li><strong>Otomatik Satış Vergisi (AST):</strong> QBO Şirket Tercihlerinde AST etkinse vergi tutarı QBO motorunca hesaplanır; KroptOS sadece net satır tutarlarını iletir ve mutabakat için doğrular.</li>
                   <li><strong>Belge No ve İptal (Void):</strong> DocNumber 21 karakterle sınırlandırılır; iptal işlemleri doğrudan silme yerine QBO standartlarına uygun Void (tutar sıfırlama) akışıyla yürütülür.</li>
                   <li><strong>Yıkıcı Token Politikası:</strong> Intuit güvenlik modeli gereği geçersiz veya süresi dolmuş refresh token kullanımı oturumu sonlandırır. Yeniden yetkilendirme gerekirse doğrudan &quot;QuickBooks ile Yeniden Bağlan&quot; adımını kullanın.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Odoo Guidance */}
+            {isOdoo && (
+              <div className="rounded-xl border border-purple-500/30 bg-purple-50 dark:bg-purple-950/30 p-4 text-xs text-purple-900 dark:text-purple-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-purple-950 dark:text-purple-100">
+                  <InformationCircleIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Odoo ERP &amp; Muhasebe Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-purple-800 dark:text-purple-300">
+                  <li><strong>Tekil Bağlantı:</strong> Odoo Online, Odoo.sh ve On-Premise kurulumların tamamı tek konnektör üzerinden yönetilir.</li>
+                  <li><strong>Çift Taşıma Desteği:</strong> Odoo 19+ için modern REST JSON-2 taşıması, Odoo 18 ve öncesi için Classic RPC (/jsonrpc) protokolü otomatik olarak seçilir.</li>
+                  <li><strong>API Anahtarı Zorunluluğu:</strong> Güvenlik standardı gereği kullanıcı parolalarıyla bağlantı desteklenmez; Odoo kullanıcı ayarlarından oluşturulan API Anahtarı kullanılır.</li>
+                  <li><strong>Taslak ve Mutabakat Akışı:</strong> Faturalar önce taslak (draft) olarak oluşturulur, sunucu hesaplamalı toplam tutar mutabakatı doğrulandıktan sonra onaylanır (action_post).</li>
                 </ul>
               </div>
             )}

@@ -106,6 +106,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('sage') && p.includes('sage')) return true;
         if (pid.includes('xero') && p.includes('xero')) return true;
         if ((pid.includes('quickbooks') || pid.includes('qbo')) && (p.includes('quickbooks') || p.includes('qbo'))) return true;
+        if (pid.includes('odoo') && p.includes('odoo')) return true;
         return false;
       });
       if (existing) {
@@ -118,6 +119,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('sage')) targetProvider = 'SAGE-ACCOUNTING';
         if (pid.includes('xero')) targetProvider = 'XERO';
         if (pid.includes('quickbooks') || pid.includes('qbo')) targetProvider = 'QUICKBOOKS';
+        if (pid.includes('odoo')) targetProvider = 'ODOO';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }

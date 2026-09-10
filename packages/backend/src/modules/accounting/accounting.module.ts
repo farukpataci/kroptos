@@ -26,6 +26,7 @@ import '../../integrations/accounting/ms-dynamics-bc-online';
 import '../../integrations/accounting/sage-accounting';
 import '../../integrations/accounting/xero';
 import '../../integrations/accounting/quickbooks';
+import '../../integrations/accounting/odoo';
 
 // Controllers
 import { AccountingController } from './accounting.controller';
