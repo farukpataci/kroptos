@@ -2,6 +2,7 @@ import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/commo
 import { ConfigService } from '@nestjs/config';
 import { Job, Worker } from 'bullmq';
 import { AccountingDocumentService } from './accounting-document.service';
+import { AccountingService } from './accounting.service';
 import {
   AccountingJobData,
   accountingSyncEventEmitter,
@@ -11,10 +12,12 @@ import {
 export class AccountingSyncWorker implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(AccountingSyncWorker.name);
   private worker?: Worker;
+  private keepAliveInterval?: NodeJS.Timeout;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly documentService: AccountingDocumentService,
+    private readonly accountingService: AccountingService,
   ) {}
 
   onModuleInit() {
@@ -50,6 +53,18 @@ export class AccountingSyncWorker implements OnModuleInit, OnModuleDestroy {
         this.logger.error(`In-memory sync job failed: ${err.message}`);
       }
     });
+
+    // §4.2 Weekly keep-alive token refresh for Sage integrations (every 7 days)
+    this.keepAliveInterval = setInterval(
+      async () => {
+        try {
+          await this.accountingService.runKeepAliveJob();
+        } catch (err: any) {
+          this.logger.error(`Sage keep-alive job failed: ${err.message}`);
+        }
+      },
+      7 * 24 * 60 * 60 * 1000,
+    );
   }
 
   async processJob(data: AccountingJobData): Promise<void> {
@@ -58,10 +73,15 @@ export class AccountingSyncWorker implements OnModuleInit, OnModuleDestroy {
       await this.documentService.createInvoiceDocument(data.payload, data.scope);
     } else if (data.jobType === 'record_payment') {
       await this.documentService.createPaymentDocument(data.payload, data.scope);
+    } else if (data.jobType === 'keep_alive_tokens') {
+      await this.accountingService.runKeepAliveJob();
     }
   }
 
   async onModuleDestroy() {
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval);
+    }
     if (this.worker) {
       await this.worker.close();
     }

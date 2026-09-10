@@ -23,17 +23,20 @@ import '../../integrations/accounting/kolaybi';
 import '../../integrations/accounting/bizimhesap';
 import '../../integrations/accounting/sap-s4hana-cloud';
 import '../../integrations/accounting/ms-dynamics-bc-online';
+import '../../integrations/accounting/sage-accounting';
 
 // Controllers
 import { AccountingController } from './accounting.controller';
 import { AccountingDocumentController } from './accounting-document.controller';
 import { AccountingMappingController } from './accounting-mapping.controller';
 import { AccountingProviderController } from './accounting-provider.controller';
+import { AccountingOAuthController } from './accounting-oauth.controller';
 
 @Module({
   imports: [PrismaModule, ConfigModule, AuditModule],
   controllers: [
     AccountingController,
+    AccountingOAuthController,
     AccountingDocumentController,
     AccountingMappingController,
     AccountingProviderController,

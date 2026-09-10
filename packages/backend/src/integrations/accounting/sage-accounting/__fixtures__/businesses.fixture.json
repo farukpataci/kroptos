@@ -1,0 +1,36 @@
+{
+  "$total": 2,
+  "$page": 1,
+  "$next": null,
+  "$itemsPerPage": 20,
+  "$items": [
+    {
+      "id": "biz-sage-uk-01",
+      "displayed_as": "KroptOS UK Ltd",
+      "$path": "/businesses/biz-sage-uk-01",
+      "name": "KroptOS UK Ltd",
+      "country": {
+        "id": "GB",
+        "displayed_as": "United Kingdom"
+      },
+      "currency": {
+        "id": "GBP",
+        "displayed_as": "Pound Sterling"
+      }
+    },
+    {
+      "id": "biz-sage-ie-02",
+      "displayed_as": "KroptOS Ireland Ltd",
+      "$path": "/businesses/biz-sage-ie-02",
+      "name": "KroptOS Ireland Ltd",
+      "country": {
+        "id": "IE",
+        "displayed_as": "Ireland"
+      },
+      "currency": {
+        "id": "EUR",
+        "displayed_as": "Euro"
+      }
+    }
+  ]
+}

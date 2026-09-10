@@ -728,14 +728,14 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
-    id: 'sage',
-    name: 'Sage Accounting & ERP',
+    id: 'sage-accounting',
+    name: 'Sage Business Cloud Accounting',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-emerald-600/10 border-emerald-600/20 text-emerald-700',
-    badgeText: 'Sage',
-    description: 'İngiltere, Fransa, Almanya ve İspanya odaklı Sage ön muhasebe ve finans çözümleri.',
-    capabilities: ['İngiltere & AB', 'Ön Muhasebe', 'Fatura'],
+    badgeText: 'Sage Business Cloud',
+    description: 'İngiltere ve Avrupa operasyonları için Sage Business Cloud REST API ve OAuth2 entegrasyonu.',
+    capabilities: ['Satış Faturası', 'Cari Eşleştirme', 'İngiltere & AB'],
     status: 'active',
   },
   {
@@ -985,7 +985,7 @@ export function AddIntegrationModal({
         setSupportedAccounting(set);
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage']));
       });
 
     return () => {
@@ -1012,7 +1012,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||

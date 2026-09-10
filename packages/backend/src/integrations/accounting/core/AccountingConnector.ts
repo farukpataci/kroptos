@@ -25,4 +25,6 @@ export abstract class AccountingConnector {
 
   // Optional methods
   abstract findInvoiceByReference?(referenceCode: string): Promise<AccountingInvoiceResult | null>;
+  buildAuthorizationUrl?(params: { state: string; redirectUri: string }): string;
+  exchangeAuthorizationCode?(params: { code: string; redirectUri: string }): Promise<{ accessToken: string; refreshToken: string; expiresIn: number }>;
 }

@@ -1,4 +1,5 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import * as crypto from 'crypto';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
@@ -366,6 +367,280 @@ export class AccountingService {
     });
 
     return { success: true };
+  }
+
+  // --- OAuth2 flow (§5) ---
+  private readonly oauthNonceStore: Map<
+    string,
+    {
+      nonce: string;
+      integrationId: string;
+      agencyId: string;
+      clientId?: string;
+      storeId?: string;
+      userId?: string;
+      provider: string;
+      redirectUri: string;
+      expiresAt: number;
+    }
+  > = new Map();
+
+  async startOAuth(
+    id: string,
+    scope: AccountingScope,
+    redirectUri?: string,
+    userContext?: { id?: string },
+  ): Promise<{ authorizationUrl: string }> {
+    const integration = await this.findIntegrationById(id, scope);
+    const credentials = integration.credentials
+      ? this.credentialsService.decrypt(integration.credentials)
+      : {};
+
+    const effectiveRedirectUri =
+      redirectUri ||
+      process.env.SAGE_REDIRECT_URI ||
+      'http://localhost:3000/api/accounting/oauth/callback';
+
+    // Generate random 32-byte cryptographically secure nonce (§5.2)
+    const nonce = crypto.randomBytes(32).toString('hex');
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes TTL
+
+    this.oauthNonceStore.set(nonce, {
+      nonce,
+      integrationId: integration.id,
+      agencyId: integration.agencyId,
+      clientId: integration.clientId || undefined,
+      storeId: integration.storeId || undefined,
+      userId: userContext?.id,
+      provider: integration.provider,
+      redirectUri: effectiveRedirectUri,
+      expiresAt,
+    });
+
+    const connector = this.connectorFactory.create(
+      integration.provider,
+      credentials,
+      integration.environment as AccountingEnvironment,
+    );
+
+    if (typeof connector.buildAuthorizationUrl !== 'function') {
+      throw new BadRequestException(
+        `${integration.provider} sağlayıcısı OAuth tarayıcı yetkilendirmesini desteklemiyor.`,
+      );
+    }
+
+    const authorizationUrl = connector.buildAuthorizationUrl({
+      state: nonce,
+      redirectUri: effectiveRedirectUri,
+    });
+
+    return { authorizationUrl };
+  }
+
+  async handleOAuthCallback(code: string, state: string) {
+    if (!state || !code) {
+      return {
+        success: false,
+        message: 'Yetkilendirme kodu veya durum anahtarı eksik.',
+      };
+    }
+
+    const nonceRecord = this.oauthNonceStore.get(state);
+    // Nonce is strictly single-use (§5.2): delete immediately
+    this.oauthNonceStore.delete(state);
+
+    if (!nonceRecord || Date.now() > nonceRecord.expiresAt) {
+      // Neutral response to avoid leaking integration existence (§5.2 rule 5)
+      return {
+        success: false,
+        message: 'Yetkilendirme oturumu geçersiz veya süresi dolmuş.',
+      };
+    }
+
+    // Resolve tenant strictly from nonce record (§5.2 rule 4)
+    const integration = await this.prisma.accountingIntegration.findUnique({
+      where: { id: nonceRecord.integrationId },
+    });
+
+    if (!integration || integration.deletedAt) {
+      return {
+        success: false,
+        message: 'Yetkilendirme oturumu geçersiz veya süresi dolmuş.',
+      };
+    }
+
+    const credentials = integration.credentials
+      ? this.credentialsService.decrypt(integration.credentials)
+      : {};
+
+    const connector = this.connectorFactory.create(
+      integration.provider,
+      credentials,
+      integration.environment as AccountingEnvironment,
+    );
+
+    if (typeof connector.exchangeAuthorizationCode !== 'function') {
+      return {
+        success: false,
+        message: 'Yetkilendirme kod değişimi bu sağlayıcıda desteklenmiyor.',
+      };
+    }
+
+    try {
+      const tokenResult = await connector.exchangeAuthorizationCode({
+        code,
+        redirectUri: nonceRecord.redirectUri,
+      });
+
+      const updatedCreds = {
+        ...credentials,
+        accessToken: tokenResult.accessToken,
+        refreshToken: tokenResult.refreshToken,
+        expiresAt: Date.now() + (tokenResult.expiresIn || 300) * 1000,
+      };
+
+      const encrypted = this.credentialsService.encrypt(updatedCreds);
+
+      await this.prisma.accountingIntegration.update({
+        where: { id: integration.id },
+        data: {
+          status: 'connected',
+          credentials: encrypted,
+          lastVerifiedAt: new Date(),
+          lastErrorMessage: null,
+        },
+      });
+
+      // Audit log WITHOUT leaking tokens, codes, or secrets (§5.2 rule 7)
+      await this.auditLogService.createLog({
+        tenantId: integration.agencyId,
+        userId: nonceRecord.userId,
+        action: 'OAUTH_AUTHORIZE_SUCCESS',
+        module: 'accounting',
+        entityType: 'AccountingIntegration',
+        entityId: integration.id,
+        entityDisplayName: integration.name,
+        description: `OAuth2 yetkilendirmesi başarıyla tamamlandı (${integration.provider})`,
+        severity: 'info',
+      });
+
+      return {
+        success: true,
+        message: 'Muhasebe entegrasyonu başarıyla bağlandı.',
+        integrationId: integration.id,
+      };
+    } catch (err: any) {
+      await this.prisma.accountingIntegration.update({
+        where: { id: integration.id },
+        data: {
+          status: 'error',
+          lastErrorMessage: err.message,
+        },
+      });
+
+      return {
+        success: false,
+        message: `Yetkilendirme hatası: ${err.message}`,
+      };
+    }
+  }
+
+  // --- Configuration Discovery (§6) ---
+
+  async listDiscoveryBusinesses(id: string, scope: AccountingScope) {
+    const integration = await this.findIntegrationById(id, scope);
+    const credentials = integration.credentials
+      ? this.credentialsService.decrypt(integration.credentials)
+      : {};
+    const connector: any = this.connectorFactory.create(
+      integration.provider,
+      credentials,
+      integration.environment as AccountingEnvironment,
+    );
+    if (typeof connector.listBusinesses === 'function') {
+      return connector.listBusinesses();
+    }
+    return [];
+  }
+
+  async listDiscoveryLedgerAccounts(id: string, scope: AccountingScope) {
+    const integration = await this.findIntegrationById(id, scope);
+    const credentials = integration.credentials
+      ? this.credentialsService.decrypt(integration.credentials)
+      : {};
+    const connector: any = this.connectorFactory.create(
+      integration.provider,
+      credentials,
+      integration.environment as AccountingEnvironment,
+    );
+    if (typeof connector.listLedgerAccounts === 'function') {
+      return connector.listLedgerAccounts();
+    }
+    return [];
+  }
+
+  async listDiscoveryTaxRates(id: string, scope: AccountingScope) {
+    const integration = await this.findIntegrationById(id, scope);
+    const credentials = integration.credentials
+      ? this.credentialsService.decrypt(integration.credentials)
+      : {};
+    const connector: any = this.connectorFactory.create(
+      integration.provider,
+      credentials,
+      integration.environment as AccountingEnvironment,
+    );
+    if (typeof connector.listTaxRates === 'function') {
+      return connector.listTaxRates();
+    }
+    return [];
+  }
+
+  // --- §4.2 Keep-alive weekly job ---
+
+  async runKeepAliveJob(): Promise<{ checked: number; refreshed: number; failed: number }> {
+    const activeIntegrations = await this.prisma.accountingIntegration.findMany({
+      where: {
+        provider: { in: ['SAGE-ACCOUNTING', 'SAGE_ACCOUNTING'] },
+        status: 'connected',
+        deletedAt: null,
+      },
+    });
+
+    let refreshed = 0;
+    let failed = 0;
+
+    for (const integration of activeIntegrations) {
+      // Mock environment does NOT make real network calls (§4.2)
+      if (integration.environment === 'MOCK') {
+        continue;
+      }
+
+      const credentials = integration.credentials
+        ? this.credentialsService.decrypt(integration.credentials)
+        : {};
+
+      try {
+        const connector: any = this.connectorFactory.create(
+          integration.provider,
+          credentials,
+          integration.environment as AccountingEnvironment,
+        );
+        // Uses the same locked single-flight path
+        await connector.testConnection();
+        refreshed++;
+      } catch (err: any) {
+        failed++;
+        await this.prisma.accountingIntegration.update({
+          where: { id: integration.id },
+          data: {
+            status: 'failed',
+            lastErrorMessage: `REAUTHORIZATION_REQUIRED: Canlı tutma yenilemesi başarısız: ${err.message}`,
+          },
+        });
+      }
+    }
+
+    return { checked: activeIntegrations.length, refreshed, failed };
   }
 
   private toMaskedResponse(integration: any) {

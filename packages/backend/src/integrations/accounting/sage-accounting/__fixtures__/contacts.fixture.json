@@ -1,0 +1,31 @@
+{
+  "$total": 1,
+  "$page": 1,
+  "$next": null,
+  "$itemsPerPage": 20,
+  "$items": [
+    {
+      "id": "contact-sage-201",
+      "displayed_as": "Acme Retail Ltd",
+      "$path": "/contacts/contact-sage-201",
+      "name": "Acme Retail Ltd",
+      "contact_type_ids": ["CUSTOMER"],
+      "reference": "CUST-001",
+      "email": "billing@acmeretail.co.uk",
+      "tax_number": "GB123456789",
+      "currency": {
+        "id": "GBP",
+        "displayed_as": "Pound Sterling"
+      },
+      "main_address": {
+        "address_line_1": "100 High Street",
+        "city": "London",
+        "postal_code": "EC1A 1BB",
+        "country": {
+          "id": "GB",
+          "displayed_as": "United Kingdom"
+        }
+      }
+    }
+  ]
+}

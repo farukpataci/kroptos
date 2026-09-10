@@ -1,0 +1,32 @@
+{
+  "$total": 3,
+  "$page": 1,
+  "$next": null,
+  "$itemsPerPage": 20,
+  "$items": [
+    {
+      "id": "GB_STANDARD",
+      "displayed_as": "Standard 20%",
+      "$path": "/tax_rates/GB_STANDARD",
+      "name": "Standard Rate",
+      "percentage": 20.0,
+      "is_visible": true
+    },
+    {
+      "id": "GB_REDUCED",
+      "displayed_as": "Reduced 5%",
+      "$path": "/tax_rates/GB_REDUCED",
+      "name": "Reduced Rate",
+      "percentage": 5.0,
+      "is_visible": true
+    },
+    {
+      "id": "GB_ZERO",
+      "displayed_as": "Zero Rate 0%",
+      "$path": "/tax_rates/GB_ZERO",
+      "name": "Zero Rate",
+      "percentage": 0.0,
+      "is_visible": true
+    }
+  ]
+}

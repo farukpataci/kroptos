@@ -117,6 +117,58 @@ export class AccountingController {
     return this.accountingService.testConnection(id, scope);
   }
 
+  // --- OAuth Start (§5.1) ---
+
+  @Post(':id/oauth/start')
+  @HttpCode(200)
+  @RequirePermission('accounting.manage')
+  @ApiOperation({ summary: 'Start OAuth2 authorization code flow' })
+  async startOAuth(
+    @Param('id') id: string,
+    @Body('redirectUri') redirectUri: string,
+    @Req() req: Request,
+  ) {
+    const scope = this.extractScope(req);
+    return this.accountingService.startOAuth(
+      id,
+      scope,
+      redirectUri,
+      this.extractUser(req),
+    );
+  }
+
+  // --- Discovery endpoints (§6) ---
+
+  @Get(':id/businesses')
+  @HttpCode(200)
+  @RequirePermission('accounting.read')
+  @ApiOperation({ summary: 'Discover available businesses under integration' })
+  async listBusinessesDiscovery(@Param('id') id: string, @Req() req: Request) {
+    const scope = this.extractScope(req);
+    return this.accountingService.listDiscoveryBusinesses(id, scope);
+  }
+
+  @Get(':id/ledger-accounts')
+  @HttpCode(200)
+  @RequirePermission('accounting.read')
+  @ApiOperation({ summary: 'Discover nominal ledger accounts under integration' })
+  async listLedgerAccountsDiscovery(
+    @Param('id') id: string,
+    @Req() req: Request,
+  ) {
+    const scope = this.extractScope(req);
+    return this.accountingService.listDiscoveryLedgerAccounts(id, scope);
+  }
+
+  @Get(':id/tax-rates')
+  @HttpCode(200)
+  @RequirePermission('accounting.read')
+  @ApiOperation({ summary: 'Discover configured tax rates under integration' })
+  async listTaxRatesDiscovery(@Param('id') id: string, @Req() req: Request) {
+    const scope = this.extractScope(req);
+    return this.accountingService.listDiscoveryTaxRates(id, scope);
+  }
+
   // --- Company endpoints ---
 
   @Get(':id/companies')

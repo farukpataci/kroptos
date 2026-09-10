@@ -7,6 +7,7 @@ import '../../kolaybi';
 import '../../bizimhesap';
 import '../../sap-s4hana-cloud';
 import '../../ms-dynamics-bc-online';
+import '../../sage-accounting';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();

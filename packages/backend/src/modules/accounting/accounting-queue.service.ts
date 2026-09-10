@@ -6,7 +6,7 @@ import { EventEmitter } from 'events';
 export const accountingSyncEventEmitter = new EventEmitter();
 
 export interface AccountingJobData {
-  jobType: 'create_invoice' | 'record_payment';
+  jobType: 'create_invoice' | 'record_payment' | 'keep_alive_tokens';
   payload: any;
   provider?: string;
   attempts?: number;

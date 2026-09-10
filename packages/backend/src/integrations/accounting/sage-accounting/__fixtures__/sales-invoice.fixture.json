@@ -1,0 +1,49 @@
+{
+  "id": "inv-sage-1001",
+  "displayed_as": "SI-1001",
+  "$path": "/sales_invoices/inv-sage-1001",
+  "transaction_type": {
+    "id": "SALES_INVOICE",
+    "displayed_as": "Sales Invoice"
+  },
+  "invoice_number": "SI-1001",
+  "contact_name": "Acme Retail Ltd",
+  "contact": {
+    "id": "contact-sage-201",
+    "displayed_as": "Acme Retail Ltd"
+  },
+  "date": "2026-09-10",
+  "due_date": "2026-09-24",
+  "reference": "ORD-2026-001",
+  "status": {
+    "id": "UNPAID",
+    "displayed_as": "Unpaid"
+  },
+  "net_amount": 100.0,
+  "tax_amount": 20.0,
+  "total_amount": 120.0,
+  "outstanding_amount": 120.0,
+  "currency": {
+    "id": "GBP",
+    "displayed_as": "Pound Sterling"
+  },
+  "invoice_lines": [
+    {
+      "id": "line-sage-1",
+      "description": "Wireless Mouse",
+      "quantity": 2.0,
+      "unit_price": 50.0,
+      "net_amount": 100.0,
+      "tax_amount": 20.0,
+      "total_amount": 120.0,
+      "tax_rate": {
+        "id": "GB_STANDARD",
+        "displayed_as": "Standard 20%"
+      },
+      "ledger_account": {
+        "id": "4000",
+        "displayed_as": "Sales Revenue (4000)"
+      }
+    }
+  ]
+}

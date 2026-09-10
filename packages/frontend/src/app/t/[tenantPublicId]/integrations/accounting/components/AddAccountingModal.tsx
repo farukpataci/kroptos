@@ -6,6 +6,9 @@ import {
   ShieldCheckIcon,
   InformationCircleIcon,
   BanknotesIcon,
+  ArrowPathIcon,
+  LinkIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import { api } from '@/lib/api';
@@ -132,6 +135,29 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'SAGE-ACCOUNTING',
+    displayName: 'Sage Business Cloud Accounting',
+    country: 'GB',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'SAGE-ACCOUNTING',
+      name: 'Sage Business Cloud Accounting',
+      fields: [
+        { key: 'businessId', label: 'Sage İşletme Kimliği (Business ID)', type: 'text', required: true, description: 'Sage panelinizdeki işletme ID değeri veya GET /businesses çıktısı.' },
+        { key: 'defaultLedgerAccountId', label: 'Varsayılan Gelir Defteri Hesabı (Ledger Account ID)', type: 'text', required: false, description: 'Fatura satırlarında kullanılacak nominal gelir hesabı (ör. 4000).' },
+        { key: 'defaultTaxRateId', label: 'Varsayılan Vergi Oranı (Tax Rate ID)', type: 'text', required: false, description: 'Fatura satırlarında geçerli Sage vergi oranı (ör. GB_STANDARD).' },
+        { key: 'clientId', label: 'Özel Client ID (İsteğe Bağlı)', type: 'text', required: false, description: 'Özel Sage Developer uygulamanız varsa girin; boşsa merkezi KroptOS uygulaması kullanılır.' },
+        { key: 'clientSecret', label: 'Özel Client Secret (İsteğe Bağlı)', type: 'password', required: false, secret: true, description: 'Özel uygulamanızın istemci gizli anahtarı.' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
@@ -165,6 +191,12 @@ const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string;
     badge: 'Dynamics 365 BC',
     iconLetter: 'D',
   },
+  'SAGE-ACCOUNTING': {
+    bg: 'bg-emerald-600/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-500/20',
+    text: 'text-emerald-600 dark:text-emerald-400',
+    badge: 'Sage Business Cloud',
+    iconLetter: 'S',
+  },
 };
 
 interface AddAccountingModalProps {
@@ -197,6 +229,12 @@ export default function AddAccountingModal({
       lower === 'dynamics'
     )
       return 'MS_DYNAMICS_BC_ONLINE';
+    if (
+      lower === 'sage' ||
+      lower === 'sage_accounting' ||
+      lower === 'sage-accounting'
+    )
+      return 'SAGE-ACCOUNTING';
     const match = DEFAULT_PROVIDERS.find((p) => p.id.toLowerCase() === lower);
     return match ? match.id : id.toUpperCase();
   };
@@ -221,6 +259,86 @@ export default function AddAccountingModal({
   const [credentials, setCredentials] = useState<Record<string, string>>(
     (editingIntegration?.credentials as Record<string, string>) || {},
   );
+
+  const [isStartingOAuth, setIsStartingOAuth] = useState(false);
+  const [isDiscovering, setIsDiscovering] = useState(false);
+  const [discoveredBusinesses, setDiscoveredBusinesses] = useState<any[]>([]);
+  const [discoveredAccounts, setDiscoveredAccounts] = useState<any[]>([]);
+  const [discoveredTaxRates, setDiscoveredTaxRates] = useState<any[]>([]);
+
+  const isSage = (editingIntegration?.provider || selectedProviderId).toUpperCase().includes('SAGE');
+  const isReauthRequired =
+    isSage &&
+    ((editingIntegration?.status as string) === 'failed' ||
+      editingIntegration?.status === 'error' &&
+        (editingIntegration?.lastErrorMessage?.includes('REAUTHORIZATION_REQUIRED') ||
+          editingIntegration?.lastErrorMessage?.includes('invalid_grant')));
+
+  const handleStartOAuth = async () => {
+    if (!editingIntegration?.id) {
+      toast.error('OAuth başlatmak için lütfen önce entegrasyonu kaydedin.');
+      return;
+    }
+    setIsStartingOAuth(true);
+    try {
+      const redirectUri = window.location.origin + '/api/accounting/oauth/callback';
+      const res = await api.post<{ authorizationUrl: string }>(
+        `/accounting/integrations/${editingIntegration.id}/oauth/start`,
+        { redirectUri },
+      );
+      if (res?.authorizationUrl) {
+        const width = 600;
+        const height = 700;
+        const left = window.screen.width / 2 - width / 2;
+        const top = window.screen.height / 2 - height / 2;
+        const popup = window.open(
+          res.authorizationUrl,
+          'SageOAuth',
+          `width=${width},height=${height},top=${top},left=${left}`,
+        );
+
+        const onMessage = (event: MessageEvent) => {
+          if (event.data?.type === 'ACCOUNTING_OAUTH_RESULT') {
+            window.removeEventListener('message', onMessage);
+            if (event.data.success) {
+              toast.success('Sage OAuth yetkilendirmesi başarıyla tamamlandı!');
+              onSuccess();
+            } else {
+              toast.error(event.data.message || 'Yetkilendirme başarısız oldu.');
+            }
+          }
+        };
+        window.addEventListener('message', onMessage);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'OAuth yönlendirmesi başlatılamadı.');
+    } finally {
+      setIsStartingOAuth(false);
+    }
+  };
+
+  const handleDiscoverConfig = async () => {
+    if (!editingIntegration?.id) {
+      toast.error('Yapılandırma keşfi için önce entegrasyonu kaydedin.');
+      return;
+    }
+    setIsDiscovering(true);
+    try {
+      const [bizs, accs, taxes] = await Promise.all([
+        api.get<any[]>(`/accounting/integrations/${editingIntegration.id}/businesses`).catch(() => []),
+        api.get<any[]>(`/accounting/integrations/${editingIntegration.id}/ledger-accounts`).catch(() => []),
+        api.get<any[]>(`/accounting/integrations/${editingIntegration.id}/tax-rates`).catch(() => []),
+      ]);
+      setDiscoveredBusinesses(bizs || []);
+      setDiscoveredAccounts(accs || []);
+      setDiscoveredTaxRates(taxes || []);
+      toast.success('Sage yapılandırma seçenekleri güncellendi.');
+    } catch (err: any) {
+      toast.error(err.message || 'Yapılandırma verileri çekilemedi.');
+    } finally {
+      setIsDiscovering(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -386,6 +504,45 @@ export default function AddAccountingModal({
               </div>
             )}
 
+            {/* Sage Business Cloud Accounting Guidance (§1, §4, §6) */}
+            {isSage && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 p-4 text-xs text-emerald-900 dark:text-emerald-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-emerald-950 dark:text-emerald-100">
+                  <InformationCircleIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  Sage Business Cloud Accounting Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-emerald-800 dark:text-emerald-300">
+                  <li><strong>Bölgesel Model:</strong> Sage İngiltere ve Avrupa odaklıdır. Türk vergi / e-Fatura modeli uygulanmaz.</li>
+                  <li><strong>Zorunlu Yapılandırma (§6):</strong> Fatura gönderimi için Varsayılan Gelir Hesabı ve Vergi Oranı seçilmelidir.</li>
+                  <li><strong>Dönen Refresh Token (§4.1):</strong> Her token kullanımında rotasyon uygulanır ve sunucu tarafında güvenli saklanır.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Re-authorization required warning banner (§4.1 & §5.4) */}
+            {isReauthRequired && (
+              <div className="rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-start gap-2.5">
+                  <ExclamationTriangleIcon className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-rose-950 dark:text-rose-100">Yeniden Yetkilendirme Gerekli:</span>
+                    <p className="mt-0.5 text-rose-800 dark:text-rose-300">
+                      Sage refresh token süresi dolmuş veya geçersiz kalmıştır. Lütfen &quot;Sage ile Yeniden Bağlan&quot; düğmesine basarak oturumunuzu tazeleyin.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleStartOAuth}
+                  disabled={isStartingOAuth}
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-rose-700 transition-all shadow-sm"
+                >
+                  <ArrowPathIcon className={`h-4 w-4 ${isStartingOAuth ? 'animate-spin' : ''}`} />
+                  Sage ile Yeniden Bağlan
+                </button>
+              </div>
+            )}
+
             {/* Provider Selector (ONLY visible when opened generically without a specific pre-selected provider) */}
             {!isProviderLocked && (
               <div className="space-y-2">
@@ -513,6 +670,122 @@ export default function AddAccountingModal({
                 })}
               </div>
             </div>
+
+            {/* Sage OAuth & Token Status (§5 & §10) */}
+            {isSage && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 p-4 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-500/20 pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <LinkIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      Sage OAuth2 Tarayıcı Yetkilendirmesi
+                    </h3>
+                    <p className="mt-0.5 text-[0.6875rem] text-slate-500 dark:text-slate-400">
+                      Tarayıcı yönlendirmesiyle Sage hesabınızda KroptOS oturumunu açıp yetki verin.
+                    </p>
+                  </div>
+                  {editingIntegration?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleStartOAuth}
+                      disabled={isStartingOAuth}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-xs"
+                    >
+                      <ArrowPathIcon className={`h-4 w-4 ${isStartingOAuth ? 'animate-spin' : ''}`} />
+                      Sage ile Bağlan / Yetkilendir
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 italic">
+                      Entegrasyonu kaydettikten sonra bağlanabilirsiniz.
+                    </span>
+                  )}
+                </div>
+
+                {editingIntegration?.lastVerifiedAt && (
+                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
+                    <span>
+                      Son Token / Doğrulama Zamanı:{' '}
+                      <strong>{new Date(editingIntegration.lastVerifiedAt).toLocaleString('tr-TR')}</strong>
+                    </span>
+                  </div>
+                )}
+
+                {/* Configuration Discovery Helpers (§6) */}
+                {editingIntegration?.id && (
+                  <div className="pt-2 border-t border-emerald-500/20 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Sage Yapılandırma Keşfi (Hesap Planı ve Vergiler)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleDiscoverConfig}
+                        disabled={isDiscovering}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline"
+                      >
+                        <ArrowPathIcon className={`h-3.5 w-3.5 ${isDiscovering ? 'animate-spin' : ''}`} />
+                        Yapılandırmayı Çek
+                      </button>
+                    </div>
+
+                    {discoveredBusinesses.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-slate-500">Mevcut İşletmeler:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {discoveredBusinesses.map((b: any) => (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => handleCredentialChange('businessId', b.id)}
+                              className="rounded-lg bg-emerald-100 dark:bg-emerald-900/40 px-2 py-1 text-[11px] font-medium text-emerald-800 dark:text-emerald-200 hover:bg-emerald-200"
+                            >
+                              {b.name || b.displayed_as} ({b.id})
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {discoveredAccounts.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-slate-500">Gelir Hesapları (Ledger Accounts):</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {discoveredAccounts.map((a: any) => (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => handleCredentialChange('defaultLedgerAccountId', a.id)}
+                              className="rounded-lg bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200"
+                            >
+                              {a.displayed_as || a.name} ({a.id})
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {discoveredTaxRates.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-slate-500">Vergi Oranları (Tax Rates):</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {discoveredTaxRates.map((tr: any) => (
+                            <button
+                              key={tr.id}
+                              type="button"
+                              onClick={() => handleCredentialChange('defaultTaxRateId', tr.id)}
+                              className="rounded-lg bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200"
+                            >
+                              {tr.displayed_as || tr.name} ({tr.percentage}%)
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer Actions */}

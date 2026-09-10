@@ -4282,7 +4282,7 @@
   "accounting": {
     "page": {
       "title": "Muhasebe & Ön Muhasebe",
-      "subtitle": "Paraşüt, KolayBi' ve BizimHesap ön muhasebe entegrasyonları, fatura taslakları, tahsilat ve cari/ürün eşlemeleri"
+      "subtitle": "Paraşüt, KolayBi', BizimHesap, Dynamics 365 BC ve Sage Business Cloud Accounting entegrasyonları, fatura taslakları ve cari/ürün eşlemeleri"
     },
     "actions": {
       "addIntegration": "Yeni Entegrasyon Ekle",
@@ -4295,7 +4295,10 @@
       "delete": "Sil",
       "refresh": "Yenile",
       "viewPayload": "Ham Yanıtı Gör",
-      "viewInProvider": "BizimHesap'ta Görüntüle",
+      "viewInProvider": "Sağlayıcıda Görüntüle",
+      "connectSage": "Sage ile Bağlan",
+      "reauthorize": "Yeniden Bağlan",
+      "reauthRequired": "Yeniden yetkilendirme gerekli. Lütfen Sage oturumunuzu yenilemek için yeniden bağlanın.",
       "cancelLocally": "Yerel İptal",
       "confirmCancelLocally": "Yerel Olarak İptal Et",
       "attachExternal": "Harici Belge Bağla",
@@ -4324,19 +4327,19 @@
     },
     "banner": {
       "mockReadyTitle": "MOCK_READY Entegrasyon",
-      "mockReadyDesc": "Canlı muhasebe API erişimi güvenli şekilde simüle edilmektedir (Paraşüt / KolayBi' / BizimHesap). TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
+      "mockReadyDesc": "Canlı muhasebe API erişimi güvenli şekilde simüle edilmektedir (Paraşüt / KolayBi' / BizimHesap / Sage). TEST ve PRODUCTION modları canlı kimlik bilgileri onaylanana kadar korumalıdır ve ağ isteği yapmaz."
     },
     "modals": {
       "createTitle": "Yeni Muhasebe Entegrasyonu",
       "editTitle": "Muhasebe Entegrasyonunu Düzenle",
-      "subtitle": "Muhasebe sağlayıcısı (Paraşüt / KolayBi' / BizimHesap) API kimlik ve firma bilgilerini girin"
+      "subtitle": "Muhasebe sağlayıcısı API kimlik ve firma bilgilerini girin"
     },
     "fields": {
       "provider": "Muhasebe Sağlayıcısı",
       "selectProvider": "Sağlayıcı Seçiniz",
       "name": "Entegrasyon Adı",
       "environment": "Çalışma Ortamı",
-      "lastVerified": "Son Doğrulama"
+      "lastVerified": "Son Doğrulama / Token Yenileme"
     },
     "env": {
       "mock": "MOCK (Geliştirme / Simülasyon)",
@@ -4357,7 +4360,7 @@
     },
     "empty": {
       "title": "Henüz Yapılandırılmış Muhasebe Entegrasyonu Yok",
-      "subtitle": "Paraşüt, KolayBi', BizimHesap, SAP veya Dynamics 365 Business Central hesabınızı bağlayarak satış faturalarınızı yönetmeye başlayın."
+      "subtitle": "Paraşüt, KolayBi', BizimHesap, SAP, Dynamics 365 Business Central veya Sage Business Cloud Accounting hesabınızı bağlayarak satış faturalarınızı yönetmeye başlayın."
     },
     "documents": {
       "colType": "Belge Tipi",

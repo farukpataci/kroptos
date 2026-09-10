@@ -130,4 +130,148 @@ describe('AccountingService', () => {
       }),
     );
   });
+
+  describe('OAuth2 Flow Security (§5 & §5.2)', () => {
+    it('startOAuth generates cryptographic nonce and builds URL', async () => {
+      const mockConnector = {
+        buildAuthorizationUrl: jest.fn().mockReturnValue('https://sageone.com/oauth2?state=mockstate'),
+      };
+      mockConnectorFactory.create.mockReturnValue(mockConnector);
+
+      mockPrisma.accountingIntegration.findFirst.mockResolvedValue({
+        id: 'acc-sage-1',
+        agencyId: 'agency-1',
+        provider: 'SAGE-ACCOUNTING',
+        environment: 'MOCK',
+        credentials: 'enc-{"businessId":"biz-1"}',
+      });
+
+      const res = await service.startOAuth(
+        'acc-sage-1',
+        { agencyId: 'agency-1' },
+        'http://localhost:3000/callback',
+        { id: 'user-1' },
+      );
+
+      expect(res.authorizationUrl).toBe('https://sageone.com/oauth2?state=mockstate');
+      expect(mockConnector.buildAuthorizationUrl).toHaveBeenCalledWith(
+        expect.objectContaining({
+          state: expect.any(String),
+          redirectUri: 'http://localhost:3000/callback',
+        }),
+      );
+    });
+
+    it('handleOAuthCallback: nonce tek kullanımlıktır; ikinci kullanımda işlem yapılmaz (§5.2)', async () => {
+      const mockConnector = {
+        buildAuthorizationUrl: jest.fn().mockImplementation(({ state }) => `https://auth.sage.com?state=${state}`),
+        exchangeAuthorizationCode: jest.fn().mockResolvedValue({
+          accessToken: 'new_acc_tok',
+          refreshToken: 'new_ref_tok',
+          expiresIn: 300,
+        }),
+      };
+      mockConnectorFactory.create.mockReturnValue(mockConnector);
+
+      mockPrisma.accountingIntegration.findFirst.mockResolvedValue({
+        id: 'acc-sage-1',
+        agencyId: 'agency-1',
+        provider: 'SAGE-ACCOUNTING',
+        environment: 'MOCK',
+        credentials: 'enc-{"businessId":"biz-1"}',
+      });
+      mockPrisma.accountingIntegration.findUnique.mockResolvedValue({
+        id: 'acc-sage-1',
+        agencyId: 'agency-1',
+        provider: 'SAGE-ACCOUNTING',
+        environment: 'MOCK',
+        credentials: 'enc-{"businessId":"biz-1"}',
+      });
+
+      // 1. Start OAuth
+      const startRes = await service.startOAuth('acc-sage-1', { agencyId: 'agency-1' });
+      const stateNonce = new URL(startRes.authorizationUrl).searchParams.get('state')!;
+      expect(stateNonce).toBeDefined();
+
+      // 2. First callback execution -> Success
+      const callback1 = await service.handleOAuthCallback('auth_code_123', stateNonce);
+      expect(callback1.success).toBe(true);
+      expect(mockConnector.exchangeAuthorizationCode).toHaveBeenCalledTimes(1);
+
+      // 3. Second callback with SAME nonce -> Rejected immediately, no code exchange
+      const callback2 = await service.handleOAuthCallback('auth_code_123', stateNonce);
+      expect(callback2.success).toBe(false);
+      expect(callback2.message.toLowerCase()).toContain('geçersiz veya süresi dolmuş');
+      // exchangeAuthorizationCode was NOT called again
+      expect(mockConnector.exchangeAuthorizationCode).toHaveBeenCalledTimes(1);
+    });
+
+    it('Bilinmeyen veya süresi dolmuş state -> nötr hata döner, entegrasyon varlığı sızmaz (§5.2 rule 5)', async () => {
+      const res = await service.handleOAuthCallback('fake_code', 'non_existent_nonce');
+      expect(res.success).toBe(false);
+      expect(res.message).toBe('Yetkilendirme oturumu geçersiz veya süresi dolmuş.');
+      expect(mockPrisma.accountingIntegration.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('code, state ve tokenlar logda ve audit kaydında AÇIK YAZILMAZ (§5.2 rule 6 & 7)', async () => {
+      const mockConnector = {
+        buildAuthorizationUrl: jest.fn().mockImplementation(({ state }) => `https://auth.sage.com?state=${state}`),
+        exchangeAuthorizationCode: jest.fn().mockResolvedValue({
+          accessToken: 'super_secret_access_token',
+          refreshToken: 'super_secret_refresh_token',
+          expiresIn: 300,
+        }),
+      };
+      mockConnectorFactory.create.mockReturnValue(mockConnector);
+
+      mockPrisma.accountingIntegration.findFirst.mockResolvedValue({
+        id: 'acc-sage-1',
+        agencyId: 'agency-1',
+        provider: 'SAGE-ACCOUNTING',
+        environment: 'MOCK',
+        credentials: 'enc-{"businessId":"biz-1"}',
+      });
+      mockPrisma.accountingIntegration.findUnique.mockResolvedValue({
+        id: 'acc-sage-1',
+        agencyId: 'agency-1',
+        provider: 'SAGE-ACCOUNTING',
+        environment: 'MOCK',
+        credentials: 'enc-{"businessId":"biz-1"}',
+      });
+
+      const startRes = await service.startOAuth('acc-sage-1', { agencyId: 'agency-1' });
+      const nonce = new URL(startRes.authorizationUrl).searchParams.get('state')!;
+
+      const cbResult = await service.handleOAuthCallback('raw_auth_code', nonce);
+      expect(cbResult.success).toBe(true);
+
+      const auditCalls = mockAuditLogService.createLog.mock.calls;
+      const oauthAudit = auditCalls.find((c: any[]) => c[0].action === 'OAUTH_AUTHORIZE_SUCCESS');
+
+      expect(oauthAudit).toBeDefined();
+      const auditPayloadStr = JSON.stringify(oauthAudit[0]);
+      expect(auditPayloadStr).not.toContain('super_secret_access_token');
+      expect(auditPayloadStr).not.toContain('super_secret_refresh_token');
+      expect(auditPayloadStr).not.toContain('raw_auth_code');
+    });
+
+    it('§4.2 Canlı tutma işi (keep-alive) mock ortamda ağ isteği yapmaz', async () => {
+      mockPrisma.accountingIntegration.findMany.mockResolvedValue([
+        {
+          id: 'acc-sage-mock',
+          provider: 'SAGE-ACCOUNTING',
+          status: 'connected',
+          environment: 'MOCK',
+          credentials: 'enc-{"businessId":"biz-1"}',
+        },
+      ]);
+
+      const result = await service.runKeepAliveJob();
+      expect(result.checked).toBe(1);
+      expect(result.refreshed).toBe(0);
+      expect(result.failed).toBe(0);
+      // No connector testConnection made for MOCK
+      expect(mockConnectorFactory.create).not.toHaveBeenCalled();
+    });
+  });
 });

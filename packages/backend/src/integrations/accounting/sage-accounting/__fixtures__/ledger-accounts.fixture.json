@@ -1,0 +1,32 @@
+{
+  "$total": 2,
+  "$page": 1,
+  "$next": null,
+  "$itemsPerPage": 20,
+  "$items": [
+    {
+      "id": "4000",
+      "displayed_as": "Sales Type A (4000)",
+      "$path": "/ledger_accounts/4000",
+      "name": "Sales Type A",
+      "nominal_code": 4000,
+      "ledger_account_type": {
+        "id": "SALES",
+        "displayed_as": "Sales"
+      },
+      "included_in_chart": true
+    },
+    {
+      "id": "4900",
+      "displayed_as": "Other Income (4900)",
+      "$path": "/ledger_accounts/4900",
+      "name": "Other Income",
+      "nominal_code": 4900,
+      "ledger_account_type": {
+        "id": "OTHER_INCOME",
+        "displayed_as": "Other Income"
+      },
+      "included_in_chart": true
+    }
+  ]
+}
