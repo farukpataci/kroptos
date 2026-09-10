@@ -1,0 +1,35 @@
+[
+  {
+    "InvoiceID": "inv-001-uuid",
+    "Type": "ACCREC",
+    "InvoiceNumber": "INV-0001",
+    "Reference": "ORDER-1001",
+    "Date": "2026-09-08",
+    "DueDate": "2026-09-22",
+    "Status": "AUTHORISED",
+    "LineAmountTypes": "Exclusive",
+    "SubTotal": 100.0,
+    "TotalTax": 20.0,
+    "Total": 120.0,
+    "AmountDue": 120.0,
+    "AmountPaid": 0.0,
+    "CurrencyCode": "GBP",
+    "Contact": {
+      "ContactID": "c001-contact-uuid-1",
+      "Name": "Global Corp Ltd"
+    },
+    "LineItems": [
+      {
+        "LineItemID": "line-001-uuid",
+        "ItemCode": "SKU-DEMO-01",
+        "Description": "Demo Product 1",
+        "Quantity": 1.0,
+        "UnitAmount": 100.0,
+        "TaxType": "OUTPUT2",
+        "TaxAmount": 20.0,
+        "LineAmount": 100.0,
+        "AccountCode": "200"
+      }
+    ]
+  }
+]

@@ -562,7 +562,7 @@
   "accounting": {
     "page": {
       "title": "Accounting Integrations",
-      "subtitle": "Paraşüt, KolayBi', BizimHesap, Dynamics 365 BC, and Sage Business Cloud Accounting integrations, invoice drafts, payment records, and contact/product mappings"
+      "subtitle": "Paraşüt, KolayBi', BizimHesap, Dynamics 365 BC, Sage, and Xero Accounting integrations, invoice drafts, payment records, and contact/product mappings"
     },
     "actions": {
       "addIntegration": "Add New Integration",
@@ -577,8 +577,9 @@
       "viewPayload": "View Raw Payload",
       "viewInProvider": "View in Provider",
       "connectSage": "Connect with Sage",
+      "connectXero": "Connect with Xero",
       "reauthorize": "Reconnect",
-      "reauthRequired": "Re-authorization required. Sage session has expired, please reconnect.",
+      "reauthRequired": "Re-authorization required. Session has expired, please reconnect.",
       "cancelLocally": "Local Cancel",
       "confirmCancelLocally": "Cancel Document Locally",
       "attachExternal": "Attach External Document",
@@ -607,7 +608,7 @@
     },
     "banner": {
       "mockReadyTitle": "MOCK_READY Integration",
-      "mockReadyDesc": "Live accounting API access is simulated in a safe mock environment (Paraşüt / KolayBi' / BizimHesap / Sage). TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
+      "mockReadyDesc": "Live accounting API access is simulated in a safe mock environment (Paraşüt / KolayBi' / BizimHesap / Sage / Xero). TEST and PRODUCTION modes are locked until live credentials and endpoints are verified."
     },
     "modals": {
       "createTitle": "New Accounting Integration",
@@ -640,7 +641,7 @@
     },
     "empty": {
       "title": "No Accounting Integrations Configured",
-      "subtitle": "Connect your Paraşüt, KolayBi', or BizimHesap account to start managing your invoices and payments."
+      "subtitle": "Connect your Paraşüt, KolayBi', BizimHesap, Dynamics 365, Sage, or Xero account to start managing your invoices and payments."
     },
     "documents": {
       "colType": "Document Type",

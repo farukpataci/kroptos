@@ -600,7 +600,7 @@ export class AccountingService {
   async runKeepAliveJob(): Promise<{ checked: number; refreshed: number; failed: number }> {
     const activeIntegrations = await this.prisma.accountingIntegration.findMany({
       where: {
-        provider: { in: ['SAGE-ACCOUNTING', 'SAGE_ACCOUNTING'] },
+        provider: { in: ['SAGE-ACCOUNTING', 'SAGE_ACCOUNTING', 'XERO'] },
         status: 'connected',
         deletedAt: null,
       },

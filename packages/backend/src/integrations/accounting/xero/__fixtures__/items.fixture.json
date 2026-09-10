@@ -1,0 +1,28 @@
+[
+  {
+    "ItemID": "item-001-uuid",
+    "Code": "SKU-DEMO-01",
+    "Name": "Demo Product 1",
+    "IsSold": true,
+    "IsPurchased": false,
+    "Description": "High quality demo product",
+    "SalesDetails": {
+      "UnitPrice": 100.0,
+      "AccountCode": "200",
+      "TaxType": "OUTPUT2"
+    }
+  },
+  {
+    "ItemID": "item-002-uuid",
+    "Code": "SKU-DEMO-02",
+    "Name": "Demo Product 2",
+    "IsSold": true,
+    "IsPurchased": false,
+    "Description": "Secondary demo product",
+    "SalesDetails": {
+      "UnitPrice": 49.9999,
+      "AccountCode": "200",
+      "TaxType": "OUTPUT2"
+    }
+  }
+]

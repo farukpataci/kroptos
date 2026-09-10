@@ -24,6 +24,7 @@ import '../../integrations/accounting/bizimhesap';
 import '../../integrations/accounting/sap-s4hana-cloud';
 import '../../integrations/accounting/ms-dynamics-bc-online';
 import '../../integrations/accounting/sage-accounting';
+import '../../integrations/accounting/xero';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

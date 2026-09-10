@@ -1,0 +1,25 @@
+[
+  {
+    "ContactID": "c001-contact-uuid-1",
+    "ContactNumber": "CUST-001",
+    "AccountNumber": "ACC-001",
+    "ContactStatus": "ACTIVE",
+    "Name": "Global Corp Ltd",
+    "FirstName": "Jane",
+    "LastName": "Doe",
+    "EmailAddress": "jane@globalcorp.com",
+    "TaxNumber": "GB123456789",
+    "IsCustomer": true,
+    "IsSupplier": false
+  },
+  {
+    "ContactID": "c002-contact-uuid-2",
+    "ContactNumber": "CUST-002",
+    "ContactStatus": "ACTIVE",
+    "Name": "Acme Industries",
+    "EmailAddress": "info@acme.com",
+    "TaxNumber": "GB987654321",
+    "IsCustomer": true,
+    "IsSupplier": false
+  }
+]

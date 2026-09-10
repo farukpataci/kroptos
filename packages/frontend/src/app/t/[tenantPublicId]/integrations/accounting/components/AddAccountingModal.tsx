@@ -196,6 +196,30 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'XERO',
+    displayName: 'Xero',
+    country: 'NZ',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'VERIFIED',
+    credentialSchema: {
+      provider: 'xero',
+      name: 'Xero',
+      fields: [
+        { key: 'tenantId', label: 'Xero Kuruluş / Tenant Kimliği (Tenant ID)', type: 'text', required: true, description: 'Xero üzerindeki bağlı organizasyon / tenant kimliği.' },
+        { key: 'tenantName', label: 'Kuruluş Adı (Organization Name)', type: 'text', required: false, description: 'Bağlı organizasyonun adı.' },
+        { key: 'accountCode', label: 'Satış Gelir Hesabı Kodu (Account Code)', type: 'text', required: false, description: 'Xero genel muhasebe satış hesabı kodu (varsayılan: 200).' },
+        { key: 'bankAccountCode', label: 'Banka Hesabı Kodu (Bank Account Code)', type: 'text', required: false, description: 'Ödemeler için Xero banka hesap kodu (varsayılan: 090).' },
+        { key: 'clientId', label: 'Özel Client ID (İsteğe Bağlı)', type: 'text', required: false, description: 'Özel Xero Developer uygulamanız varsa girin; boşsa merkezi KroptOS uygulaması kullanılır.' },
+        { key: 'clientSecret', label: 'Özel Client Secret (İsteğe Bağlı)', type: 'password', required: false, secret: true, description: 'Özel uygulamanızın istemci gizli anahtarı.' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
@@ -235,6 +259,12 @@ const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string;
     badge: 'Sage Business Cloud',
     iconLetter: 'S',
   },
+  XERO: {
+    bg: 'bg-sky-500/10 text-sky-600 dark:bg-sky-500/20 dark:text-sky-400 border border-sky-500/20',
+    text: 'text-sky-600 dark:text-sky-400',
+    badge: 'Xero Accounting',
+    iconLetter: 'X',
+  },
 };
 
 interface AddAccountingModalProps {
@@ -268,6 +298,7 @@ export default function AddAccountingModal({
     )
       return 'MS_DYNAMICS_BC_ONLINE';
     if (lower.includes('sage')) return 'SAGE-ACCOUNTING';
+    if (lower.includes('xero')) return 'XERO';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
     if (lower.includes('parasut')) return 'PARASUT';
@@ -322,10 +353,11 @@ export default function AddAccountingModal({
 
   const isDynamics = resolvedProviderKey === 'MS_DYNAMICS_BC_ONLINE';
   const isSage = resolvedProviderKey === 'SAGE-ACCOUNTING';
+  const isXero = resolvedProviderKey === 'XERO';
   const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
 
   const isReauthRequired =
-    isSage &&
+    (isSage || isXero) &&
     ((editingIntegration?.status as string) === 'failed' ||
       (editingIntegration?.status === 'error' &&
         (editingIntegration?.lastErrorMessage?.includes('REAUTHORIZATION_REQUIRED') ||
@@ -348,9 +380,10 @@ export default function AddAccountingModal({
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
+        const popupName = isXero ? 'XeroOAuth' : 'SageOAuth';
         const popup = window.open(
           res.authorizationUrl,
-          'SageOAuth',
+          popupName,
           `width=${width},height=${height},top=${top},left=${left}`,
         );
 
@@ -358,7 +391,7 @@ export default function AddAccountingModal({
           if (event.data?.type === 'ACCOUNTING_OAUTH_RESULT') {
             window.removeEventListener('message', onMessage);
             if (event.data.success) {
-              toast.success('Sage OAuth yetkilendirmesi başarıyla tamamlandı!');
+              toast.success(`${isXero ? 'Xero' : 'Sage'} OAuth yetkilendirmesi başarıyla tamamlandı!`);
               onSuccess();
             } else {
               toast.error(event.data.message || 'Yetkilendirme başarısız oldu.');
@@ -618,7 +651,22 @@ export default function AddAccountingModal({
               </div>
             )}
 
-            {/* Re-authorization required warning banner (§4.1 & §5.4) */}
+            {/* Xero Accounting API Guidance */}
+            {isXero && (
+              <div className="rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/30 p-4 text-xs text-sky-900 dark:text-sky-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-sky-950 dark:text-sky-100">
+                  <InformationCircleIcon className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                  Xero Accounting API Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-sky-800 dark:text-sky-300">
+                  <li><strong>Küresel Model:</strong> Xero uluslararası bulut muhasebe standardını kullanır (Yeni Zelanda, İngiltere, ABD, Avustralya). Türk e-Fatura / GİB zorunluluğu yoktur.</li>
+                  <li><strong>3 Adımlı Mutabakat Akışı:</strong> Faturalar önce DRAFT olarak oluşturulur, sunucu hesaplamalı toplamlar mutabakat toleransı (≤ 0.05) içinde doğrulanıp AUTHORISED statüsüne alınır.</li>
+                  <li><strong>Dönen Refresh Token:</strong> Token rotasyonu 30 dakikalık tolerans (grace period) ile çalışır, 60 günlük hareketsizlik sonlanmasına karşı haftalık otomatik canlı tutma tetiklenir.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Re-authorization required warning banner */}
             {isReauthRequired && (
               <div className="rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
                 <div className="flex items-start gap-2.5">
@@ -626,7 +674,7 @@ export default function AddAccountingModal({
                   <div>
                     <span className="font-bold text-rose-950 dark:text-rose-100">Yeniden Yetkilendirme Gerekli:</span>
                     <p className="mt-0.5 text-rose-800 dark:text-rose-300">
-                      Sage refresh token süresi dolmuş veya geçersiz kalmıştır. Lütfen &quot;Sage ile Yeniden Bağlan&quot; düğmesine basarak oturumunuzu tazeleyin.
+                      {isXero ? 'Xero' : 'Sage'} refresh token süresi dolmuş veya geçersiz kalmıştır. Lütfen &quot;{isXero ? 'Xero' : 'Sage'} ile Yeniden Bağlan&quot; düğmesine basarak oturumunuzu tazeleyin.
                     </p>
                   </div>
                 </div>
@@ -637,7 +685,7 @@ export default function AddAccountingModal({
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-rose-700 transition-all shadow-sm"
                 >
                   <ArrowPathIcon className={`h-4 w-4 ${isStartingOAuth ? 'animate-spin' : ''}`} />
-                  Sage ile Yeniden Bağlan
+                  {isXero ? 'Xero' : 'Sage'} ile Yeniden Bağlan
                 </button>
               </div>
             )}
@@ -966,6 +1014,102 @@ export default function AddAccountingModal({
                               className="rounded-lg bg-slate-100 dark:bg-slate-800 px-2 py-1 text-[11px] font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200"
                             >
                               {tr.displayed_as || tr.name} ({tr.percentage}%)
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Xero OAuth & Organization Selection */}
+            {isXero && (
+              <div className="rounded-2xl border border-sky-500/20 bg-sky-50/40 dark:bg-sky-950/20 p-4 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-sky-500/20 pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <LinkIcon className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                      Xero OAuth2 Tarayıcı Yetkilendirmesi
+                    </h3>
+                    <p className="mt-0.5 text-[0.6875rem] text-slate-500 dark:text-slate-400">
+                      Tarayıcı yönlendirmesiyle Xero hesabınızda KroptOS oturumunu açıp yetki verin ve bağlı organizasyonu seçin.
+                    </p>
+                  </div>
+                  {editingIntegration?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleStartOAuth}
+                      disabled={isStartingOAuth}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-sky-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-sky-700 transition-all shadow-xs"
+                    >
+                      <ArrowPathIcon className={`h-4 w-4 ${isStartingOAuth ? 'animate-spin' : ''}`} />
+                      Xero ile Bağlan / Yetkilendir
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 italic">
+                      Entegrasyonu kaydettikten sonra bağlanabilirsiniz.
+                    </span>
+                  )}
+                </div>
+
+                {editingIntegration?.lastVerifiedAt && (
+                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    <ShieldCheckIcon className="h-4 w-4 text-sky-600" />
+                    <span>
+                      Son Token / Doğrulama Zamanı:{' '}
+                      <strong>{new Date(editingIntegration.lastVerifiedAt).toLocaleString('tr-TR')}</strong>
+                    </span>
+                  </div>
+                )}
+
+                {/* Organization Discovery */}
+                {editingIntegration?.id && (
+                  <div className="pt-2 border-t border-sky-500/20 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                        Xero Organizasyonları / Kuruluşları
+                      </span>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setIsDiscovering(true);
+                          try {
+                            const data = await api.get<any[]>(
+                              `/accounting/integrations/${editingIntegration.id}/businesses`,
+                            );
+                            setDiscoveredBusinesses(data || []);
+                            toast.success('Xero organizasyon listesi güncellendi.');
+                          } catch (err: any) {
+                            toast.error(err.message || 'Organizasyon listesi alınamadı.');
+                          } finally {
+                            setIsDiscovering(false);
+                          }
+                        }}
+                        disabled={isDiscovering}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 dark:text-sky-400 hover:underline"
+                      >
+                        <ArrowPathIcon className={`h-3.5 w-3.5 ${isDiscovering ? 'animate-spin' : ''}`} />
+                        Organizasyonları Çek
+                      </button>
+                    </div>
+
+                    {discoveredBusinesses.length > 0 && (
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-slate-500">Mevcut Organizasyonlar:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {discoveredBusinesses.map((b: any) => (
+                            <button
+                              key={b.id}
+                              type="button"
+                              onClick={() => {
+                                handleCredentialChange('tenantId', b.id);
+                                if (b.name) handleCredentialChange('tenantName', b.name);
+                              }}
+                              className="rounded-lg bg-sky-100 dark:bg-sky-900/40 px-2 py-1 text-[11px] font-medium text-sky-800 dark:text-sky-200 hover:bg-sky-200"
+                            >
+                              {b.name} ({b.id})
                             </button>
                           ))}
                         </div>

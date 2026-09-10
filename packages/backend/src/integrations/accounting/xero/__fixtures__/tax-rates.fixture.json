@@ -1,0 +1,23 @@
+[
+  {
+    "Name": "20% (VAT on Income)",
+    "TaxType": "OUTPUT2",
+    "ReportTaxType": "OUTPUT",
+    "Status": "ACTIVE",
+    "DisplayTaxRate": 20.0
+  },
+  {
+    "Name": "Zero Rated",
+    "TaxType": "ZERORATED",
+    "ReportTaxType": "OUTPUT",
+    "Status": "ACTIVE",
+    "DisplayTaxRate": 0.0
+  },
+  {
+    "Name": "Exempt Income",
+    "TaxType": "EXEMPTINCOME",
+    "ReportTaxType": "OUTPUT",
+    "Status": "ACTIVE",
+    "DisplayTaxRate": 0.0
+  }
+]

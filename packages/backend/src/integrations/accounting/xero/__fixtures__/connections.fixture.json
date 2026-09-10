@@ -1,0 +1,18 @@
+[
+  {
+    "id": "conn-001-uuid",
+    "tenantId": "xero-tenant-uuid-demo-org",
+    "tenantType": "ORGANISATION",
+    "tenantName": "KroptOS Demo Global Ltd",
+    "createdDateUtc": "2026-01-01T00:00:00Z",
+    "updatedDateUtc": "2026-09-01T00:00:00Z"
+  },
+  {
+    "id": "conn-002-uuid",
+    "tenantId": "xero-tenant-uuid-secondary-org",
+    "tenantType": "ORGANISATION",
+    "tenantName": "KroptOS Subsidiary UK",
+    "createdDateUtc": "2026-03-15T00:00:00Z",
+    "updatedDateUtc": "2026-09-01T00:00:00Z"
+  }
+]

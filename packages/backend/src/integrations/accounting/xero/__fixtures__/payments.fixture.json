@@ -1,0 +1,17 @@
+[
+  {
+    "PaymentID": "pay-001-uuid",
+    "Invoice": {
+      "InvoiceID": "inv-001-uuid",
+      "InvoiceNumber": "INV-0001"
+    },
+    "Account": {
+      "Code": "090"
+    },
+    "Date": "2026-09-09",
+    "Amount": 120.0,
+    "CurrencyRate": 1.0,
+    "Reference": "PAY-REF-1001",
+    "Status": "AUTHORISED"
+  }
+]
