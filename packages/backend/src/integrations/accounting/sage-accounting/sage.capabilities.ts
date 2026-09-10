@@ -14,4 +14,9 @@ export const SAGE_CAPABILITIES: AccountingCapabilities = {
   cancelInvoice: CapabilityStatus.DOCUMENTATION_REQUIRED, // §4.7 - Void vs Credit note lifecycle unverified
   findInvoiceByReference: CapabilityStatus.DOCUMENTATION_REQUIRED, // §4.5 - search parameter is fuzzy/not strict filter
   multiCompany: CapabilityStatus.MOCK_ONLY,
+  refreshSemantics: {
+    rotatesOnRefresh: true,
+    previousTokenGraceMs: 0,
+    inactivityLimitDays: 31,
+  },
 };

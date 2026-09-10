@@ -16,4 +16,9 @@ export const PARASUT_CAPABILITIES: AccountingCapabilities = {
   eInvoiceOfficialSend: CapabilityStatus.NOT_SUPPORTED,
   cancelInvoice: CapabilityStatus.DOCUMENTATION_REQUIRED,
   findInvoiceByReference: CapabilityStatus.MOCK_ONLY,
+  refreshSemantics: {
+    rotatesOnRefresh: false,
+    previousTokenGraceMs: 0,
+    inactivityLimitDays: null,
+  },
 };

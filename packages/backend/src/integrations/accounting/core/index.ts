@@ -8,3 +8,4 @@ export * from './AccountingConnector';
 export * from './AccountingConnectorFactory';
 export * from './AccountingProviderRegistry';
 export * from './AccountingAmount.util';
+export * from './AccountingTokenSemantics';

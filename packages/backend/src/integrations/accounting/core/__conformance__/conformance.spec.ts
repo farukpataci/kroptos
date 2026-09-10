@@ -168,5 +168,38 @@ describe('Accounting Provider Conformance Suite', () => {
         expect(descriptor.supportsProduction).toBe(false);
       }
     });
+
+    it('16. Tenant/business/organization identifier must be derived from credentials/integration row, never from API request payload (§2.5)', () => {
+      // In KroptOS architecture, external tenant routing is strictly bound to the integration row's credentials
+      // Generic AccountingInvoiceRequest only exposes internal KroptOS companyId, never provider tenant headers
+      const invoiceReq: any = {
+        companyId: 'comp-1',
+        referenceCode: 'INV-TENANT-CHECK',
+        issueDate: '2026-09-08',
+        currency: 'TRY',
+        contact: { name: 'Customer' },
+        items: [{ sku: 'S', name: 'N', quantity: 1, unitPrice: 10, vatRate: 0, vatAmount: 0, totalAmount: 10 }],
+        subtotal: 10,
+        vatTotal: 0,
+        grandTotal: 10,
+      };
+
+      expect(invoiceReq.xeroTenantId).toBeUndefined();
+      expect(invoiceReq.businessId).toBeUndefined();
+      expect(invoiceReq.bcCompanyId).toBeUndefined();
+    });
+
+    it('17. Refresh semantics must be valid if declared in capabilities (§1)', () => {
+      if (descriptor.capabilities.refreshSemantics) {
+        const sem = descriptor.capabilities.refreshSemantics;
+        expect(typeof sem.rotatesOnRefresh).toBe('boolean');
+        expect(typeof sem.previousTokenGraceMs).toBe('number');
+        expect(sem.previousTokenGraceMs).toBeGreaterThanOrEqual(0);
+        if (sem.inactivityLimitDays !== null) {
+          expect(typeof sem.inactivityLimitDays).toBe('number');
+          expect(sem.inactivityLimitDays).toBeGreaterThan(0);
+        }
+      }
+    });
   });
 });

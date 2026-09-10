@@ -115,96 +115,89 @@ export class SageAuth {
     }
 
     const { clientId, clientSecret } = this.resolveAppCredentials(credentials);
-    const tokenUrl = 'https://oauth.accounting.sage.com/token';
+    const cacheKey = `sage_token_${integrationId}`;
 
-    const bodyParams = new URLSearchParams({
-      grant_type: 'refresh_token',
-      refresh_token: currentRefreshToken,
-      client_id: clientId,
-      client_secret: clientSecret,
-    });
+    const token = await this.tokenStore.rotateTokenWithPolicy({
+      key: cacheKey,
+      provider: 'sage-accounting',
+      semantics: {
+        rotatesOnRefresh: true,
+        previousTokenGraceMs: 0,
+        inactivityLimitDays: 31,
+      },
+      currentRefreshToken,
+      refreshCall: async (refreshToken) => {
+        const tokenUrl = 'https://oauth.accounting.sage.com/token';
+        const bodyParams = new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: refreshToken,
+          client_id: clientId,
+          client_secret: clientSecret,
+        });
 
-    let res: Response;
-    try {
-      res = await fetchFn(tokenUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: bodyParams.toString(),
-      });
-    } catch (err: any) {
-      throw new AccountingAuthError(
-        'sage-accounting',
-        `Sage token sunucusuna bağlanılamadı: ${err.message}`,
-      );
-    }
-
-    if (!res.ok) {
-      let errBody: any;
-      try {
-        errBody = await res.json();
-      } catch {
-        errBody = null;
-      }
-
-      const errCode = errBody?.error || '';
-      const errDesc = errBody?.error_description || `HTTP ${res.status}`;
-
-      if (
-        errCode === 'invalid_grant' ||
-        res.status === 400 ||
-        res.status === 401
-      ) {
-        // Rotated token already expired or invalidated -> Do NOT retry (§4.1 rule 4)
-        if (this.markReauthRequiredFn) {
-          await this.markReauthRequiredFn(
-            integrationId,
-            `invalid_grant: ${errDesc}`,
+        let res: Response;
+        try {
+          res = await fetchFn(tokenUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: bodyParams.toString(),
+          });
+        } catch (err: any) {
+          throw new AccountingAuthError(
+            'sage-accounting',
+            `Sage token sunucusuna bağlanılamadı: ${err.message}`,
           );
         }
-        throw new AccountingAuthError(
-          'sage-accounting',
-          `REAUTHORIZATION_REQUIRED: Sage oturumu veya refresh token geçersiz kaldı (${errDesc}). Lütfen yeniden bağlanın.`,
-        );
-      }
 
-      throw new AccountingAuthError(
-        'sage-accounting',
-        `Sage token yenileme hatası (${res.status}): ${errDesc}`,
-      );
-    }
+        if (!res.ok) {
+          let errBody: any;
+          try {
+            errBody = await res.json();
+          } catch {
+            errBody = null;
+          }
+          const errCode = errBody?.error || '';
+          const errDesc = errBody?.error_description || `HTTP ${res.status}`;
 
-    const data = (await res.json()) as SageOAuthTokenResponse;
-    const expiresInSec = typeof data.expires_in === 'number' ? data.expires_in : 300;
-    const expiresAt = Date.now() + expiresInSec * 1000;
+          if (
+            errCode === 'invalid_grant' ||
+            res.status === 400 ||
+            res.status === 401
+          ) {
+            const errorObj: any = new Error(errDesc);
+            errorObj.error = 'invalid_grant';
+            errorObj.status = res.status;
+            throw errorObj;
+          }
 
-    const newTokens = {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresAt,
-    };
+          throw new AccountingAuthError(
+            'sage-accounting',
+            `Sage token yenileme hatası (${res.status}): ${errDesc}`,
+          );
+        }
 
-    // Step 2 & 3: Mandatory order: Save to DB BEFORE returning and before any API call is made.
-    if (this.saveTokensFn) {
-      try {
-        await this.saveTokensFn(integrationId, newTokens);
-      } catch (saveErr: any) {
-        // If DB write fails, abort! Do NOT return token or proceed with dead token.
-        this.tokenStore.deleteToken(`sage_token_${integrationId}`);
-        throw new AccountingAuthError(
-          'sage-accounting',
-          `Kritik hata: Yeni Sage refresh token veri tabanına kaydedilemedi (${saveErr.message}). İstek iptal edildi.`,
-        );
-      }
-    }
+        const data = (await res.json()) as SageOAuthTokenResponse;
+        return {
+          accessToken: data.access_token,
+          refreshToken: data.refresh_token,
+          expiresIn: typeof data.expires_in === 'number' ? data.expires_in : 300,
+        };
+      },
+      saveTokensFn: this.saveTokensFn
+        ? (tokens) => this.saveTokensFn!(integrationId, tokens)
+        : undefined,
+      markReauthRequiredFn: this.markReauthRequiredFn
+        ? (reason) => this.markReauthRequiredFn!(integrationId, reason)
+        : undefined,
+    });
 
-    // Update credential object reference if applicable
-    credentials.accessToken = newTokens.accessToken;
-    credentials.refreshToken = newTokens.refreshToken;
-    credentials.expiresAt = newTokens.expiresAt;
+    credentials.accessToken = token.accessToken;
+    credentials.refreshToken = token.refreshToken;
+    credentials.expiresAt = token.expiresAt;
 
-    return newTokens;
+    return token;
   }
 
   /**

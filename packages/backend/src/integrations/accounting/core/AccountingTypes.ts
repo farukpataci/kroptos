@@ -62,6 +62,7 @@ export interface AccountingCapabilities {
   findInvoiceByReference: CapabilityStatus;
   multiCompany?: CapabilityStatus;
   eDocument?: CapabilityStatus;
+  refreshSemantics?: import('./AccountingTokenSemantics').RefreshSemantics;
 }
 
 export interface AccountingInvoiceItem {
