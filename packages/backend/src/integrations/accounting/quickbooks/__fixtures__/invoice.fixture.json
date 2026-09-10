@@ -1,0 +1,63 @@
+{
+  "Invoice": {
+    "Id": "130",
+    "SyncToken": "0",
+    "MetaData": {
+      "CreateTime": "2026-09-10T15:20:00-07:00",
+      "LastUpdatedTime": "2026-09-10T15:20:00-07:00"
+    },
+    "DocNumber": "ORD-2026-001",
+    "TxnDate": "2026-09-10",
+    "CurrencyRef": {
+      "value": "USD",
+      "name": "United States Dollar"
+    },
+    "Line": [
+      {
+        "Id": "1",
+        "LineNum": 1,
+        "Description": "Wireless Mouse",
+        "Amount": 100.0,
+        "DetailType": "SalesItemLineDetail",
+        "SalesItemLineDetail": {
+          "ItemRef": {
+            "value": "1",
+            "name": "Services"
+          },
+          "UnitPrice": 100.0,
+          "Qty": 1,
+          "TaxCodeRef": {
+            "value": "TAX"
+          }
+        }
+      }
+    ],
+    "TxnTaxDetail": {
+      "TotalTax": 8.25,
+      "TaxLine": [
+        {
+          "Amount": 8.25,
+          "DetailType": "TaxLineDetail",
+          "TaxLineDetail": {
+            "TaxRateRef": {
+              "value": "1"
+            },
+            "PercentBased": true,
+            "TaxPercent": 8.25,
+            "NetAmountTaxable": 100.0
+          }
+        }
+      ]
+    },
+    "CustomerRef": {
+      "value": "1",
+      "name": "Amy's Bird Sanctuary"
+    },
+    "CustomerMemo": {
+      "value": "KroptOS Ref: ORD-2026-001"
+    },
+    "PrivateNote": "KroptOS Ref: ORD-2026-001 | DocNumber: ORD-2026-001",
+    "TotalAmt": 108.25,
+    "Balance": 108.25
+  }
+}

@@ -9,6 +9,7 @@ import '../../sap-s4hana-cloud';
 import '../../ms-dynamics-bc-online';
 import '../../sage-accounting';
 import '../../xero';
+import '../../quickbooks';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();

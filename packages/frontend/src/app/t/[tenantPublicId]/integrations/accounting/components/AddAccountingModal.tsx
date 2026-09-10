@@ -220,6 +220,29 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'QUICKBOOKS',
+    displayName: 'QuickBooks Online',
+    country: 'US',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'VERIFIED',
+    credentialSchema: {
+      provider: 'quickbooks',
+      name: 'QuickBooks Online',
+      fields: [
+        { key: 'realmId', label: 'Company / Realm ID', type: 'text', required: true, description: 'QuickBooks Online şirket/kuruluş Realm ID kimliği.' },
+        { key: 'taxCodeRef', label: 'Vergi Kodu Referansı (Tax Code Ref - İsteğe Bağlı)', type: 'text', required: false, description: 'AST devre dışı şirketler için varsayılan vergi kodu (örn: TAX veya 1).' },
+        { key: 'depositAccountId', label: 'Mevduat Hesap Kodu (Deposit Account ID - İsteğe Bağlı)', type: 'text', required: false, description: 'Ödeme tahsilatları için varsayılan mevduat hesabı ID.' },
+        { key: 'clientId', label: 'Özel Client ID (İsteğe Bağlı)', type: 'text', required: false, description: 'Özel Intuit Developer uygulamanız varsa girin; boşsa merkezi KroptOS uygulaması kullanılır.' },
+        { key: 'clientSecret', label: 'Özel Client Secret (İsteğe Bağlı)', type: 'password', required: false, secret: true, description: 'Özel uygulamanızın istemci gizli anahtarı.' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
@@ -265,6 +288,12 @@ const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string;
     badge: 'Xero Accounting',
     iconLetter: 'X',
   },
+  QUICKBOOKS: {
+    bg: 'bg-emerald-700/10 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-600/20',
+    text: 'text-emerald-700 dark:text-emerald-400',
+    badge: 'QuickBooks Online',
+    iconLetter: 'Q',
+  },
 };
 
 interface AddAccountingModalProps {
@@ -299,6 +328,7 @@ export default function AddAccountingModal({
       return 'MS_DYNAMICS_BC_ONLINE';
     if (lower.includes('sage')) return 'SAGE-ACCOUNTING';
     if (lower.includes('xero')) return 'XERO';
+    if (lower.includes('quickbooks') || lower.includes('qbo')) return 'QUICKBOOKS';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
     if (lower.includes('parasut')) return 'PARASUT';
@@ -375,10 +405,11 @@ export default function AddAccountingModal({
   const isDynamics = resolvedProviderKey === 'MS_DYNAMICS_BC_ONLINE';
   const isSage = resolvedProviderKey === 'SAGE-ACCOUNTING';
   const isXero = resolvedProviderKey === 'XERO';
+  const isQuickBooks = resolvedProviderKey === 'QUICKBOOKS';
   const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
 
   const isReauthRequired =
-    (isSage || isXero) &&
+    (isSage || isXero || isQuickBooks) &&
     ((editingIntegration?.status as string) === 'failed' ||
       (editingIntegration?.status === 'error' &&
         (editingIntegration?.lastErrorMessage?.includes('REAUTHORIZATION_REQUIRED') ||
@@ -401,7 +432,8 @@ export default function AddAccountingModal({
         const height = 700;
         const left = window.screen.width / 2 - width / 2;
         const top = window.screen.height / 2 - height / 2;
-        const popupName = isXero ? 'XeroOAuth' : 'SageOAuth';
+        const popupName = isXero ? 'XeroOAuth' : isQuickBooks ? 'QBOOAuth' : 'SageOAuth';
+        const providerName = isXero ? 'Xero' : isQuickBooks ? 'QuickBooks Online' : 'Sage';
         const popup = window.open(
           res.authorizationUrl,
           popupName,
@@ -412,7 +444,7 @@ export default function AddAccountingModal({
           if (event.data?.type === 'ACCOUNTING_OAUTH_RESULT') {
             window.removeEventListener('message', onMessage);
             if (event.data.success) {
-              toast.success(`${isXero ? 'Xero' : 'Sage'} OAuth yetkilendirmesi başarıyla tamamlandı!`);
+              toast.success(`${providerName} OAuth yetkilendirmesi başarıyla tamamlandı!`);
               onSuccess();
             } else {
               toast.error(event.data.message || 'Yetkilendirme başarısız oldu.');
@@ -687,6 +719,22 @@ export default function AddAccountingModal({
               </div>
             )}
 
+            {/* QuickBooks Online Guidance */}
+            {isQuickBooks && (
+              <div className="rounded-xl border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 p-4 text-xs text-emerald-900 dark:text-emerald-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-emerald-950 dark:text-emerald-100">
+                  <InformationCircleIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                  QuickBooks Online Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-emerald-800 dark:text-emerald-300">
+                  <li><strong>Küresel Model:</strong> QuickBooks Online ABD, İngiltere, Kanada ve Avustralya standartlarını kullanır. Türk e-Fatura zorunluluğu yoktur.</li>
+                  <li><strong>Otomatik Satış Vergisi (AST):</strong> QBO Şirket Tercihlerinde AST etkinse vergi tutarı QBO motorunca hesaplanır; KroptOS sadece net satır tutarlarını iletir ve mutabakat için doğrular.</li>
+                  <li><strong>Belge No ve İptal (Void):</strong> DocNumber 21 karakterle sınırlandırılır; iptal işlemleri doğrudan silme yerine QBO standartlarına uygun Void (tutar sıfırlama) akışıyla yürütülür.</li>
+                  <li><strong>Yıkıcı Token Politikası:</strong> Intuit güvenlik modeli gereği geçersiz veya süresi dolmuş refresh token kullanımı oturumu sonlandırır. Yeniden yetkilendirme gerekirse doğrudan &quot;QuickBooks ile Yeniden Bağlan&quot; adımını kullanın.</li>
+                </ul>
+              </div>
+            )}
+
             {/* Re-authorization required warning banner */}
             {isReauthRequired && (
               <div className="rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
@@ -695,7 +743,7 @@ export default function AddAccountingModal({
                   <div>
                     <span className="font-bold text-rose-950 dark:text-rose-100">Yeniden Yetkilendirme Gerekli:</span>
                     <p className="mt-0.5 text-rose-800 dark:text-rose-300">
-                      {isXero ? 'Xero' : 'Sage'} refresh token süresi dolmuş veya geçersiz kalmıştır. Lütfen &quot;{isXero ? 'Xero' : 'Sage'} ile Yeniden Bağlan&quot; düğmesine basarak oturumunuzu tazeleyin.
+                      {isXero ? 'Xero' : isQuickBooks ? 'QuickBooks Online' : 'Sage'} refresh token süresi dolmuş veya geçersiz kalmıştır. Lütfen &quot;{isXero ? 'Xero' : isQuickBooks ? 'QuickBooks' : 'Sage'} ile Yeniden Bağlan&quot; düğmesine basarak oturumunuzu tazeleyin.
                     </p>
                   </div>
                 </div>
@@ -706,7 +754,7 @@ export default function AddAccountingModal({
                   className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-rose-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-rose-700 transition-all shadow-sm"
                 >
                   <ArrowPathIcon className={`h-4 w-4 ${isStartingOAuth ? 'animate-spin' : ''}`} />
-                  {isXero ? 'Xero' : 'Sage'} ile Yeniden Bağlan
+                  {isXero ? 'Xero' : isQuickBooks ? 'QuickBooks' : 'Sage'} ile Yeniden Bağlan
                 </button>
               </div>
             )}
@@ -1136,6 +1184,48 @@ export default function AddAccountingModal({
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* QuickBooks OAuth */}
+            {isQuickBooks && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 p-4 space-y-3.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-500/20 pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      <LinkIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                      QuickBooks Online OAuth2 Tarayıcı Yetkilendirmesi
+                    </h3>
+                    <p className="mt-0.5 text-[0.6875rem] text-slate-500 dark:text-slate-400">
+                      Tarayıcı yönlendirmesiyle Intuit App Center üzerinde KroptOS yetkisini onaylayıp Realm ID bağlantısını tamamlayın.
+                    </p>
+                  </div>
+                  {editingIntegration?.id ? (
+                    <button
+                      type="button"
+                      onClick={handleStartOAuth}
+                      disabled={isStartingOAuth}
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition-all shadow-xs"
+                    >
+                      <ArrowPathIcon className={`h-4 w-4 ${isStartingOAuth ? 'animate-spin' : ''}`} />
+                      QuickBooks ile Bağlan / Yetkilendir
+                    </button>
+                  ) : (
+                    <span className="text-[11px] text-slate-400 italic">
+                      Entegrasyonu kaydettikten sonra bağlanabilirsiniz.
+                    </span>
+                  )}
+                </div>
+
+                {editingIntegration?.lastVerifiedAt && (
+                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+                    <ShieldCheckIcon className="h-4 w-4 text-emerald-600" />
+                    <span>
+                      Son Token / Doğrulama Zamanı:{' '}
+                      <strong>{new Date(editingIntegration.lastVerifiedAt).toLocaleString('tr-TR')}</strong>
+                    </span>
                   </div>
                 )}
               </div>

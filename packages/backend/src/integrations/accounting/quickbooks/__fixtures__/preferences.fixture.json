@@ -1,0 +1,17 @@
+{
+  "Preferences": {
+    "TaxPrefs": {
+      "UsingSalesTax": true,
+      "PartnerTaxEnabled": true
+    },
+    "CurrencyPrefs": {
+      "MultiCurrencyEnabled": false,
+      "HomeCurrency": {
+        "value": "USD",
+        "name": "United States Dollar"
+      }
+    },
+    "Id": "1",
+    "SyncToken": "1"
+  }
+}

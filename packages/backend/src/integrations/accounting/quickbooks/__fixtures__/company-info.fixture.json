@@ -1,0 +1,34 @@
+{
+  "CompanyInfo": {
+    "CompanyName": "Sandbox Company_US_1",
+    "LegalName": "Sandbox Company_US_1 Inc.",
+    "CompanyAddr": {
+      "Id": "1",
+      "Line1": "2700 Coast Ave",
+      "City": "Mountain View",
+      "CountrySubDivisionCode": "CA",
+      "PostalCode": "94043",
+      "Country": "US"
+    },
+    "CustomerCommunicationAddr": {
+      "Id": "1",
+      "Line1": "2700 Coast Ave",
+      "City": "Mountain View",
+      "CountrySubDivisionCode": "CA",
+      "PostalCode": "94043",
+      "Country": "US"
+    },
+    "LegalAddr": {
+      "Id": "1",
+      "Line1": "2700 Coast Ave",
+      "City": "Mountain View",
+      "CountrySubDivisionCode": "CA",
+      "PostalCode": "94043",
+      "Country": "US"
+    },
+    "FiscalYearStartMonth": "January",
+    "Country": "US",
+    "Id": "1",
+    "SyncToken": "0"
+  }
+}

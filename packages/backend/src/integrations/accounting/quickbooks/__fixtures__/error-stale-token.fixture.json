@@ -1,0 +1,14 @@
+{
+  "Fault": {
+    "Error": [
+      {
+        "Message": "Stale Object Error",
+        "Detail": "Stale Object Error : You and another user were working on this at the same time. The other user finished first, so your work was not saved to avoid overwriting their work.",
+        "code": "5010",
+        "element": ""
+      }
+    ],
+    "type": "ValidationFault"
+  },
+  "time": "2026-09-10T15:25:00.000-07:00"
+}
