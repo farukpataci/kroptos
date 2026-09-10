@@ -23,6 +23,7 @@ export interface AccountingProviderField {
   required: boolean;
   secret?: boolean;
   description?: string;
+  defaultValue?: string;
 }
 
 export interface AccountingProviderInfo {

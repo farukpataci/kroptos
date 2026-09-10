@@ -122,12 +122,50 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
       provider: 'MS_DYNAMICS_BC_ONLINE',
       name: 'Microsoft Dynamics 365 Business Central Online',
       fields: [
-        { key: 'aadTenantId', label: 'Microsoft Entra Directory (Tenant) ID', type: 'text', required: true },
-        { key: 'environmentName', label: 'Ortam Adı (production / sandbox)', type: 'text', required: true },
-        { key: 'companyId', label: 'Business Central Company ID (GUID)', type: 'text', required: true },
-        { key: 'userDomain', label: 'Kullanıcı Alan Adı (Opsiyonel)', type: 'text', required: false },
-        { key: 'clientId', label: 'Özel Client ID (Opsiyonel)', type: 'text', required: false },
-        { key: 'clientSecret', label: 'Özel Client Secret (Opsiyonel)', type: 'password', required: false, secret: true },
+        {
+          key: 'aadTenantId',
+          label: 'Microsoft Entra (Azure AD) Directory / Tenant ID',
+          type: 'text',
+          required: true,
+          description: 'Azure Portal / Entra ID genel bakışında yer alan Directory (tenant) ID GUID değeri.',
+        },
+        {
+          key: 'environmentName',
+          label: 'Ortam Adı (Environment Name)',
+          type: 'text',
+          required: true,
+          defaultValue: 'production',
+          description: 'Business Central ortamı: "production", "sandbox" veya şirketinizin özel ortam adı.',
+        },
+        {
+          key: 'companyId',
+          label: 'Business Central Şirket Kimliği (Company ID GUID)',
+          type: 'text',
+          required: true,
+          description: 'İşlemlerin yürütüleceği Business Central Company GUID değeri.',
+        },
+        {
+          key: 'userDomain',
+          label: 'Kullanıcı Alan Adı (User Domain - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          description: 'Doğrudan kiracı URL yapısı kullanılıyorsa (ör. firmaniz.com), aksi halde boş bırakınız.',
+        },
+        {
+          key: 'clientId',
+          label: 'Özel İstemci Kimliği (Client ID - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          description: 'Kendi özel Entra ID uygulamanızı kullanmak isterseniz giriniz; boşsa merkezi KroptOS çok kiracılı uygulaması kullanılır.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Özel İstemci Gizli Anahtarı (Client Secret - İsteğe Bağlı)',
+          type: 'password',
+          required: false,
+          secret: true,
+          description: 'Özel Entra ID uygulamanızın istemci parolası (Client Secret).',
+        },
       ],
     },
     capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', multiCompany: 'SUPPORTED' },
@@ -218,24 +256,25 @@ export default function AddAccountingModal({
   const toast = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const resolveProviderId = (id?: string | null) => {
+  const resolveProviderId = (id?: string | null): string => {
     if (!id) return 'PARASUT';
-    const lower = id.toLowerCase();
-    if (lower === 'sap' || lower === 'sap_s4hana_cloud') return 'SAP_S4HANA_CLOUD';
+    const lower = id.toLowerCase().replace(/[-_]/g, '');
+    if (lower.includes('sap')) return 'SAP_S4HANA_CLOUD';
     if (
-      lower === 'ms_dynamics' ||
-      lower === 'ms_dynamics_bc_online' ||
-      lower === 'ms-dynamics-bc-online' ||
-      lower === 'dynamics'
+      lower.includes('dynamics') ||
+      lower.includes('msdynamics') ||
+      lower === 'msbc' ||
+      lower.includes('businesscentral')
     )
       return 'MS_DYNAMICS_BC_ONLINE';
-    if (
-      lower === 'sage' ||
-      lower === 'sage_accounting' ||
-      lower === 'sage-accounting'
-    )
-      return 'SAGE-ACCOUNTING';
-    const match = DEFAULT_PROVIDERS.find((p) => p.id.toLowerCase() === lower);
+    if (lower.includes('sage')) return 'SAGE-ACCOUNTING';
+    if (lower.includes('kolaybi')) return 'KOLAYBI';
+    if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
+    if (lower.includes('parasut')) return 'PARASUT';
+
+    const match = DEFAULT_PROVIDERS.find(
+      (p) => p.id.toLowerCase().replace(/[-_]/g, '') === lower,
+    );
     return match ? match.id : id.toUpperCase();
   };
 
@@ -249,7 +288,9 @@ export default function AddAccountingModal({
   const [name, setName] = useState<string>(() => {
     if (editingIntegration?.name) return editingIntegration.name;
     const pid = initialProviderId ? resolveProviderId(initialProviderId) : 'PARASUT';
-    const match = DEFAULT_PROVIDERS.find((p) => p.id === pid);
+    const match =
+      DEFAULT_PROVIDERS.find((p) => resolveProviderId(p.id) === pid) ||
+      DEFAULT_PROVIDERS.find((p) => p.id === pid);
     return match ? `${match.displayName} Muhasebe` : 'Muhasebe Entegrasyonu';
   });
 
@@ -266,13 +307,29 @@ export default function AddAccountingModal({
   const [discoveredAccounts, setDiscoveredAccounts] = useState<any[]>([]);
   const [discoveredTaxRates, setDiscoveredTaxRates] = useState<any[]>([]);
 
-  const isSage = (editingIntegration?.provider || selectedProviderId).toUpperCase().includes('SAGE');
+  // Dynamics 365 discovery state
+  const [isDiscoveringDynamics, setIsDiscoveringDynamics] = useState(false);
+  const [discoveredDynamicsCompanies, setDiscoveredDynamicsCompanies] = useState<any[]>([]);
+
+  const resolvedProviderKey = resolveProviderId(selectedProviderId);
+
+  const activeProvider =
+    providers.find((p) => resolveProviderId(p.id) === resolvedProviderKey) ||
+    DEFAULT_PROVIDERS.find((p) => resolveProviderId(p.id) === resolvedProviderKey) ||
+    providers.find((p) => p.id.toUpperCase() === selectedProviderId.toUpperCase()) ||
+    DEFAULT_PROVIDERS.find((p) => p.id.toUpperCase() === selectedProviderId.toUpperCase()) ||
+    DEFAULT_PROVIDERS[0];
+
+  const isDynamics = resolvedProviderKey === 'MS_DYNAMICS_BC_ONLINE';
+  const isSage = resolvedProviderKey === 'SAGE-ACCOUNTING';
+  const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
+
   const isReauthRequired =
     isSage &&
     ((editingIntegration?.status as string) === 'failed' ||
-      editingIntegration?.status === 'error' &&
+      (editingIntegration?.status === 'error' &&
         (editingIntegration?.lastErrorMessage?.includes('REAUTHORIZATION_REQUIRED') ||
-          editingIntegration?.lastErrorMessage?.includes('invalid_grant')));
+          editingIntegration?.lastErrorMessage?.includes('invalid_grant'))));
 
   const handleStartOAuth = async () => {
     if (!editingIntegration?.id) {
@@ -340,6 +397,23 @@ export default function AddAccountingModal({
     }
   };
 
+  const handleDiscoverDynamicsCompanies = async () => {
+    if (!editingIntegration?.id) {
+      toast.error('Şirket listesini çekmek için önce entegrasyonu kaydedin.');
+      return;
+    }
+    setIsDiscoveringDynamics(true);
+    try {
+      const companies = await api.get<any[]>(`/accounting/integrations/${editingIntegration.id}/businesses`);
+      setDiscoveredDynamicsCompanies(companies || []);
+      toast.success('Business Central şirketleri listelendi.');
+    } catch (err: any) {
+      toast.error(err.message || 'Şirket listesi alınamadı.');
+    } finally {
+      setIsDiscoveringDynamics(false);
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -347,7 +421,22 @@ export default function AddAccountingModal({
       .get<AccountingProviderInfo[]>('/accounting/providers')
       .then((res) => {
         if (Array.isArray(res) && res.length > 0) {
-          setProviders(res);
+          setProviders(() => {
+            const merged = [...DEFAULT_PROVIDERS];
+            for (const item of res) {
+              const idx = merged.findIndex(
+                (m) =>
+                  m.id.toUpperCase() === item.id.toUpperCase() ||
+                  resolveProviderId(m.id) === resolveProviderId(item.id),
+              );
+              if (idx >= 0) {
+                merged[idx] = { ...merged[idx], ...item };
+              } else {
+                merged.push(item);
+              }
+            }
+            return merged;
+          });
         }
       })
       .catch(() => {
@@ -356,46 +445,56 @@ export default function AddAccountingModal({
   }, [isOpen]);
 
   useEffect(() => {
+    if (!isOpen) return;
+
     if (editingIntegration) {
       const pid = resolveProviderId(editingIntegration.provider);
       setSelectedProviderId(pid);
       setName(editingIntegration.name);
       setEnvironment(editingIntegration.environment);
       setCredentials((editingIntegration.credentials as Record<string, string>) || {});
-    }
-  }, [editingIntegration]);
-
-  useEffect(() => {
-    if (initialProviderId && !editingIntegration && isOpen) {
+    } else if (initialProviderId) {
       const pid = resolveProviderId(initialProviderId);
       setSelectedProviderId(pid);
-      const match = providers.find((p) => p.id === pid) || DEFAULT_PROVIDERS.find((p) => p.id === pid);
+      const match =
+        DEFAULT_PROVIDERS.find((p) => resolveProviderId(p.id) === pid) ||
+        providers.find((p) => resolveProviderId(p.id) === pid);
       if (match) {
         setName(`${match.displayName} Muhasebe`);
+        const defaultCreds: Record<string, string> = {};
+        match.credentialSchema?.fields?.forEach((f) => {
+          if (f.defaultValue) defaultCreds[f.key] = f.defaultValue;
+        });
+        setCredentials(defaultCreds);
       }
     }
-  }, [initialProviderId, editingIntegration, providers, isOpen]);
-
-  const activeProvider =
-    providers.find((p) => p.id.toUpperCase() === selectedProviderId.toUpperCase()) ||
-    providers[0] ||
-    DEFAULT_PROVIDERS[0];
+  }, [isOpen, initialProviderId, editingIntegration]);
 
   const isProviderLocked = Boolean(initialProviderId || editingIntegration);
 
-  const theme = PROVIDER_THEMES[activeProvider.id.toUpperCase()] || {
-    bg: 'bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/20',
-    text: 'text-blue-600 dark:text-blue-400',
-    badge: activeProvider.displayName,
-    iconLetter: activeProvider.displayName.charAt(0),
-  };
+  const theme =
+    PROVIDER_THEMES[resolvedProviderKey] ||
+    PROVIDER_THEMES[activeProvider.id.toUpperCase()] ||
+    PROVIDER_THEMES[selectedProviderId.toUpperCase()] || {
+      bg: 'bg-cyan-600/10 text-cyan-600 dark:bg-cyan-500/20 dark:text-cyan-400 border border-cyan-500/20',
+      text: 'text-cyan-600 dark:text-cyan-400',
+      badge: activeProvider.displayName,
+      iconLetter: activeProvider.displayName.charAt(0),
+    };
 
   const handleProviderChange = (newId: string) => {
-    setSelectedProviderId(newId);
-    const p = providers.find((pr) => pr.id === newId);
+    const pid = resolveProviderId(newId);
+    setSelectedProviderId(pid);
+    const p =
+      DEFAULT_PROVIDERS.find((pr) => resolveProviderId(pr.id) === pid) ||
+      providers.find((pr) => resolveProviderId(pr.id) === pid);
     if (p && !editingIntegration) {
       setName(`${p.displayName} Muhasebe`);
-      setCredentials({});
+      const defaultCreds: Record<string, string> = {};
+      p.credentialSchema?.fields?.forEach((f) => {
+        if (f.defaultValue) defaultCreds[f.key] = f.defaultValue;
+      });
+      setCredentials(defaultCreds);
     }
   };
 
@@ -417,7 +516,7 @@ export default function AddAccountingModal({
         toast.success(t('messages.updateSuccess'));
       } else {
         await api.post('/accounting/integrations', {
-          provider: selectedProviderId,
+          provider: resolvedProviderKey,
           name,
           environment,
           credentials,
@@ -632,14 +731,53 @@ export default function AddAccountingModal({
 
             {/* Dynamic Provider Credential Fields */}
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 p-4 space-y-4">
-              <div className="border-b border-slate-200 dark:border-slate-800 pb-3">
-                <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                  {activeProvider.displayName} Bağlantı Bilgileri
-                </h3>
-                <p className="mt-0.5 text-[0.6875rem] text-slate-500 dark:text-slate-400">
-                  {activeProvider.displayName} panelinizden temin ettiğiniz API erişim bilgilerini girin.
-                </p>
+              <div className="border-b border-slate-200 dark:border-slate-800 pb-3 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                    {activeProvider.displayName} Bağlantı Bilgileri
+                  </h3>
+                  <p className="mt-0.5 text-[0.6875rem] text-slate-500 dark:text-slate-400">
+                    {activeProvider.displayName} panelinizden temin ettiğiniz API erişim bilgilerini girin.
+                  </p>
+                </div>
+
+                {isDynamics && editingIntegration?.id && (
+                  <button
+                    type="button"
+                    onClick={handleDiscoverDynamicsCompanies}
+                    disabled={isDiscoveringDynamics}
+                    className="inline-flex items-center gap-1.5 rounded-xl border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-950/40 px-3 py-1.5 text-xs font-semibold text-cyan-700 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-900/60 transition-all"
+                  >
+                    <ArrowPathIcon className={`h-3.5 w-3.5 ${isDiscoveringDynamics ? 'animate-spin' : ''}`} />
+                    Şirketleri Çek
+                  </button>
+                )}
               </div>
+
+              {/* Dynamics Discovered Companies Chips */}
+              {isDynamics && discoveredDynamicsCompanies.length > 0 && (
+                <div className="rounded-xl border border-cyan-500/20 bg-cyan-50/50 dark:bg-cyan-950/20 p-3 space-y-2">
+                  <span className="text-[11px] font-bold text-cyan-900 dark:text-cyan-200">
+                    Kayıtlı Business Central Şirketleri (Seçmek için tıklayın):
+                  </span>
+                  <div className="flex flex-wrap gap-2">
+                    {discoveredDynamicsCompanies.map((comp) => (
+                      <button
+                        key={comp.id}
+                        type="button"
+                        onClick={() => handleCredentialChange('companyId', comp.id)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-all ${
+                          credentials.companyId === comp.id
+                            ? 'bg-cyan-600 text-white shadow-sm ring-2 ring-cyan-400'
+                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-cyan-500 hover:text-cyan-600'
+                        }`}
+                      >
+                        {comp.name} ({comp.id.substring(0, 8)}...)
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {activeProvider.credentialSchema?.fields?.map((field) => {
@@ -650,9 +788,55 @@ export default function AddAccountingModal({
                       key={field.key}
                       className={field.type === 'url' ? 'col-span-full space-y-1' : 'space-y-1'}
                     >
-                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
-                        {field.label} {field.required ? <span className="text-red-500">*</span> : ''}
-                      </label>
+                      <div className="flex items-center justify-between">
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300">
+                          {field.label} {field.required ? <span className="text-red-500">*</span> : ''}
+                        </label>
+
+                        {/* Dynamics quick helpers */}
+                        {isDynamics && field.key === 'environmentName' && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleCredentialChange('environmentName', 'production')}
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium transition-all ${
+                                currentValue === 'production'
+                                  ? 'bg-cyan-600 text-white'
+                                  : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20'
+                              }`}
+                            >
+                              production
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleCredentialChange('environmentName', 'sandbox')}
+                              className={`text-[10px] px-1.5 py-0.5 rounded font-medium transition-all ${
+                                currentValue === 'sandbox'
+                                  ? 'bg-cyan-600 text-white'
+                                  : 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-500/20'
+                              }`}
+                            >
+                              sandbox
+                            </button>
+                          </div>
+                        )}
+
+                        {isDynamics && field.key === 'companyId' && !currentValue && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleCredentialChange(
+                                'companyId',
+                                'b0a00001-0000-0000-0000-000000000001',
+                              )
+                            }
+                            className="text-[10px] text-cyan-600 dark:text-cyan-400 hover:underline px-1.5 py-0.5 rounded bg-cyan-500/10 font-medium"
+                          >
+                            Örnek GUID Doldur
+                          </button>
+                        )}
+                      </div>
+
                       <input
                         type={field.type === 'password' ? 'password' : 'text'}
                         required={field.required && !editingIntegration}
@@ -665,6 +849,11 @@ export default function AddAccountingModal({
                             : field.description || field.label
                         }
                       />
+                      {field.description && (
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                          {field.description}
+                        </p>
+                      )}
                     </div>
                   );
                 })}

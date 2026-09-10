@@ -111,4 +111,13 @@ export class BusinessCentralConnector extends AccountingConnector {
   async getCompanies(): Promise<BusinessCentralCompany[]> {
     return this.client.getCompanies();
   }
+
+  async listBusinesses(): Promise<Array<{ id: string; name: string; country?: string }>> {
+    const companies = await this.getCompanies();
+    return companies.map((c) => ({
+      id: c.id,
+      name: c.displayName || c.name,
+      country: 'TR',
+    }));
+  }
 }
