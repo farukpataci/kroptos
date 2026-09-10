@@ -96,11 +96,19 @@ export function IntegrationTree() {
       theme = 'text-green-600 bg-green-50 border-green-100 hover:border-green-300';
     } else if (provider === 'woocommerce') {
       theme = 'text-purple-600 bg-purple-50 border-purple-100 hover:border-purple-300';
+    } else if (provider === 'ideasoft') {
+      theme = 'text-cyan-600 bg-cyan-50 border-cyan-100 hover:border-cyan-300';
     } else if (provider === 'logo') {
       theme = 'text-sky-600 bg-sky-50 border-sky-100 hover:border-sky-300';
     } else if (provider === 'n11') {
       theme = 'text-red-600 bg-red-50 border-red-100 hover:border-red-300';
     } else if (provider === 'ciceksepeti') {
+      theme = 'text-blue-600 bg-blue-50 border-blue-100 hover:border-blue-300';
+    } else if (provider === 'ticimax') {
+      theme = 'text-sky-600 bg-sky-50 border-sky-100 hover:border-sky-300';
+    } else if (provider === 'tsoft') {
+      theme = 'text-indigo-600 bg-indigo-50 border-indigo-100 hover:border-indigo-300';
+    } else if (provider === 'opencart') {
       theme = 'text-blue-600 bg-blue-50 border-blue-100 hover:border-blue-300';
     }
 

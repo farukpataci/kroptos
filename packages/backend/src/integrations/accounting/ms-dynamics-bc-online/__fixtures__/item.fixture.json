@@ -1,0 +1,9 @@
+{
+  "id": "i0b00001-1111-2222-3333-444455556666",
+  "number": "ITEM-001",
+  "displayName": "Deneme Urun 1",
+  "type": "Inventory",
+  "itemCategoryCode": "ELECTRONICS",
+  "unitPrice": 500.0,
+  "baseUnitOfMeasureCode": "PCS"
+}

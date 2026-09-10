@@ -1,0 +1,34 @@
+{
+  "id": "e0b00001-1111-2222-3333-444455556666",
+  "number": "103001",
+  "externalDocumentNumber": "ORD-1001",
+  "invoiceDate": "2026-09-10",
+  "postingDate": "2026-09-10",
+  "dueDate": "2026-09-20",
+  "customerId": "c0a00001-1111-2222-3333-444455556666",
+  "customerNumber": "10000",
+  "customerName": "Test Customer A.S.",
+  "currencyCode": "TRY",
+  "status": "Open",
+  "totalAmountExcludingTax": 1000.0,
+  "totalTaxAmount": 200.0,
+  "totalAmountIncludingTax": 1200.0,
+  "@odata.etag": "W/\"JzQ0OzE2ODkxNDEzNDc4MzEzODcxNzcxOzAxOyc=\"",
+  "salesInvoiceLines": [
+    {
+      "id": "l0b00001-1111-2222-3333-444455556666",
+      "documentId": "e0b00001-1111-2222-3333-444455556666",
+      "sequence": 10000,
+      "lineType": "Item",
+      "itemId": "i0b00001-1111-2222-3333-444455556666",
+      "lineObjectNumber": "ITEM-001",
+      "description": "Deneme Urun 1",
+      "quantity": 2,
+      "unitPrice": 500.0,
+      "amountExcludingTax": 1000.0,
+      "taxPercent": 20.0,
+      "totalTaxAmount": 200.0,
+      "amountIncludingTax": 1200.0
+    }
+  ]
+}

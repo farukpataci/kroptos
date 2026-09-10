@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter, useParams } from 'next/navigation';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
 import { PlusIcon } from '@heroicons/react/24/outline';
@@ -11,10 +12,14 @@ import { IntegrationSettingsDrawer } from './marketplace/components/IntegrationS
 import { IntegrationSetupWizard } from './marketplace/components/IntegrationSetupWizard';
 import CarrierConnectionDrawer from './carrier/components/CarrierConnectionDrawer';
 import { CarrierSetupWizard } from './carrier/components/CarrierSetupWizard';
+import AddAccountingModal from './accounting/components/AddAccountingModal';
 import type { CarrierConnection, CarrierProviderOption } from './carrier/types';
 
 export default function IntegrationsParentPage() {
   const toast = useToast();
+  const router = useRouter();
+  const params = useParams();
+  const tenantPublicId = params?.tenantPublicId as string;
   const [integrations, setIntegrations] = useState<ActiveIntegrationItem[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -28,23 +33,31 @@ export default function IntegrationsParentPage() {
     presetName: string;
   } | null>(null);
 
+  // Accounting Setup & Settings State
+  const [accountingModalProviderId, setAccountingModalProviderId] = useState<string | null>(null);
+  const [editingAccountingItem, setEditingAccountingItem] = useState<any | null>(null);
+
   // Marketplace Drawer / Wizard State
   const [activeDrawerIntegration, setActiveDrawerIntegration] = useState<any>(null);
   const [wizardProvider, setWizardProvider] = useState<CatalogProvider | null>(null);
   const [syncingId, setSyncingId] = useState<string | null>(null);
   const [togglingId, setTogglingId] = useState<string | null>(null);
 
+  const [accountingItems, setAccountingItems] = useState<any[]>([]);
+
   const fetchIntegrations = async () => {
     try {
-      const [marketplaces, carriers, providerOptions] = await Promise.all([
+      const [marketplaces, carriers, providerOptions, accountings] = await Promise.all([
         apiFetch<any[]>('/integrations').catch(() => []),
         apiFetch<CarrierConnection[]>('/carriers').catch(() => []),
         apiFetch<CarrierProviderOption[]>('/carriers/providers').catch(() => []),
+        apiFetch<any[]>('/accounting/integrations').catch(() => []),
       ]);
 
       const rawCarriers = carriers || [];
       setCarrierConnections(rawCarriers);
       setCarrierProviders(providerOptions || []);
+      setAccountingItems(accountings || []);
 
       const carrierItems: ActiveIntegrationItem[] = rawCarriers.map((c) => ({
         id: c.id,
@@ -57,7 +70,18 @@ export default function IntegrationsParentPage() {
         rawCarrier: c,
       }));
 
-      setIntegrations([...(marketplaces || []), ...carrierItems]);
+      const accountingListItems: ActiveIntegrationItem[] = (accountings || []).map((a: any) => ({
+        id: a.id,
+        name: a.name,
+        provider: a.provider,
+        providerType: 'accounting',
+        status: a.status === 'connected' ? 'active' : 'inactive',
+        lastSyncAt: a.lastVerifiedAt ?? undefined,
+        isAccounting: true,
+        rawAccounting: a,
+      }));
+
+      setIntegrations([...(marketplaces || []), ...carrierItems, ...accountingListItems]);
     } catch (err) {
       console.error('Failed to fetch integrations', err);
     }
@@ -68,6 +92,32 @@ export default function IntegrationsParentPage() {
   }, []);
 
   const handleSelectProvider = (provider: CatalogProvider) => {
+    if (provider.category === 'accounting') {
+      const pid = provider.id.toLowerCase();
+      const existing = accountingItems.find((a) => {
+        const p = (a.provider || '').toLowerCase();
+        if (p === pid) return true;
+        if (pid === 'sap' && p === 'sap_s4hana_cloud') return true;
+        if (
+          (pid === 'ms_dynamics' || pid === 'dynamics') &&
+          (p === 'ms_dynamics_bc_online' || p === 'ms-dynamics-bc-online')
+        )
+          return true;
+        return false;
+      });
+      if (existing) {
+        setEditingAccountingItem(existing);
+        setAccountingModalProviderId(existing.provider);
+      } else {
+        let targetProvider = provider.id.toUpperCase();
+        if (pid === 'sap') targetProvider = 'SAP_S4HANA_CLOUD';
+        if (pid === 'ms_dynamics' || pid === 'dynamics') targetProvider = 'MS_DYNAMICS_BC_ONLINE';
+        setAccountingModalProviderId(targetProvider);
+        setEditingAccountingItem(null);
+      }
+      return;
+    }
+
     if (provider.category === 'carrier') {
       const existingCarrier = carrierConnections.find(
         (c) => c.provider.toLowerCase() === provider.id.toLowerCase(),
@@ -130,6 +180,9 @@ export default function IntegrationsParentPage() {
     if (item.isCarrier) {
       setActiveCarrierConnection(item.rawCarrier);
       setIsCarrierDrawerOpen(true);
+    } else if (item.isAccounting) {
+      setEditingAccountingItem(item.rawAccounting);
+      setAccountingModalProviderId(item.rawAccounting.provider);
     } else {
       setActiveDrawerIntegration(item);
     }
@@ -145,6 +198,15 @@ export default function IntegrationsParentPage() {
           toast.success(res.message || 'Kargo bağlantı testi başarılı');
         } else {
           toast.error(res.message || 'Kargo bağlantı testi başarısız');
+        }
+        await fetchIntegrations();
+        window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+      } else if (item?.isAccounting) {
+        const res = await apiFetch<any>(`/accounting/integrations/${id}/test-connection`, { method: 'POST' });
+        if (res.success) {
+          toast.success(res.message || 'Muhasebe bağlantı testi başarılı');
+        } else {
+          toast.error(res.message || 'Muhasebe bağlantı testi başarısız');
         }
         await fetchIntegrations();
         window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
@@ -183,6 +245,8 @@ export default function IntegrationsParentPage() {
             ? `${item.name} kargo bağlantısı aktifleştirildi`
             : `${item.name} kargo bağlantısı pasifleştirildi`,
         );
+      } else if (item.isAccounting) {
+        toast.info(`${item.name} ayarları düzenleme penceresinden güncellenebilir`);
       } else {
         await apiFetch(`/integrations/${item.id}`, {
           method: 'PATCH',
@@ -209,6 +273,8 @@ export default function IntegrationsParentPage() {
     try {
       if (item?.isCarrier) {
         await apiFetch(`/carriers/${id}`, { method: 'DELETE' });
+      } else if (item?.isAccounting) {
+        await apiFetch(`/accounting/integrations/${id}`, { method: 'DELETE' });
       } else {
         await apiFetch(`/integrations/${id}`, { method: 'DELETE' });
       }
@@ -220,7 +286,16 @@ export default function IntegrationsParentPage() {
     }
   };
 
-  const connectedProviderIds = integrations.map((i) => i.provider.toLowerCase());
+  const connectedProviderIds = [
+    ...integrations.map((i) => i.provider.toLowerCase()),
+    ...accountingItems.flatMap((a) => {
+      const p = (a.provider || '').toLowerCase();
+      if (p === 'sap_s4hana_cloud') return [p, 'sap'];
+      if (p === 'ms_dynamics_bc_online' || p === 'ms-dynamics-bc-online')
+        return [p, 'ms_dynamics', 'dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online'];
+      return [p];
+    }),
+  ];
 
   return (
     <div className="flex flex-col h-full animate-fade-in p-6 space-y-6">
@@ -330,6 +405,21 @@ export default function IntegrationsParentPage() {
           }}
         />
       )}
+
+      {/* Accounting Setup & Settings Modal */}
+      <AddAccountingModal
+        isOpen={Boolean(accountingModalProviderId)}
+        onClose={() => {
+          setAccountingModalProviderId(null);
+          setEditingAccountingItem(null);
+        }}
+        onSuccess={() => {
+          fetchIntegrations();
+          window.dispatchEvent(new CustomEvent('refresh-integration-tree'));
+        }}
+        editingIntegration={editingAccountingItem}
+        initialProviderId={accountingModalProviderId || undefined}
+      />
     </div>
   );
 }

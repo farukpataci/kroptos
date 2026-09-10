@@ -22,6 +22,7 @@ import '../../integrations/accounting/parasut';
 import '../../integrations/accounting/kolaybi';
 import '../../integrations/accounting/bizimhesap';
 import '../../integrations/accounting/sap-s4hana-cloud';
+import '../../integrations/accounting/ms-dynamics-bc-online';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

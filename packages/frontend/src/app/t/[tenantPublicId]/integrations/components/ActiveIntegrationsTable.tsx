@@ -26,6 +26,8 @@ export interface ActiveIntegrationItem {
   modeSource?: 'setting' | 'env' | 'default';
   isCarrier?: boolean;
   rawCarrier?: any;
+  isAccounting?: boolean;
+  rawAccounting?: any;
 }
 
 interface ActiveIntegrationsTableProps {

@@ -1,0 +1,12 @@
+{
+  "id": "c0a00001-1111-2222-3333-444455556666",
+  "number": "10000",
+  "displayName": "Test Customer A.S.",
+  "type": "Company",
+  "email": "muhasebe@testcustomer.com",
+  "phoneNumber": "+905551112233",
+  "taxRegistrationNumber": "1234567890",
+  "addressLine1": "Barbaros Bulvari No: 12",
+  "city": "Istanbul",
+  "country": "TR"
+}

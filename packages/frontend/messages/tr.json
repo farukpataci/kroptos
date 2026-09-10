@@ -4357,7 +4357,7 @@
     },
     "empty": {
       "title": "Henüz Yapılandırılmış Muhasebe Entegrasyonu Yok",
-      "subtitle": "Paraşüt, KolayBi' veya BizimHesap hesabınızı bağlayarak satış faturalarınızı ve tahsilatlarınızı yönetmeye başlayın."
+      "subtitle": "Paraşüt, KolayBi', BizimHesap, SAP veya Dynamics 365 Business Central hesabınızı bağlayarak satış faturalarınızı yönetmeye başlayın."
     },
     "documents": {
       "colType": "Belge Tipi",

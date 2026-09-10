@@ -1,0 +1,16 @@
+[
+  {
+    "id": "b0a00001-0000-0000-0000-000000000001",
+    "systemVersion": "22.0.0.0",
+    "name": "CRONUS_TURKEY",
+    "displayName": "CRONUS Türkiye A.Ş.",
+    "businessProfileId": ""
+  },
+  {
+    "id": "b0a00002-0000-0000-0000-000000000002",
+    "systemVersion": "22.0.0.0",
+    "name": "CRONUS_GLOBAL",
+    "displayName": "CRONUS Global Ltd.",
+    "businessProfileId": ""
+  }
+]

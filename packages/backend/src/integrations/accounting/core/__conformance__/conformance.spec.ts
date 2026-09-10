@@ -6,6 +6,7 @@ import '../../parasut';
 import '../../kolaybi';
 import '../../bizimhesap';
 import '../../sap-s4hana-cloud';
+import '../../ms-dynamics-bc-online';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
@@ -149,7 +150,10 @@ describe('Accounting Provider Conformance Suite', () => {
         currency: 'TRY',
         paymentDate: '2026-09-08',
       };
-      if (descriptor.capabilities.payment === 'NOT_SUPPORTED') {
+      if (
+        descriptor.capabilities.payment === 'NOT_SUPPORTED' ||
+        descriptor.capabilities.payment === 'DOCUMENTATION_REQUIRED'
+      ) {
         await expect(connector.recordPayment(payReq)).rejects.toThrow();
       } else {
         const res = await connector.recordPayment(payReq);

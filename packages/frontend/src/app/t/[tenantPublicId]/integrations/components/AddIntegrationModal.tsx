@@ -948,8 +948,9 @@ export function AddIntegrationModal({
   // a connectable provider from one that only exists in this list.
   const [supportedMarketplaces, setSupportedMarketplaces] = useState<Set<string> | null>(null);
   const [supportedCarriers, setSupportedCarriers] = useState<Set<string> | null>(null);
+  const [supportedAccounting, setSupportedAccounting] = useState<Set<string> | null>(null);
 
-  // The backend registry is the authority on which marketplaces & carriers can actually be connected.
+  // The backend registry is the authority on which marketplaces, carriers & accounting providers can actually be connected.
   useEffect(() => {
     if (!isOpen) return;
     let cancelled = false;
@@ -972,6 +973,21 @@ export function AddIntegrationModal({
         if (!cancelled) setSupportedCarriers(new Set());
       });
 
+    apiFetch<Array<{ id: string }>>('/accounting/providers')
+      .then((providers) => {
+        if (cancelled) return;
+        const set = new Set<string>();
+        providers.forEach((p) => {
+          set.add(p.id.toLowerCase());
+          set.add(p.id.toLowerCase().replace(/_/g, '-'));
+          set.add(p.id.toLowerCase().replace(/-/g, '_'));
+        });
+        setSupportedAccounting(set);
+      })
+      .catch(() => {
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online']));
+      });
+
     return () => {
       cancelled = true;
     };
@@ -985,6 +1001,24 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'carrier') {
       return (supportedCarriers?.has(provider.id.toLowerCase()) ?? false) || provider.status === 'active';
+    }
+    if (provider.category === 'ecommerce') {
+      return (
+        provider.id.toLowerCase() === 'shopify' ||
+        provider.id.toLowerCase() === 'woocommerce' ||
+        provider.id.toLowerCase() === 'ideasoft' ||
+        provider.status === 'active'
+      );
+    }
+    if (provider.category === 'accounting') {
+      const pid = provider.id.toLowerCase();
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online'];
+      if (activeAccounting.includes(pid)) return true;
+      return (
+        (supportedAccounting?.has(pid) ?? false) ||
+        (supportedAccounting?.has(pid.replace(/_/g, '-')) ?? false) ||
+        (supportedAccounting?.has(pid.replace(/-/g, '_')) ?? false)
+      );
     }
     return false;
   };
@@ -1156,7 +1190,11 @@ export function AddIntegrationModal({
                     const isPending =
                       provider.category === 'marketplace'
                         ? supportedMarketplaces === null
-                        : supportedCarriers === null;
+                        : provider.category === 'carrier'
+                        ? supportedCarriers === null
+                        : provider.category === 'accounting'
+                        ? supportedAccounting === null
+                        : false;
 
                     return (
                       <div

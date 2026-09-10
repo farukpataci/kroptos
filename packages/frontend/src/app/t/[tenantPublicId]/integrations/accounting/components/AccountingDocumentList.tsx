@@ -118,7 +118,7 @@ export default function AccountingDocumentList() {
     }
   };
 
-  const renderStatus = (status: string, errMsg?: string) => {
+  const renderBaseStatus = (status: string, errMsg?: string) => {
     switch (status) {
       case 'created':
         return (
@@ -154,6 +154,48 @@ export default function AccountingDocumentList() {
       default:
         return status;
     }
+  };
+
+  const renderStatus = (doc: AccountingDocumentItem) => {
+    const raw = (doc.rawResponse as any) || {};
+    const providerStatus = raw.providerStatus;
+    const isMismatch = raw.reconciliationMismatch;
+    const mismatchMsg = raw.reconciliationMessage;
+    const diff = raw.reconciliationDiff;
+
+    return (
+      <div className="flex flex-col gap-1 items-start">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {renderBaseStatus(doc.status, doc.errorMessage)}
+          {providerStatus && (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold ${
+                providerStatus === 'Open' || providerStatus === 'Paid'
+                  ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                  : providerStatus === 'Draft'
+                  ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  : 'bg-zinc-500/10 text-zinc-400 border border-zinc-500/20'
+              }`}
+            >
+              BC: {providerStatus}
+            </span>
+          )}
+        </div>
+        {isMismatch && (
+          <div
+            className="text-[11px] text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-0.5 mt-0.5 leading-tight cursor-help"
+            title={mismatchMsg}
+          >
+            ⚠️ Toplam uyuşmuyor {diff ? `(Fark: ${diff} ${doc.currency})` : ''} • BC'de taslak bekliyor
+          </div>
+        )}
+        {doc.status === 'cancelled' && (raw.cancellationType === 'credit_memo' || doc.errorMessage?.includes('alacak dekontu')) && (
+          <div className="text-[11px] text-zinc-400 bg-zinc-500/10 border border-zinc-500/20 rounded px-2 py-0.5 mt-0.5 leading-tight">
+            BC'de düzeltici alacak dekontu oluşturuldu
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -244,7 +286,7 @@ export default function AccountingDocumentList() {
                       {doc.currency}
                     </td>
                     <td className="px-4 py-3">
-                      {renderStatus(doc.status, doc.errorMessage)}
+                      {renderStatus(doc)}
                     </td>
                     <td className="px-4 py-3 text-kp-text-muted">
                       {new Date(doc.createdAt).toLocaleString('tr-TR')}
