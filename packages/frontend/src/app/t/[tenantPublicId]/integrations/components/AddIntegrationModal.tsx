@@ -925,17 +925,6 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     capabilities: ['Polonya (PL)', 'KSeF Uyumlu', 'Stok & Ticaret'],
     status: 'active',
   },
-  {
-    id: 'netsuite',
-    name: 'Oracle NetSuite',
-    category: 'accounting',
-    categoryLabel: 'Muhasebe Entegrasyonu',
-    badgeBg: 'bg-blue-700/10 border-blue-700/20 text-blue-800 dark:text-blue-300',
-    badgeText: 'Oracle NetSuite',
-    description: 'Oracle NetSuite Cloud ERP ile global ölçekli finans, envanter, e-Fatura ve sipariş akışı.',
-    capabilities: ['Global Cloud ERP', 'Çoklu Para Birimi', 'Konsolide Finans'],
-    status: 'active',
-  },
 ];
 
 interface AddIntegrationModalProps {
