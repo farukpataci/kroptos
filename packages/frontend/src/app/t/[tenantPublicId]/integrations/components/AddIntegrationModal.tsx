@@ -849,6 +849,17 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
+    id: 'netsuite',
+    name: 'Oracle NetSuite',
+    category: 'accounting',
+    categoryLabel: 'Muhasebe Entegrasyonu',
+    badgeBg: 'bg-blue-700/10 border-blue-700/20 text-blue-800 dark:text-blue-300',
+    badgeText: 'NetSuite ERP',
+    description: 'Oracle NetSuite bulut ERP ile kurumsal fatura, cari senkronizasyonu, tahsilat ve ürün eşleme akışı.',
+    capabilities: ['M2M OAuth 2.0', 'OneWorld Subsidiary', 'eid: Upsert', 'Eşzamanlılık 1'],
+    status: 'active',
+  },
+  {
     id: 'teamsystem',
     name: 'TeamSystem',
     category: 'accounting',
@@ -983,10 +994,10 @@ export function AddIntegrationModal({
           set.add(p.id.toLowerCase().replace(/-/g, '_'));
         });
         setSupportedAccounting(set);
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite']));
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite']));
       });
 
     return () => {
@@ -1013,7 +1024,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||

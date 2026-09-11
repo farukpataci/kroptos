@@ -18,6 +18,7 @@ import '../../freeagent';
 import '../../exact-online';
 import '../../visma-net-erp';
 import '../../fortnox';
+import '../../netsuite';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();

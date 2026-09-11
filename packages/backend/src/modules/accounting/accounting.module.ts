@@ -34,6 +34,7 @@ import '../../integrations/accounting/freeagent';
 import '../../integrations/accounting/exact-online';
 import '../../integrations/accounting/visma-net-erp';
 import '../../integrations/accounting/fortnox';
+import '../../integrations/accounting/netsuite';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

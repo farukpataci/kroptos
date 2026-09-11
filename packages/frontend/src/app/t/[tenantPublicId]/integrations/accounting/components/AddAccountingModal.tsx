@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   XMarkIcon,
   ShieldCheckIcon,
@@ -563,9 +563,82 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'NETSUITE',
+    displayName: 'Oracle NetSuite',
+    country: 'US',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'netsuite',
+      name: 'Oracle NetSuite',
+      fields: [
+        {
+          key: 'accountId',
+          label: 'NetSuite Hesap Kimliği (Account ID)',
+          type: 'text',
+          required: true,
+          description: 'NetSuite hesap numaranız (örn: "1234567" veya Sandbox için "1234567_SB1").',
+        },
+        {
+          key: 'clientId',
+          label: 'İstemci Kimliği (Client ID / Consumer Key)',
+          type: 'text',
+          required: true,
+          description: 'OAuth 2.0 Entegrasyon kaydındaki Consumer Key değeri.',
+        },
+        {
+          key: 'certificateId',
+          label: 'Sertifika Kimliği (Certificate ID / kid)',
+          type: 'text',
+          required: true,
+          description: 'OAuth 2.0 Client Credentials kurulumunda sertifikaya atanan kid kimliği.',
+        },
+        {
+          key: 'keyReference',
+          label: 'Özel Anahtar Referansı (Key Reference)',
+          type: 'text',
+          required: true,
+          description: 'Sunucu ortamında/KMS\'te saklanan RSA özel anahtarının ortam değişkeni adı (örn: "NETSUITE_PRIVATE_KEY"). Özel anahtar formdan girilmez.',
+        },
+        {
+          key: 'subsidiaryId',
+          label: 'Subsidiary ID (OneWorld)',
+          type: 'text',
+          required: false,
+          description: 'OneWorld hesaplarında kayıtların bağlanacağı iştirak/subsidiary dahili numarası (§5.9).',
+        },
+        {
+          key: 'certificateExpiresAt',
+          label: 'Sertifika Bitiş Tarihi (YYYY-MM-DD)',
+          type: 'text',
+          required: false,
+          description: 'Yüklenen açık anahtar sertifikasının son geçerlilik tarihi (30 ve 7 gün kala uyarı verilir).',
+        },
+        {
+          key: 'concurrencyLimit',
+          label: 'Eşzamanlı İstek Limiti (Varsayılan: 1)',
+          type: 'number',
+          required: false,
+          description: 'Hesap genelindeki eşzamanlılık havuzundan bu bağlantı için ayrılan tavan.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
+  NETSUITE: {
+    bg: 'bg-blue-700/10 text-blue-700 dark:bg-blue-600/20 dark:text-blue-300 border border-blue-600/20',
+    text: 'text-blue-700 dark:text-blue-300',
+    badge: 'NetSuite ERP',
+    iconLetter: 'N',
+  },
   DATEV: {
     bg: 'bg-emerald-600/10 text-emerald-600 dark:bg-emerald-600/20 dark:text-emerald-400 border border-emerald-600/20',
     text: 'text-emerald-600 dark:text-emerald-400',
@@ -704,6 +777,7 @@ export default function AddAccountingModal({
     if (lower.includes('exact')) return 'EXACT-ONLINE';
     if (lower.includes('visma')) return 'VISMA-NET-ERP';
     if (lower.includes('fortnox')) return 'FORTNOX';
+    if (lower.includes('netsuite')) return 'NETSUITE';
     if (lower.includes('datev')) return 'DATEV';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
@@ -786,6 +860,13 @@ export default function AddAccountingModal({
   const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
   const isLexware = resolvedProviderKey === 'LEXWARE-OFFICE';
   const isFortnox = resolvedProviderKey === 'FORTNOX';
+  const isNetSuite = resolvedProviderKey === 'NETSUITE';
+
+  const certExpiryDays = useMemo(() => {
+    if (!isNetSuite || !credentials.certificateExpiresAt) return null;
+    const diff = new Date(credentials.certificateExpiresAt).getTime() - Date.now();
+    return Math.floor(diff / (1000 * 60 * 60 * 24));
+  }, [isNetSuite, credentials.certificateExpiresAt]);
 
   const isReauthRequired =
     (isSage || isXero || isQuickBooks) &&
@@ -1416,6 +1497,51 @@ export default function AddAccountingModal({
                   </p>
                   <p>
                     • <strong>Rate Limiti:</strong> Fortnox 5 saniyelik blokta en fazla 25 istek kısıtını uygular (300 req/dk).
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Oracle NetSuite Information & Concurrency Banner (§5.2, §5.3, §9) */}
+            {isNetSuite && (
+              <div className="rounded-2xl border border-blue-500/20 bg-blue-50/40 dark:bg-blue-950/20 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-blue-500/20 pb-2">
+                  <div className="flex items-center gap-2">
+                    <InformationCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Oracle NetSuite ERP Entegrasyon Bilgileri
+                    </h3>
+                  </div>
+                  {certExpiryDays !== null && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                        certExpiryDays <= 0
+                          ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20'
+                          : certExpiryDays <= 7
+                          ? 'bg-red-500/10 text-red-600 border border-red-500/20 animate-pulse'
+                          : certExpiryDays <= 30
+                          ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+                          : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
+                      }`}
+                    >
+                      {certExpiryDays <= 0
+                        ? 'Sertifika Süresi Doldu!'
+                        : `Sertifika: ${certExpiryDays} gün kaldı`}
+                    </span>
+                  )}
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-2">
+                  <p>
+                    • <strong>Kurulum Adımları:</strong> NetSuite panelinde <em>Setup &gt; Integration &gt; Manage Integrations</em> altından OAuth 2.0 (Client Credentials) entegrasyonu açın. <em>Setup &gt; Integration &gt; OAuth 2.0 Client Credentials Setup</em> adımından açık anahtar sertifikanızı yükleyip <strong>kid</strong> değerini alın.
+                  </p>
+                  <p>
+                    • <strong>Özel Anahtar Güvenliği:</strong> RSA özel anahtarınız sunucu güvenli ortamında tanımlı bir ortam değişkeninde tutulur; formu doldururken yalnızca referans adı (örn: <code>NETSUITE_PRIVATE_KEY</code>) belirtilir. Anahtar arayüze girilmez (§5.2).
+                  </p>
+                  <p>
+                    • <strong>Eşzamanlılık Havuzu Paylaşımı:</strong> NetSuite API kotası hesap genelindedir ve tüm entegrasyonlarınızla aynı havuzdan tüketilir. Varsayılan eşzamanlılık 1&apos;dir. Yoğun veri aktarımlarının mesai saatleri dışında yapılması önerilir (§5.3).
+                  </p>
+                  <p>
+                    • <strong>OneWorld Subsidiary:</strong> Çoklu tüzel kişiliğe sahip NetSuite hesaplarında fatura ve carilerin bağlanacağı tüzel kişilik ID&apos;si yapılandırmadan girilir (§5.9).
                   </p>
                 </div>
               </div>

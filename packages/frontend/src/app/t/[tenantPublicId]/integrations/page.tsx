@@ -114,6 +114,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('exact') && p.includes('exact')) return true;
         if (pid.includes('visma') && p.includes('visma')) return true;
         if (pid.includes('fortnox') && p.includes('fortnox')) return true;
+        if (pid.includes('netsuite') && p.includes('netsuite')) return true;
         return false;
       });
       if (existing) {
@@ -134,6 +135,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('exact')) targetProvider = 'EXACT-ONLINE';
         if (pid.includes('visma')) targetProvider = 'VISMA-NET-ERP';
         if (pid.includes('fortnox')) targetProvider = 'FORTNOX';
+        if (pid.includes('netsuite')) targetProvider = 'NETSUITE';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }
