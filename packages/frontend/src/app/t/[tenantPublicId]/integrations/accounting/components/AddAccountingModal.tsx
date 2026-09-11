@@ -318,6 +318,251 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'SEVDESK',
+    displayName: 'sevDesk',
+    country: 'DE',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'sevdesk',
+      name: 'sevDesk',
+      fields: [
+        {
+          key: 'apiToken',
+          label: 'API Belirteci (API Token)',
+          type: 'password',
+          required: true,
+          secret: true,
+          description:
+            'sevDesk web panelinizde Ayarlar > Kullanıcı Yönetimi (Einstellungen > Benutzer) bölümünden aldığınız 32 haneli kullanıcı API token.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', payment: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'FREEAGENT',
+    displayName: 'FreeAgent',
+    country: 'GB',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'freeagent',
+      name: 'FreeAgent',
+      fields: [
+        {
+          key: 'defaultCategoryUrl',
+          label: 'Varsayılan Gelir Kategorisi URI (Default Category URI)',
+          type: 'text',
+          required: false,
+          description: 'FreeAgent muhasebe gelir kategorisi URI adresi.',
+        },
+        {
+          key: 'bankAccountUrl',
+          label: 'Banka Hesabı URI (Bank Account URI)',
+          type: 'text',
+          required: false,
+          description: 'Tahsilat açıklamaları için banka hesabı URI adresi.',
+        },
+        {
+          key: 'clientId',
+          label: 'Özel İstemci Kimliği (Client ID - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          description: 'Özel FreeAgent uygulamanız varsa girin; boşsa merkezi KroptOS uygulaması kullanılır.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Özel İstemci Gizli Anahtarı (Client Secret - İsteğe Bağlı)',
+          type: 'password',
+          required: false,
+          secret: true,
+          description: 'Özel FreeAgent uygulamanızın istemci parolası.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', payment: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'EXACT-ONLINE',
+    displayName: 'Exact Online',
+    country: 'NL',
+    protocol: 'odata',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'exact-online',
+      name: 'Exact Online',
+      fields: [
+        {
+          key: 'country',
+          label: 'Ülke / Bölge (Country)',
+          type: 'text',
+          required: false,
+          defaultValue: 'NL',
+          description: 'Exact Online bölgesi: "NL" (Hollanda), "BE" (Belçika), "DE", "UK", "US", "ES".',
+        },
+        {
+          key: 'division',
+          label: 'Şirket / Bölüm Kodu (Division)',
+          type: 'text',
+          required: false,
+          description: 'İşlem yapılacak Exact Online division/şirket numarası (sayısal).',
+        },
+        {
+          key: 'journalCode',
+          label: 'Satış Günlüğü Kodu (Journal Code)',
+          type: 'text',
+          required: false,
+          defaultValue: '70',
+          description: 'Exact Online satış günlüğü kodu (örn: 70).',
+        },
+        {
+          key: 'clientId',
+          label: 'Client ID (Uygulama Kimliği)',
+          type: 'text',
+          required: false,
+          description: 'Exact Online App Center istemci kimliği.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Client Secret (Gizli Anahtar)',
+          type: 'password',
+          required: false,
+          secret: true,
+          description: 'Exact Online App Center istemci gizli anahtarı.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', payment: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'VISMA-NET-ERP',
+    displayName: 'Visma.net ERP',
+    country: 'NO',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'visma-net-erp',
+      name: 'Visma.net ERP',
+      fields: [
+        {
+          key: 'ippCompanyId',
+          label: 'Şirket Tanımlayıcısı (ipp-company-id)',
+          type: 'text',
+          required: true,
+          description: 'Visma.net ERP şirket kimlik numarası (örn: 1113659).',
+        },
+        {
+          key: 'clientId',
+          label: 'Client ID (Visma Developer Portal)',
+          type: 'text',
+          required: false,
+          description: 'Visma Developer Portal üzerinde kayıtlı uygulama istemci kimliği.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Client Secret (Gizli Anahtar)',
+          type: 'password',
+          required: false,
+          secret: true,
+          description: 'Visma Developer Portal uygulama gizli anahtarı.',
+        },
+        {
+          key: 'incomeAccount',
+          label: 'Gelir Hesabı Kodu (Account Number)',
+          type: 'text',
+          required: false,
+          description: 'Fatura satırlarında kullanılacak işletme hesap planı gelir kodu (örn: 3000).',
+        },
+        {
+          key: 'vatCodeId',
+          label: 'KDV / Vergi Kodu (VAT Code ID)',
+          type: 'text',
+          required: false,
+          description: 'Nordics/AB vergi kodu (örn: 25, 15, 0).',
+        },
+        {
+          key: 'branchNumber',
+          label: 'Şube Numarası (Branch Number)',
+          type: 'text',
+          required: false,
+          description: 'Çok şubeli işletmeler için Visma.net ERP şube kodu.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY', payment: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'FORTNOX',
+    displayName: 'Fortnox',
+    country: 'SE',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'fortnox',
+      name: 'Fortnox',
+      fields: [
+        {
+          key: 'clientId',
+          label: 'Client ID (Fortnox Developer Portal)',
+          type: 'text',
+          required: true,
+          description: 'Fortnox Developer Portal üzerinde oluşturulan uygulamanın Client ID değeri.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Client Secret (Gizli Anahtar)',
+          type: 'password',
+          required: true,
+          secret: true,
+          description: 'Fortnox Developer Portal üzerinde verilen Client Secret anahtarı.',
+        },
+        {
+          key: 'redirectUri',
+          label: 'Redirect URI (Geri Dönüş URL)',
+          type: 'text',
+          required: true,
+          description: 'OAuth 2.0 yetkilendirme geri dönüş adresi.',
+        },
+        {
+          key: 'defaultSalesAccount',
+          label: 'Varsayılan Satış Hesabı (Sales Account)',
+          type: 'text',
+          required: false,
+          description: 'İsveç BAS hesap planı gelir hesabı (varsayılan: 3001).',
+        },
+        {
+          key: 'defaultVATRate',
+          label: 'Varsayılan KDV Oranı (%)',
+          type: 'text',
+          required: false,
+          description: 'Varsayılan İsveç KDV oranı (örn: 25).',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
@@ -387,6 +632,36 @@ const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string;
     badge: 'Lexware Office',
     iconLetter: 'L',
   },
+  SEVDESK: {
+    bg: 'bg-blue-600/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400 border border-blue-500/20',
+    text: 'text-blue-600 dark:text-blue-400',
+    badge: 'sevDesk DACH',
+    iconLetter: 'S',
+  },
+  FREEAGENT: {
+    bg: 'bg-indigo-600/10 text-indigo-600 dark:bg-indigo-500/20 dark:text-indigo-400 border border-indigo-500/20',
+    text: 'text-indigo-600 dark:text-indigo-400',
+    badge: 'FreeAgent UK',
+    iconLetter: 'F',
+  },
+  'EXACT-ONLINE': {
+    bg: 'bg-red-600/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 border border-red-500/20',
+    text: 'text-red-600 dark:text-red-400',
+    badge: 'Exact NL/BE',
+    iconLetter: 'E',
+  },
+  'VISMA-NET-ERP': {
+    bg: 'bg-red-600/10 text-red-600 dark:bg-red-500/20 dark:text-red-400 border border-red-500/20',
+    text: 'text-red-600 dark:text-red-400',
+    badge: 'Visma.net ERP',
+    iconLetter: 'V',
+  },
+  FORTNOX: {
+    bg: 'bg-emerald-700/10 text-emerald-700 dark:bg-emerald-600/20 dark:text-emerald-300 border border-emerald-600/20',
+    text: 'text-emerald-700 dark:text-emerald-300',
+    badge: 'Fortnox (İsveç)',
+    iconLetter: 'F',
+  },
 };
 
 interface AddAccountingModalProps {
@@ -424,6 +699,11 @@ export default function AddAccountingModal({
     if (lower.includes('quickbooks') || lower.includes('qbo')) return 'QUICKBOOKS';
     if (lower.includes('odoo')) return 'ODOO';
     if (lower.includes('lexware')) return 'LEXWARE-OFFICE';
+    if (lower.includes('sevdesk')) return 'SEVDESK';
+    if (lower.includes('freeagent')) return 'FREEAGENT';
+    if (lower.includes('exact')) return 'EXACT-ONLINE';
+    if (lower.includes('visma')) return 'VISMA-NET-ERP';
+    if (lower.includes('fortnox')) return 'FORTNOX';
     if (lower.includes('datev')) return 'DATEV';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
@@ -505,6 +785,7 @@ export default function AddAccountingModal({
   const isOdoo = resolvedProviderKey === 'ODOO';
   const isSap = resolvedProviderKey === 'SAP_S4HANA_CLOUD';
   const isLexware = resolvedProviderKey === 'LEXWARE-OFFICE';
+  const isFortnox = resolvedProviderKey === 'FORTNOX';
 
   const isReauthRequired =
     (isSage || isXero || isQuickBooks) &&
@@ -699,12 +980,19 @@ export default function AddAccountingModal({
         });
         toast.success(t('messages.updateSuccess'));
       } else {
-        await api.post('/accounting/integrations', {
+        const created = await api.post<any>('/accounting/integrations', {
           provider: resolvedProviderKey,
           name,
           environment,
           credentials,
         });
+        if (created?.id && (environment === 'MOCK' || !environment)) {
+          try {
+            await api.post(`/accounting/integrations/${created.id}/test-connection`);
+          } catch {
+            // ignore
+          }
+        }
         toast.success(t('messages.createSuccess'));
       }
       onSuccess();
@@ -1106,6 +1394,32 @@ export default function AddAccountingModal({
                 })}
               </div>
             </div>
+
+            {/* Fortnox Information Banner (§5.4, §5.5, §5.6, §9) */}
+            {isFortnox && (
+              <div className="rounded-2xl border border-emerald-500/20 bg-emerald-50/40 dark:bg-emerald-950/20 p-4 space-y-3">
+                <div className="flex items-center gap-2 border-b border-emerald-500/20 pb-2">
+                  <InformationCircleIcon className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                    Fortnox (İsveç) Muhasebe Entegrasyon Bilgileri
+                  </h3>
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-2">
+                  <p>
+                    • <strong>Mali Yıl Kısıtı:</strong> Fatura kesilecek tarihe ait Fortnox hesabınızda aktif bir mali yıl tanımlı olmalıdır. Açık mali yıl yoksa fatura aktarımı durdurulur.
+                  </p>
+                  <p>
+                    • <strong>Fatura Değişmezliği:</strong> Deftere kaydedilmiş (Booked: true) faturalar İsveç Bokföringslagen uyarınca değiştirilemez veya silinemez. Düzeltmeler alacak faturası (Kreditfaktura) ile yapılır.
+                  </p>
+                  <p>
+                    • <strong>E-posta Gönderimi Yapılmaz:</strong> Faturalar KroptOS üzerinden müşteriye e-posta ile iletilmez; belge dağıtımı doğrudan Fortnox panelinden yapılmalıdır.
+                  </p>
+                  <p>
+                    • <strong>Rate Limiti:</strong> Fortnox 5 saniyelik blokta en fazla 25 istek kısıtını uygular (300 req/dk).
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* Sage OAuth & Token Status (§5 & §10) */}
             {isSage && (

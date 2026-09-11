@@ -29,6 +29,11 @@ import '../../integrations/accounting/quickbooks';
 import '../../integrations/accounting/odoo';
 import '../../integrations/accounting/datev';
 import '../../integrations/accounting/lexware-office';
+import '../../integrations/accounting/sevdesk';
+import '../../integrations/accounting/freeagent';
+import '../../integrations/accounting/exact-online';
+import '../../integrations/accounting/visma-net-erp';
+import '../../integrations/accounting/fortnox';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

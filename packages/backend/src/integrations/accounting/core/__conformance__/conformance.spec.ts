@@ -13,6 +13,11 @@ import '../../quickbooks';
 import '../../odoo';
 import '../../datev';
 import '../../lexware-office';
+import '../../sevdesk';
+import '../../freeagent';
+import '../../exact-online';
+import '../../visma-net-erp';
+import '../../fortnox';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();

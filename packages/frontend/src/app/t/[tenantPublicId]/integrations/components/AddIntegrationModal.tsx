@@ -795,13 +795,13 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
   },
   {
     id: 'sevdesk',
-    name: 'sevdesk',
+    name: 'sevDesk',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-blue-600/10 border-blue-600/20 text-blue-700',
-    badgeText: 'sevdesk DACH',
-    description: 'Almanya ve DACH bölgesi için sevdesk bulut muhasebe ve otomatik e-Fatura çözümü.',
-    capabilities: ['DACH Bölgesi', 'Bulut Fatura', 'Stok Takibi'],
+    badgeText: 'sevDesk DACH',
+    description: 'Almanya ve DACH bölgesi için sevDesk bulut muhasebe ve faturalama çözümü.',
+    capabilities: ['Almanya (DE)', 'Bulut Fatura', 'Ödeme Takibi'],
     status: 'active',
   },
   {
@@ -811,8 +811,8 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-indigo-600/10 border-indigo-600/20 text-indigo-700',
     badgeText: 'FreeAgent UK',
-    description: 'İngiltere mikro işletme ve serbest meslek sahipleri için FreeAgent muhasebe yazılımı.',
-    capabilities: ['İngiltere (UK)', 'Making Tax Digital', 'Mikro İşletme'],
+    description: 'İngiltere mikro işletmeler ve KOBİler için FreeAgent bulut muhasebe entegrasyonu.',
+    capabilities: ['İngiltere (UK)', 'Bulut Fatura', 'Gelir Kategorisi'],
     status: 'active',
   },
   {
@@ -823,18 +823,18 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     badgeBg: 'bg-red-600/10 border-red-600/20 text-red-700',
     badgeText: 'Exact NL/BE',
     description: 'Hollanda ve Belçika KOBİ pazar lideri Exact Online ERP ve ön muhasebe entegrasyonu.',
-    capabilities: ['Hollanda & Belçika', 'ERP & Muhasebe', 'Stok Senkronizasyonu'],
+    capabilities: ['Benelux (NL/BE)', 'Satış Faturası', 'Cari Hesap'],
     status: 'active',
   },
   {
-    id: 'visma',
-    name: 'Visma ERP & Accounting',
+    id: 'visma_net_erp',
+    name: 'Visma.net ERP',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
-    badgeBg: 'bg-sky-600/10 border-sky-600/20 text-sky-700',
-    badgeText: 'Visma Nordics',
-    description: 'İskandinav ülkeleri (Norveç, İsveç, Finlandiya, Danimarka) ve Avrupa genelinde Visma ERP.',
-    capabilities: ['İskandinavya (Nordics)', 'Kurumsal ERP', 'E-Fatura'],
+    badgeBg: 'bg-red-600/10 border-red-600/20 text-red-700',
+    badgeText: 'Visma.net ERP',
+    description: 'Nordics ve Hollanda odaklı orta ve büyük ölçekli Visma.net ERP bulut muhasebe entegrasyonu (Arka plan 202 işletim).',
+    capabilities: ['Nordics & NL', 'Arka Plan İşlem (202)', 'Satış Faturası'],
     status: 'active',
   },
   {
@@ -983,9 +983,10 @@ export function AddIntegrationModal({
           set.add(p.id.toLowerCase().replace(/-/g, '_'));
         });
         setSupportedAccounting(set);
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox']));
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox']));
       });
 
     return () => {
@@ -1012,7 +1013,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||

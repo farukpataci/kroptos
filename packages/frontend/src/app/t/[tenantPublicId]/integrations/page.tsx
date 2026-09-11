@@ -109,6 +109,11 @@ export default function IntegrationsParentPage() {
         if (pid.includes('odoo') && p.includes('odoo')) return true;
         if (pid.includes('datev') && p.includes('datev')) return true;
         if (pid.includes('lexware') && p.includes('lexware')) return true;
+        if (pid.includes('sevdesk') && p.includes('sevdesk')) return true;
+        if (pid.includes('freeagent') && p.includes('freeagent')) return true;
+        if (pid.includes('exact') && p.includes('exact')) return true;
+        if (pid.includes('visma') && p.includes('visma')) return true;
+        if (pid.includes('fortnox') && p.includes('fortnox')) return true;
         return false;
       });
       if (existing) {
@@ -124,9 +129,15 @@ export default function IntegrationsParentPage() {
         if (pid.includes('odoo')) targetProvider = 'ODOO';
         if (pid.includes('datev')) targetProvider = 'DATEV';
         if (pid.includes('lexware')) targetProvider = 'LEXWARE-OFFICE';
+        if (pid.includes('sevdesk')) targetProvider = 'SEVDESK';
+        if (pid.includes('freeagent')) targetProvider = 'FREEAGENT';
+        if (pid.includes('exact')) targetProvider = 'EXACT-ONLINE';
+        if (pid.includes('visma')) targetProvider = 'VISMA-NET-ERP';
+        if (pid.includes('fortnox')) targetProvider = 'FORTNOX';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }
+      setIsAddModalOpen(false);
       return;
     }
 
@@ -258,7 +269,16 @@ export default function IntegrationsParentPage() {
             : `${item.name} kargo bağlantısı pasifleştirildi`,
         );
       } else if (item.isAccounting) {
-        toast.info(`${item.name} ayarları düzenleme penceresinden güncellenebilir`);
+        const targetStatus = nextStatus === 'active' ? 'connected' : 'disconnected';
+        await apiFetch(`/accounting/integrations/${item.id}`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: targetStatus }),
+        });
+        toast.success(
+          nextStatus === 'active'
+            ? `${item.name} muhasebe bağlantısı aktifleştirildi`
+            : `${item.name} muhasebe bağlantısı pasifleştirildi`,
+        );
       } else {
         await apiFetch(`/integrations/${item.id}`, {
           method: 'PATCH',
