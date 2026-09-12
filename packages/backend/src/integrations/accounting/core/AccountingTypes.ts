@@ -38,7 +38,7 @@ export interface AccountingProviderDescriptor {
   id: string;
   displayName: string;
   country: string;
-  protocol: 'rest' | 'jsonapi' | 'soap' | 'odata';
+  protocol: 'rest' | 'jsonapi' | 'soap' | 'odata' | 'custom';
   readiness: AccountingReadiness;
   documentationStatus: 'VERIFIED' | 'PARTIAL' | 'DOCUMENTATION_REQUIRED';
   credentialSchema: AccountingProviderSchema;

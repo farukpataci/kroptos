@@ -7,10 +7,13 @@ import { ILogoRestClient } from './logo-rest.client';
  * ClientId/Secret elde edilene kadar hiçbir gerçek ağ isteği yapılmaz (§12).
  */
 export class LogoRestUnverifiedClient implements ILogoRestClient {
-  constructor(private readonly environment: AccountingEnvironment) {}
+  constructor(
+    private readonly environment: AccountingEnvironment,
+    private readonly provider: string = 'LOGO-REST',
+  ) {}
 
   private fail(): never {
-    throw new IntegrationNotVerifiedError('LOGO-REST', this.environment);
+    throw new IntegrationNotVerifiedError(this.provider, this.environment);
   }
 
   async testConnection(): Promise<never> { return this.fail(); }

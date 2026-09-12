@@ -629,14 +629,25 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
 
   // 💼 MUHASEBE ENTEGRASYONU (ERP & STOK & E-FATURA)
   {
-    id: 'logo_go3',
-    name: 'Logo GO3 / Tiger ERP',
+    id: 'logo_tiger',
+    name: 'Logo Tiger ERP',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
     badgeBg: 'bg-sky-600/10 border-sky-600/20 text-sky-700',
-    badgeText: 'Logo ERP',
-    description: 'Logo REST / Web Servis entegrasyonu ile malzeme, stok hareketi ve sipariş akışı.',
-    capabilities: ['Stok Kaynağı (Canlı)', 'Malzeme Kartları', 'Depo Sevkleri', 'Fatura'],
+    badgeText: 'Logo REST',
+    description: 'Tiger 3 / Tiger Wings / Enterprise için Logo REST Servis entegrasyonu: fatura, cari, tahsilat ve ürün eşleme.',
+    capabilities: ['Tiger 3 / Wings', 'REST Servis (32001)', 'Firma Bazlı Oturum', 'Fatura & Cari'],
+    status: 'active',
+  },
+  {
+    id: 'logo_go3',
+    name: 'Logo GO3 ERP',
+    category: 'accounting',
+    categoryLabel: 'Muhasebe Entegrasyonu',
+    badgeBg: 'bg-indigo-600/10 border-indigo-600/20 text-indigo-700',
+    badgeText: 'Logo Objects',
+    description: 'GO3 / Go Plus / Tiger Plus için Logo Objects (COM) entegrasyonu; müşteri sunucusundaki KroptOS Agent üzerinden çalışır.',
+    capabilities: ['GO3 / Go Plus', 'Logo Objects (COM)', 'Agent Gerekli', 'Fatura & Cari'],
     status: 'active',
   },
   {
@@ -983,10 +994,10 @@ export function AddIntegrationModal({
           set.add(p.id.toLowerCase().replace(/-/g, '_'));
         });
         setSupportedAccounting(set);
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_go3', 'logo-rest', 'logo_rest']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_tiger', 'logo-rest', 'logo_rest', 'logo_go3', 'logo-objects', 'logo_objects']));
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_go3', 'logo-rest', 'logo_rest']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_tiger', 'logo-rest', 'logo_rest', 'logo_go3', 'logo-objects', 'logo_objects']));
       });
 
     return () => {
@@ -1013,7 +1024,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_go3', 'logo-rest', 'logo_rest'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_tiger', 'logo-rest', 'logo_rest', 'logo_go3', 'logo-objects', 'logo_objects'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||

@@ -39,6 +39,7 @@ import '../../integrations/accounting/fatture-in-cloud';
 import '../../integrations/accounting/cegid-xrp-flex';
 import '../../integrations/accounting/pennylane';
 import '../../integrations/accounting/logo-rest';
+import '../../integrations/accounting/logo-objects';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

@@ -23,6 +23,7 @@ import '../../fatture-in-cloud';
 import '../../cegid-xrp-flex';
 import '../../pennylane';
 import '../../logo-rest';
+import '../../logo-objects';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();

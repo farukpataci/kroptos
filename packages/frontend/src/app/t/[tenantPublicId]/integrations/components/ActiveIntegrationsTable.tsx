@@ -46,7 +46,7 @@ function getTypeInfo(providerType: string, provider: string) {
   if (type.includes('marketplace') || ['trendyol', 'hepsiburada', 'amazon', 'n11', 'ciceksepeti'].includes(type)) {
     return { label: 'Pazaryeri', icon: BuildingStorefrontIcon, className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' };
   }
-  if (type.includes('erp') || type.includes('accounting') || ['logo', 'mikro', 'netsis', 'nebim', 'parasut', 'bizimhesap', 'kolaybi', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage', 'sage-accounting', 'sage_accounting', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware', 'lexware-office', 'sevdesk', 'freeagent', 'exact', 'exact-online', 'exact_online', 'visma', 'visma-net-erp', 'visma_net_erp', 'fortnox', 'netsuite', 'logo-rest', 'logo_rest', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane'].includes(type)) {
+  if (type.includes('erp') || type.includes('accounting') || ['logo', 'mikro', 'netsis', 'nebim', 'parasut', 'bizimhesap', 'kolaybi', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage', 'sage-accounting', 'sage_accounting', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware', 'lexware-office', 'sevdesk', 'freeagent', 'exact', 'exact-online', 'exact_online', 'visma', 'visma-net-erp', 'visma_net_erp', 'fortnox', 'netsuite', 'logo-rest', 'logo_rest', 'logo-objects', 'logo_objects', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane'].includes(type)) {
     return { label: 'Muhasebe Entegrasyonu', icon: DocumentTextIcon, className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' };
   }
   if (

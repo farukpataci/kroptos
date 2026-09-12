@@ -861,9 +861,37 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'LOGO-OBJECTS',
+    displayName: 'Logo GO3 (Logo Objects)',
+    country: 'TR',
+    protocol: 'custom',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'DOCUMENTATION_REQUIRED',
+    credentialSchema: {
+      provider: 'logo-objects',
+      name: 'Logo GO3 (Logo Objects)',
+      fields: [
+        { key: 'username', label: 'Logo Kullanıcı Adı', type: 'text', required: true },
+        { key: 'password', label: 'Logo Şifresi', type: 'password', required: true, secret: true },
+        { key: 'companyId', label: 'Firma Numarası', type: 'text', required: true, defaultValue: '1', description: 'Login çağrısındaki firma numarası; oturum bu firmaya kilitlenir.' },
+        { key: 'periodNo', label: 'Dönem Numarası', type: 'text', required: true, defaultValue: '0', description: '0 = aktif dönem.' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
+  'LOGO-OBJECTS': {
+    bg: 'bg-indigo-600/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-500/20',
+    text: 'text-indigo-700 dark:text-indigo-300',
+    badge: 'Logo Objects (GO3)',
+    iconLetter: 'G',
+  },
   'LOGO-REST': {
     bg: 'bg-sky-600/10 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 border border-sky-500/20',
     text: 'text-sky-700 dark:text-sky-300',
@@ -1036,6 +1064,7 @@ export default function AddAccountingModal({
     if (lower.includes('fatture') || lower.includes('fic')) return 'FATTURE-IN-CLOUD';
     if (lower.includes('cegid')) return 'CEGID-XRP-FLEX';
     if (lower.includes('pennylane')) return 'PENNYLANE';
+    if (lower.includes('logoobjects') || lower.includes('go3')) return 'LOGO-OBJECTS';
     if (lower.includes('logo')) return 'LOGO-REST';
     if (lower.includes('datev')) return 'DATEV';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
@@ -1124,6 +1153,7 @@ export default function AddAccountingModal({
   const isCegid = resolvedProviderKey === 'CEGID-XRP-FLEX';
   const isPennylane = resolvedProviderKey === 'PENNYLANE';
   const isLogoRest = resolvedProviderKey === 'LOGO-REST';
+  const isLogoObjects = resolvedProviderKey === 'LOGO-OBJECTS';
 
   const certExpiryDays = useMemo(() => {
     if (!isNetSuite || !credentials.certificateExpiresAt) return null;
@@ -1525,6 +1555,22 @@ export default function AddAccountingModal({
                   <li><strong>Fatura Numaralandırma & Yaşam Döngüsü:</strong> Faturalar KroptOS tarafından yapılandırılmış veri olarak taslak (draft: true) açılır; fatura numarası ve sıralı yasal dizilim Pennylane tarafından üretilir.</li>
                   <li><strong>Sunucu Hesaplamalı Mutabakat:</strong> Toplam tutar sunucu tarafından hesaplanır; mutabakat toleransı (≤ 0.05 EUR) doğrulandıktan sonra kesinleştirilir (finalize). Uyuşmazlık durumunda fatura taslakta bekletilir.</li>
                   <li><strong>Fransız KDV Kodları ve Limitler:</strong> Fransız KDV sistemi kodlu enum (FR_200, FR_100 vb.) olarak eşlenir. İstekler 25 istek / 5 saniye kayan pencere sınırına tabidir.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Logo Objects (GO3) guidance (docs/logo.agent.md §1.2, §4) */}
+            {isLogoObjects && (
+              <div className="rounded-xl border border-indigo-500/30 bg-indigo-50 dark:bg-indigo-950/30 p-4 text-xs text-indigo-900 dark:text-indigo-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-indigo-950 dark:text-indigo-100">
+                  <InformationCircleIcon className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                  Logo GO3 (Logo Objects) Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-indigo-800 dark:text-indigo-300">
+                  <li><strong>Kapsam:</strong> GO3, Go Plus ve Tiger Plus. Bu ürünlerde REST servis yoktur; bağlantı Logo Objects (COM) üzerinden kurulur.</li>
+                  <li><strong>Agent zorunlu:</strong> COM yalnızca Logo&apos;nun kurulu olduğu Windows makinesinde çalışır. KroptOS Agent o makineye kurulur ve buluta yalnızca dışarı yönlü bağlanır; müşteride hiçbir port açılmaz.</li>
+                  <li><strong>Oturum:</strong> Login(kullanıcı, şifre, firma, dönem) — firma ve dönem oturuma kilitlenir; dönem 0 aktif dönemdir.</li>
+                  <li><strong>Ön koşul:</strong> Logo Objects kullanım hakkı. Bu sürüm yalnızca MOCK ortamında çalışır; canlı bağlantı Agent ve COM duman testi sonrasında açılır.</li>
                 </ul>
               </div>
             )}

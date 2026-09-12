@@ -27,16 +27,19 @@ export class LogoRestMockClient implements ILogoRestClient {
   private static readonly productStore = new Map<string, string>();
   private static seq = 0;
 
-  constructor(private readonly credentials: Record<string, any> = {}) {}
+  constructor(
+    private readonly credentials: Record<string, any> = {},
+    private readonly provider: 'LOGO-REST' | 'LOGO-OBJECTS' = 'LOGO-REST',
+  ) {}
 
   private firmNo(): string {
     return String(this.credentials.companyId || '1');
   }
 
   private triggers(ref: string): void {
-    if (ref.includes('TRIGGER_AUTH_FAIL')) throw new AccountingAuthError('LOGO-REST', 'Kimlik reddedildi');
-    if (ref.includes('TRIGGER_RATE_LIMIT')) throw new AccountingRateLimitError('LOGO-REST', 30);
-    if (ref.includes('TRIGGER_NETWORK_FAIL')) throw new AccountingNetworkError('LOGO-REST', 'REST servisine erişilemedi');
+    if (ref.includes('TRIGGER_AUTH_FAIL')) throw new AccountingAuthError(this.provider, 'Kimlik reddedildi');
+    if (ref.includes('TRIGGER_RATE_LIMIT')) throw new AccountingRateLimitError(this.provider, 30);
+    if (ref.includes('TRIGGER_NETWORK_FAIL')) throw new AccountingNetworkError(this.provider, 'Logo sunucusuna erişilemedi');
   }
 
   private id(prefix: string): string {
@@ -47,7 +50,7 @@ export class LogoRestMockClient implements ILogoRestClient {
     this.triggers(String(this.credentials.clientSecret || ''));
     return {
       success: true,
-      message: `Logo REST Servis bağlantısı simüle edildi (firma ${this.firmNo()}, MOCK)`,
+      message: `${this.provider} bağlantısı simüle edildi (firma ${this.firmNo()}, MOCK)`,
       companyName: `Logo Firma ${this.firmNo()}`,
       companyId: this.firmNo(),
       environment: 'MOCK',
@@ -57,7 +60,7 @@ export class LogoRestMockClient implements ILogoRestClient {
   async createInvoice(request: AccountingInvoiceRequest): Promise<AccountingInvoiceResult> {
     const ref = request.referenceCode || '';
     this.triggers(ref);
-    if (!request.items?.length) throw new AccountingApiError('LOGO-REST', 400, 'Fatura satırı yok');
+    if (!request.items?.length) throw new AccountingApiError(this.provider, 400, 'Fatura satırı yok');
 
     const key = `${this.firmNo()}:${ref}`;
     const existing = LogoRestMockClient.invoiceStore.get(key);
@@ -73,7 +76,7 @@ export class LogoRestMockClient implements ILogoRestClient {
 
   async recordPayment(request: AccountingPaymentRequest): Promise<AccountingPaymentResult> {
     this.triggers(request.referenceCode || '');
-    if (request.amount <= 0) throw new AccountingApiError('LOGO-REST', 400, 'Tahsilat tutarı pozitif olmalı');
+    if (request.amount <= 0) throw new AccountingApiError(this.provider, 400, 'Tahsilat tutarı pozitif olmalı');
     return { externalId: this.id('pay'), rawResponse: { mock: true, invoice: request.invoiceExternalId } };
   }
 
