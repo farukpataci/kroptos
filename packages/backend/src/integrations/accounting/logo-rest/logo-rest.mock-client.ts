@@ -29,7 +29,7 @@ export class LogoRestMockClient implements ILogoRestClient {
 
   constructor(
     private readonly credentials: Record<string, any> = {},
-    private readonly provider: 'LOGO-REST' | 'LOGO-OBJECTS' = 'LOGO-REST',
+    private readonly provider: string = 'LOGO-REST',
   ) {}
 
   private firmNo(): string {

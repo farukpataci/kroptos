@@ -117,6 +117,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('netsuite') && p.includes('netsuite')) return true;
         if (pid === 'logo_tiger' && p === 'logo-rest') return true;
         if (pid === 'logo_go3' && p === 'logo-objects') return true;
+        if (pid === 'netsis' && p === 'netsis') return true;
         return false;
       });
       if (existing) {
@@ -143,6 +144,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('pennylane')) targetProvider = 'PENNYLANE';
         if (pid === 'logo_tiger') targetProvider = 'LOGO-REST';
         if (pid === 'logo_go3') targetProvider = 'LOGO-OBJECTS';
+        if (pid === 'netsis') targetProvider = 'NETSIS';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }

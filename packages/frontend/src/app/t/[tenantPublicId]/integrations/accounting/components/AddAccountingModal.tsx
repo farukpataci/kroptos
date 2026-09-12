@@ -883,9 +883,39 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'NETSIS',
+    displayName: 'Logo Netsis (NetOpenX)',
+    country: 'TR',
+    protocol: 'custom',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'DOCUMENTATION_REQUIRED',
+    credentialSchema: {
+      provider: 'netsis',
+      name: 'Logo Netsis (NetOpenX)',
+      fields: [
+        { key: 'username', label: 'Netsis Kullanıcı Adı', type: 'text', required: true },
+        { key: 'password', label: 'Netsis Şifresi', type: 'password', required: true, secret: true },
+        { key: 'companyId', label: 'Firma Kodu', type: 'text', required: true, description: 'Oturum bu firmaya kilitlenir; her firma için ayrı bağlantı tutulur.' },
+        { key: 'branchCode', label: 'Şube Kodu', type: 'text', required: false, defaultValue: '0', description: 'Oturum anahtarının parçasıdır (firma + şube).' },
+        { key: 'dbUser', label: 'Veritabanı Kullanıcısı', type: 'text', required: false, description: 'NetOpenX bağlantısı için gerekiyorsa SQL kullanıcı adı.' },
+        { key: 'dbPassword', label: 'Veritabanı Şifresi', type: 'password', required: false, secret: true },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
+  NETSIS: {
+    bg: 'bg-blue-700/10 text-blue-800 dark:bg-blue-600/20 dark:text-blue-300 border border-blue-600/20',
+    text: 'text-blue-800 dark:text-blue-300',
+    badge: 'Netsis',
+    iconLetter: 'N',
+  },
   'LOGO-OBJECTS': {
     bg: 'bg-indigo-600/10 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-500/20',
     text: 'text-indigo-700 dark:text-indigo-300',
@@ -1064,6 +1094,7 @@ export default function AddAccountingModal({
     if (lower.includes('fatture') || lower.includes('fic')) return 'FATTURE-IN-CLOUD';
     if (lower.includes('cegid')) return 'CEGID-XRP-FLEX';
     if (lower.includes('pennylane')) return 'PENNYLANE';
+    if (lower.includes('netsis')) return 'NETSIS';
     if (lower.includes('logoobjects') || lower.includes('go3')) return 'LOGO-OBJECTS';
     if (lower.includes('logo')) return 'LOGO-REST';
     if (lower.includes('datev')) return 'DATEV';
@@ -1154,6 +1185,7 @@ export default function AddAccountingModal({
   const isPennylane = resolvedProviderKey === 'PENNYLANE';
   const isLogoRest = resolvedProviderKey === 'LOGO-REST';
   const isLogoObjects = resolvedProviderKey === 'LOGO-OBJECTS';
+  const isNetsis = resolvedProviderKey === 'NETSIS';
 
   const certExpiryDays = useMemo(() => {
     if (!isNetSuite || !credentials.certificateExpiresAt) return null;
@@ -1555,6 +1587,22 @@ export default function AddAccountingModal({
                   <li><strong>Fatura Numaralandırma & Yaşam Döngüsü:</strong> Faturalar KroptOS tarafından yapılandırılmış veri olarak taslak (draft: true) açılır; fatura numarası ve sıralı yasal dizilim Pennylane tarafından üretilir.</li>
                   <li><strong>Sunucu Hesaplamalı Mutabakat:</strong> Toplam tutar sunucu tarafından hesaplanır; mutabakat toleransı (≤ 0.05 EUR) doğrulandıktan sonra kesinleştirilir (finalize). Uyuşmazlık durumunda fatura taslakta bekletilir.</li>
                   <li><strong>Fransız KDV Kodları ve Limitler:</strong> Fransız KDV sistemi kodlu enum (FR_200, FR_100 vb.) olarak eşlenir. İstekler 25 istek / 5 saniye kayan pencere sınırına tabidir.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Netsis guidance (docs/logo.agent.md §1.3, §4.3.3) */}
+            {isNetsis && (
+              <div className="rounded-xl border border-blue-500/30 bg-blue-50 dark:bg-blue-950/30 p-4 text-xs text-blue-900 dark:text-blue-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-blue-950 dark:text-blue-100">
+                  <InformationCircleIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  Logo Netsis (NetOpenX) Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-blue-800 dark:text-blue-300">
+                  <li><strong>Protokol:</strong> NetOpenX (COM, <code>NetOpenX50.dll</code>) ve/veya NOX REST katmanı. İkisi de müşteri ağında çalışır; internete açılmaz.</li>
+                  <li><strong>Lisans:</strong> NetOpenX Runtime lisansı kullanılacak istemci sayısına göre alınır (Çözüm Ortağı üzerinden). Eşzamanlı oturum tavanı bu lisansa bağlıdır.</li>
+                  <li><strong>Agent zorunlu:</strong> KroptOS Agent müşteri sunucusuna kurulur ve buluta yalnızca dışarı yönlü bağlanır; müşteride port açılmaz.</li>
+                  <li><strong>Oturum:</strong> Firma + şube oturuma kilitlenir; birden fazla firma için ayrı bağlantı açın. Bu sürüm yalnızca MOCK ortamında çalışır.</li>
                 </ul>
               </div>
             )}

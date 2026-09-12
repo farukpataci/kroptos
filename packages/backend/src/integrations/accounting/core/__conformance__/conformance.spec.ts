@@ -24,6 +24,7 @@ import '../../cegid-xrp-flex';
 import '../../pennylane';
 import '../../logo-rest';
 import '../../logo-objects';
+import '../../netsis';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
