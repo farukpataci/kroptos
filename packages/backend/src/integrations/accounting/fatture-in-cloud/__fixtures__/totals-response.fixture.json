@@ -1,0 +1,12 @@
+{
+  "data": {
+    "amount_net": 100.0,
+    "amount_vat": 22.0,
+    "amount_gross": 122.0,
+    "amount_due_discount": 0.0,
+    "amount_rivalsa": 0.0,
+    "amount_cassa": 0.0,
+    "amount_withholding_tax": 0.0,
+    "amount_other_withholding_tax": 0.0
+  }
+}

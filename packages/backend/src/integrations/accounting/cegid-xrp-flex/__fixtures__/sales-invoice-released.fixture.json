@@ -1,0 +1,28 @@
+{
+  "id": "INV-FLEX-1001",
+  "ReferenceNbr": { "value": "INV-FLEX-1001" },
+  "Type": { "value": "Invoice" },
+  "CustomerID": { "value": "C000000004" },
+  "CustomerOrder": { "value": "ORD-2026-001" },
+  "Date": { "value": "2026-09-12" },
+  "DueDate": { "value": "2026-10-12" },
+  "Description": { "value": "KroptOS Test Faturası" },
+  "Hold": { "value": false },
+  "Status": { "value": "Open" },
+  "Amount": { "value": 120.00 },
+  "TaxTotal": { "value": 20.00 },
+  "CurrencyID": { "value": "EUR" },
+  "Branch": { "value": "PROD" },
+  "Details": [
+    {
+      "rowNumber": 1,
+      "InventoryID": { "value": "PROD-001" },
+      "TransactionDescription": { "value": "Danışmanlık Hizmeti" },
+      "Qty": { "value": 1 },
+      "UnitPrice": { "value": 100.00 },
+      "Amount": { "value": 100.00 },
+      "Account": { "value": "707000" },
+      "TaxCategory": { "value": "TVA20" }
+    }
+  ]
+}

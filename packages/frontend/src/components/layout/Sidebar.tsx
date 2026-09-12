@@ -140,13 +140,8 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       id: 'integrations',
       label: 'Entegrasyon',
       icon: LinkIcon,
-      children: [
-        { label: 'Tüm Entegrasyonlar', href: `/t/${tenantPublicId}/integrations`, exact: true },
-        { label: 'Pazaryerleri', href: `/t/${tenantPublicId}/integrations/marketplace` },
-        { label: 'Kargo & Taşıyıcı', href: `/t/${tenantPublicId}/integrations/carrier` },
-        { label: 'Muhasebe (Ön Muhasebe)', href: `/t/${tenantPublicId}/integrations/accounting` },
-        { label: 'ERP & Ticari', href: `/t/${tenantPublicId}/integrations/erp` },
-      ],
+      href: `/t/${tenantPublicId}/integrations`,
+      exact: true,
     },
     {
       id: 'support',
@@ -162,6 +157,9 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         { label: 'Sistem Ayarları', href: `/t/${tenantPublicId}/system?tab=settings` },
         { label: 'Depo Yönetimi', href: `/t/${tenantPublicId}/system?tab=warehouses` },
         { label: 'Sistem Günlüğü', href: `/t/${tenantPublicId}/system?tab=audit_logs` },
+        { label: 'Muhasebe (Ön Muhasebe)', href: `/t/${tenantPublicId}/integrations/accounting` },
+        { label: 'Kargo & Taşıyıcı', href: `/t/${tenantPublicId}/integrations/carrier` },
+        { label: 'ERP & Ticari', href: `/t/${tenantPublicId}/integrations/erp` },
       ],
     },
   ];

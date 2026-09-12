@@ -1,0 +1,6 @@
+{
+  "data": {
+    "success": false,
+    "error": "Il codice fiscale o la partita IVA del cliente non risulta valido ai fini della fatturazione elettronica."
+  }
+}

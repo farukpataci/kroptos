@@ -3,6 +3,7 @@ import { MarketplaceConnector } from './MarketplaceConnector';
 import { MarketplaceHttpClient } from './MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from './MarketplaceRateLimiter';
 import { TrendyolConnector } from '../trendyol/TrendyolConnector';
+import { TicimaxConnector } from '../ticimax/TicimaxConnector';
 import { TrendyolGlobalConnector } from '../trendyol_global/TrendyolGlobalConnector';
 import { HepsiburadaConnector } from '../hepsiburada/HepsiburadaConnector';
 import { AmazonConnector } from '../amazon/AmazonConnector';
@@ -19,8 +20,11 @@ import { AllegroConnector } from '../allegro/AllegroConnector';
 import { AliExpressConnector } from '../aliexpress/AliExpressConnector';
 import { EmagConnector } from '../emag/EmagConnector';
 import { FarmazonConnector } from '../farmazon/FarmazonConnector';
-import { WooCommerceConnector } from '../../ecommerce/woocommerce/WooCommerceConnector';
-import { ShopifyConnector } from '../../ecommerce/shopify/ShopifyConnector';
+import { WooCommerceConnector } from '../woocommerce/WooCommerceConnector';
+import { ShopifyMarketplaceAdapter } from '../../ecommerce/shopify/ShopifyMarketplaceAdapter';
+import { IdeasoftMarketplaceAdapter } from '../../ecommerce/ideasoft/IdeasoftMarketplaceAdapter';
+import { TsoftConnector } from '../tsoft/TsoftConnector';
+import { OpencartConnector } from '../opencart/OpencartConnector';
 
 @Injectable()
 export class MarketplaceConnectorFactory {
@@ -78,7 +82,15 @@ export class MarketplaceConnectorFactory {
       case 'WOOCOMMERCE':
         return new WooCommerceConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'SHOPIFY':
-        return new ShopifyConnector(credentials, this.httpClient, this.rateLimiter, settings);
+        return new ShopifyMarketplaceAdapter(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'IDEASOFT':
+        return new IdeasoftMarketplaceAdapter(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'TICIMAX':
+        return new TicimaxConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'TSOFT':
+        return new TsoftConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'OPENCART':
+        return new OpencartConnector(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }

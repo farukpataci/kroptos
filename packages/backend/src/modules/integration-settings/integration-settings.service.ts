@@ -85,9 +85,9 @@ export class IntegrationSettingsService {
       ctx.isSuperAdmin,
     );
 
-    if (integration.providerType !== 'marketplace') {
+    if (integration.providerType !== 'marketplace' && integration.providerType !== 'ecommerce') {
       throw new BadRequestException(
-        'Integration settings are only defined for marketplace integrations',
+        'Integration settings are only defined for marketplace and ecommerce integrations',
       );
     }
 

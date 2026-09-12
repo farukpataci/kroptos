@@ -1,0 +1,11 @@
+{
+  "Customer": {
+    "fields": ["CustomerID", "CustomerName", "MainContact", "TaxRegistrationID", "Status", "CustomerClass"]
+  },
+  "SalesInvoice": {
+    "fields": ["ReferenceNbr", "CustomerID", "Type", "Hold", "Details", "Amount", "TaxTotal", "Date", "DueDate"]
+  },
+  "Payment": {
+    "fields": ["ReferenceNbr", "CustomerID", "PaymentAmount", "ApplicationDate", "Status"]
+  }
+}

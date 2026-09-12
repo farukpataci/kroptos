@@ -17,6 +17,8 @@ import { TrendyolBaseConnector } from '../../integrations/marketplaces/trendyol/
 import { IntegrationQueueService } from './integration-queue.service';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { EcommerceConnectorFactory } from '../../integrations/ecommerce/core/EcommerceConnectorFactory';
+import { EcommerceCredentialService } from '../../integrations/ecommerce/core/EcommerceCredentialService';
 import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 import { MarketplaceSettingsRegistry } from '../../integrations/marketplaces/settings/manifest.registry';
 
@@ -27,6 +29,8 @@ export class IntegrationService {
     private credentialService: MarketplaceCredentialService,
     private connectorFactory: MarketplaceConnectorFactory,
     private erpConnectorFactory: ErpConnectorFactory,
+    private ecommerceConnectorFactory: EcommerceConnectorFactory,
+    private ecommerceCredentialService: EcommerceCredentialService,
     private queueService: IntegrationQueueService,
     @Inject(forwardRef(() => IntegrationSettingsService))
     private settingsService: IntegrationSettingsService,
@@ -376,6 +380,21 @@ export class IntegrationService {
     return this.connectorFactory.create(integration.provider, credentials, settings);
   }
 
+  private async buildEcommerceConnector(integration: {
+    id: string;
+    provider: string;
+    credentialsEncrypted: string;
+  }) {
+    const credentials = this.ecommerceCredentialService.decrypt(integration.credentialsEncrypted);
+    this.ecommerceCredentialService.validate(integration.provider, credentials);
+
+    const settings = await this.settingsService
+      .resolveForRuntime(integration.id)
+      .catch(() => ({}) as Record<string, unknown>);
+
+    return this.ecommerceConnectorFactory.create(integration.provider, credentials, settings);
+  }
+
   async testConnection(
     id: string,
     userId: string,
@@ -395,7 +414,12 @@ export class IntegrationService {
     let modeSource: string | undefined;
 
     try {
-      if (integration.providerType === 'marketplace') {
+      if (integration.providerType === 'ecommerce' || integration.provider.toLowerCase() === 'shopify') {
+        const connector = await this.buildEcommerceConnector(integration);
+        const testResult = await connector.testConnection();
+        success = testResult.success;
+        message = testResult.message;
+      } else if (integration.providerType === 'marketplace') {
         const connector = await this.buildMarketplaceConnector(integration);
         const testResult = await connector.testConnection();
         success = testResult.success;

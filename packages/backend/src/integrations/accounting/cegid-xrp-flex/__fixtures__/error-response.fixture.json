@@ -1,0 +1,6 @@
+{
+  "message": "An error has occurred.",
+  "exceptionMessage": "Customer 'C000999' not found in database.",
+  "exceptionType": "PX.Data.PXException",
+  "stackTrace": "at PX.Data.PXSelectBase`1.Search[Field](Object[] values)"
+}

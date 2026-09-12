@@ -27,5 +27,11 @@ export interface RefreshSemantics {
    * tekrar denenmez; belirsizlikte kapalı tarafa düşülerek doğrudan reauthorization_required verilir.
    */
   staleTokenUseIsDestructive: boolean;
+  /**
+   * Token verildikten sonra en erken ne kadar süre sonra yenilenebileceği (ms).
+   * 0 veya tanımsız ise her an yenilenebilir (Sage, Xero, QBO, FreeAgent: 0).
+   * Exact Online için: 570_000 ms (570 saniye).
+   */
+  earliestRefreshAfterMs?: number;
 }
 

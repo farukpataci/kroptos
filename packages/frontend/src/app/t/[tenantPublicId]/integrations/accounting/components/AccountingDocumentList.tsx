@@ -198,6 +198,44 @@ export default function AccountingDocumentList() {
     );
   };
 
+  const renderEiStatus = (doc: AccountingDocumentItem) => {
+    const raw = (doc.rawResponse || {}) as any;
+    const eiStatus = raw?.ei_status;
+    const dryRun = raw?.dry_run_verified;
+
+    if (!eiStatus && dryRun === undefined) {
+      return <span className="text-kp-text-muted">-</span>;
+    }
+
+    return (
+      <div className="flex flex-col gap-1 items-start">
+        {eiStatus && (
+          <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+              eiStatus === 'accepted' || eiStatus === 'sent'
+                ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                : eiStatus === 'rejected' || eiStatus === 'error' || eiStatus === 'discarded'
+                ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                : 'bg-purple-500/10 text-purple-400 border border-purple-500/20'
+            }`}
+            title={`FIC ei_status: ${eiStatus}`}
+          >
+            {raw?.ei_status_desc || `SdI: ${eiStatus}`}
+          </span>
+        )}
+        {dryRun !== undefined && (
+          <span
+            className={`text-[10px] font-medium ${
+              dryRun ? 'text-emerald-400' : 'text-amber-400'
+            }`}
+          >
+            {dryRun ? '✓ XML Doğrulandı' : `✗ Hata: ${raw?.dry_run_error || 'Doğrulanamadı'}`}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
       {/* Filters bar */}
@@ -244,6 +282,17 @@ export default function AccountingDocumentList() {
         </div>
       </div>
 
+      {/* Permanent E-Invoicing Notice (§2.1, §9) */}
+      <div className="flex items-start gap-2.5 rounded-kp-md border border-sky-500/20 bg-sky-500/10 p-3 text-xs text-sky-300">
+        <InformationCircleIcon className="h-4 w-4 shrink-0 text-sky-400 mt-0.5" />
+        <div className="space-y-0.5">
+          <span className="font-semibold text-sky-300">İtalya E-Fatura (SdI) Bilgilendirmesi:</span>
+          <p className="text-sky-200/90">
+            Fatture in Cloud üzerinde oluşturulan belgelerin e-fatura verisi hazırlanır ve XML şeması <code>dry_run</code> ile doğrulanır. Yasal ve geri alınamaz bir işlem olduğundan, SdI&apos;ya resmi gönderim Fatture in Cloud portalı üzerinden operatör onayıyla yürütülür.
+          </p>
+        </div>
+      </div>
+
       {/* Table */}
       <div className="overflow-hidden rounded-kp-lg border border-kp-border bg-kp-surface-card">
         <table className="min-w-full divide-y divide-kp-border text-left text-xs">
@@ -254,6 +303,7 @@ export default function AccountingDocumentList() {
               <th className="px-4 py-3 font-semibold">{t('documents.colExternalNumber')}</th>
               <th className="px-4 py-3 font-semibold">{t('documents.colAmount')}</th>
               <th className="px-4 py-3 font-semibold">{t('documents.colStatus')}</th>
+              <th className="px-4 py-3 font-semibold">E-Fatura (SdI)</th>
               <th className="px-4 py-3 font-semibold">{t('documents.colDate')}</th>
               <th className="px-4 py-3 font-semibold text-right">{t('documents.colActions')}</th>
             </tr>
@@ -261,7 +311,7 @@ export default function AccountingDocumentList() {
           <tbody className="divide-y divide-kp-border text-kp-text-primary">
             {documents.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-kp-text-muted">
+                <td colSpan={8} className="px-4 py-8 text-center text-kp-text-muted">
                   {isLoading ? t('documents.loading') : t('documents.noRecords')}
                 </td>
               </tr>
@@ -287,6 +337,9 @@ export default function AccountingDocumentList() {
                     </td>
                     <td className="px-4 py-3">
                       {renderStatus(doc)}
+                    </td>
+                    <td className="px-4 py-3">
+                      {renderEiStatus(doc)}
                     </td>
                     <td className="px-4 py-3 text-kp-text-muted">
                       {new Date(doc.createdAt).toLocaleString('tr-TR')}

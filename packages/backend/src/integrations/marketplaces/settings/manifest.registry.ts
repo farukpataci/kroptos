@@ -22,6 +22,12 @@ import { emagOverride } from './providers/emag.settings';
 import { zalandoOverride } from './providers/zalando.settings';
 import { aliexpressOverride } from './providers/aliexpress.settings';
 import { farmazonOverride } from './providers/farmazon.settings';
+import { shopifyOverride } from './providers/shopify.settings';
+import { woocommerceOverride } from './providers/woocommerce.settings';
+import { ideasoftOverride } from './providers/ideasoft.settings';
+import { ticimaxOverride } from './providers/ticimax.settings';
+import { tsoftOverride } from './providers/tsoft.settings';
+import { opencartOverride } from './providers/opencart.settings';
 
 /**
  * The one place a marketplace is registered. Adding a provider is this list
@@ -46,6 +52,12 @@ const OVERRIDES: ProviderSettingsOverride[] = [
   zalandoOverride,
   aliexpressOverride,
   farmazonOverride,
+  shopifyOverride,
+  woocommerceOverride,
+  ideasoftOverride,
+  ticimaxOverride,
+  tsoftOverride,
+  opencartOverride,
 ];
 
 @Injectable()

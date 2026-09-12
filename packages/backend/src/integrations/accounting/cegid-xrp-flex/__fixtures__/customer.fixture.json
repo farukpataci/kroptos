@@ -1,0 +1,19 @@
+{
+  "id": "C000000004",
+  "CustomerID": { "value": "C000000004" },
+  "CustomerName": { "value": "Hotel du Lac" },
+  "CustomerClass": { "value": "DEFAULT" },
+  "Status": { "value": "Active" },
+  "TaxRegistrationID": { "value": "FR12345678901" },
+  "MainContact": {
+    "DisplayName": { "value": "Hotel du Lac" },
+    "Email": { "value": "contact@hoteldulac.fr" },
+    "Phone1": { "value": "+33123456789" },
+    "Address": {
+      "AddressLine1": { "value": "15 Rue de la Paix" },
+      "City": { "value": "Paris" },
+      "PostalCode": { "value": "75001" },
+      "Country": { "value": "FR" }
+    }
+  }
+}

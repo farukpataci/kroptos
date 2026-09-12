@@ -11,6 +11,7 @@ import {
   ArrowPathIcon,
   KeyIcon,
   CalendarDaysIcon,
+  BoltIcon,
 } from '@heroicons/react/24/outline';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
@@ -18,6 +19,7 @@ import { AccountingCompanyItem } from '../types';
 
 interface DatevExportManagerProps {
   companies: AccountingCompanyItem[];
+  onRefresh?: () => void;
 }
 
 interface DatevConfigForm {

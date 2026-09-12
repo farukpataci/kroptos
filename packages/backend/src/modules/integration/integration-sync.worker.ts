@@ -6,6 +6,8 @@ import { MarketplaceCredentialService } from '../../integrations/marketplaces/co
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import type { MarketplaceConnector } from '../../integrations/marketplaces/core/MarketplaceConnector';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { EcommerceConnectorFactory } from '../../integrations/ecommerce/core/EcommerceConnectorFactory';
+import { EcommerceCredentialService } from '../../integrations/ecommerce/core/EcommerceCredentialService';
 import { decrypt } from '../../common/utils/encryption.util';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { syncEventEmitter } from './integration-queue.service';
@@ -25,6 +27,8 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     private erpConnectorFactory: ErpConnectorFactory,
     @Inject(forwardRef(() => IntegrationSettingsService))
     private settingsService: IntegrationSettingsService,
+    private ecommerceConnectorFactory?: EcommerceConnectorFactory,
+    private ecommerceCredentialService?: EcommerceCredentialService,
   ) {}
 
   onModuleInit() {
@@ -123,7 +127,11 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     provider: string,
     connector: MarketplaceConnector,
   ) {
-    for (const finding of connector.consumeUnmappedKeys()) {
+    if (!connector || typeof connector.consumeUnmappedKeys !== 'function') return;
+    const findings = connector.consumeUnmappedKeys();
+    if (!findings || !Array.isArray(findings)) return;
+
+    for (const finding of findings) {
       const fingerprint = createHash('sha1').update(finding.keys.join(',')).digest('hex').slice(0, 12);
       const errorCode = `unmapped_keys:${fingerprint}`;
 
@@ -409,6 +417,122 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
             }
           }
           logMessage = `Successfully synced ${count} orders to Logo ERP.`;
+        }
+      } else if (integration.providerType === 'ecommerce' || integration.provider.toLowerCase() === 'shopify') {
+        // E-Commerce platform (Shopify, etc.) sync logic
+        if (!this.ecommerceCredentialService || !this.ecommerceConnectorFactory) {
+          throw new Error('E-Commerce services are not configured in worker');
+        }
+        const credentials = this.ecommerceCredentialService.decrypt(integration.credentialsEncrypted);
+        this.ecommerceCredentialService.validate(integration.provider, credentials);
+        const settings = await this.settingsService
+          .resolveForRuntime(integration.id)
+          .catch(() => ({}) as Record<string, unknown>);
+        const connector = this.ecommerceConnectorFactory.create(integration.provider, credentials, settings);
+
+        if (eventType === 'sync_products') {
+          const products = await connector.fetchProducts();
+          for (const p of products) {
+            for (const v of p.variants) {
+              const sku = v.sku || `${p.id}-${v.id}`;
+              await this.prisma.product.upsert({
+                where: { storeId_sku: { storeId, sku } },
+                create: {
+                  agencyId: integration.agencyId,
+                  clientId,
+                  storeId,
+                  sku,
+                  name: `${p.title}${v.title && v.title !== 'Default Title' ? ` - ${v.title}` : ''}`,
+                  description: p.description || null,
+                  price: new Prisma.Decimal(v.price),
+                  basePrice: new Prisma.Decimal(v.price),
+                  stockQuantity: v.inventoryQuantity,
+                  barcode: v.barcode || null,
+                  status: 'active',
+                },
+                update: {
+                  name: `${p.title}${v.title && v.title !== 'Default Title' ? ` - ${v.title}` : ''}`,
+                  description: p.description || undefined,
+                  price: new Prisma.Decimal(v.price),
+                  stockQuantity: v.inventoryQuantity,
+                  barcode: v.barcode || undefined,
+                },
+              });
+            }
+          }
+          logMessage = `Successfully synced ${products.length} products from ${integration.provider}.`;
+        } else if (eventType === 'sync_orders') {
+          const orders = await connector.fetchOrders();
+          let newOrdersCount = 0;
+          for (const o of orders) {
+            const existing = await this.prisma.order.findUnique({
+              where: { storeId_orderNumber: { storeId, orderNumber: o.orderNumber } },
+            });
+            if (!existing) {
+              const orderItemsData: any[] = [];
+              for (const item of o.items) {
+                const itemSku = item.sku || `ITEM-${item.id}`;
+                let product = await this.prisma.product.findFirst({
+                  where: { storeId, sku: itemSku },
+                });
+                if (!product) {
+                  product = await this.prisma.product.create({
+                    data: {
+                      agencyId: integration.agencyId,
+                      clientId,
+                      storeId,
+                      sku: itemSku,
+                      name: item.title,
+                      price: new Prisma.Decimal(item.unitPrice),
+                      basePrice: new Prisma.Decimal(item.unitPrice),
+                      stockQuantity: 0,
+                      status: 'active',
+                    },
+                  });
+                }
+                orderItemsData.push({
+                  productId: product.id,
+                  sku: itemSku,
+                  name: item.title,
+                  quantity: item.quantity,
+                  unitPrice: new Prisma.Decimal(item.unitPrice),
+                  totalPrice: new Prisma.Decimal(item.totalPrice),
+                });
+              }
+
+              await this.prisma.order.create({
+                data: {
+                  agencyId: integration.agencyId,
+                  clientId,
+                  storeId,
+                  orderNumber: o.orderNumber,
+                  customerName: o.customer?.fullName || 'Müşteri',
+                  customerEmail: o.customer?.email || null,
+                  customerPhone: o.customer?.phone || null,
+                  shippingAddress: o.shippingAddress
+                    ? `${o.shippingAddress.address1} ${o.shippingAddress.city} ${o.shippingAddress.country}`
+                    : null,
+                  totalAmount: new Prisma.Decimal(o.totalPrice),
+                  currency: o.currency,
+                  status: o.orderStatus === 'cancelled' ? 'cancelled' : 'pending',
+                  paymentStatus: o.financialStatus === 'paid' ? 'paid' : 'pending',
+                  source: integration.provider.toLowerCase(),
+                  publicId: generatePublicId('ord', 12),
+                  createdBy: 'system',
+                  items: { create: orderItemsData },
+                },
+              });
+              newOrdersCount++;
+            }
+          }
+          logMessage = `Successfully synced ${orders.length} orders (${newOrdersCount} new) from ${integration.provider}.`;
+        } else if (eventType === 'sync_stock') {
+          const { sku, quantity } = payload;
+          const res = await connector.updateInventory({ sku, availableQuantity: quantity });
+          if (!res.success) {
+            throw new Error(res.message || `Stock update failed in ${integration.provider}`);
+          }
+          logMessage = `Successfully synced stock for SKU '${sku}' to ${quantity} in ${integration.provider}`;
         }
       } else {
         // Marketplace integration sync logic

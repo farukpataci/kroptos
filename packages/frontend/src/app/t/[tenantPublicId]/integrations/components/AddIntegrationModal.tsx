@@ -860,14 +860,14 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
-    id: 'teamsystem',
-    name: 'TeamSystem',
+    id: 'fatture-in-cloud',
+    name: 'Fatture in Cloud (TeamSystem)',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
-    badgeBg: 'bg-blue-600/10 border-blue-600/20 text-blue-700',
-    badgeText: 'TeamSystem IT',
-    description: 'İtalya pazar lideri TeamSystem ERP ve Fatturazione Elettronica e-Fatura entegrasyonu.',
-    capabilities: ['İtalya (IT)', 'Fatturazione Elettronica', 'ERP & Muhasebe'],
+    badgeBg: 'bg-sky-600/10 border-sky-600/20 text-sky-700 dark:text-sky-300',
+    badgeText: 'Fatture in Cloud IT',
+    description: 'İtalya bulut muhasebe lideri Fatture in Cloud REST v2 API ile fatura, cari, ürün ve e-fatura akışı.',
+    capabilities: ['İtalya (IT)', 'Fatture in Cloud v2', 'E-Fatura dry_run', 'SdI Hazırlığı'],
     status: 'active',
   },
   {
@@ -882,14 +882,14 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     status: 'active',
   },
   {
-    id: 'cegid',
-    name: 'Cegid',
+    id: 'cegid-xrp-flex',
+    name: 'Cegid XRP Flex',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
-    badgeBg: 'bg-violet-600/10 border-violet-600/20 text-violet-700',
-    badgeText: 'Cegid FR/ES',
-    description: 'Fransa, İspanya ve Portekiz pazarında Cegid perakende ve ERP muhasebe entegrasyonu.',
-    capabilities: ['Fransa & İspanya', 'Retail ERP', 'Muhasebe'],
+    badgeBg: 'bg-violet-600/10 border-violet-600/20 text-violet-700 dark:text-violet-300',
+    badgeText: 'Cegid ERP (FR)',
+    description: 'Cegid XRP Flex bulut ERP ile satış faturası, cari senkronizasyonu ve tahsilat akışı.',
+    capabilities: ['Fransa (FR)', 'Acumatica REST v2', 'Taslak & Mutabakat', 'Mali Müşavir Kodları'],
     status: 'active',
   },
   {
@@ -897,10 +897,10 @@ export const CATALOG_PROVIDERS: CatalogProvider[] = [
     name: 'Pennylane',
     category: 'accounting',
     categoryLabel: 'Muhasebe Entegrasyonu',
-    badgeBg: 'bg-teal-600/10 border-teal-600/20 text-teal-700',
-    badgeText: 'Pennylane FR',
-    description: 'Fransa yükselen bulut finans platformu Pennylane e-Fatura ve muhasebe otomasyonu.',
-    capabilities: ['Fransa (FR)', 'Bulut Finans', 'E-Fatura Otomasyonu'],
+    badgeBg: 'bg-teal-600/10 border-teal-600/20 text-teal-700 dark:text-teal-300',
+    badgeText: 'Pennylane (FR)',
+    description: 'Fransa bulut muhasebe platformu Pennylane API v2 ile satış faturası, cari senkronizasyonu ve mutabakat akışı.',
+    capabilities: ['Fransa (FR)', 'API v2 REST', 'Taslak & Mutabakat', '25 req / 5 sn'],
     status: 'active',
   },
   {
@@ -983,10 +983,10 @@ export function AddIntegrationModal({
           set.add(p.id.toLowerCase().replace(/-/g, '_'));
         });
         setSupportedAccounting(set);
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_go3', 'logo-rest', 'logo_rest']));
       })
       .catch(() => {
-        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite']));
+        if (!cancelled) setSupportedAccounting(new Set(['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_go3', 'logo-rest', 'logo_rest']));
       });
 
     return () => {
@@ -1013,7 +1013,7 @@ export function AddIntegrationModal({
     }
     if (provider.category === 'accounting') {
       const pid = provider.id.toLowerCase();
-      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite'];
+      const activeAccounting = ['parasut', 'kolaybi', 'bizimhesap', 'sap', 'sap_s4hana_cloud', 'ms_dynamics', 'ms-dynamics-bc-online', 'ms_dynamics_bc_online', 'sage-accounting', 'sage_accounting', 'sage', 'xero', 'quickbooks', 'odoo', 'datev', 'lexware_office', 'lexware-office', 'lexware', 'sevdesk', 'freeagent', 'exact', 'exact_online', 'exact-online', 'visma', 'visma_net_erp', 'visma-net-erp', 'fortnox', 'netsuite', 'fatture-in-cloud', 'fatture_in_cloud', 'fic', 'cegid-xrp-flex', 'cegid_xrp_flex', 'cegid', 'pennylane', 'logo_go3', 'logo-rest', 'logo_rest'];
       if (activeAccounting.includes(pid)) return true;
       return (
         (supportedAccounting?.has(pid) ?? false) ||

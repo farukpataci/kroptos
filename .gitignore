@@ -60,3 +60,7 @@ scratch/
 # hem revert commit'i 2026-08-18'de geçmişten düşürüldü, dal henüz push edilmemişti.
 *.docx
 *.doc
+
+# Assistant / Tooling
+.claude/
+.mcp.json

@@ -19,6 +19,10 @@ import '../../exact-online';
 import '../../visma-net-erp';
 import '../../fortnox';
 import '../../netsuite';
+import '../../fatture-in-cloud';
+import '../../cegid-xrp-flex';
+import '../../pennylane';
+import '../../logo-rest';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();

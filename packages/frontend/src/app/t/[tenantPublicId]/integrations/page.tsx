@@ -115,6 +115,7 @@ export default function IntegrationsParentPage() {
         if (pid.includes('visma') && p.includes('visma')) return true;
         if (pid.includes('fortnox') && p.includes('fortnox')) return true;
         if (pid.includes('netsuite') && p.includes('netsuite')) return true;
+        if (pid.includes('logo') && p === 'logo-rest') return true;
         return false;
       });
       if (existing) {
@@ -136,6 +137,10 @@ export default function IntegrationsParentPage() {
         if (pid.includes('visma')) targetProvider = 'VISMA-NET-ERP';
         if (pid.includes('fortnox')) targetProvider = 'FORTNOX';
         if (pid.includes('netsuite')) targetProvider = 'NETSUITE';
+        if (pid.includes('fatture') || pid.includes('fic')) targetProvider = 'FATTURE-IN-CLOUD';
+        if (pid.includes('cegid')) targetProvider = 'CEGID-XRP-FLEX';
+        if (pid.includes('pennylane')) targetProvider = 'PENNYLANE';
+        if (pid.includes('logo')) targetProvider = 'LOGO-REST';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }

@@ -630,9 +630,264 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'FATTURE-IN-CLOUD',
+    displayName: 'Fatture in Cloud (TeamSystem)',
+    country: 'IT',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'fatture-in-cloud',
+      name: 'Fatture in Cloud (TeamSystem)',
+      fields: [
+        {
+          key: 'companyId',
+          label: 'Fatture in Cloud Şirket Kimliği (Company ID)',
+          type: 'text',
+          required: true,
+          description: 'Fatture in Cloud firma ID değeri (GET /user/companies ile listelenir). Tüm çağrılar /c/{company_id}/ altına kapsamlanır.',
+        },
+        {
+          key: 'paymentAccountId',
+          label: 'Varsayılan Ödeme / Kasa-Banka Hesabı ID (Payment Account ID)',
+          type: 'text',
+          required: false,
+          description: 'Tahsil edilmiş ("paid") faturalar için zorunlu kasa/banka hesap ID değeri (§5.6).',
+        },
+        {
+          key: 'useGrossPrices',
+          label: 'Fiyatları Brüt Olarak Gönder (use_gross_prices)',
+          type: 'select',
+          required: false,
+          defaultValue: 'false',
+          description: 'Kalem fiyatlarının net mi brüt mü iletileceğini belirler (§5.4). Varsayılan: false (net fiyat).',
+        },
+        {
+          key: 'defaultVatId',
+          label: 'Varsayılan FIC KDV ID (Default VAT ID)',
+          type: 'text',
+          required: false,
+          defaultValue: '0',
+          description: 'Fatture in Cloud üzerindeki standart KDV oranı ID değeri (örn. %22 standart KDV için).',
+        },
+        {
+          key: 'clientId',
+          label: 'Özel İstemci Kimliği (Client ID - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          description: 'Özel FIC Developer uygulamanız varsa girin; boşsa merkezi KroptOS OAuth uygulaması kullanılır.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'Özel İstemci Gizli Anahtarı (Client Secret - İsteğe Bağlı)',
+          type: 'password',
+          required: false,
+          secret: true,
+          description: 'Özel FIC Developer uygulamanızın istemci parolası.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'CEGID-XRP-FLEX',
+    displayName: 'Cegid XRP Flex',
+    country: 'FR',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'cegid-xrp-flex',
+      name: 'Cegid XRP Flex',
+      fields: [
+        {
+          key: 'instanceUrl',
+          label: 'Cegid XRP Flex Örnek URL (Instance URL)',
+          type: 'text',
+          required: true,
+          description: 'Cegid XRP Flex bulut örneğinizin temel adresi (örn. https://acme.cegid.cloud).',
+        },
+        {
+          key: 'clientId',
+          label: 'OAuth 2.0 İstemci Kimliği (Client ID)',
+          type: 'text',
+          required: true,
+          description: 'Cegid XRP Flex OAuth 2.0 Connected Application istemci kimliği.',
+        },
+        {
+          key: 'clientSecret',
+          label: 'OAuth 2.0 İstemci Parolası (Client Secret)',
+          type: 'password',
+          required: true,
+          secret: true,
+          description: 'Cegid XRP Flex OAuth 2.0 Connected Application gizli anahtarı.',
+        },
+        {
+          key: 'username',
+          label: 'Kullanıcı Adı (Username)',
+          type: 'text',
+          required: true,
+          description: 'API erişim yetkisine sahip Cegid XRP Flex ERP kullanıcı adı.',
+        },
+        {
+          key: 'password',
+          label: 'Kullanıcı Parolası (Password)',
+          type: 'password',
+          required: true,
+          secret: true,
+          description: 'Cegid XRP Flex kullanıcısının parolası.',
+        },
+        {
+          key: 'defaultIncomeAccount',
+          label: 'Varsayılan Gelir / Satış Hesabı Kodu (Compte de Ventes - 707xxx)',
+          type: 'text',
+          required: true,
+          defaultValue: '707000',
+          description: 'Fransız Tekdüzen Hesap Planı (PCG) satış hesabı kodu. Mali müşavirinizden temin ediniz.',
+        },
+        {
+          key: 'defaultVatCode',
+          label: 'Varsayılan KDV / Vergi Kodu (Code Taxe / TVA)',
+          type: 'text',
+          required: true,
+          defaultValue: 'TVA20',
+          description: 'Cegid XRP Flex sisteminde tanımlı vergi kodu (örn. TVA20). Mali müşavirinizden teyit ediniz.',
+        },
+        {
+          key: 'branchId',
+          label: 'Şube Kodu (Branch ID - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          description: 'Çok şubeli kurulumlar için PX-Branch başlığında iletilecek şube kodu.',
+        },
+        {
+          key: 'endpointName',
+          label: 'Uç Nokta Adı (Endpoint Name - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          defaultValue: 'Default',
+          description: 'Acumatica sözleşme uç noktası adı. Varsayılan: Default.',
+        },
+        {
+          key: 'endpointVersion',
+          label: 'Uç Nokta Sürümü (Endpoint Version - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          defaultValue: '20.200.001',
+          description: 'Acumatica sözleşme sürümü. Varsayılan: 20.200.001.',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'PENNYLANE',
+    displayName: 'Pennylane',
+    country: 'FR',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'VERIFIED',
+    credentialSchema: {
+      provider: 'pennylane',
+      name: 'Pennylane',
+      fields: [
+        {
+          key: 'apiToken',
+          label: 'API Belirteci (API Token)',
+          type: 'password',
+          required: true,
+          secret: true,
+          description: 'Pennylane Ayarlar > Geliştirici sayfasından üretilen API v2 belirteci.',
+        },
+        {
+          key: 'baseUrl',
+          label: 'API Taban URL (Base URL)',
+          type: 'text',
+          required: false,
+          defaultValue: 'https://app.pennylane.com/api/external/v2/',
+          description: 'Pennylane API v2 ana adresi (Yalnızca API v2 desteklenir).',
+        },
+        {
+          key: 'companyId',
+          label: 'Şirket Kimliği (Company ID - İsteğe Bağlı)',
+          type: 'text',
+          required: false,
+          description: 'Çoklu şirket hesapları için hedef şirket kimliği.',
+        },
+        {
+          key: 'defaultVatRate',
+          label: 'Varsayılan KDV Kodu (Default VAT Rate)',
+          type: 'text',
+          required: false,
+          defaultValue: 'FR_200',
+          description: 'Fransız KDV oranı kodu (FR_200: %20 standart, FR_100: %10, FR_055: %5.5, FR_021: %2.1, exempt: İstisna).',
+        },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'LOGO-REST',
+    displayName: 'Logo Tiger REST Servis',
+    country: 'TR',
+    protocol: 'rest',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'logo-rest',
+      name: 'Logo Tiger REST Servis',
+      fields: [
+        { key: 'baseUrl', label: 'REST Servis Adresi', type: 'url', required: true, description: 'Logo REST Servisinin çalıştığı sunucu (örn. http://10.0.0.5:32001). Varsayılan port 32001.' },
+        { key: 'clientId', label: 'Client ID', type: 'text', required: true, description: 'Logo Çözüm Ortağı üzerinden verilen istemci kimliği.' },
+        { key: 'clientSecret', label: 'Client Secret', type: 'password', required: true, secret: true, description: 'Logo Çözüm Ortağı üzerinden verilen istemci sırrı.' },
+        { key: 'username', label: 'Logo Kullanıcı Adı', type: 'text', required: true },
+        { key: 'password', label: 'Logo Şifresi', type: 'password', required: true, secret: true },
+        { key: 'companyId', label: 'Firma Numarası (firmno)', type: 'text', required: true, defaultValue: '1', description: 'Token bu firmaya kilitlenir; her firma için ayrı bağlantı/oturum tutulur.' },
+        { key: 'periodNo', label: 'Dönem Numarası', type: 'text', required: false, description: 'Boş bırakılırsa aktif dönem.' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
+  'LOGO-REST': {
+    bg: 'bg-sky-600/10 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 border border-sky-500/20',
+    text: 'text-sky-700 dark:text-sky-300',
+    badge: 'Logo ERP',
+    iconLetter: 'L',
+  },
+  PENNYLANE: {
+    bg: 'bg-teal-600/10 text-teal-600 dark:bg-teal-500/20 dark:text-teal-300 border border-teal-500/20',
+    text: 'text-teal-600 dark:text-teal-300',
+    badge: 'Pennylane (FR)',
+    iconLetter: 'P',
+  },
+  'CEGID-XRP-FLEX': {
+    bg: 'bg-violet-600/10 text-violet-600 dark:bg-violet-500/20 dark:text-violet-300 border border-violet-500/20',
+    text: 'text-violet-600 dark:text-violet-300',
+    badge: 'Cegid ERP (FR)',
+    iconLetter: 'C',
+  },
+  'FATTURE-IN-CLOUD': {
+    bg: 'bg-sky-600/10 text-sky-600 dark:bg-sky-500/20 dark:text-sky-300 border border-sky-500/20',
+    text: 'text-sky-600 dark:text-sky-300',
+    badge: 'TeamSystem FIC',
+    iconLetter: 'F',
+  },
   NETSUITE: {
     bg: 'bg-blue-700/10 text-blue-700 dark:bg-blue-600/20 dark:text-blue-300 border border-blue-600/20',
     text: 'text-blue-700 dark:text-blue-300',
@@ -778,6 +1033,10 @@ export default function AddAccountingModal({
     if (lower.includes('visma')) return 'VISMA-NET-ERP';
     if (lower.includes('fortnox')) return 'FORTNOX';
     if (lower.includes('netsuite')) return 'NETSUITE';
+    if (lower.includes('fatture') || lower.includes('fic')) return 'FATTURE-IN-CLOUD';
+    if (lower.includes('cegid')) return 'CEGID-XRP-FLEX';
+    if (lower.includes('pennylane')) return 'PENNYLANE';
+    if (lower.includes('logo')) return 'LOGO-REST';
     if (lower.includes('datev')) return 'DATEV';
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
@@ -861,6 +1120,10 @@ export default function AddAccountingModal({
   const isLexware = resolvedProviderKey === 'LEXWARE-OFFICE';
   const isFortnox = resolvedProviderKey === 'FORTNOX';
   const isNetSuite = resolvedProviderKey === 'NETSUITE';
+  const isFattureInCloud = resolvedProviderKey === 'FATTURE-IN-CLOUD';
+  const isCegid = resolvedProviderKey === 'CEGID-XRP-FLEX';
+  const isPennylane = resolvedProviderKey === 'PENNYLANE';
+  const isLogoRest = resolvedProviderKey === 'LOGO-REST';
 
   const certExpiryDays = useMemo(() => {
     if (!isNetSuite || !credentials.certificateExpiresAt) return null;
@@ -1234,6 +1497,55 @@ export default function AddAccountingModal({
               </div>
             )}
 
+            {/* Cegid XRP Flex Guidance (§1, §4, §6) */}
+            {isCegid && (
+              <div className="rounded-xl border border-violet-500/30 bg-violet-50 dark:bg-violet-950/30 p-4 text-xs text-violet-900 dark:text-violet-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-violet-950 dark:text-violet-100">
+                  <InformationCircleIcon className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                  Cegid XRP Flex Bulut ERP Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-violet-800 dark:text-violet-300">
+                  <li><strong>Fransa Bulut ERP Mimarisi:</strong> Cegid XRP Flex, Acumatica tabanlı REST sözleşme API&apos;sini kullanır. Cegid Loop veya Expert serisinden bağımsız kurumsal ERP ürünüdür.</li>
+                  <li><strong>Hesap Planı ve Vergi Kodları (Mali Müşavir):</strong> Fatura gönderimi öncesinde Fransız Tekdüzen Hesap Planı (PCG - 707xxx) satış hesapları ve TVA kodları şirketinizin <em>expert-comptable</em> (mali müşaviri) ile netleştirilmelidir.</li>
+                  <li><strong>Taslak, Mutabakat ve Onay Döngüsü:</strong> Faturalar önce taslak (Hold: true) olarak açılır, sunucu hesaplamalı toplam tutar mutabakat toleransı (≤ 0.05) içinde teyit edildikten sonra kesinleştirilir (ReleaseInvoice).</li>
+                  <li><strong>Güvenli Kimlik Yönetimi:</strong> OAuth 2.0 Password Grant ile token alınır ve sunucu tarafında güvenli şekilde saklanır.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Pennylane Guidance (§3, §5.1, §5.3, §5.4, §6) */}
+            {isPennylane && (
+              <div className="rounded-xl border border-teal-500/30 bg-teal-50 dark:bg-teal-950/30 p-4 text-xs text-teal-900 dark:text-teal-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-teal-950 dark:text-teal-100">
+                  <InformationCircleIcon className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+                  Pennylane Bulut Muhasebe Entegrasyon Rehberi (API v2)
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-teal-800 dark:text-teal-300">
+                  <li><strong>Yalnızca API v2 Mimarisi:</strong> Pennylane entegrasyonu tamamen modern REST v2 API standardını kullanır (API v1 kullanımdan kaldırılmıştır).</li>
+                  <li><strong>Fatura Numaralandırma & Yaşam Döngüsü:</strong> Faturalar KroptOS tarafından yapılandırılmış veri olarak taslak (draft: true) açılır; fatura numarası ve sıralı yasal dizilim Pennylane tarafından üretilir.</li>
+                  <li><strong>Sunucu Hesaplamalı Mutabakat:</strong> Toplam tutar sunucu tarafından hesaplanır; mutabakat toleransı (≤ 0.05 EUR) doğrulandıktan sonra kesinleştirilir (finalize). Uyuşmazlık durumunda fatura taslakta bekletilir.</li>
+                  <li><strong>Fransız KDV Kodları ve Limitler:</strong> Fransız KDV sistemi kodlu enum (FR_200, FR_100 vb.) olarak eşlenir. İstekler 25 istek / 5 saniye kayan pencere sınırına tabidir.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Logo Tiger REST guidance (docs/logo.agent.md §1.1, §4, §5.3) */}
+            {isLogoRest && (
+              <div className="rounded-xl border border-sky-500/30 bg-sky-50 dark:bg-sky-950/30 p-4 text-xs text-sky-900 dark:text-sky-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-sky-950 dark:text-sky-100">
+                  <InformationCircleIcon className="h-4 w-4 text-sky-600 dark:text-sky-400" />
+                  Logo REST Servis Entegrasyon Rehberi
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-sky-800 dark:text-sky-300">
+                  <li><strong>Desteklenen ürünler:</strong> Tiger 3, Tiger Wings ve Enterprise sürümleri. <strong>GO3, Start, Tiger Plus ve Go Plus Logo REST tarafından desteklenmez</strong>; bunlar için Logo Objects (COM) tabanlı ayrı bir yol gerekir.</li>
+                  <li><strong>Ticari ön koşul:</strong> Client ID / Client Secret yalnızca Logo Çözüm Ortaklarına verilir. Ayrı lisans gerekmez; Logo Objects kullanım hakkı yeterlidir.</li>
+                  <li><strong>Kurulum:</strong> ERP dizinindeki <code>RESTServis\LogoRestServiceSetup.exe</code> ile kurulur, <code>RestServiceWSManager.exe</code> ile yapılandırılır. Varsayılan port 32001.</li>
+                  <li><strong>Firma kilidi:</strong> Token, girilen firma numarasına (firmno) bağlıdır. Birden fazla firma için ayrı bağlantı açın.</li>
+                  <li><strong>Güvenlik:</strong> REST servisini internete açmayın. Bu sürüm yalnızca MOCK ortamında çalışır; canlı bağlantı, yerel ağdaki KroptOS Agent ile sağlanacaktır.</li>
+                </ul>
+              </div>
+            )}
+
             {/* Re-authorization required warning banner */}
             {isReauthRequired && (
               <div className="rounded-xl border border-rose-500/40 bg-rose-50 dark:bg-rose-950/40 p-4 text-xs text-rose-900 dark:text-rose-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
@@ -1542,6 +1854,37 @@ export default function AddAccountingModal({
                   </p>
                   <p>
                     • <strong>OneWorld Subsidiary:</strong> Çoklu tüzel kişiliğe sahip NetSuite hesaplarında fatura ve carilerin bağlanacağı tüzel kişilik ID&apos;si yapılandırmadan girilir (§5.9).
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Fatture in Cloud (TeamSystem) Information & Legal Notice Banner (§1, §2.1, §5.1, §9) */}
+            {isFattureInCloud && (
+              <div className="rounded-2xl border border-sky-500/20 bg-sky-50/40 dark:bg-sky-950/20 p-4 space-y-3">
+                <div className="flex items-center justify-between border-b border-sky-500/20 pb-2">
+                  <div className="flex items-center gap-2">
+                    <InformationCircleIcon className="h-4 w-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                    <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Fatture in Cloud (TeamSystem) Entegrasyon Bilgileri
+                    </h3>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/10 text-sky-700 dark:text-sky-300 border border-sky-500/20">
+                    MOCK_READY
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300 space-y-2">
+                  <p>
+                    • <strong>TeamSystem Ayrımı:</strong> Fatture in Cloud, TeamSystem grubunun tek açık dokümanlı bulut API çözümüdür. TeamSystem Enterprise / Alyante çözümleri şirket içi (on-prem) ve yetkili iş ortağı (partner) kanalıyla sağlandığından ayrı bir takvimde ele alınacaktır (§1).
+                  </p>
+                  <p>
+                    • <strong>SdI E-Fatura Güvenlik Sınırı:</strong> İtalya vergi dairesi (SdI) iletimi yasal ve geri alınamaz bir işlemdir. Bu fazda SdI resmi gönderim ucu çağrılmaz; fatura verisi hazırlanır ve <code>dry_run</code> XML doğrulaması yapılır. Resmi iletim Fatture in Cloud portalı üzerinden operatör onayıyla yürütülür (§2.1, §5.1).
+                  </p>
+                  <p>
+                    • <strong>İki Bağımsız Durum Ekseni:</strong> KroptOS belge durumu (belgenin oluşturulması) ile FIC e-fatura iletim durumu (<code>ei_status</code>) birbirinden tamamen bağımsızdır. Belgeleriniz arayüzde iki ayrı sütunda gösterilir (§5.2).
+                  </p>
+                  <p>
+                    • <strong>Kasa/Banka Hesabı Zorunluluğu:</strong> Tahsil edilmiş (&quot;paid&quot;) fatura oluşturabilmek için Fatture in Cloud kasa/banka hesap ID&apos;si zorunludur (§5.6).
                   </p>
                 </div>
               </div>

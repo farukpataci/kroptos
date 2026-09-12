@@ -1,0 +1,26 @@
+{
+  "id": 2050,
+  "invoice_number": null,
+  "draft": true,
+  "status": "draft",
+  "date": "2026-09-12",
+  "deadline": "2026-10-12",
+  "amount": "120.00",
+  "currency_amount": "120.00",
+  "remaining_amount_with_tax": "120.00",
+  "paid": false,
+  "customer_id": 1050,
+  "external_reference": "KROP-INV-2050",
+  "invoice_lines": [
+    {
+      "id": 1,
+      "label": "Audit Comptable",
+      "quantity": 1,
+      "raw_currency_unit_price": "100.00",
+      "vat_rate": "FR_200",
+      "amount": "100.00"
+    }
+  ],
+  "created_at": "2026-09-12T10:05:00.000Z",
+  "updated_at": "2026-09-12T10:05:00.000Z"
+}

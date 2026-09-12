@@ -1,0 +1,43 @@
+{
+  "data": {
+    "id": 10001,
+    "type": "invoice",
+    "number": 1,
+    "numeration": "INV",
+    "date": "2026-09-11",
+    "amount_net": 100.0,
+    "amount_vat": 22.0,
+    "amount_gross": 122.0,
+    "use_gross_prices": false,
+    "e_invoice": false,
+    "entity": {
+      "id": 54321,
+      "name": "Mario Rossi S.r.l.",
+      "vat_number": "IT12345678901",
+      "tax_code": "IT12345678901",
+      "address_street": "Via Roma, 10",
+      "address_postal_code": "20100",
+      "address_city": "Milano",
+      "address_province": "MI",
+      "country": "Italia"
+    },
+    "items_list": [
+      {
+        "name": "Servizio Consulenza",
+        "qty": 2,
+        "net_price": 50.0,
+        "vat": {
+          "id": 0,
+          "value": 22
+        }
+      }
+    ],
+    "payments_list": [
+      {
+        "amount": 122.0,
+        "due_date": "2026-10-11",
+        "status": "not_paid"
+      }
+    ]
+  }
+}

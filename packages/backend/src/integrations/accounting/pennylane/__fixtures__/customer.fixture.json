@@ -1,0 +1,9 @@
+{
+  "id": 1050,
+  "name": "Acme France Consulting SAS",
+  "reg_no": "123456789",
+  "vat_number": "FR12345678901",
+  "emails": ["contact@acme.fr"],
+  "external_reference": "KROP-CUST-1050",
+  "created_at": "2026-09-12T10:00:00.000Z"
+}

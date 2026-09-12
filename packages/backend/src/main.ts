@@ -8,7 +8,14 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const express = require('express');
-  app.use(express.json({ limit: '10mb' }));
+  app.use(
+    express.json({
+      limit: '10mb',
+      verify: (req: any, _res: any, buf: Buffer) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
   // Validation pipe

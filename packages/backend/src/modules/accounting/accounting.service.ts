@@ -102,16 +102,18 @@ export class AccountingService {
       },
     });
 
-    // Auto-create default company if companyId provided in credentials
-    if (dto.credentials.companyId) {
+    // Auto-create default company if companyId or mandantenNummer provided
+    const externalCompanyId = dto.credentials?.companyId || (dto.provider === 'DATEV' ? (dto.credentials?.mandantenNummer || '1') : null);
+    if (externalCompanyId) {
       await this.prisma.accountingCompany.create({
         data: {
           integrationId: created.id,
           agencyId: dto.agencyId,
-          externalCompanyId: String(dto.credentials.companyId),
+          externalCompanyId: String(externalCompanyId),
           name: dto.name,
-          currency: 'TRY',
+          currency: dto.provider === 'DATEV' ? 'EUR' : 'TRY',
           isDefault: true,
+          defaultAccountCodes: dto.provider === 'DATEV' ? dto.credentials : undefined,
         },
       });
     }
@@ -272,6 +274,26 @@ export class AccountingService {
           lastErrorMessage: result.success ? null : result.message,
         },
       });
+
+      if (result.success && integration.provider === 'DATEV') {
+        const hasCompany = await this.prisma.accountingCompany.findFirst({
+          where: { integrationId: integration.id, deletedAt: null },
+        });
+        if (!hasCompany) {
+          const mandantenNummer = credentials?.mandantenNummer || '1';
+          await this.prisma.accountingCompany.create({
+            data: {
+              integrationId: integration.id,
+              agencyId: integration.agencyId,
+              externalCompanyId: String(mandantenNummer),
+              name: integration.name || `DATEV Mandant ${mandantenNummer}`,
+              currency: 'EUR',
+              isDefault: true,
+              defaultAccountCodes: credentials,
+            },
+          });
+        }
+      }
 
       return result;
     } catch (err: any) {

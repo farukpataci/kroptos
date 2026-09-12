@@ -1,0 +1,8 @@
+{
+  "id": 3050,
+  "label": "Conseil Financier",
+  "reference": "SKU-FIN-01",
+  "unit": "hour",
+  "vat_rate": "FR_200",
+  "price_before_tax": "150.00"
+}
