@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus } from '@nestjs/common';
+import { HttpException, HttpStatus, NotImplementedException } from '@nestjs/common';
 
 export class IntegrationNotVerifiedError extends HttpException {
   constructor(provider: string, environment: string) {
@@ -66,3 +66,62 @@ export class AccountingNetworkError extends HttpException {
 }
 
 export { AccountingRateLimitExceededError as AccountingRateLimitError };
+
+// --- Agent çatısı hataları (docs/mikro.agent.md §6, K3/K7/K8) ---
+
+/** K3: NOT_SUPPORTED yetenek çağrısı → NotImplementedException, sahte başarı yok. */
+export class CapabilityNotSupportedError extends NotImplementedException {
+  constructor(provider: string, capability: string) {
+    super(`[${provider}] '${capability}' yeteneği desteklenmiyor (NOT_SUPPORTED).`);
+    this.name = 'CapabilityNotSupportedError';
+  }
+}
+
+/** K3/K12: ticari veya sözleşmesel karar olmadan açılamayan yetenek (onaylı mod). */
+export class CapabilityContractRequiredError extends HttpException {
+  constructor(provider: string, capability: string, reason?: string) {
+    super(
+      `[${provider}] '${capability}' yeteneği sözleşme/onay gerektirir (CONTRACT_REQUIRED).${reason ? ` ${reason}` : ''}`,
+      HttpStatus.CONFLICT,
+    );
+    this.name = 'CapabilityContractRequiredError';
+  }
+}
+
+/** Kapanmış döneme yazma connector'a ulaşmadan reddedilir. */
+export class ClosedPeriodError extends HttpException {
+  constructor(periodNo: string, issuedAt: string) {
+    super(
+      `Belge tarihi (${issuedAt}) bağlantının dönemiyle (${periodNo}) uyuşmuyor; kapanmış döneme yazılmaz.`,
+      HttpStatus.BAD_REQUEST,
+    );
+    this.name = 'ClosedPeriodError';
+  }
+}
+
+/** K8: tarihe bağlı kimlik — Agent ile ERP arasında saat farkı varsa iş çalıştırılmaz. */
+export class ClockSkewError extends HttpException {
+  constructor(skewSec: number, limitSec: number) {
+    super(`Saat farkı ${skewSec}s, sınır ${limitSec}s (erp_clock_skew).`, HttpStatus.CONFLICT);
+    this.name = 'ClockSkewError';
+  }
+}
+
+/** K7: manifest dışı queryId, tanımsız/geçersiz parametre veya salt-okunur olmayan SQL. */
+export class CatalogQueryRejectedError extends HttpException {
+  constructor(message: string) {
+    super(`Katalog sorgusu reddedildi: ${message}`, HttpStatus.BAD_REQUEST);
+    this.name = 'CatalogQueryRejectedError';
+  }
+}
+
+/** K7: beklenen kolon yoksa akış durur — boş sonuçla devam etmez. */
+export class CatalogSchemaDriftError extends HttpException {
+  constructor(queryId: string, missing: string[]) {
+    super(
+      `'${queryId}' sonucunda beklenen kolon(lar) yok: ${missing.join(', ')} (catalog_schema_drift).`,
+      HttpStatus.CONFLICT,
+    );
+    this.name = 'CatalogSchemaDriftError';
+  }
+}

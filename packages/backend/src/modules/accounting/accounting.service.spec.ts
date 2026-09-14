@@ -29,6 +29,7 @@ describe('AccountingService', () => {
     mockCredentialsService = {
       validate: jest.fn(),
       encrypt: jest.fn((val) => `enc-${JSON.stringify(val)}`),
+      stripNonServerFields: jest.fn((_p, val) => val),
       decrypt: jest.fn((val) => JSON.parse(val.replace('enc-', ''))),
       maskCredentials: jest.fn((p, c) => ({ ...c, clientSecret: '****' })),
     };

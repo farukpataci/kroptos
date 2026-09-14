@@ -83,7 +83,9 @@ export class AccountingService {
       );
     }
 
-    const encryptedCreds = this.credentialsService.encrypt(dto.credentials);
+    const encryptedCreds = this.credentialsService.encrypt(
+      this.credentialsService.stripNonServerFields(dto.provider, dto.credentials),
+    );
     const publicId = generatePublicId('acc_int');
 
     const created = await this.prisma.accountingIntegration.create({
@@ -160,7 +162,9 @@ export class AccountingService {
       }
       const merged = { ...currentCreds, ...dto.credentials };
       this.credentialsService.validate(integration.provider, merged);
-      data.credentials = this.credentialsService.encrypt(merged);
+      data.credentials = this.credentialsService.encrypt(
+        this.credentialsService.stripNonServerFields(integration.provider, merged),
+      );
     }
 
     const updated = await this.prisma.accountingIntegration.update({

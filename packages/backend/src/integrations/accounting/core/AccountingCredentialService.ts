@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { decrypt, encrypt } from '../../../common/utils/encryption.util';
 import { AccountingProviderSchema } from './AccountingTypes';
 import { AccountingProviderRegistry } from './AccountingProviderRegistry';
+import { isAgentLocal, isDerived, stripNonServerFields } from './AccountingCredentialSchema';
 
 export { AccountingProviderSchema } from './AccountingTypes';
 
@@ -32,8 +33,9 @@ export class AccountingCredentialService {
       throw new BadRequestException(`Desteklenmeyen muhasebe sağlayıcısı: ${provider}`);
     }
 
+    // AGENT_LOCAL / derived alanlar sunucuya HİÇ gelmez (K2) — burada zorunlu sayılmaz
     const missing = schema.fields
-      .filter((f) => f.required)
+      .filter((f) => f.required && !isAgentLocal(f) && !isDerived(f))
       .filter((f) => !String(credentials?.[f.key] ?? '').trim())
       .map((f) => f.key);
 
@@ -42,6 +44,12 @@ export class AccountingCredentialService {
         `${provider} için zorunlu alanlar eksik: ${missing.join(', ')}`,
       );
     }
+  }
+
+  /** K2 — şifrelemeden ÖNCE çağrılır: AGENT_LOCAL ve derived alanlar sunucu kaydına giremez. */
+  stripNonServerFields(provider: string, credentials: Record<string, any> | undefined): Record<string, any> {
+    const schema = this.getSchema(provider);
+    return schema ? stripNonServerFields(schema, credentials) : { ...(credentials ?? {}) };
   }
 
   maskCredentials(provider: string, credentials: Record<string, any>): Record<string, any> {

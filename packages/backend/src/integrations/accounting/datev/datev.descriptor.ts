@@ -16,6 +16,7 @@ export const DATEV_DESCRIPTOR: AccountingProviderDescriptor = {
   supportsMock: true,
   supportsTest: true,
   supportsProduction: true,
+  isOffline: true, // EXTF dosya üretimi — ağ isteği yok; registry doğrulama kuralından muaf
   lastVerifiedAt: null,
   sandboxVerifiedAt: null,
   connectorClass: DatevConnector,

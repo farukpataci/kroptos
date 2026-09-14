@@ -3,11 +3,13 @@ export enum CapabilityStatus {
   MOCK_ONLY = 'MOCK_ONLY',
   NOT_SUPPORTED = 'NOT_SUPPORTED',
   DOCUMENTATION_REQUIRED = 'DOCUMENTATION_REQUIRED',
+  CONTRACT_REQUIRED = 'CONTRACT_REQUIRED', // ticari/sözleşmesel karar gerekir (örn. silme ≠ iptal, K12)
   UNKNOWN = 'UNKNOWN',
 }
 
 export type AccountingEnvironment = 'MOCK' | 'TEST' | 'PRODUCTION';
-export type AccountingReadiness = 'SCAFFOLDED' | 'MOCK_READY' | 'TEST_READY' | 'PRODUCTION_READY';
+export type AccountingReadiness = 'NOT_STARTED' | 'SCAFFOLDED' | 'MOCK_READY' | 'TEST_READY' | 'PRODUCTION_READY';
+export type AccountingRoute = 'DIRECT' | 'AGENT';
 
 export type AccountingDocumentType =
   | 'sales_invoice'
@@ -26,6 +28,10 @@ export interface CredentialFieldDefinition {
   secret?: boolean;
   description?: string;
   defaultValue?: string;
+  /** Varsayılan SERVER_ENCRYPTED. AGENT_LOCAL alanlar sunucuda HİÇBİR KOŞULDA persist edilmez (K2). */
+  storage?: 'SERVER_ENCRYPTED' | 'AGENT_LOCAL';
+  /** Formda GÖSTERİLMEZ; Agent yerelde türetir (örn. Mikro Sifre = MD5(tarih + şifre)). */
+  derived?: { from: string[]; strategy: string };
 }
 
 export interface AccountingProviderSchema {
@@ -49,6 +55,40 @@ export interface AccountingProviderDescriptor {
   lastVerifiedAt: string | null;
   sandboxVerifiedAt?: string | null;
   connectorClass: any;
+  // --- Agent çatısı (docs/mikro.agent.md §6) — hepsi isteğe bağlı, eski sağlayıcılar etkilenmez ---
+  /** Rota bağlantı kaydının özelliğidir; sağlayıcı yalnızca hangilerini taşıyabildiğini bildirir (K5). */
+  supportedRoutes?: AccountingRoute[];
+  /** Ağ isteği hiç yapmayan sağlayıcı (örn. DATEV dosya dışa aktarımı) — doğrulama kuralından muaf. */
+  isOffline?: boolean;
+  /** Metot sürümleri buradan okunur; "en yenisini kullan" mantığı YOK. */
+  methodVersions?: Record<string, string>;
+  vendorFamily?: string;
+  productScope?: string[];
+  requiresPeriod?: boolean;
+  requiresBranch?: boolean;
+  /** i18n anahtarı — panelde bağlantı kurulmadan ÖNCE gösterilir */
+  commercialPrerequisite?: string;
+  licensePrerequisite?: string;
+}
+
+/** Firma ekseni — SessionKey'in parçası (K4). */
+export interface CompanyKey {
+  companyNo: string;
+  periodNo?: string | null;
+  branchCode?: string | null;
+}
+
+/**
+ * Connector'a verilen bağlam — KİMLİK TAŞIMAZ ve taşıyamaz (K1).
+ * Backend ERP şifresini görmediği için taşıyamaz; transport işi rotaya göre yürütür.
+ */
+export interface AccountingContext {
+  integrationId: string;
+  tenant: { agencyId: string; clientId?: string | null };
+  companyKey: CompanyKey;
+  environment: AccountingEnvironment;
+  transport: import('./transport/AccountingTransport').AccountingTransport;
+  isTestMode: boolean;
 }
 
 export interface AccountingCapabilities {
@@ -63,7 +103,35 @@ export interface AccountingCapabilities {
   multiCompany?: CapabilityStatus;
   eDocument?: CapabilityStatus;
   refreshSemantics?: import('./AccountingTokenSemantics').RefreshSemantics;
+  // --- Agent rotası yetenekleri (docs/mikro.agent.md §6.1). supportedRoutes bildiren sağlayıcıda HEPSİ zorunlu. ---
+  connectionTest?: CapabilityStatus;
+  companyList?: CapabilityStatus;
+  warehouseList?: CapabilityStatus;
+  productSearch?: CapabilityStatus;
+  productFetch?: CapabilityStatus;
+  productCreate?: CapabilityStatus;
+  stockSnapshot?: CapabilityStatus;
+  stockDelta?: CapabilityStatus;
+  partnerFetch?: CapabilityStatus;
+  partnerUpsert?: CapabilityStatus;
+  receiptPush?: CapabilityStatus;
+  invoicePush?: CapabilityStatus;
+  invoiceFindByRef?: CapabilityStatus;
+  invoiceCancel?: CapabilityStatus;
 }
+
+export const CORE_CAPABILITY_KEYS = [
+  'salesInvoice', 'payment', 'contactSync', 'productMapping', 'stockSync',
+  'eInvoiceOfficialSend', 'cancelInvoice', 'findInvoiceByReference',
+] as const;
+
+export const AGENT_ROUTE_CAPABILITY_KEYS = [
+  'connectionTest', 'companyList', 'warehouseList', 'productSearch', 'productFetch', 'productCreate',
+  'stockSnapshot', 'stockDelta', 'partnerFetch', 'partnerUpsert', 'receiptPush', 'invoicePush',
+  'invoiceFindByRef', 'invoiceCancel', 'eDocument',
+] as const;
+
+export type AgentRouteCapabilityKey = (typeof AGENT_ROUTE_CAPABILITY_KEYS)[number];
 
 export interface AccountingInvoiceItem {
   sku: string;
@@ -168,4 +236,7 @@ export interface AccountingTestConnectionResult {
   companyName?: string;
   companyId?: string;
   environment: AccountingEnvironment;
+  /** K3: mock cevap gerçek gibi gösterilmez */
+  isMock?: boolean;
+  durationMs?: number;
 }
