@@ -1553,6 +1553,15 @@ model AccountingIntegration {
   lastVerifiedAt   DateTime?
   lastSyncAt       DateTime?
   lastErrorMessage String?
+  // --- Agent rotası (docs/mikro.agent.md GÖREV 1) ---
+  route                 String    @default("DIRECT") // DIRECT | AGENT — bağlantının özelliği, sağlayıcının değil (K5)
+  agentId               String?   // route=AGENT ise atanmış Agent
+  exclusiveAgentId      String?   // K9: bağlantı başına tek aktif Agent
+  agentLeaseUntil       DateTime? // K9: kira; dolsa bile açık yazma işi varken devralma bloke
+  transportSecurity     String?   // K10: null=localhost | 'PLAINTEXT_LAN' (denetimde görünür istisna)
+  credentialSetAt       DateTime? // K2: AGENT_LOCAL kimlik sunucuda YOK — yalnızca iz
+  credentialSetBy       String?
+  credentialFingerprint String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   deletedAt        DateTime?
@@ -1562,6 +1571,8 @@ model AccountingIntegration {
   @@unique([provider, scopeKey])
   @@index([agencyId])
   @@index([storeId])
+  @@index([exclusiveAgentId])
+  @@index([deletedAt])
 }
 
 // Firma / dönem ekseni — Paraşüt'te company_id
@@ -1577,6 +1588,9 @@ model AccountingCompany {
   defaultRetailContactId String?             // KolayBi' B2C fallback perakende müşteri ID
   invoiceSeries       String?
   defaultAccountCodes Json?
+  periodNo            String?               // Mikro CalismaYili / Logo dönem — SessionKey ekseni (K4)
+  branchCode          String?               // Netsis şube — SessionKey ekseni (K4)
+  isActive            Boolean               @default(true)
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   deletedAt           DateTime?
@@ -1647,3 +1661,122 @@ model AccountingProductMapping {
   @@index([agencyId])
 }
 
+
+// ============================================================================
+// Muhasebe Agent çatısı — docs/mikro.agent.md GÖREV 1
+// AccountingIntegration/AccountingCompany/AccountingDocument mevcut modellerin
+// üstüne kurulur (§1.3). Hiçbir yeni modelde storeId yoktur.
+// ============================================================================
+
+model AgentInstance {
+  id              String    @id @default(cuid())
+  agencyId        String
+  clientId        String?
+  name            String    // "MERKEZ-SRV01"
+  status          String    @default("PENDING") // PENDING | ACTIVE | OFFLINE | REVOKED
+  publicKey       String    // K2: tarayıcıda credential bununla şifrelenir; sunucunun özel anahtarı YOK
+  certFingerprint String?
+  agentVersion    String?
+  osVersion       String?
+  protocolVersion Int?
+  clockSkewSec    Int?      // K8: tarihe bağlı kimlik — saat farkı ölçülür
+  lastHeartbeatAt DateTime?
+  connectedNodeId String?   // YALNIZCA gözlem — yönlendirme Redis pub/sub ile
+  enrolledAt      DateTime?
+  revokedAt       DateTime?
+  revokedBy       String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([agencyId, name])
+  @@index([agencyId])
+  @@index([status])
+}
+
+model AgentEnrollmentCode {
+  id            String    @id @default(cuid())
+  agencyId      String
+  clientId      String?
+  codeHash      String    @unique // kodun kendisi SAKLANMAZ
+  createdBy     String
+  expiresAt     DateTime
+  usedAt        DateTime?
+  usedByAgentId String?
+  createdAt     DateTime  @default(now())
+
+  @@index([agencyId])
+}
+
+model AgentCredentialEnvelope {
+  id            String    @id @default(cuid())
+  agencyId      String
+  agentId       String
+  integrationId String
+  blob          String    // K2: Agent açık anahtarıyla şifreli; sunucu ÇÖZEMEZ; teslimde satır SİLİNİR
+  fingerprint   String
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+
+  @@index([agentId])
+  @@index([agencyId])
+}
+
+model AgentJob {
+  id             String    @id @default(cuid())
+  agencyId       String
+  agentId        String
+  integrationId  String
+  companyKey     String    // SessionKey (K4)
+  type           String    // AgentJobType — kapalı küme (K6)
+  payload        Json      // MASKELİ — credential asla girmez (K1)
+  idempotencyKey String?   // yazma işlerinde zorunlu
+  status         String    @default("queued") // queued | dispatched | running | ok | failed | expired
+  attempt        Int       @default(0)
+  notBefore      DateTime?
+  expiresAt      DateTime
+  startedAt      DateTime?
+  finishedAt     DateTime?
+  durationMs     Int?
+  errorCode      String?
+  resultRef      Json?
+  createdAt      DateTime  @default(now())
+
+  @@unique([agentId, idempotencyKey]) // Postgres'te NULL'lar çakışmaz
+  @@index([agencyId])
+  @@index([agentId, status])
+  @@index([integrationId, companyKey, status])
+}
+
+model AccountingSyncCursor {
+  id             String    @id @default(cuid())
+  integrationId  String
+  companyKey     String
+  stream         String    // STOCK | PRODUCT | PARTNER
+  cursor         String?   // sağlayıcı güvenilir imleç veremiyorsa NULL kalır (stockDelta NOT_SUPPORTED)
+  lastFullSyncAt DateTime?
+  lastDeltaAt    DateTime?
+  staleSince     DateTime?
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([integrationId, companyKey, stream])
+}
+
+model AccountingProblem {
+  id            String    @id @default(cuid())
+  agencyId      String
+  integrationId String?
+  agentId       String?
+  companyKey    String?
+  code          String    // agent_offline | agent_failover_blocked | erp_auth_failed | erp_session_limit | erp_clock_skew | mapping_missing | stock_sync_stale | invoice_stuck | catalog_schema_drift
+  severity      String    @default("warn") // info | warn | error
+  occurrences   Int       @default(1) // aynı kod tekrarında sayaç artar, yeni satır AÇILMAZ
+  detail        Json?
+  firstSeenAt   DateTime  @default(now())
+  lastSeenAt    DateTime  @default(now())
+  resolvedAt    DateTime?
+  resolvedBy    String?
+
+  @@unique([agencyId, integrationId, code, companyKey])
+  @@index([agencyId])
+}
