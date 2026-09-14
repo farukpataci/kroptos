@@ -1,0 +1,24 @@
+{
+  "name": "kroptos-agent",
+  "version": "0.1.0",
+  "private": true,
+  "description": "KroptOS Agent — müşteri sunucusunda çalışır, buluta yalnızca dışarı yönlü bağlanır (docs/mikro.agent.md §9). pnpm workspace'i DEĞİLDİR.",
+  "main": "dist/agent/src/main.js",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/agent/src/main.js",
+    "enroll": "node dist/agent/src/main.js enroll",
+    "test": "jest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/jest": "29.5.14",
+    "@types/node": "22.10.2",
+    "jest": "29.7.0",
+    "ts-jest": "29.2.5",
+    "typescript": "5.7.2"
+  }
+}

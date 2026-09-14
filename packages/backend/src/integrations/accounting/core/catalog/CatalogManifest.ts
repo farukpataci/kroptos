@@ -5,6 +5,9 @@
  * doğrulayıcıyı kullanır (katalog dosyasında SELECT/WITH dışı ifade varsa Agent BAŞLAMAZ).
  */
 import { CatalogQueryRejectedError, CatalogSchemaDriftError } from '../AccountingErrors';
+import { readOnlySqlViolation } from './readonly-sql';
+
+export { readOnlySqlViolation } from './readonly-sql';
 
 export type CatalogParamType = 'string' | 'number' | 'boolean' | 'date';
 
@@ -114,22 +117,11 @@ export function assertExpectedColumns(
   if (missing.length) throw new CatalogSchemaDriftError(spec.queryId, missing);
 }
 
-const FORBIDDEN_SQL = /\b(INSERT|UPDATE|DELETE|MERGE|DROP|ALTER|CREATE|TRUNCATE|EXEC|EXECUTE|GRANT|REVOKE|INTO|xp_\w+|sp_\w+)\b/i;
-
 /**
  * Salt-okunur SQL doğrulayıcı: yalnızca SELECT/WITH ile başlar; `;`, `--`, `/*`, EXEC, DDL/DML → reddet.
- * Parametre yer tutucuları (`@name`) serbesttir; metin literal'i içindeki anahtar kelimeler de
- * reddedilir — katalog SQL'i literal taşımak zorunda değildir, yanlış pozitif kabul edilir.
+ * Kural `readonly-sql.ts`'te (çerçevesiz) yaşar; Agent aynı dosyayı kullanır.
  */
 export function assertReadOnlySql(sql: string, queryId = '?'): void {
-  const text = String(sql ?? '').trim();
-  if (!text) throw new CatalogQueryRejectedError(`${queryId}: boş SQL`);
-  if (!/^(SELECT|WITH)\b/i.test(text)) {
-    throw new CatalogQueryRejectedError(`${queryId}: yalnızca SELECT/WITH ile başlayabilir`);
-  }
-  if (text.includes(';')) throw new CatalogQueryRejectedError(`${queryId}: ';' yasak`);
-  if (text.includes('--')) throw new CatalogQueryRejectedError(`${queryId}: '--' yasak`);
-  if (text.includes('/*')) throw new CatalogQueryRejectedError(`${queryId}: '/*' yasak`);
-  const hit = text.match(FORBIDDEN_SQL);
-  if (hit) throw new CatalogQueryRejectedError(`${queryId}: '${hit[1]}' yasak`);
+  const violation = readOnlySqlViolation(sql);
+  if (violation) throw new CatalogQueryRejectedError(`${queryId}: ${violation}`);
 }

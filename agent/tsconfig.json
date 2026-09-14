@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "outDir": "dist",
+    "rootDir": "..",
+    "types": ["node", "jest"]
+  },
+  "include": [
+    "src/**/*.ts",
+    "tests/**/*.ts",
+    "../packages/backend/src/integrations/accounting/core/agent/AgentProtocol.ts",
+    "../packages/backend/src/integrations/accounting/core/catalog/readonly-sql.ts",
+    "../packages/backend/src/integrations/accounting/core/AccountingTypes.ts",
+    "../packages/backend/src/integrations/accounting/core/AccountingTokenSemantics.ts",
+    "../packages/backend/src/integrations/accounting/core/transport/AccountingTransport.ts"
+  ]
+}

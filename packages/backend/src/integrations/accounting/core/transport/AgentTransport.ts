@@ -76,6 +76,7 @@ export class AgentTransport implements AccountingTransport {
       payload: op.payload ?? {},
       idempotencyKey: isWriteJob(op.type) ? op.idempotencyKey! : null,
       attempt: 1,
+      issuedAt: (this.opts.now ?? (() => new Date()))().toISOString(),
       ttlSec: op.ttlSec ?? DEFAULT_JOB_TTL_SEC,
       jobTimeoutSec: op.timeoutSec ?? DEFAULT_JOB_TIMEOUT_SEC,
     };

@@ -69,6 +69,8 @@ export interface AgentJob {
   /** Yazma işlerinde zorunlu, okuma işlerinde null */
   idempotencyKey: string | null;
   attempt: number;
+  /** ISO — sunucu üretir; ttlSec bundan sayılır */
+  issuedAt: string;
   notBefore?: string; // ISO
   ttlSec: number;
   jobTimeoutSec: number;
