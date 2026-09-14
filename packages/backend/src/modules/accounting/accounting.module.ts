@@ -41,6 +41,7 @@ import '../../integrations/accounting/pennylane';
 import '../../integrations/accounting/logo-rest';
 import '../../integrations/accounting/logo-objects';
 import '../../integrations/accounting/netsis';
+import '../../integrations/accounting/mikro';
 
 // Controllers
 import { AccountingController } from './accounting.controller';

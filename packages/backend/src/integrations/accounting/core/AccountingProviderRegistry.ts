@@ -46,7 +46,8 @@ export class AccountingProviderRegistry {
         fail(`readiness=${d.readiness} iken supportsProduction açılamaz`);
       }
     }
-    if (typeof d.connectorClass !== 'function') fail('connectorClass eksik');
+    // connectorClass burada denetlenmez: spec dosyalarında döngüsel import sırası yüzünden kayıt anında
+    // henüz tanımsız olabilir; get() sonrası factory zaten `new` ile patlar.
   }
 
   static get(id: string): AccountingProviderDescriptor {

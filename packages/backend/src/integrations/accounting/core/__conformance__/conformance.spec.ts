@@ -25,6 +25,7 @@ import '../../pennylane';
 import '../../logo-rest';
 import '../../logo-objects';
 import '../../netsis';
+import '../../mikro';
 
 describe('Accounting Provider Conformance Suite', () => {
   const providers = AccountingProviderRegistry.all();
@@ -51,7 +52,7 @@ describe('Accounting Provider Conformance Suite', () => {
     });
 
     it('4. should have valid readiness status', () => {
-      expect(['MOCK_READY', 'TEST_READY', 'PRODUCTION_READY']).toContain(descriptor.readiness);
+      expect(['SCAFFOLDED', 'MOCK_READY', 'TEST_READY', 'PRODUCTION_READY']).toContain(descriptor.readiness);
     });
 
     it('5. should have valid credential schema with required field definitions', () => {
@@ -134,7 +135,8 @@ describe('Accounting Provider Conformance Suite', () => {
         grandTotal: 120,
       };
 
-      if (descriptor.capabilities.salesInvoice === 'NOT_SUPPORTED') {
+      // K3: SUPPORTED/MOCK_ONLY dışındaki her statü MOCK'ta bile fırlatır — sahte başarı yok
+      if (!['SUPPORTED', 'MOCK_ONLY'].includes(descriptor.capabilities.salesInvoice)) {
         await expect(connector.createInvoice(invoiceReq)).rejects.toThrow();
       } else {
         const res = await connector.createInvoice(invoiceReq);
@@ -150,7 +152,7 @@ describe('Accounting Provider Conformance Suite', () => {
         name: 'Mock Customer',
         taxNumber: '12345678901',
       };
-      if (descriptor.capabilities.contactSync === 'NOT_SUPPORTED') {
+      if (!['SUPPORTED', 'MOCK_ONLY'].includes(descriptor.capabilities.contactSync)) {
         await expect(connector.syncContact(contactReq)).rejects.toThrow();
       } else {
         const res = await connector.syncContact(contactReq);
@@ -168,10 +170,7 @@ describe('Accounting Provider Conformance Suite', () => {
         currency: 'TRY',
         paymentDate: '2026-09-08',
       };
-      if (
-        descriptor.capabilities.payment === 'NOT_SUPPORTED' ||
-        descriptor.capabilities.payment === 'DOCUMENTATION_REQUIRED'
-      ) {
+      if (!['SUPPORTED', 'MOCK_ONLY'].includes(descriptor.capabilities.payment)) {
         await expect(connector.recordPayment(payReq)).rejects.toThrow();
       } else {
         const res = await connector.recordPayment(payReq);
