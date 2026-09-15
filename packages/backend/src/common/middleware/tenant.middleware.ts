@@ -73,6 +73,7 @@ export class TenantMiddleware implements NestMiddleware {
         clientId: tokenClientId,
         storeId: payload.storeId ?? null,
         role,
+        roleIsSystem: payload.roleIsSystem === true,
       };
 
       // Resolve requested resource IDs from headers or path parameters
@@ -128,7 +129,7 @@ export class TenantMiddleware implements NestMiddleware {
         }
       }
 
-      const isSuper = isSuperAdminRole(role);
+      const isSuper = isSuperAdminRole({ role, roleIsSystem: payload.roleIsSystem });
 
       // 1. Validate Store access if storeId is requested
       if (storeId) {

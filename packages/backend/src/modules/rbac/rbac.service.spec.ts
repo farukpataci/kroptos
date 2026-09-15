@@ -122,7 +122,7 @@ describe('RbacService', () => {
     it('refuses to assign super_admin at runtime', async () => {
       mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-1' });
       mockPrismaService.agency.findFirst.mockResolvedValue({ id: 'agency-1' });
-      mockPrismaService.role.findUnique.mockResolvedValue({ id: 'sa', name: 'super_admin' });
+      mockPrismaService.role.findUnique.mockResolvedValue({ id: 'sa', key: 'super_admin', name: 'super_admin', isSystem: true });
 
       await expect(
         service.assignRole({ userId: 'user-1', agencyId: 'agency-1', roleId: 'sa' }, 'perf-by'),

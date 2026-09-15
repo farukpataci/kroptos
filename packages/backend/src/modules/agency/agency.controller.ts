@@ -18,7 +18,7 @@ export class AgencyController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return isSuperAdminRole(user?.role);
+    return isSuperAdminRole(user);
   }
 
   @Get('/api/agencies')

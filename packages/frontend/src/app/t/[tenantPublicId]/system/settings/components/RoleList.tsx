@@ -10,6 +10,7 @@ import {
   ArrowPathIcon
 } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/ui/Toast';
+import { PERMISSIONS, PERMISSION_CATEGORIES, DEFAULT_ROLES, SYSTEM_ROLE_KEYS } from '@kroptos/shared';
 
 interface Permission {
   key: string;
@@ -30,103 +31,28 @@ interface Role {
   permissions: string[]; // List of permission keys granted to this role
 }
 
-const PERMISSION_GROUPS: PermissionGroup[] = [
-  {
-    category: 'Katalog & Ürünler',
-    permissions: [
-      { key: 'products.view', name: 'Ürünleri Görüntüle', description: 'Ürün listesini ve detaylarını görme yetkisi' },
-      { key: 'products.create', name: 'Yeni Ürün Ekle', description: 'Kataloğa yeni ürün kartı tanımlama yetkisi' },
-      { key: 'products.edit', name: 'Ürünleri Düzenle', description: 'Mevcut ürün bilgilerini ve pazaryeri eşleştirmelerini düzenleme yetkisi' },
-      { key: 'products.delete', name: 'Ürünleri Sil', description: 'Katalogdan ürün kaydı silme yetkisi' },
-    ],
-  },
-  {
-    category: 'Envanter & Depolar',
-    permissions: [
-      { key: 'inventory.view', name: 'Stokları Görüntüle', description: 'Depo stok miktarlarını ve envanter listelerini görüntüleme yetkisi' },
-      { key: 'inventory.adjust', name: 'Stok Düzeltme & Hareket', description: 'Manuel stok girişi, düzeltme ve depolar arası sevk yetkisi' },
-      { key: 'warehouses.manage', name: 'Depoları Yönet', description: 'Depo bölgesi, raf ve lokasyon ayarlarını düzenleme yetkisi' },
-    ],
-  },
-  {
-    category: 'Sipariş Yönetimi',
-    permissions: [
-      { key: 'orders.view', name: 'Siparişleri Görüntüle', description: 'Pazaryerlerinden gelen tüm siparişleri görüntüleme yetkisi' },
-      { key: 'orders.process', name: 'Sipariş Paketle & Fatura', description: 'Sipariş durumunu güncelleme, paketleme ve faturalandırma yetkisi' },
-      { key: 'orders.cancel', name: 'Sipariş İptal / İade', description: 'Sipariş iptali veya iade süreçlerini yönetme yetkisi' },
-    ],
-  },
-  {
-    category: 'Entegrasyonlar',
-    permissions: [
-      { key: 'integrations.view', name: 'Bağlantıları Listele', description: 'Aktif Trendyol, ERP ve kargo entegrasyonlarını görüntüleme yetkisi' },
-      { key: 'integrations.manage', name: 'Entegrasyon Düzenle', description: 'Entegrasyon bilgilerini güncelleme, yeni API anahtarı ekleme yetkisi' },
-      { key: 'integrations.sync', name: 'Senkronizasyon Başlat', description: 'Manuel fiyat, stok ve sipariş eşitleme işlemlerini tetikleme yetkisi' },
-    ],
-  },
-  {
-    category: 'Sistem Ayarları',
-    permissions: [
-      { key: 'settings.view', name: 'Sistem Ayarlarını Gör', description: 'Mağaza bilgileri, şema ve genel parametre ayarlarını görüntüleme yetkisi' },
-      { key: 'settings.edit', name: 'Sistem Ayarlarını Yönet', description: 'Genel mağaza parametrelerini değiştirme ve kullanıcı yönetimi yetkisi' },
-      { key: 'logs.view', name: 'İşlem Loglarını İzle', description: 'Sistem güvenlik ve API haberleşme günlüklerini inceleme yetkisi' },
-    ],
-  },
-];
+// Katalog tek kaynak: @kroptos/shared. Burada izin/rol string'i literal olarak geçmez.
+const PERMISSION_GROUPS: PermissionGroup[] = PERMISSION_CATEGORIES.map((category) => ({
+  category,
+  permissions: PERMISSIONS.filter((p) => p.category === category && p.key !== '*:*').map((p) => ({
+    key: p.key,
+    name: p.name,
+    description: p.description,
+  })),
+})).filter((g) => g.permissions.length > 0);
 
-const INITIAL_ROLES: Role[] = [
-  {
-    id: 'role_1',
-    name: 'Administrator',
-    description: 'Sistemdeki tüm alanlara erişim ve düzenleme yetkisine sahip tam yetkili yönetici rolü.',
-    userCount: 1,
-    permissions: [
-      'products.view', 'products.create', 'products.edit', 'products.delete',
-      'inventory.view', 'inventory.adjust', 'warehouses.manage',
-      'orders.view', 'orders.process', 'orders.cancel',
-      'integrations.view', 'integrations.manage', 'integrations.sync',
-      'settings.view', 'settings.edit', 'logs.view'
-    ],
-  },
-  {
-    id: 'role_2',
-    name: 'Depo Sorumlusu',
-    description: 'Stok hareketleri, envanter düzenlemeleri ve sipariş paketleme süreçlerini yöneten operasyonel rol.',
-    userCount: 1,
-    permissions: [
-      'products.view',
-      'inventory.view', 'inventory.adjust', 'warehouses.manage',
-      'orders.view', 'orders.process'
-    ],
-  },
-  {
-    id: 'role_3',
-    name: 'Muhasebe',
-    description: 'Fatura, muhasebe entegrasyonları, sipariş raporları ve finansal alanları görüntüleyen rol.',
-    userCount: 1,
-    permissions: [
-      'products.view',
-      'inventory.view',
-      'orders.view', 'orders.process',
-      'settings.view'
-    ],
-  },
-  {
-    id: 'role_4',
-    name: 'Satış Temsilcisi',
-    description: 'Sadece ürün listeleme, stok izleme ve siparişlerin izlenmesini sağlayan kısıtlı rol.',
-    userCount: 1,
-    permissions: [
-      'products.view',
-      'inventory.view',
-      'orders.view'
-    ],
-  },
-];
+// Sistem rolleri; API'ye bağlanma P8'in işi, bu liste hâlâ yerel başlangıç durumu.
+const INITIAL_ROLES: Role[] = DEFAULT_ROLES.map((r) => ({
+  id: r.key,
+  name: r.name,
+  description: r.description,
+  userCount: 0,
+  permissions: [...r.permissions],
+}));
 
 export function RoleList() {
   const [roles, setRoles] = useState<Role[]>(INITIAL_ROLES);
-  const [selectedRoleId, setSelectedRoleId] = useState('role_1');
+  const [selectedRoleId, setSelectedRoleId] = useState(INITIAL_ROLES[0]?.id ?? '');
   
   // States for new custom role creation
   const [isAddingRole, setIsAddingRole] = useState(false);
@@ -171,7 +97,7 @@ export function RoleList() {
       name: newRoleName,
       description: newRoleDesc || `${newRoleName} için tanımlanmış sistem rolü.`,
       userCount: 0,
-      permissions: ['products.view'], // Default view permission
+      permissions: ['products.read'], // Default view permission
     };
 
     setRoles((prev) => [...prev, newRole]);
@@ -182,8 +108,8 @@ export function RoleList() {
   };
 
   const handleDeleteRole = (roleId: string, roleName: string) => {
-    if (roleId === 'role_1') {
-      toast.warning('Yönetici (Administrator) rolü korumalıdır ve silinemez.');
+    if (SYSTEM_ROLE_KEYS.includes(roleId)) {
+      toast.warning('Sistem rolleri korumalıdır ve silinemez.');
       return;
     }
     if (confirm(`"${roleName}" rolünü silmek istediğinize emin misiniz? Bu role sahip kullanıcılar yetkisiz kalacaktır.`)) {
@@ -272,7 +198,7 @@ export function RoleList() {
                     <div className="flex items-center justify-between">
                       <div className="font-semibold text-xs text-kp-text-primary">{role.name}</div>
                       
-                      {role.id !== 'role_1' && (
+                      {!SYSTEM_ROLE_KEYS.includes(role.id) && (
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

@@ -80,7 +80,7 @@ export class RbacService {
       throw new NotFoundException(`Role with ID '${dto.roleId}' not found`);
     }
     // super_admin platform rolüdür: yalnız seed atar, hiçbir runtime akışı veremez.
-    if (isSuperAdminRole(role.name)) {
+    if (isSuperAdminRole({ role: role.key, roleIsSystem: role.isSystem })) {
       throw new ForbiddenException(`Role '${role.name}' cannot be assigned at runtime`);
     }
 

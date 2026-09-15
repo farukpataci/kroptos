@@ -17,11 +17,12 @@ export class ClientController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return isSuperAdminRole(user?.role);
+    return isSuperAdminRole(user);
   }
 
   @Get()
   @HttpCode(200)
+  @RequirePermission('clients.read')
   @ApiOperation({ summary: 'List all active clients within user authorized agency contexts' })
   @ApiResponse({ status: 200, type: [ClientResponseDto] })
   async list(@Req() req: Request) {
@@ -32,6 +33,7 @@ export class ClientController {
 
   @Get(':id')
   @HttpCode(200)
+  @RequirePermission('clients.read')
   @ApiOperation({ summary: 'Get active client details' })
   @ApiResponse({ status: 200, type: ClientResponseDto })
   async get(@Param('id') id: string, @Req() req: Request) {

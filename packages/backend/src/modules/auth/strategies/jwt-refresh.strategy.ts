@@ -31,6 +31,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy, 'jwt-refresh'
       clientId: payload.clientId,
       storeId: payload.storeId ?? null,
       role: payload.role,
+      roleIsSystem: payload.roleIsSystem === true,
       refreshToken,
     };
   }

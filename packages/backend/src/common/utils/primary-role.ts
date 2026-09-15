@@ -34,7 +34,7 @@ interface RoleLike {
   clientId?: string | null;
   storeId?: string | null;
   createdAt?: Date;
-  role: { name: string };
+  role: { key: string; isSystem?: boolean };
 }
 
 function rank(name: string): number {
@@ -58,7 +58,7 @@ export function resolvePrimaryRole<T extends RoleLike>(userRoles: T[], ctx?: Pri
   return covering.reduce((best, cur) => {
     const bySpec = specificity(cur, ctx) - specificity(best, ctx);
     if (bySpec !== 0) return bySpec > 0 ? cur : best;
-    const byRank = rank(best.role.name) - rank(cur.role.name);
+    const byRank = rank(best.role.key) - rank(cur.role.key);
     if (byRank !== 0) return byRank > 0 ? cur : best;
     const byAge = (best.createdAt?.getTime() ?? 0) - (cur.createdAt?.getTime() ?? 0);
     return byAge > 0 ? cur : best;

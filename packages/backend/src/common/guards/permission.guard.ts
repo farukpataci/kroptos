@@ -27,7 +27,7 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('User context not found');
     }
 
-    if (isSuperAdminRole(user.role)) {
+    if (isSuperAdminRole(user)) {
       return true;
     }
 

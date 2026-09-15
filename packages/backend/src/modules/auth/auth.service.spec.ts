@@ -113,7 +113,8 @@ describe('AuthService', () => {
       });
       mockPrismaService.role.findFirst.mockResolvedValue({
         id: 'owner-role-id',
-        name: 'agency_owner',
+        key: 'agency_owner',
+        isSystem: true,
         permissions: [{ name: 'agencies.read' }, { name: 'clients.create' }],
       });
 
@@ -139,7 +140,8 @@ describe('AuthService', () => {
       mockPrismaService.agency.create.mockResolvedValue({ id: 'ag1', name: 'A' });
       mockPrismaService.role.findFirst.mockResolvedValue({
         id: 'owner-role-id',
-        name: 'agency_owner',
+        key: 'agency_owner',
+        isSystem: true,
         permissions: [{ name: 'agencies.read' }],
       });
 
@@ -210,7 +212,7 @@ describe('AuthService', () => {
           clientId: null,
           storeId: null,
           agency: { id: 'agency-id', name: 'Agency Inc' },
-          role: { id: 'role-id', name: 'super_admin', permissions: [{ name: '*:*' }] },
+          role: { id: 'role-id', key: 'super_admin', isSystem: true, permissions: [{ name: '*:*' }] },
         },
       ]);
 
@@ -241,7 +243,7 @@ describe('AuthService', () => {
           storeId: null,
           createdAt: new Date('2026-01-01'),
           agency: { id: 'agency-b', name: 'B', stores: [] },
-          role: { id: 'r-viewer', name: 'viewer', permissions: [{ name: 'orders.read' }] },
+          role: { id: 'r-viewer', key: 'viewer', isSystem: true, permissions: [{ name: 'orders.read' }] },
         },
         {
           agencyId: 'agency-a',
@@ -249,7 +251,7 @@ describe('AuthService', () => {
           storeId: null,
           createdAt: new Date('2026-02-01'),
           agency: { id: 'agency-a', name: 'A', stores: [] },
-          role: { id: 'r-owner', name: 'agency_owner', permissions: [{ name: 'clients.create' }] },
+          role: { id: 'r-owner', key: 'agency_owner', isSystem: true, permissions: [{ name: 'clients.create' }] },
         },
       ]);
 
@@ -298,7 +300,7 @@ describe('AuthService', () => {
           agencyId: 'agency-id',
           clientId: null,
           storeId: null,
-          role: { name: 'super_admin', permissions: [{ name: '*:*' }] },
+          role: { key: 'super_admin', isSystem: true, permissions: [{ name: '*:*' }] },
         },
       ]);
 
@@ -325,9 +327,9 @@ describe('AuthService', () => {
       ],
     };
     const meUser = { id: 'user-id', email: 'u@x.y', isActive: true };
-    const storeRole = { agencyId: 'agency-1', clientId: null, storeId: 's1', agency, client: null, role: { name: 'store_manager' } };
-    const agencyRole = { agencyId: 'agency-1', clientId: null, storeId: null, agency, client: null, role: { name: 'agency_owner' } };
-    const clientRole = { agencyId: 'agency-1', clientId: 'c1', storeId: null, agency, client: { id: 'c1', name: 'C1' }, role: { name: 'client_admin' } };
+    const storeRole = { agencyId: 'agency-1', clientId: null, storeId: 's1', agency, client: null, role: { key: 'store_manager', isSystem: true } };
+    const agencyRole = { agencyId: 'agency-1', clientId: null, storeId: null, agency, client: null, role: { key: 'agency_owner', isSystem: true } };
+    const clientRole = { agencyId: 'agency-1', clientId: 'c1', storeId: null, agency, client: { id: 'c1', name: 'C1' }, role: { key: 'client_admin', isSystem: true } };
 
     beforeEach(() => {
       mockPrismaService.user.findUnique.mockResolvedValue(meUser);
@@ -374,7 +376,7 @@ describe('AuthService', () => {
       agencyId: 'new-agency-id',
       clientId: null,
       storeId: null,
-      role: { name: 'agency_owner', permissions: [{ name: 'orders.read' }] },
+      role: { key: 'agency_owner', isSystem: true, permissions: [{ name: 'orders.read' }] },
     };
 
     it('should throw ForbiddenException if user has no access to target tenant', async () => {
@@ -395,7 +397,7 @@ describe('AuthService', () => {
           agencyId: 'new-agency-id',
           clientId: 'client-id',
           storeId: null,
-          role: { name: 'client_admin', permissions: [{ name: 'orders.read' }] },
+          role: { key: 'client_admin', isSystem: true, permissions: [{ name: 'orders.read' }] },
         },
       ]);
 
@@ -461,7 +463,7 @@ describe('AuthService', () => {
           agencyId: 'new-agency-id',
           clientId: null,
           storeId: 'store-id',
-          role: { name: 'store_manager', permissions: [{ name: 'products.read' }] },
+          role: { key: 'store_manager', isSystem: true, permissions: [{ name: 'products.read' }] },
         },
       ]);
 

@@ -17,11 +17,12 @@ export class StoreController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return isSuperAdminRole(user?.role);
+    return isSuperAdminRole(user);
   }
 
   @Get()
   @HttpCode(200)
+  @RequirePermission('stores.read')
   @ApiOperation({ summary: 'List all active stores authorized for the current user' })
   @ApiResponse({ status: 200, type: [StoreResponseDto] })
   async list(@Req() req: Request) {
@@ -32,6 +33,7 @@ export class StoreController {
 
   @Get(':id')
   @HttpCode(200)
+  @RequirePermission('stores.read')
   @ApiOperation({ summary: 'Get active store details' })
   @ApiResponse({ status: 200, type: StoreResponseDto })
   async get(@Param('id') id: string, @Req() req: Request) {

@@ -171,6 +171,7 @@ describe('TenantMiddleware', () => {
         userId: 'user-1',
         agencyId: 'agency-1',
         role: 'super_admin',
+        roleIsSystem: true,
       });
       const mockAgency = { id: 'agency-1', name: 'Agency 1' };
       mockPrismaService.agency.findFirst.mockResolvedValue(mockAgency);
@@ -264,5 +265,22 @@ describe('TenantMiddleware', () => {
       expect(req.activeAgency).toEqual(mockAgency);
       expect(next).toHaveBeenCalled();
     });
+  });
+});
+
+describe('TenantMiddleware — tenant role named super_admin gets no bypass', () => {
+  it('falls through to the DB role check and is denied without a covering role', async () => {
+    const mockJwt = { verify: jest.fn().mockReturnValue({ userId: 'user-1', agencyId: 'agency-1', role: 'super_admin', roleIsSystem: false }) };
+    const prisma: any = {
+      agency: { findFirst: jest.fn().mockResolvedValue({ id: 'agency-1' }) },
+      store: { findFirst: jest.fn() },
+      client: { findFirst: jest.fn() },
+      storeUser: { findFirst: jest.fn() },
+      userRole: { findFirst: jest.fn().mockResolvedValue(null) },
+    };
+    const mw = new TenantMiddleware(mockJwt as any, prisma);
+    const req: any = { path: '/api/agencies/agency-1', headers: { authorization: 'Bearer t' } };
+    await expect(mw.use(req, {} as any, jest.fn())).rejects.toThrow(ForbiddenException);
+    expect(prisma.userRole.findFirst).toHaveBeenCalled();
   });
 });

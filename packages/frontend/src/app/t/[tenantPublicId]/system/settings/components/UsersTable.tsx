@@ -32,7 +32,6 @@ interface User {
   allowedStores?: AvailableStore[];
 }
 
-const ROLES = ['super_admin', 'admin', 'manager', 'user', 'viewer'];
 
 export function UsersTable() {
   const toast = useToast();

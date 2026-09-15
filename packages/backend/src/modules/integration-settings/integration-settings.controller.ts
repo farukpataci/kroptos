@@ -46,7 +46,7 @@ export class IntegrationSettingsController {
       agencyId: (req as any).activeAgency?.id,
       clientId: (req as any).activeClient?.id,
       storeId: (req as any).activeStore?.id,
-      isSuperAdmin: isSuperAdminRole(user?.role),
+      isSuperAdmin: isSuperAdminRole(user),
       userId: user?.userId,
       userName: user?.email,
       ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),

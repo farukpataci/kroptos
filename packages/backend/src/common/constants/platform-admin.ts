@@ -9,6 +9,14 @@
  */
 const DEFAULT_PLATFORM_ADMIN_EMAILS = ['faruk.pataci@gmail.com'];
 
+export const SUPER_ADMIN_ROLE_KEY = 'super_admin';
+
+/** JWT'nin ve req.user'ın taşıdığı rol kimliği: makine adı + sistem rolü mü. */
+export interface RoleIdentity {
+  role?: string | null;
+  roleIsSystem?: boolean | null;
+}
+
 export function platformAdminEmails(): string[] {
   const configured = process.env.PLATFORM_ADMIN_EMAILS;
   const list = configured
@@ -17,12 +25,19 @@ export function platformAdminEmails(): string[] {
   return list.map((email) => email.toLowerCase());
 }
 
-export function isSuperAdminRole(role?: string | null): boolean {
-  return role === 'super_admin';
+/**
+ * Bypass yalnız SİSTEM super_admin rolüne. P3'ten sonra Role.name unique değil ve
+ * P7 ajanslara özel rol yaratma yetkisi verecek: key'i 'super_admin' olan bir
+ * tenant rolü (agencyId dolu, isSystem false) partial index'e takılmaz — bypass
+ * almamalı. Bu yüzden key VE isSystem birlikte gerekir; görünen ad (name) hiç
+ * okunmaz.
+ */
+export function isSuperAdminRole(identity?: RoleIdentity | null): boolean {
+  return identity?.role === SUPER_ADMIN_ROLE_KEY && identity?.roleIsSystem === true;
 }
 
 /** Both conditions must hold: the super admin role *and* an allowlisted email. */
-export function isPlatformAdmin(user?: { email?: string | null; role?: string | null }): boolean {
-  if (!user?.email || !isSuperAdminRole(user.role)) return false;
+export function isPlatformAdmin(user?: (RoleIdentity & { email?: string | null }) | null): boolean {
+  if (!user?.email || !isSuperAdminRole(user)) return false;
   return platformAdminEmails().includes(user.email.toLowerCase());
 }

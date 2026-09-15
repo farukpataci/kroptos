@@ -20,7 +20,7 @@ export class ProductController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return isSuperAdminRole(user?.role);
+    return isSuperAdminRole(user);
   }
 
   @Get()
@@ -99,7 +99,7 @@ export class ProductController {
 
   @Patch(':id')
   @HttpCode(200)
-  @RequirePermission('products.create')
+  @RequirePermission('products.update')
   @ApiOperation({ summary: 'Update product details' })
   @ApiResponse({ status: 200, type: ProductResponseDto })
   async update(
@@ -128,7 +128,7 @@ export class ProductController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission('products.create')
+  @RequirePermission('products.delete')
   @ApiOperation({ summary: 'Soft delete product' })
   @ApiResponse({ status: 204, description: 'Product soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {

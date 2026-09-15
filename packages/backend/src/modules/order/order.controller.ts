@@ -24,7 +24,7 @@ export class OrderController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return isSuperAdminRole(user?.role);
+    return isSuperAdminRole(user);
   }
 
   @Get('/api/orders')
@@ -163,7 +163,7 @@ export class OrderController {
 
   @Post('/api/orders/:id/cancel')
   @HttpCode(200)
-  @RequirePermission('orders.update')
+  @RequirePermission('orders.cancel')
   @ApiOperation({ summary: 'Cancel order processing' })
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async cancel(@Param('id') id: string, @Req() req: Request) {
@@ -187,7 +187,7 @@ export class OrderController {
 
   @Post('/api/orders/:id/refund')
   @HttpCode(200)
-  @RequirePermission('orders.update')
+  @RequirePermission('orders.cancel')
   @ApiOperation({ summary: 'Refund order payments' })
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async refund(@Param('id') id: string, @Req() req: Request) {

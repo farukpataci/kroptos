@@ -5,7 +5,7 @@ const ur = (name: string, opts: { agencyId?: string; clientId?: string | null; s
   clientId: opts.clientId ?? null,
   storeId: opts.storeId ?? null,
   createdAt: new Date(opts.createdAt ?? '2026-01-01'),
-  role: { name },
+  role: { key: name },
 });
 
 describe('resolvePrimaryRole', () => {

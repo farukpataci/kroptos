@@ -85,10 +85,12 @@ describe('PermissionGuard', () => {
     await expect(guard.canActivate(ctx({ userId: 'u1', agencyId: 'a1' }))).resolves.toBe(true);
   });
 
-  it('super_admin bypasses the lookup entirely', async () => {
+  it('SYSTEM super_admin bypasses the lookup entirely; a tenant role named super_admin does not', async () => {
     rows = [];
-    await expect(guard.canActivate(ctx({ userId: 'x', agencyId: 'a1', role: 'super_admin' }))).resolves.toBe(true);
+    await expect(guard.canActivate(ctx({ userId: 'x', agencyId: 'a1', role: 'super_admin', roleIsSystem: true }))).resolves.toBe(true);
     expect(prisma.userRole.findMany).not.toHaveBeenCalled();
+    await expect(guard.canActivate(ctx({ userId: 'x', agencyId: 'a1', role: 'super_admin', roleIsSystem: false }))).rejects.toThrow('No active role');
+    expect(prisma.userRole.findMany).toHaveBeenCalledTimes(1);
   });
 
   it('uses the middleware-resolved context over the token context', async () => {

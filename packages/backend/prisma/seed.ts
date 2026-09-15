@@ -1,4 +1,5 @@
 import { PrismaClient, Prisma } from '@prisma/client';
+import { PERMISSIONS, DEFAULT_ROLES } from '@kroptos/shared';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -6,280 +7,22 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Starting seed...');
 
-  // 1. Seed Permissions
-  const permissionsList = [
-    { name: '*:*', description: 'Wildcard full access' },
-    { name: 'agencies.read', description: 'View agencies list and details' },
-    { name: 'agencies.create', description: 'Create new agencies' },
-    { name: 'clients.read', description: 'View client accounts' },
-    { name: 'clients.create', description: 'Create new clients' },
-    { name: 'stores.read', description: 'View store channels' },
-    { name: 'stores.create', description: 'Create new stores' },
-    { name: 'products.read', description: 'View products' },
-    { name: 'products.create', description: 'Add new products' },
-    { name: 'orders.read', description: 'View client orders' },
-    { name: 'orders.update', description: 'Modify orders' },
-    { name: 'integrations.manage', description: 'Manage third-party integrations' },
-    { name: 'integrations.read', description: 'View integrations and their settings (secrets masked)' },
-    { name: 'integrations.settings.update', description: 'Change, reset or restore integration settings' },
-    { name: 'accounting.export', description: 'Export financial/invoice reports' },
-    { name: 'warehouse.manage', description: 'Manage inventories and warehouse popups' },
-    { name: 'wms.view', description: 'Access WMS interface' },
-    { name: 'wms.manage', description: 'Full WMS administration' },
-    { name: 'wms.print', description: 'Trigger print jobs in WMS' },
-    { name: 'wms.settings.update', description: 'Update WMS printer/label settings' },
-    { name: 'wms.labels.view', description: 'View WMS shipping labels' },
-    { name: 'wms.labels.create', description: 'Create shipping labels in WMS' },
-    { name: 'wms.stock.view', description: 'View WMS stock movements' },
-    { name: 'wms.stock.update', description: 'Modify WMS stock levels' },
-    { name: 'carriers.read', description: 'View carrier connections' },
-    { name: 'carriers.create', description: 'Add carrier connections' },
-    { name: 'carriers.update', description: 'Change or test carrier connections' },
-    { name: 'carriers.delete', description: 'Remove carrier connections' },
-    { name: 'shipments.read', description: 'View shipments and tracking events' },
-    { name: 'shipments.create', description: 'Create shipments and obtain barcodes' },
-    { name: 'shipments.cancel', description: 'Cancel shipments at the carrier' },
-    { name: 'shipments.label.print', description: 'Print or download shipping labels' },
-    { name: 'shipments.handover', description: 'Hand parcels to the courier and print the manifest' },
-    { name: 'analytics.read', description: 'View analytics dashboards and reports' },
-    { name: 'analytics.export', description: 'Export analytics reports' },
-    { name: 'analytics.financial.read', description: 'View profitability and financial analytics' },
-    { name: 'analytics.integration.read', description: 'View integration health and accounting analytics' },
-    { name: 'system.settings.read', description: 'View system, tenant, security and notification settings' },
-    { name: 'system.settings.manage', description: 'Change system, tenant, security and notification settings' },
-    { name: 'system.settings.write', description: 'Assign stores to users' },
-    { name: 'warehouse.settings.read', description: 'View warehouses, zones, locations and stock sources' },
-    { name: 'warehouse.settings.manage', description: 'Manage warehouses, zones, locations and stock sources' },
-    { name: 'stock.allocation.read', description: 'View and calculate stock allocation rules' },
-    { name: 'stock.allocation.manage', description: 'Create and change stock allocation rules' },
-    { name: 'audit.read', description: 'View audit log records' },
-    { name: 'integration.logs.read', description: 'View integration error logs' },
-    { name: 'integration.logs.manage', description: 'Resolve, ignore or retry integration errors' },
-    { name: 'accounting.read', description: 'View accounting integrations and documents' },
-    { name: 'accounting.manage', description: 'Manage accounting integrations, companies, and emit invoices' },
-    { name: 'accounting.documents.read', description: 'View accounting documents' },
-    { name: 'accounting.documents.create', description: 'Create accounting invoice and payment documents' },
-    // docs/mikro.agent.md §10 — accounting.credential.manage ve agent.manage AYRI izinlerdir
-    { name: 'accounting.credential.manage', description: 'Submit ERP credentials to an Agent (end-to-end encrypted envelope)' },
-    { name: 'accounting.invoice.push', description: 'Push invoices to ERP via the Agent route' },
-    { name: 'agent.read', description: 'View KroptOS Agents and their job queue' },
-    { name: 'agent.manage', description: 'Generate enrollment codes, assign and revoke KroptOS Agents' },
-    { name: 'agencies.write', description: 'Update or delete agencies' },
-    { name: 'clients.write', description: 'Update or delete clients' },
-    { name: 'stores.write', description: 'Update or delete stores' },
-  ];
+  // 1. Seed Permissions — katalog tek kaynak: packages/shared/src/permissions.ts
+  const permissionsList = PERMISSIONS.map((p) => ({ name: p.key, description: p.description, category: p.category }));
 
   console.log('Seeding permissions...');
   const permissionsMap: Record<string, any> = {};
   for (const perm of permissionsList) {
     const createdPerm = await prisma.permission.upsert({
       where: { name: perm.name },
-      update: { description: perm.description },
+      update: { description: perm.description, category: perm.category },
       create: perm,
     });
     permissionsMap[perm.name] = createdPerm;
   }
 
-  // 2. Seed Roles and map permissions
-  const rolesList = [
-    {
-      name: 'super_admin',
-      description: 'Super administrator with full system-wide access',
-      permissions: ['*:*'],
-    },
-    {
-      name: 'agency_owner',
-      description: 'Agency owner with full management rights inside their agency',
-      permissions: [
-        'agencies.read',
-        'clients.read',
-        'clients.create',
-        'stores.read',
-        'stores.create',
-        'products.read',
-        'products.create',
-        'orders.read',
-        'orders.update',
-        'integrations.manage',
-        'integrations.read',
-        'integrations.settings.update',
-        'accounting.export',
-        'accounting.read',
-        'accounting.manage',
-        'accounting.documents.read',
-        'accounting.documents.create',
-        'accounting.credential.manage',
-        'accounting.invoice.push',
-        'agent.read',
-        'agent.manage',
-        'warehouse.manage',
-        'wms.view',
-        'wms.manage',
-        'wms.print',
-        'wms.settings.update',
-        'wms.labels.view',
-        'wms.labels.create',
-        'wms.stock.view',
-        'wms.stock.update',
-        'analytics.read',
-        'analytics.export',
-        'analytics.financial.read',
-        'analytics.integration.read',
-        'system.settings.read',
-        'system.settings.manage',
-        'system.settings.write',
-        'warehouse.settings.read',
-        'warehouse.settings.manage',
-        'stock.allocation.read',
-        'stock.allocation.manage',
-        'audit.read',
-        'integration.logs.read',
-        'integration.logs.manage',
-        'clients.write',
-        'stores.write',
-        'carriers.read',
-        'carriers.create',
-        'carriers.update',
-        'carriers.delete',
-        'shipments.read',
-        'shipments.create',
-        'shipments.cancel',
-        'shipments.label.print',
-        'shipments.handover',
-      ],
-    },
-    {
-      name: 'agency_admin',
-      description: 'Agency admin helping to manage clients and stores',
-      permissions: [
-        'agencies.read',
-        'clients.read',
-        'clients.create',
-        'stores.read',
-        'stores.create',
-        'products.read',
-        'products.create',
-        'orders.read',
-        'orders.update',
-        'integrations.read',
-        'integrations.settings.update',
-        'wms.view',
-        'wms.print',
-        'wms.labels.view',
-        'wms.stock.view',
-        'analytics.read',
-        'analytics.integration.read',
-        'system.settings.read',
-        // agency_admin ajans icindeki kullanici/magaza yonetimine yardim eden rol;
-        // denetim kaydini gorememesi bu rolun varlik sebebiyle celisiyordu.
-        'audit.read',
-        'integration.logs.read',
-        'integration.logs.manage',
-        'carriers.read',
-        'shipments.read',
-      ],
-    },
-    {
-      name: 'client_admin',
-      description: 'Client administrator managing stores, products, and orders',
-      permissions: [
-        'clients.read',
-        'stores.read',
-        'stores.create',
-        'products.read',
-        'products.create',
-        'orders.read',
-        'orders.update',
-        'integrations.read',
-        'wms.view',
-        'wms.manage',
-        'wms.print',
-        'wms.settings.update',
-        'wms.labels.view',
-        'wms.labels.create',
-        'wms.stock.view',
-        'wms.stock.update',
-        'analytics.read',
-        'warehouse.settings.read',
-        'warehouse.settings.manage',
-        'stock.allocation.read',
-        'carriers.read',
-        'carriers.create',
-        'carriers.update',
-        'carriers.delete',
-        'shipments.read',
-        'shipments.create',
-        'shipments.cancel',
-        'shipments.label.print',
-        'shipments.handover',
-      ],
-    },
-    {
-      name: 'store_manager',
-      description: 'Store manager focusing on operational products and orders',
-      permissions: [
-        'stores.read',
-        'products.read',
-        'products.create',
-        'orders.read',
-        'orders.update',
-        'wms.view',
-        'wms.print',
-        'wms.labels.view',
-        'wms.stock.view',
-        'wms.stock.update',
-        'carriers.read',
-        'shipments.read',
-        'shipments.create',
-        'shipments.label.print',
-        'shipments.handover',
-      ],
-    },
-    {
-      name: 'accountant',
-      description: 'Accountant checking billing, financials, and exporting report audits',
-      permissions: [
-        'stores.read',
-        'orders.read',
-        'accounting.export',
-        'analytics.read',
-        'analytics.export',
-        'analytics.financial.read',
-      ],
-    },
-    {
-      name: 'warehouse_staff',
-      description: 'Warehouse staff managing stock levels and fulfillments',
-      permissions: [
-        'products.read',
-        'orders.read',
-        'warehouse.manage',
-        'wms.view',
-        'wms.print',
-        'wms.labels.view',
-        'wms.labels.create',
-        'wms.stock.view',
-        'wms.stock.update',
-        'warehouse.settings.read',
-        'stock.allocation.read',
-        'carriers.read',
-        'shipments.read',
-        'shipments.create',
-        'shipments.label.print',
-        'shipments.handover',
-      ],
-    },
-    {
-      name: 'support',
-      description: 'Customer support staff reading issues, tickets, and order logs',
-      permissions: ['clients.read', 'stores.read', 'orders.read'],
-    },
-    {
-      name: 'viewer',
-      description: 'Read-only profile context viewer',
-      permissions: ['agencies.read', 'clients.read', 'stores.read', 'products.read', 'orders.read'],
-    },
-  ];
+  // 2. Seed Roles and map permissions — DEFAULT_ROLES (shared)
+  const rolesList = DEFAULT_ROLES.map((r) => ({ name: r.key, description: r.description, permissions: r.permissions as string[] }));
 
   console.log('Seeding roles...');
   for (const roleDef of rolesList) {
@@ -374,9 +117,10 @@ async function seedTestTenants() {
   console.log('Seeding multi-tenant test data for staging/dev...');
   const hashedTestPassword = await bcrypt.hash(testPassword, 10);
 
-  const agencyAdminRole = await prisma.role.findUnique({ where: { name: 'agency_admin' } });
-  const storeManagerRole = await prisma.role.findUnique({ where: { name: 'store_manager' } });
-  const warehouseStaffRole = await prisma.role.findUnique({ where: { name: 'warehouse_staff' } });
+  // P3: Role.name unique degil, sistem rolu key + agencyId null ile bulunur
+  const agencyAdminRole = await prisma.role.findFirst({ where: { key: 'agency_admin', agencyId: null, deletedAt: null } });
+  const storeManagerRole = await prisma.role.findFirst({ where: { key: 'store_manager', agencyId: null, deletedAt: null } });
+  const warehouseStaffRole = await prisma.role.findFirst({ where: { key: 'warehouse_staff', agencyId: null, deletedAt: null } });
 
   if (!agencyAdminRole || !storeManagerRole || !warehouseStaffRole) {
     throw new Error('Required roles (agency_admin, store_manager, warehouse_staff) not found');
@@ -469,21 +213,13 @@ async function seedTestTenants() {
         create: { email: u.email, passwordHash: hashedTestPassword, firstName: u.firstName, lastName: u.lastName, isActive: true },
       });
 
-      await prisma.userRole.upsert({
-        where: {
-          userId_agencyId_roleId: {
-            userId: user.id,
-            agencyId: agency.id,
-            roleId: u.roleId,
-          },
-        },
-        update: {},
-        create: {
-          userId: user.id,
-          agencyId: agency.id,
-          roleId: u.roleId,
-        },
+      // P3: bilesik unique kalkti; eski upsert gibi soft-deleted satira da dokunmaz
+      const existingRole = await prisma.userRole.findFirst({
+        where: { userId: user.id, agencyId: agency.id, roleId: u.roleId, clientId: null, storeId: null },
       });
+      if (!existingRole) {
+        await prisma.userRole.create({ data: { userId: user.id, agencyId: agency.id, roleId: u.roleId } });
+      }
     }
 
     // Seed 2 Clients & 2 Stores per client (4 stores per agency = 8 total)

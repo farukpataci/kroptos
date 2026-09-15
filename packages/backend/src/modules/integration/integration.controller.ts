@@ -22,7 +22,7 @@ export class IntegrationController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return isSuperAdminRole(user?.role);
+    return isSuperAdminRole(user);
   }
 
   private sanitizeResponse(integration: any) {
@@ -184,7 +184,7 @@ export class IntegrationController {
 
   @Post(':id/sync')
   @HttpCode(200)
-  @RequirePermission('integrations.manage')
+  @RequirePermission('integrations.sync')
   @ApiOperation({ summary: 'Trigger dynamic integration sync' })
   @ApiResponse({ status: 200, description: 'Sync job status and execution details' })
   async triggerSync(@Param('id') id: string, @Req() req: Request) {

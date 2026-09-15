@@ -61,7 +61,7 @@ export class AuthService {
     agencyId: string,
     clientId: string | null = null,
     storeId: string | null = null,
-    role: string = 'user',
+    role: { key: string; isSystem: boolean },
   ) {
     // permissions[] bilerek yok: izinler her istekte DB'den (PermissionCache)
     // okunur. Token'a gömülü izin, rol geri alındıktan sonra da geçerli kalıyordu.
@@ -72,7 +72,9 @@ export class AuthService {
       agencyId,
       clientId,
       storeId,
-      role,
+      // Makine adi + sistem rolu mu: isSuperAdminRole ikisini birden ister (gorunen ad okunmaz).
+      role: role.key,
+      roleIsSystem: role.isSystem,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -182,7 +184,7 @@ export class AuthService {
       result.agency.id,
       null,
       null,
-      result.role.name,
+      result.role,
     );
 
     // 7. Save sessions
@@ -220,7 +222,7 @@ export class AuthService {
           id: result.agency.id,
           publicId: result.agency.publicId,
           name: result.agency.name,
-          role: result.role.name,
+          role: result.role.key,
           clientId: null,
           storeId: null,
         },
@@ -265,7 +267,7 @@ export class AuthService {
       primaryUserRole.agencyId,
       primaryUserRole.clientId,
       primaryUserRole.storeId,
-      primaryUserRole.role.name,
+      primaryUserRole.role,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
@@ -389,7 +391,7 @@ export class AuthService {
         userRole.agencyId,
         userRole.clientId,
         userRole.storeId,
-        userRole.role.name,
+        userRole.role,
       );
 
       const newHash = this.hashToken(newTokens.refreshToken);
@@ -479,7 +481,7 @@ export class AuthService {
       dto.agencyId,
       requestedClientId,
       requestedStoreId,
-      userRole.role.name,
+      userRole.role,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
@@ -567,7 +569,7 @@ export class AuthService {
     for (const ur of userRoles) {
       const agency = ur.agency;
       const agencyStores = agency.stores ?? [];
-      const agencyWide = (!ur.clientId && !ur.storeId) || isSuperAdminRole(ur.role.name);
+      const agencyWide = (!ur.clientId && !ur.storeId) || isSuperAdminRole({ role: ur.role.key, roleIsSystem: ur.role.isSystem });
       if (agencyWide) {
         agencies.set(agency.id, {
           id: agency.id,
@@ -605,20 +607,21 @@ export class AuthService {
     if (accessibleTenants.length === 0) {
       console.warn(
         `[getMe] user ${user.email} has no accessible tenant: roles=${JSON.stringify(
-          userRoles.map((ur) => ({ role: ur.role.name, agencyId: ur.agencyId, clientId: ur.clientId, storeId: ur.storeId })),
+          userRoles.map((ur) => ({ role: ur.role.key, agencyId: ur.agencyId, clientId: ur.clientId, storeId: ur.storeId })),
         )} storeUsers=${storeUsers.length}`,
       );
     }
 
     // The UI needs the role to decide what to show; it is advisory only, every
     // protected route re-checks it server-side.
-    const role = resolvePrimaryRole(userRoles)?.role?.name ?? null;
+    const primary = resolvePrimaryRole(userRoles)?.role;
+    const role = primary?.key ?? null;
 
     return {
       user: {
         ...user,
         role,
-        isPlatformAdmin: isPlatformAdmin({ email: user.email, role }),
+        isPlatformAdmin: isPlatformAdmin({ email: user.email, role, roleIsSystem: primary?.isSystem ?? false }),
       },
       accessibleTenants,
     };
