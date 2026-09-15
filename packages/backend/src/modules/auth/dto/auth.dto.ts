@@ -75,6 +75,16 @@ export class UserResponseDto {
 
   @ApiProperty()
   twoFactorEnabled: boolean;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Aktif baglamdaki rol key' })
+  role?: string | null;
+
+  @ApiPropertyOptional()
+  isPlatformAdmin?: boolean;
+
+  /** Aktif baglamdaki etkin izinler (JWT'de DEGIL; her cagrida DB/cache). Sistem super_admin icin ['*:*']. */
+  @ApiPropertyOptional({ type: [String] })
+  permissions?: string[];
 }
 
 export class AgencyTenantDto {
@@ -95,6 +105,9 @@ export class AgencyTenantDto {
 
   @ApiProperty({ required: false })
   agencyId?: string;
+
+  @ApiProperty({ required: false, type: [String], description: 'Bu baglamdaki etkin izinler' })
+  permissions?: string[];
 
   @ApiProperty({ required: false, nullable: true })
   clientId?: string | null;

@@ -84,7 +84,13 @@ export class AuthController {
   @ApiOperation({ summary: 'Get current user profile, active session context, and accessible tenants' })
   @ApiResponse({ status: 200, description: 'Success' })
   async me(@Req() req: Request) {
-    const userId = (req.user as any).userId;
-    return this.authService.getMe(userId);
+    const r = req as any;
+    const u = r.user;
+    // Aktif baglam: middleware'in header'dan cozdugu activeX, yoksa token'daki kapsam.
+    return this.authService.getMe(u.userId, {
+      agencyId: r.activeAgency?.id ?? u.agencyId,
+      clientId: r.activeClient?.id ?? u.clientId ?? null,
+      storeId: r.activeStore?.id ?? u.storeId ?? null,
+    });
   }
 }

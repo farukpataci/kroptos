@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { ArrowPathIcon, ExclamationTriangleIcon, UserPlusIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '@/lib/auth-context';
 import { useToast } from '@/components/ui/Toast';
+import { usePermission } from '@/hooks/usePermission';
 import { useUsers, type UserRow } from '../hooks/useUsers';
 import { useRoles } from '../hooks/useRoles';
 import { useInvitations } from '../hooks/useInvitations';
@@ -19,6 +20,7 @@ export default function UsersPanel() {
   const tc = useTranslations('common');
   const toast = useToast();
   const { user: me } = useAuth();
+  const { can } = usePermission();
   const users = useUsers();
   const rolesApi = useRoles();
   const invitations = useInvitations();
@@ -76,9 +78,11 @@ export default function UsersPanel() {
           <button onClick={() => { users.refresh(); invitations.refresh(); }} className="flex items-center gap-1.5 rounded-kp-md border border-kp-border px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:text-kp-text-primary">
             <ArrowPathIcon className={`h-3.5 w-3.5 ${users.isLoading ? 'animate-spin' : ''}`} /> {tc('actions.refresh')}
           </button>
+          {can('users.manage') && (
           <button onClick={() => setInviteOpen(true)} className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-xs font-semibold">
             <UserPlusIcon className="h-3.5 w-3.5" /> {t('invite')}
           </button>
+          )}
         </div>
       </div>
 

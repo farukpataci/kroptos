@@ -112,7 +112,12 @@
     "all": "Tümü",
     "total": "Toplam",
     "requiredField": "Bu alan zorunludur",
-    "unknownError": "Bilinmeyen bir hata oluştu"
+    "unknownError": "Bilinmeyen bir hata oluştu",
+    "forbidden": {
+      "title": "Bu sayfaya erişim yetkiniz yok",
+      "desc": "Rolünüz bu bölümü görüntülemeye izin vermiyor. Erişim gerekiyorsa ajans yöneticinizle iletişime geçin.",
+      "backToDashboard": "Panele dön"
+    }
   },
   "header": {
     "agency": "Dağıtıcı Firma",

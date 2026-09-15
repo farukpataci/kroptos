@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { PermissionCacheService } from '@common/services/permission-cache.service';
 import { BadRequestException, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 
@@ -56,6 +57,8 @@ describe('AuthService', () => {
     $transaction: jest.fn((cb) => cb(mockPrismaService)),
   };
 
+  const mockPermissionCache = { getPermissions: jest.fn().mockResolvedValue(['orders.read']), invalidateUser: jest.fn() };
+
   const mockJwtService = {
     sign: jest.fn(() => 'mock-jwt-token'),
     verify: jest.fn().mockImplementation(() => ({ userId: 'user-1', email: 'test@example.com', tenantId: 'agency-1', role: 'super_admin' })),
@@ -67,6 +70,7 @@ describe('AuthService', () => {
         AuthService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: JwtService, useValue: mockJwtService },
+        { provide: PermissionCacheService, useValue: mockPermissionCache },
       ],
     }).compile();
 
@@ -473,5 +477,27 @@ describe('AuthService', () => {
       expect(signedPayload.role).toBe('store_manager');
       expect(signedPayload.permissions).toBeUndefined();
     });
+  });
+});
+
+describe('AuthService.getMe permissions (P10)', () => {
+  it('returns permissions for the active scope and for every accessible tenant; never in the JWT', async () => {
+    const perms = { getPermissions: jest.fn(async (s: any) => (s.storeId ? ['products.read'] : ['orders.read', 'clients.create'])), invalidateUser: jest.fn() };
+    const agency = { id: 'a1', publicId: 'tn_a1', name: 'A', stores: [{ id: 's1', publicId: 'tn_s1', name: 'S1', agencyId: 'a1', clientId: null }] };
+    const prisma: any = {
+      user: { findUnique: jest.fn().mockResolvedValue({ id: 'u1', email: 'u@x.y', isActive: true }) },
+      userRole: { findMany: jest.fn().mockResolvedValue([{ agencyId: 'a1', clientId: null, storeId: null, agency, client: null, role: { key: 'agency_owner', isSystem: true } }]) },
+      storeUser: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    const svc = new AuthService(prisma, { sign: jest.fn(() => 'tok') } as any, perms as any);
+
+    const me = await svc.getMe('u1', { agencyId: 'a1', storeId: 's1' });
+    expect(me.user.permissions).toEqual(['products.read']); // aktif baglam = magaza
+    expect(me.accessibleTenants.map((t: any) => `${t.type}:${t.permissions.join('|')}`)).toEqual(['agency:orders.read|clients.create', 'brand:products.read']);
+    expect(perms.getPermissions).toHaveBeenCalledWith({ userId: 'u1', agencyId: 'a1', clientId: null, storeId: 's1' });
+
+    // baglam verilmezse birincil rolun kapsami
+    const me2 = await svc.getMe('u1');
+    expect(me2.user.permissions).toEqual(['orders.read', 'clients.create']);
   });
 });

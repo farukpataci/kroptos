@@ -15,6 +15,8 @@ interface User {
    * re-checked server-side.
    */
   isPlatformAdmin?: boolean;
+  /** Aktif baglamdaki etkin izinler (/auth/me). JWT'den DEGIL. */
+  permissions?: string[];
 }
 
 interface TenantContext {
@@ -35,6 +37,12 @@ interface AuthContextType {
   setTenantContext: (context: TenantContext) => void;
   switchTenant: (agencyId: string, clientId: string | null, storeId: string | null) => Promise<void>;
   accessibleTenants: any[];
+  /**
+   * Aktif baglamin izinleri; null = henuz yuklenmedi (usePermission fail-closed).
+   * accessibleTenants icindeki eslesen girdiden turetilir (baglam degisince aninda),
+   * eslesen yoksa user.permissions.
+   */
+  permissions: string[] | null;
   refreshUserProfile: () => Promise<void>;
   /** Sunucudan gelen oturum yanitini (login / davet kabulu) baglama uygular. */
   applySession: (data: AuthResponse) => void;
@@ -54,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accessibleTenants, setAccessibleTenants] = useState<any[]>([]);
+  const [permissionsLoaded, setPermissionsLoaded] = useState(false);
   const [tenantContext, setTenantContextState] = useState<TenantContext>({
     agencyId: null,
     clientId: null,
@@ -126,6 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           }
           setUser(meData.user);
           setAccessibleTenants(meData.accessibleTenants);
+          setPermissionsLoaded(true);
 
           // Initialize context default if none chosen (or just dropped)
           if (!localStorage.getItem('selected_tenant')) {
@@ -152,6 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const meData = await apiFetch<any>('/auth/me');
       setUser(meData.user);
       setAccessibleTenants(meData.accessibleTenants);
+      setPermissionsLoaded(true);
     } catch (e) {
       console.error('Failed to refresh user profile:', e);
     }
@@ -176,6 +187,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(data.accessToken);
     localStorage.setItem('auth', JSON.stringify({ user: data.user, accessToken: data.accessToken }));
     setAccessibleTenants(data.agencies || []);
+    setPermissionsLoaded(true);
     const def = pickDefaultTenant(data.agencies || [], data.accessToken);
     if (def) setTenantContext(def);
     // Refresh profile in background without blocking navigation
@@ -235,6 +247,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     setTenantContext({ agencyId, clientId, storeId });
+    // Izinler accessibleTenants'tan turetildigi icin aninda guncellenir; taze liste arka planda.
+    refreshUserProfile().catch(console.error);
   };
 
 
@@ -242,10 +256,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setAccessToken(null);
     setAccessibleTenants([]);
+    setPermissionsLoaded(false);
     setTenantContextState({ agencyId: null, clientId: null, storeId: null });
     localStorage.removeItem('auth');
     localStorage.removeItem('selected_tenant');
   };
+
+  // Aktif baglamin izinleri: accessibleTenants'taki eslesen girdi (switchTenant sonrasi
+  // ek istek gerekmez), yoksa user.permissions. Yuklenmediyse null -> can() false.
+  const permissions: string[] | null = !permissionsLoaded
+    ? null
+    : (accessibleTenants.find((t: any) =>
+        (t.agencyId || t.id) === tenantContext.agencyId &&
+        (t.clientId || null) === (tenantContext.clientId || null) &&
+        (t.storeId || null) === (tenantContext.storeId || null),
+      )?.permissions ?? user?.permissions ?? []);
 
   return (
     <AuthContext.Provider
@@ -261,6 +286,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setTenantContext,
         switchTenant,
         accessibleTenants,
+        permissions,
         refreshUserProfile,
         applySession,
       }}

@@ -17,6 +17,7 @@ import { Order } from '../hooks/useOrders';
 import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge } from './OrderStatusBadge';
 import OrderTimeline from './OrderTimeline';
 import CargoSimulationModal from './CargoSimulationModal';
+import { usePermission } from '@/hooks/usePermission';
 
 interface OrderDetailDrawerProps {
   orderId: string | null;
@@ -87,6 +88,8 @@ export default function OrderDetailDrawer({
       setIsActioning(false);
     }
   };
+
+  const { can } = usePermission();
 
   const handleStatusChange = (status: string) => {
     if (!order) return;
@@ -331,7 +334,7 @@ export default function OrderDetailDrawer({
                         )}
 
                         {/* Status Change Dropdown */}
-                        {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                        {can('orders.update') && order.status !== 'cancelled' && order.status !== 'delivered' && (
                           <select
                             value=""
                             onChange={(e) => e.target.value && handleStatusChange(e.target.value)}
@@ -347,7 +350,7 @@ export default function OrderDetailDrawer({
                         )}
 
                         {/* Refund */}
-                        {order.paymentStatus === 'paid' && (
+                        {can('orders.cancel') && order.paymentStatus === 'paid' && (
                           <button
                             onClick={handleRefund}
                             disabled={isActioning}
@@ -359,7 +362,7 @@ export default function OrderDetailDrawer({
                         )}
 
                         {/* Cancel */}
-                        {order.status !== 'cancelled' && order.status !== 'delivered' && (
+                        {can('orders.cancel') && order.status !== 'cancelled' && order.status !== 'delivered' && (
                           <button
                             onClick={handleCancel}
                             disabled={isActioning}

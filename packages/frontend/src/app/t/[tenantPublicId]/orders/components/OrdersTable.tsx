@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { Order, OrderFilters } from '../hooks/useOrders';
 import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge, OrderModeBadge } from './OrderStatusBadge';
 import { pageWindow } from '@/lib/pagination';
+import { usePermission } from '@/hooks/usePermission';
 
 interface OrdersTableProps {
   orders: Order[];
@@ -50,6 +51,7 @@ export default function OrdersTable({
   onCreateOrder,
 }: OrdersTableProps) {
   const t = useTranslations('orders.table');
+  const { can } = usePermission();
   const totalOnPage = orders.length;
   const startIdx = (currentPage - 1) * pageSize + 1;
   const endIdx = Math.min(startIdx + totalOnPage - 1, totalFiltered);
@@ -440,7 +442,7 @@ export default function OrdersTable({
           )}
 
           {/* Create Order Button */}
-          {onCreateOrder && (
+          {onCreateOrder && can('orders.update') && (
             <button
               onClick={onCreateOrder}
               className="ml-auto flex items-center justify-center gap-1.5 rounded bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-[0.6875rem] font-bold shadow-sm transition-all h-[28px]"

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowPathIcon, ExclamationTriangleIcon, FolderIcon, LockClosedIcon, PlusIcon, ShieldCheckIcon, TrashIcon, UsersIcon } from '@heroicons/react/24/outline';
 import { useToast } from '@/components/ui/Toast';
+import { usePermission } from '@/hooks/usePermission';
 import { useRoles, type RoleRow } from '../hooks/useRoles';
 import PermissionMatrix from './PermissionMatrix';
 import DeleteConfirmModal from './DeleteConfirmModal';
@@ -13,6 +14,8 @@ export default function RoleList() {
   const t = useTranslations('system.roles');
   const tc = useTranslations('common');
   const toast = useToast();
+  const { can } = usePermission();
+  const canManage = can('roles.manage');
   const { roles, catalog, isLoading, error, refresh, createRole, updateRole, deleteRole } = useRoles();
 
   const [selectedId, setSelectedId] = useState<string>('');
@@ -123,7 +126,7 @@ export default function RoleList() {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[0.6875rem] font-bold text-kp-text-tertiary uppercase tracking-wider">{t('listTitle')}</span>
-            {!isAdding && (
+            {!isAdding && canManage && (
               <button onClick={() => setIsAdding(true)} className="text-[0.625rem] font-semibold text-kp-accent hover:text-kp-accent-hover flex items-center gap-0.5">
                 <PlusIcon className="h-3.5 w-3.5" /> {t('newRole')}
               </button>
@@ -150,7 +153,7 @@ export default function RoleList() {
             ) : (
               roles.map((role) => {
                 const isSelected = role.id === selected?.id;
-                const canDelete = !role.isSystem && role.userCount === 0;
+                const canDelete = canManage && !role.isSystem && role.userCount === 0;
                 return (
                   <div key={role.id} onClick={() => setSelectedId(role.id)} className={`group relative w-full text-left p-3 rounded-kp-md border transition-all cursor-pointer ${isSelected ? 'bg-kp-accent/5 border-kp-accent/30 shadow-xs' : 'bg-kp-bg-secondary border-kp-border hover:bg-kp-bg-hover'}`}>
                     <div className="flex items-center justify-between gap-2">
@@ -202,7 +205,7 @@ export default function RoleList() {
                     <div className="text-[0.625rem] font-mono text-kp-text-tertiary">{selected.key}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {selected.isSystem ? (
+                    {selected.isSystem || !canManage ? (
                       <span className="inline-flex items-center gap-1 rounded-kp-sm bg-kp-bg-primary px-2 py-1 text-[0.625rem] font-semibold text-kp-text-tertiary border border-kp-border" title={t('systemHint')}>
                         <LockClosedIcon className="h-3 w-3" /> {t('readOnly')}
                       </span>
@@ -220,7 +223,7 @@ export default function RoleList() {
                   </div>
                 )}
 
-                <PermissionMatrix groups={catalog} granted={draft} readOnly={selected.isSystem} onToggle={toggle} />
+                <PermissionMatrix groups={catalog} granted={draft} readOnly={selected.isSystem || !canManage} onToggle={toggle} />
               </>
             )}
           </div>

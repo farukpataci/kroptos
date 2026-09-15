@@ -7,6 +7,7 @@ import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } f
 import { isPlatformAdmin, isSuperAdminRole } from '../../common/constants/platform-admin';
 import { resolvePrimaryRole } from '../../common/utils/primary-role';
 import { buildUserRoleScopeWhere } from '../../common/utils/tenant-scope';
+import { PermissionCacheService } from '../../common/services/permission-cache.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -14,6 +15,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private permissionCache: PermissionCacheService,
   ) {}
 
   private hashToken(token: string): string {
@@ -300,7 +302,11 @@ export class AuthService {
       { email: user.email },
     );
 
-    const { accessibleTenants } = await this.getMe(user.id);
+    const { accessibleTenants, user: me } = await this.getMe(user.id, {
+      agencyId: primaryUserRole.agencyId,
+      clientId: primaryUserRole.clientId,
+      storeId: primaryUserRole.storeId,
+    });
 
     return {
       accessToken: tokens.accessToken,
@@ -312,6 +318,9 @@ export class AuthService {
         lastName: user.lastName || undefined,
         isActive: user.isActive,
         twoFactorEnabled: user.twoFactorEnabled,
+        role: me.role,
+        isPlatformAdmin: me.isPlatformAdmin,
+        permissions: me.permissions,
       },
       agencies: accessibleTenants,
     };
@@ -348,7 +357,7 @@ export class AuthService {
       data: { userId, tokenHash: await this.hashPassword(tokens.refreshToken), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
     });
 
-    const { accessibleTenants } = await this.getMe(userId);
+    const { accessibleTenants, user: me } = await this.getMe(userId, scope);
     return {
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
@@ -359,6 +368,9 @@ export class AuthService {
         lastName: user.lastName || undefined,
         isActive: user.isActive,
         twoFactorEnabled: user.twoFactorEnabled,
+        role: me.role,
+        isPlatformAdmin: me.isPlatformAdmin,
+        permissions: me.permissions,
       },
       agencies: accessibleTenants,
     };
@@ -556,7 +568,11 @@ export class AuthService {
     return tokens;
   }
 
-  async getMe(userId: string) {
+  /**
+   * @param active Aktif baglam (controller: middleware'in cozdugu activeX ?? token;
+   *   login: birincil rolun kapsami). user.permissions bu baglama gore hesaplanir.
+   */
+  async getMe(userId: string, active?: { agencyId?: string | null; clientId?: string | null; storeId?: string | null }) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -650,7 +666,14 @@ export class AuthService {
     }
     for (const su of storeUsers) stores.set(su.store.id, brand(su.store));
 
-    const accessibleTenants: Entry[] = [...agencies.values(), ...clients.values(), ...stores.values()];
+    // Her girdiye o baglamdaki etkin izin kumesi: buildUserRoleScopeWhere + birlesim
+    // (PermissionCacheService, 60 sn cache). JWT'ye KONMAZ (P2). Sistem super_admin icin
+    // katalogdaki haliyle ['*:*'] doner; genisletilmez, istemci can() wildcard'i tanir.
+    const permsFor = async (scope: { agencyId: string; clientId?: string | null; storeId?: string | null }) =>
+      (await this.permissionCache.getPermissions({ userId, agencyId: scope.agencyId, clientId: scope.clientId ?? null, storeId: scope.storeId ?? null })) ?? [];
+    const accessibleTenants: (Entry & { permissions: string[] })[] = await Promise.all(
+      [...agencies.values(), ...clients.values(), ...stores.values()].map(async (e) => ({ ...e, permissions: await permsFor(e) })),
+    );
     if (accessibleTenants.length === 0) {
       console.warn(
         `[getMe] user ${user.email} has no accessible tenant: roles=${JSON.stringify(
@@ -661,14 +684,18 @@ export class AuthService {
 
     // The UI needs the role to decide what to show; it is advisory only, every
     // protected route re-checks it server-side.
-    const primary = resolvePrimaryRole(userRoles)?.role;
+    const primaryRow = resolvePrimaryRole(userRoles, active?.agencyId ? active : undefined) ?? resolvePrimaryRole(userRoles);
+    const primary = primaryRow?.role;
     const role = primary?.key ?? null;
+    const activeScope = active?.agencyId ? { agencyId: active.agencyId, clientId: active.clientId ?? null, storeId: active.storeId ?? null } : primaryRow ? { agencyId: primaryRow.agencyId, clientId: primaryRow.clientId, storeId: primaryRow.storeId } : null;
+    const permissions = activeScope ? await permsFor(activeScope) : [];
 
     return {
       user: {
         ...user,
         role,
         isPlatformAdmin: isPlatformAdmin({ email: user.email, role, roleIsSystem: primary?.isSystem ?? false }),
+        permissions,
       },
       accessibleTenants,
     };

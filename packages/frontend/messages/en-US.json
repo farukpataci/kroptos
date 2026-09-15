@@ -813,5 +813,12 @@
     "otherAccountTitle": "This invitation is for another account",
     "otherAccountDesc": "You are signed in as <strong>{current}</strong>; the invitation was sent to <strong>{invited}</strong>. Sign out first to continue.",
     "logoutAndContinue": "Sign out and continue"
+  },
+  "common": {
+    "forbidden": {
+      "title": "You do not have access to this page",
+      "desc": "Your role does not allow viewing this section. Contact your agency administrator if you need access.",
+      "backToDashboard": "Back to dashboard"
+    }
   }
 }

@@ -20,6 +20,7 @@ import { useTranslations } from 'next-intl';
 import { Product, Category, ProductFilters } from '../hooks/useProducts';
 import { ProductStatusBadge, StockBadge, MarginBadge, getProductImage } from './ProductStatusBadge';
 import { useToast } from '@/components/ui/Toast';
+import { usePermission } from '@/hooks/usePermission';
 import { pageWindow } from '@/lib/pagination';
 
 interface ProductsTableProps {
@@ -81,6 +82,7 @@ export default function ProductsTable({
   const t = useTranslations('products.table');
   const tc = useTranslations('common');
   const toast = useToast();
+  const { can } = usePermission();
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const pagesShown = pageWindow(currentPage, totalPages);
@@ -195,7 +197,7 @@ export default function ProductsTable({
           </button>
         </div>
 
-        {salesMode === 'multi' && (
+        {salesMode === 'multi' && can('products.create') && (
           <button
             onClick={onAddBundle}
             className="w-full sm:w-auto flex items-center justify-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2 text-xs font-semibold shadow-xs transition-colors"
@@ -311,7 +313,7 @@ export default function ProductsTable({
         </div>
 
         {/* Add Product Button (Only shown in single mode, in multi mode it is at top right) */}
-        {salesMode === 'single' && (
+        {salesMode === 'single' && can('products.create') && (
           <button
             onClick={onAddProduct}
             className="flex items-center justify-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-1.5 text-xs font-semibold shadow-xs transition-colors"
@@ -554,6 +556,7 @@ export default function ProductsTable({
                     {/* Actions */}
                     <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-end gap-1">
+                        {can('products.update') && (
                         <button
                           onClick={() => onEdit(product)}
                           className="flex h-7 w-7 items-center justify-center rounded-kp-sm text-kp-text-tertiary hover:text-kp-accent hover:bg-kp-bg-hover transition-colors"
@@ -561,6 +564,8 @@ export default function ProductsTable({
                         >
                           <PencilIcon className="h-3.5 w-3.5" />
                         </button>
+                        )}
+                        {can('products.delete') && (
                         <button
                           onClick={() => onDelete(product)}
                           className="flex h-7 w-7 items-center justify-center rounded-kp-sm text-kp-text-tertiary hover:text-kp-danger hover:bg-kp-bg-hover transition-colors"
@@ -568,6 +573,7 @@ export default function ProductsTable({
                         >
                           <TrashIcon className="h-3.5 w-3.5" />
                         </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -629,7 +635,7 @@ export default function ProductsTable({
       )}
 
       {/* Floating Sticky Bulk Actions Bar */}
-      {selectedIds.length > 0 && (
+      {selectedIds.length > 0 && can('products.update') && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-kp-lg bg-kp-bg-secondary/95 border border-kp-border shadow-kp-elevated backdrop-blur-md animate-slide-up">
           <div className="flex items-center gap-2 pr-3 border-r border-kp-border">
             <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-white text-[0.6875rem] font-bold">

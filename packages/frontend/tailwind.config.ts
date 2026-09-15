@@ -1,5 +1,13 @@
 import type { Config } from 'tailwindcss';
 
+// kp-* renkleri hex CSS degiskeni; Tailwind 3 bunlara /<alfa> uygulayamaz ve sinifi sessizce
+// uretmez (P9 bulgusu: bg-kp-accent/90 soluk cikti). Renk fonksiyonu opacityValue alir ve
+// color-mix ile karistirir (globals.css zaten color-mix kullaniyor). 437 kullanim tek yerden duzeldi.
+const kp = (v: string) => ({ opacityValue }: { opacityValue?: string }) =>
+  opacityValue === undefined || opacityValue === '1'
+    ? `var(${v})`
+    : `color-mix(in srgb, var(${v}) calc(${opacityValue} * 100%), transparent)`;
+
 const config: Config = {
   darkMode: 'class',
   content: [
@@ -11,32 +19,32 @@ const config: Config = {
     extend: {
       colors: {
         // Background
-        'kp-bg-primary': 'var(--bg-primary)',
-        'kp-bg-secondary': 'var(--bg-secondary)',
-        'kp-bg-tertiary': 'var(--bg-tertiary)',
-        'kp-bg-hover': 'var(--bg-hover)',
-        'kp-bg-active': 'var(--bg-active)',
+        'kp-bg-primary': kp('--bg-primary'),
+        'kp-bg-secondary': kp('--bg-secondary'),
+        'kp-bg-tertiary': kp('--bg-tertiary'),
+        'kp-bg-hover': kp('--bg-hover'),
+        'kp-bg-active': kp('--bg-active'),
         // Border
-        'kp-border': 'var(--border-default)',
-        'kp-border-subtle': 'var(--border-subtle)',
-        'kp-border-accent': 'var(--border-accent)',
+        'kp-border': kp('--border-default'),
+        'kp-border-subtle': kp('--border-subtle'),
+        'kp-border-accent': kp('--border-accent'),
         // Text
-        'kp-text-primary': 'var(--text-primary)',
-        'kp-text-secondary': 'var(--text-secondary)',
-        'kp-text-tertiary': 'var(--text-tertiary)',
+        'kp-text-primary': kp('--text-primary'),
+        'kp-text-secondary': kp('--text-secondary'),
+        'kp-text-tertiary': kp('--text-tertiary'),
         // Accent
-        'kp-accent': 'var(--accent)',
-        'kp-accent-hover': 'var(--accent-hover)',
-        'kp-accent-muted': 'var(--accent-muted)',
+        'kp-accent': kp('--accent'),
+        'kp-accent-hover': kp('--accent-hover'),
+        'kp-accent-muted': kp('--accent-muted'),
         // Semantic
-        'kp-success': 'var(--success)',
-        'kp-success-muted': 'var(--success-muted)',
-        'kp-warning': 'var(--warning)',
-        'kp-warning-muted': 'var(--warning-muted)',
-        'kp-danger': 'var(--danger)',
-        'kp-danger-muted': 'var(--danger-muted)',
-        'kp-info': 'var(--info)',
-        'kp-info-muted': 'var(--info-muted)',
+        'kp-success': kp('--success'),
+        'kp-success-muted': kp('--success-muted'),
+        'kp-warning': kp('--warning'),
+        'kp-warning-muted': kp('--warning-muted'),
+        'kp-danger': kp('--danger'),
+        'kp-danger-muted': kp('--danger-muted'),
+        'kp-info': kp('--info'),
+        'kp-info-muted': kp('--info-muted'),
       },
       fontFamily: {
         sans: ['var(--font-outfit)', 'Outfit', 'sans-serif'],
@@ -44,16 +52,16 @@ const config: Config = {
         mono: ['var(--font-jetbrains)', 'JetBrains Mono', 'monospace'],
       },
       borderRadius: {
-        'kp-sm': 'var(--radius-sm)',
-        'kp-md': 'var(--radius-md)',
-        'kp-lg': 'var(--radius-lg)',
-        'kp-xl': 'var(--radius-xl)',
+        'kp-sm': kp('--radius-sm'),
+        'kp-md': kp('--radius-md'),
+        'kp-lg': kp('--radius-lg'),
+        'kp-xl': kp('--radius-xl'),
       },
       boxShadow: {
-        'kp-card': 'var(--shadow-card)',
-        'kp-elevated': 'var(--shadow-elevated)',
-        'kp-dropdown': 'var(--shadow-dropdown)',
-        'kp-glow': 'var(--shadow-glow-accent)',
+        'kp-card': kp('--shadow-card'),
+        'kp-elevated': kp('--shadow-elevated'),
+        'kp-dropdown': kp('--shadow-dropdown'),
+        'kp-glow': kp('--shadow-glow-accent'),
       },
       spacing: {
         'sidebar': 'var(--sidebar-width)',
