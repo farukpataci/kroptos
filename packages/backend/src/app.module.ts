@@ -5,6 +5,7 @@ import { AgencyModule } from './modules/agency/agency.module';
 import { ClientModule } from './modules/client/client.module';
 import { StoreModule } from './modules/store/store.module';
 import { RbacModule } from './modules/rbac/rbac.module';
+import { InvitationModule } from './modules/invitation/invitation.module';
 import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
@@ -38,6 +39,7 @@ import { HealthController } from './modules/health/health.controller';
     ClientModule,
     StoreModule,
     RbacModule,
+    InvitationModule,
     ProductModule,
     CategoryModule,
     OrderModule,

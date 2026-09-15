@@ -317,6 +317,53 @@ export class AuthService {
     };
   }
 
+  /**
+   * Sifresiz oturum acar: davet kabulu gibi kimligi baska yoldan kanitlanmis akislar
+   * icin. Token, verilen kapsami kapsayan role gore uretilir (switchTenant kurali);
+   * kapsayan rol yoksa 403.
+   */
+  async issueSessionFor(
+    userId: string,
+    scope: { agencyId: string; clientId?: string | null; storeId?: string | null },
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null, isActive: true } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    const candidates = await this.prisma.userRole.findMany({
+      where: buildUserRoleScopeWhere({ userId, agencyId: scope.agencyId, clientId: scope.clientId ?? null, storeId: scope.storeId ?? null }),
+      include: { role: true },
+    });
+    const userRole = resolvePrimaryRole(candidates, scope);
+    if (!userRole) {
+      throw new ForbiddenException('No role covers the requested tenant context');
+    }
+
+    const tokens = await this.generateTokens(userId, user.email, scope.agencyId, scope.clientId ?? null, scope.storeId ?? null, userRole.role);
+    await this.prisma.session.create({
+      data: { userId, tokenHash: this.hashToken(tokens.refreshToken), ipAddress: ipAddress || null, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+    });
+    await this.prisma.refreshToken.create({
+      data: { userId, tokenHash: await this.hashPassword(tokens.refreshToken), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+    });
+
+    const { accessibleTenants } = await this.getMe(userId);
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName || undefined,
+        lastName: user.lastName || undefined,
+        isActive: user.isActive,
+        twoFactorEnabled: user.twoFactorEnabled,
+      },
+      agencies: accessibleTenants,
+    };
+  }
+
   async logout(refreshToken: string, userId: string, ipAddress?: string): Promise<void> {
     const tokenHash = this.hashToken(refreshToken);
 
