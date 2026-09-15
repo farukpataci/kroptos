@@ -144,7 +144,7 @@ export class AgencyService {
       // 2. Seed'deki agency_owner rolü. Eskiden burada 'Agency Owner' adında
       // '*:*' izinli bir rol yaratılıyordu — register'daki super_admin açığının
       // ikizi (PermissionGuard '*:*' görünce her şeye izin verir).
-      const ownerRole = await tx.role.findUnique({ where: { name: 'agency_owner' } });
+      const ownerRole = await tx.role.findFirst({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } });
       if (!ownerRole) {
         throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before creating agencies");
       }

@@ -90,6 +90,8 @@ model Agency {
   wmsStockMovements  WmsStockMovement[]
   wmsPackagingTasks  WmsPackagingTask[]
   warehouses         Warehouse[]
+  roles              Role[]
+  invitations        Invitation[]
 
   @@index([deletedAt])
 }
@@ -170,18 +172,34 @@ model Store {
 
 model Role {
   id          String       @id @default(cuid())
-  name        String       @unique
+  // null = sistem rolu (seed), dolu = o ajansin ozel rolu
+  agencyId    String?
+  agency      Agency?      @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  // Makine adi (agency_owner, store_manager...). Benzersizlik Prisma ile IFADE EDILEMIYOR:
+  // agencyId NULL olan iki sistem rolu @@unique([agencyId, key]) altinda ayni key ile girebilir
+  // (PostgreSQL NULL != NULL). Iki partial unique index SQL ile tutuluyor, bkz.
+  // prisma/scripts/p3-role-schema.sql: role_agency_key_uq (agencyId NOT NULL) ve
+  // role_system_key_uq (agencyId NULL); ikisi de deletedAt IS NULL uzerinde.
+  key         String
+  // Gorunen ad; artik unique degil
+  name        String
   description String?
+  isSystem    Boolean      @default(false)
+  updatedAt   DateTime     @updatedAt
+  deletedAt   DateTime?
   permissions Permission[]
 
   userRoles UserRole[]
   StoreUser StoreUser[]
+
+  @@index([agencyId])
 }
 
 model Permission {
   id          String  @id @default(cuid())
   name        String  @unique // kaynak.aksiyon, e.g., "products.create", "orders.read"
   description String?
+  category    String  @default("") // UI gruplamasi; izin GLOBAL kalir, tenant'a baglanmaz
   roles       Role[]
 }
 
@@ -198,13 +216,37 @@ model UserRole {
   roleId    String
   role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
   createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  @@unique([userId, agencyId, roleId])
+  // Benzersizlik SQL partial index ile (prisma/scripts/p3-role-schema.sql, userrole_scope_uq):
+  // (userId, agencyId, COALESCE(clientId,''), COALESCE(storeId,''), roleId) WHERE deletedAt IS NULL.
+  // Eski @@unique([userId, agencyId, roleId]) ayni rolu iki magaza icin vermeyi engelliyordu.
   @@index([userId])
   @@index([agencyId])
   @@index([roleId])
   @@index([deletedAt])
+}
+
+model Invitation {
+  id         String    @id @default(cuid())
+  agencyId   String
+  agency     Agency    @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  clientId   String?
+  storeId    String?
+  email      String
+  roleId     String
+  tokenHash  String    @unique
+  invitedBy  String
+  status     String    @default("pending") // pending | accepted | revoked | expired
+  expiresAt  DateTime
+  acceptedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([agencyId])
+  @@index([email])
+  @@index([status])
 }
 
 // ==================== Commerce ====================

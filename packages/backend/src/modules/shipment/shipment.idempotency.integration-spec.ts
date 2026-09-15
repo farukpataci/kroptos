@@ -208,11 +208,12 @@ describe('F-4: shipment idempotency against the real database', () => {
     const shipperRole = await prisma.role.create({
       data: {
         name: `f4-shipper-${suffix}`,
+        key: `f4_shipper_${suffix}`,
         permissions: { connect: permissions.map((p) => ({ id: p.id })) },
       },
     });
     // Deliberately holds no shipments.* permission at all.
-    const readerRole = await prisma.role.create({ data: { name: `f4-nothing-${suffix}` } });
+    const readerRole = await prisma.role.create({ data: { name: `f4-nothing-${suffix}`, key: `f4_nothing_${suffix}` } });
     made.roleIds.push(shipperRole.id, readerRole.id);
 
     const allowed = await prisma.user.create({

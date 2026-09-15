@@ -24,9 +24,23 @@ const LEGACY_ROLE_NAME = 'Agency Owner';
 export async function run(prisma: PrismaClient, APPLY: boolean) {
   console.log(`Mod: ${APPLY ? 'APPLY' : 'DRY-RUN'} | rol: '${LEGACY_ROLE_NAME}'`);
 
-  const role = await prisma.role.findUnique({
+  // Bu script P3 migration'ından ÖNCE çalışır; üretilmiş client ise yeni şemayı bilir.
+  // Bu yüzden select ile yalnız eski şemada da var olan kolonlar okunur (Role.agencyId/key,
+  // UserRole.updatedAt henüz yok → P2022).
+  const role = await prisma.role.findFirst({
     where: { name: LEGACY_ROLE_NAME },
-    include: { permissions: { select: { name: true } }, userRoles: { include: { user: { select: { email: true } } } } },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      permissions: { select: { name: true } },
+      userRoles: {
+        select: {
+          id: true, userId: true, agencyId: true, clientId: true, storeId: true, roleId: true,
+          createdAt: true, deletedAt: true, user: { select: { email: true } },
+        },
+      },
+    },
   });
   if (!role) {
     console.log('Rol yok, yapılacak bir şey yok.');
@@ -74,7 +88,7 @@ export async function run(prisma: PrismaClient, APPLY: boolean) {
         newValue: { id: role.id, name: role.name, description: role.description, cascadedUserRoles: role.userRoles.length },
       },
     });
-    await tx.role.delete({ where: { id: role.id } });
+    await tx.role.delete({ where: { id: role.id }, select: { id: true } });
   });
 
   const remaining = await prisma.userRole.count({ where: { roleId: role.id } });

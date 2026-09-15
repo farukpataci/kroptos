@@ -285,23 +285,26 @@ async function main() {
   for (const roleDef of rolesList) {
     const permConnects = roleDef.permissions.map((pName) => ({ id: permissionsMap[pName].id }));
 
-    // Disconnect old permissions and connect new ones to refresh seed
-    await prisma.role.upsert({
-      where: { name: roleDef.name },
-      update: {
-        description: roleDef.description,
-        permissions: {
-          set: permConnects,
+    // Sistem rolu: agencyId NULL, key = name. Role.name artik unique degil (P3), o yuzden
+    // upsert yerine key ile findFirst; benzersizligi role_system_key_uq partial index tutar.
+    const existing = await prisma.role.findFirst({ where: { key: roleDef.name, agencyId: null, deletedAt: null } });
+    if (existing) {
+      // Disconnect old permissions and connect new ones to refresh seed
+      await prisma.role.update({
+        where: { id: existing.id },
+        data: { description: roleDef.description, isSystem: true, permissions: { set: permConnects } },
+      });
+    } else {
+      await prisma.role.create({
+        data: {
+          key: roleDef.name,
+          name: roleDef.name,
+          description: roleDef.description,
+          isSystem: true,
+          permissions: { connect: permConnects },
         },
-      },
-      create: {
-        name: roleDef.name,
-        description: roleDef.description,
-        permissions: {
-          connect: permConnects,
-        },
-      },
-    });
+      });
+    }
   }
 
   // 3. Create a default global user (super_admin)
@@ -310,7 +313,7 @@ async function main() {
   const defaultPassword = 'Password123!';
   const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
-  const superAdminRole = await prisma.role.findUnique({ where: { name: 'super_admin' } });
+  const superAdminRole = await prisma.role.findFirst({ where: { key: 'super_admin', agencyId: null, deletedAt: null } });
   if (!superAdminRole) {
     throw new Error('super_admin role not found after seeding roles');
   }
@@ -338,22 +341,15 @@ async function main() {
     },
   });
 
-  // Map user to role
-  await prisma.userRole.upsert({
-    where: {
-      userId_agencyId_roleId: {
-        userId: defaultUser.id,
-        agencyId: defaultAgency.id,
-        roleId: superAdminRole.id,
-      },
-    },
-    update: {},
-    create: {
-      userId: defaultUser.id,
-      agencyId: defaultAgency.id,
-      roleId: superAdminRole.id,
-    },
+  // Map user to role (bilesik unique P3 ile kalkti; eski upsert gibi soft-deleted satira da dokunmaz)
+  const existingAssignment = await prisma.userRole.findFirst({
+    where: { userId: defaultUser.id, agencyId: defaultAgency.id, roleId: superAdminRole.id, clientId: null, storeId: null },
   });
+  if (!existingAssignment) {
+    await prisma.userRole.create({
+      data: { userId: defaultUser.id, agencyId: defaultAgency.id, roleId: superAdminRole.id },
+    });
+  }
 
   // 4. Seed Multi-tenant Test Data for Staging / Dev
   await seedTestTenants();

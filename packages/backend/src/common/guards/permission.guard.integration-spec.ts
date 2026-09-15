@@ -68,7 +68,7 @@ describe('PermissionGuard against the real database', () => {
     await cache.onModuleInit();
     before = await countAll();
 
-    const owner = await prisma.role.findUnique({ where: { name: 'agency_owner' } });
+    const owner = await prisma.role.findFirst({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } });
     if (!owner) throw new Error('agency_owner rolü yok; seed çalıştırılmalı');
     ownerRoleId = owner.id;
 

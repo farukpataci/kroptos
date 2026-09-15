@@ -146,7 +146,7 @@ export class AuthService {
       // bağlanıyordu: açık kayıt formu platform çapında tam yetki dağıtıyordu.
       // super_admin yalnız seed ile atanır; agency_owner seed'de yoksa sessizce
       // düşme, patla.
-      const ownerRole = await tx.role.findUnique({ where: { name: 'agency_owner' } });
+      const ownerRole = await tx.role.findFirst({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } });
       if (!ownerRole) {
         throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before registration");
       }

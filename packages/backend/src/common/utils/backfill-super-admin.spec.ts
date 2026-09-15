@@ -11,11 +11,11 @@ describe('backfill-super-admin script', () => {
 
   const prisma: any = {
     role: {
-      findUnique: jest.fn(({ where }) => Promise.resolve({ id: where.name, name: where.name })),
+      findFirst: jest.fn(({ where }) => Promise.resolve({ id: where.name, name: where.name })),
     },
     userRole: {
       findMany: jest.fn().mockResolvedValue(rows),
-      findUnique: jest.fn().mockResolvedValue(null),
+      findFirst: jest.fn().mockResolvedValue(null),
       update: jest.fn().mockResolvedValue({}),
       count: jest.fn().mockResolvedValue(0),
     },

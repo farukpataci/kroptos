@@ -90,7 +90,8 @@ async function main() {
 
   const missingRoles: string[] = [];
   for (const [roleName, permissionNames] of Object.entries(ROLE_GRANTS)) {
-    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    // findFirst by name: P3 öncesi ve sonrası şemada aynı çalışır (name her ikisinde var)
+    const role = await prisma.role.findFirst({ where: { name: roleName } });
     if (!role) {
       missingRoles.push(roleName);
       continue;

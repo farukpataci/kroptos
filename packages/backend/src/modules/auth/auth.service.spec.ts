@@ -21,6 +21,7 @@ describe('AuthService', () => {
     },
     role: {
       findUnique: jest.fn(),
+      findFirst: jest.fn(),
       create: jest.fn(),
     },
     userRole: {
@@ -110,7 +111,7 @@ describe('AuthService', () => {
         id: 'new-agency-id',
         name: 'Agency Inc',
       });
-      mockPrismaService.role.findUnique.mockResolvedValue({
+      mockPrismaService.role.findFirst.mockResolvedValue({
         id: 'owner-role-id',
         name: 'agency_owner',
         permissions: [{ name: 'agencies.read' }, { name: 'clients.create' }],
@@ -136,7 +137,7 @@ describe('AuthService', () => {
       mockPrismaService.agency.findFirst.mockResolvedValue(null);
       mockPrismaService.user.create.mockResolvedValue({ id: 'u1', email: 'a@b.c', isActive: true });
       mockPrismaService.agency.create.mockResolvedValue({ id: 'ag1', name: 'A' });
-      mockPrismaService.role.findUnique.mockResolvedValue({
+      mockPrismaService.role.findFirst.mockResolvedValue({
         id: 'owner-role-id',
         name: 'agency_owner',
         permissions: [{ name: 'agencies.read' }],
@@ -150,8 +151,8 @@ describe('AuthService', () => {
         agencyName: 'A',
       });
 
-      expect(mockPrismaService.role.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { name: 'agency_owner' } }),
+      expect(mockPrismaService.role.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } }),
       );
       expect(mockPrismaService.role.create).not.toHaveBeenCalled();
       expect(mockPrismaService.userRole.create).toHaveBeenCalledWith({
@@ -169,7 +170,7 @@ describe('AuthService', () => {
       mockPrismaService.agency.findFirst.mockResolvedValue(null);
       mockPrismaService.user.create.mockResolvedValue({ id: 'u1', email: 'a@b.c' });
       mockPrismaService.agency.create.mockResolvedValue({ id: 'ag1', name: 'A' });
-      mockPrismaService.role.findUnique.mockResolvedValue(null);
+      mockPrismaService.role.findFirst.mockResolvedValue(null);
 
       await expect(
         service.register({ email: 'a@b.c', password: 'Password123!', firstName: 'A', lastName: 'B', agencyName: 'A' }),

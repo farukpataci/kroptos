@@ -22,8 +22,8 @@ export async function run(prisma: PrismaClient, APPLY: boolean) {
   console.log(`Mod: ${APPLY ? 'APPLY' : 'DRY-RUN'} | allowlist: ${allowlist.join(', ')}`);
 
   const [superAdmin, agencyOwner] = await Promise.all([
-    prisma.role.findUnique({ where: { name: 'super_admin' } }),
-    prisma.role.findUnique({ where: { name: 'agency_owner' } }),
+    prisma.role.findFirst({ where: { name: 'super_admin' } }),
+    prisma.role.findFirst({ where: { name: 'agency_owner' } }),
   ]);
   if (!superAdmin) throw new Error("Role 'super_admin' not found");
   if (!agencyOwner) throw new Error("Role 'agency_owner' not found — run prisma/seed.ts first");
@@ -47,8 +47,9 @@ export async function run(prisma: PrismaClient, APPLY: boolean) {
   let merged = 0;
   for (const row of targets) {
     await prisma.$transaction(async (tx) => {
-      const existingOwner = await tx.userRole.findUnique({
-        where: { userId_agencyId_roleId: { userId: row.userId, agencyId: row.agencyId, roleId: agencyOwner.id } },
+      // P3 sonrası bileşik unique yok; eski semantik (kullanıcı+ajans+rol, kapsamdan bağımsız) korunuyor
+      const existingOwner = await tx.userRole.findFirst({
+        where: { userId: row.userId, agencyId: row.agencyId, roleId: agencyOwner.id },
       });
       if (existingOwner) {
         await tx.userRole.update({ where: { id: row.id }, data: { deletedAt: new Date() } });
