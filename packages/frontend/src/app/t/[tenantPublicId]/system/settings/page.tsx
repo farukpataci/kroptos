@@ -22,7 +22,7 @@ const tabs = [
   { id: 'warehouse', label: 'Depo Ayarları' },
   { id: 'shipping', label: 'Kargo Ayarları' },
   { id: 'accounting', label: 'Muhasebe Ayarları' },
-  { id: 'notifications', label: 'Bildirim Ayarları' },
+  { id: 'notifications', label: 'Bildirim & SMS Ayarları' },
   { id: 'security', label: 'Güvenlik Ayarları' },
   { id: 'audit', label: 'Denetim & Günlükler' },
 ];

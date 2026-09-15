@@ -29,6 +29,8 @@ export interface Order {
    *  because rows imported before the sync worker started writing it have
    *  none until the backfill runs. */
   publicId?: string;
+  storeId?: string;
+  store?: { id: string; name: string; publicId?: string };
   orderNumber: string;
   customerName: string;
   customerEmail?: string;
@@ -97,7 +99,7 @@ export function useOrders() {
   const PAGE_SIZE = 20;
 
   const fetchOrders = useCallback(async () => {
-    if (!tenantContext.storeId) {
+    if (!tenantContext.storeId && !tenantContext.agencyId) {
       setIsLoading(false);
       return;
     }
@@ -111,15 +113,15 @@ export function useOrders() {
     } finally {
       setIsLoading(false);
     }
-  }, [tenantContext.storeId]);
+  }, [tenantContext.storeId, tenantContext.agencyId]);
 
   const fetchProducts = useCallback(async () => {
-    if (!tenantContext.storeId) return;
+    if (!tenantContext.storeId && !tenantContext.agencyId) return;
     try {
       const data = await apiFetch<Product[]>('/products');
       setProducts(data || []);
     } catch (_) {}
-  }, [tenantContext.storeId]);
+  }, [tenantContext.storeId, tenantContext.agencyId]);
 
   useEffect(() => {
     fetchOrders();

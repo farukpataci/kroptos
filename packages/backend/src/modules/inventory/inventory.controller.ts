@@ -25,11 +25,11 @@ export class InventoryController {
     const activeAgency = (req as any).activeAgency;
     const activeStore = (req as any).activeStore;
 
-    if (!activeAgency?.id || !activeStore?.id) {
-      throw new BadRequestException('Active Agency and Store headers are required');
+    if (!activeAgency?.id) {
+      throw new BadRequestException('Active Agency header is required');
     }
 
-    return this.inventoryService.list(activeAgency.id, activeStore.id);
+    return this.inventoryService.list(activeAgency.id, activeStore?.id);
   }
 
   @Post('adjust')
@@ -57,10 +57,10 @@ export class InventoryController {
     const activeAgency = (req as any).activeAgency;
     const activeStore = (req as any).activeStore;
 
-    if (!activeAgency?.id || !activeStore?.id) {
-      throw new BadRequestException('Active Agency and Store headers are required');
+    if (!activeAgency?.id) {
+      throw new BadRequestException('Active Agency header is required');
     }
 
-    return this.inventoryService.getMovements(activeAgency.id, activeStore.id);
+    return this.inventoryService.getMovements(activeAgency.id, activeStore?.id);
   }
 }

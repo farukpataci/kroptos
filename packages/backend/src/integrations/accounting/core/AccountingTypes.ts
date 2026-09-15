@@ -27,7 +27,7 @@ export interface CredentialFieldDefinition {
   required: boolean;
   secret?: boolean;
   description?: string;
-  defaultValue?: string;
+  defaultValue?: string | number;
   /** Varsayılan SERVER_ENCRYPTED. AGENT_LOCAL alanlar sunucuda HİÇBİR KOŞULDA persist edilmez (K2). */
   storage?: 'SERVER_ENCRYPTED' | 'AGENT_LOCAL';
   /** Formda GÖSTERİLMEZ; Agent yerelde türetir (örn. Mikro Sifre = MD5(tarih + şifre)). */
@@ -65,10 +65,21 @@ export interface AccountingProviderDescriptor {
   vendorFamily?: string;
   productScope?: string[];
   requiresPeriod?: boolean;
+  /** D5 (docs/nebim.v3.agent.md §4): dönem bir bayrak değil politikadır. */
+  periodPolicy?: 'PERIOD_NUMBER' | 'DATE_RANGE' | 'ERP_ENFORCED';
   requiresBranch?: boolean;
+  /** D6 (docs/nebim.v3.agent.md §4): yazma işlerinin ön koşulu olan kayıt parametreleri şeması. */
+  postingDefaultSpec?: readonly PostingFieldSpec[];
   /** i18n anahtarı — panelde bağlantı kurulmadan ÖNCE gösterilir */
   commercialPrerequisite?: string;
   licensePrerequisite?: string;
+}
+
+export interface PostingFieldSpec {
+  key: string;
+  label?: string;
+  required: boolean;
+  appliesTo: readonly ('INVOICE' | 'RECEIPT' | 'ORDER' | 'STOCK')[];
 }
 
 /** Firma ekseni — SessionKey'in parçası (K4). */

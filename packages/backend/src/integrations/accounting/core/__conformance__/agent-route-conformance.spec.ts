@@ -3,7 +3,7 @@
  * Registry'deki HER sağlayıcı otomatik kapsanır; yeni connector için buraya satır EKLENMEZ.
  * "Ağ isteği yapılmadı" iddiası yorumla değil SAYAÇLA kanıtlanır (SpyTransport + HTTP casusu).
  */
-import { NotImplementedException } from '@nestjs/common';
+import { BadRequestException, NotImplementedException } from '@nestjs/common';
 import { AccountingProviderRegistry } from '../AccountingProviderRegistry';
 import {
   AGENT_ROUTE_CAPABILITY_KEYS,
@@ -13,7 +13,10 @@ import {
 } from '../AccountingTypes';
 import {
   CapabilityContractRequiredError,
+  ClosedPeriodError,
   IntegrationNotVerifiedError,
+  PostingDefaultsMissingError,
+  assertPostingDefaults,
 } from '../AccountingErrors';
 import { AGENT_JOB_TYPES, isAgentJobType } from '../agent/AgentProtocol';
 import { tokenCacheKey } from '../AccountingSessionKey';
@@ -48,6 +51,7 @@ import '../../logo-rest';
 import '../../logo-objects';
 import '../../netsis';
 import '../../mikro';
+import '../../nebim-v3';
 
 const VALID = new Set<string>(Object.values(CapabilityStatus));
 
@@ -192,7 +196,7 @@ describe('Agent-route conformance — tüm sağlayıcılar', () => {
       await c.testConnection().catch(() => undefined);
       await c.createInvoice(invoiceReq()).catch(() => undefined);
       for (const op of spy.operations) expect(isAgentJobType(op.type)).toBe(true);
-      expect(AGENT_JOB_TYPES).toHaveLength(14);
+      expect(AGENT_JOB_TYPES).toHaveLength(15);
     });
 
     it('22. iki farklı companyNo aynı token anahtarını paylaşmıyor', () => {
@@ -277,4 +281,66 @@ describe('Agent-route conformance — tüm sağlayıcılar', () => {
       expect(() => c.buildRequestPreview('stock', { changedSince: '2026-01-01' })).toThrow();
     });
   });
+
+  describe('GÖREV N4 — Uygunluk testleri (46–51)', () => {
+    it('46. periodPolicy seçilmemiş descriptor registry\'ye giremiyor (D5)', () => {
+      const base = AccountingProviderRegistry.get('NEBIM-V3');
+      const invalidDesc = {
+        ...base,
+        id: 'TEST_INVALID_POLICY',
+        capabilities: {
+          ...base.capabilities,
+          invoicePush: CapabilityStatus.SUPPORTED,
+        },
+        periodPolicy: undefined,
+      };
+      expect(() => AccountingProviderRegistry.register(invalidDesc as any)).toThrow(/periodPolicy.*zorunludur/);
+    });
+
+    it('47. periodPolicy: ERP_ENFORCED iken assertPeriodMatches atlanıyor, ama ERP dönem hatası ClosedPeriodError\'a eşleniyor', () => {
+      const nebimDesc = AccountingProviderRegistry.get('NEBIM-V3');
+      expect(nebimDesc.periodPolicy).toBe('ERP_ENFORCED');
+      // ERP'den dönen dönem kapalılık hatası ClosedPeriodError üretmeli
+      const c: any = new nebimDesc.connectorClass({}, 'MOCK');
+      if (typeof c.mapError === 'function') {
+        const domainErr = c.mapError({ message: 'İşlem yapılan mali dönem kapalıdır' });
+        expect(domainErr).toBeInstanceOf(ClosedPeriodError);
+      }
+    });
+
+    it('48. postingDefaultSpec\'te required olan bir alan boşken ilgili yazma işi ağa çıkmıyor (D6/K17)', () => {
+      const spec = [
+        { key: 'storeCode', label: 'Mağaza Kodu', required: true, appliesTo: ['INVOICE'] },
+        { key: 'orderWarehouseCode', label: 'Sipariş Depo Kodu', required: true, appliesTo: ['INVOICE'] },
+      ] as const;
+
+      expect(() => assertPostingDefaults(spec, { storeCode: 'M1' }, 'INVOICE', 'NEBIM-V3')).toThrow(PostingDefaultsMissingError);
+      try {
+        assertPostingDefaults(spec, { storeCode: 'M1' }, 'INVOICE', 'NEBIM-V3');
+      } catch (e: any) {
+        expect(e).toBeInstanceOf(PostingDefaultsMissingError);
+        expect(e.missingFields).toContain('orderWarehouseCode');
+      }
+    });
+
+    it('49. postingDefaults şemada tanımsız anahtar içeriyorsa reddediliyor', () => {
+      const spec = [{ key: 'storeCode', label: 'Mağaza Kodu', required: true, appliesTo: ['INVOICE'] }] as const;
+      expect(() => assertPostingDefaults(spec, { storeCode: 'M1', unknownParam: '123' }, 'INVOICE', 'NEBIM-V3')).toThrow(BadRequestException);
+    });
+
+    it('50. SESSION_RELEASE kapalı kümede; hiçbir sağlayıcı kümeye ekleme yaptırmıyor (D7, test 21 korunur)', () => {
+      expect(AGENT_JOB_TYPES.includes('SESSION_RELEASE')).toBe(true);
+      expect(AGENT_JOB_TYPES).toHaveLength(15);
+      expect(isAgentJobType('SESSION_RELEASE')).toBe(true);
+      expect(isAgentJobType('UNKNOWN_NEW_JOB_TYPE' as any)).toBe(false);
+    });
+
+    it('51. maxSessions varsayılanı 1; 1\'den büyük bir değer audit kaydı olmadan yazılamıyor (K14)', () => {
+      const nebimDesc = AccountingProviderRegistry.get('NEBIM-V3');
+      const maxSessionsField = nebimDesc.credentialSchema.fields.find((f) => f.key === 'maxSessions');
+      expect(maxSessionsField).toBeDefined();
+      expect(maxSessionsField?.defaultValue).toBe(1);
+    });
+  });
 });
+

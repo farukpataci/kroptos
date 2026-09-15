@@ -34,17 +34,24 @@ export class InventoryService {
     }
   }
 
-  async list(agencyId: string, storeId: string) {
-    if (!storeId) {
-      throw new BadRequestException('Store context is required');
+  async list(agencyId: string, storeId?: string) {
+    if (!storeId && !agencyId) {
+      throw new BadRequestException('Agency or Store context is required');
     }
 
     // Auto-create missing inventory records to self-heal
-    await this.ensureInventoriesExist(agencyId, storeId);
+    if (storeId) {
+      await this.ensureInventoriesExist(agencyId, storeId);
+    }
+
+    const where: any = storeId ? { storeId } : { agencyId };
 
     return this.prisma.inventory.findMany({
-      where: { storeId },
+      where,
       include: {
+        store: {
+          select: { id: true, name: true, publicId: true },
+        },
         product: {
           include: {
             category: {
@@ -142,21 +149,24 @@ export class InventoryService {
     });
   }
 
-  async getMovements(agencyId: string, storeId: string) {
-    if (!storeId) {
-      throw new BadRequestException('Store context is required');
+  async getMovements(agencyId: string, storeId?: string) {
+    if (!storeId && !agencyId) {
+      throw new BadRequestException('Agency or Store context is required');
     }
 
+    const where: any = storeId
+      ? { inventory: { storeId } }
+      : { inventory: { agencyId } };
+
     return this.prisma.inventoryAdjustment.findMany({
-      where: {
-        inventory: {
-          storeId,
-        },
-      },
+      where,
       include: {
         inventory: {
           include: {
             product: true,
+            store: {
+              select: { id: true, name: true, publicId: true },
+            },
           },
         },
       },

@@ -907,9 +907,81 @@ const DEFAULT_PROVIDERS: AccountingProviderInfo[] = [
     supportsTest: false,
     supportsProduction: false,
   },
+  {
+    id: 'MIKRO',
+    displayName: 'Mikro ERP',
+    country: 'TR',
+    protocol: 'custom',
+    readiness: 'MOCK_READY',
+    documentationStatus: 'PARTIAL',
+    credentialSchema: {
+      provider: 'mikro',
+      name: 'Mikro ERP',
+      fields: [
+        { key: 'baseUrl', label: 'Sunucu Adresi', type: 'text', required: true, defaultValue: 'http://localhost', description: 'Mikro API servis adresi.' },
+        { key: 'port', label: 'Port Numarası', type: 'number', required: true, defaultValue: '8094', description: 'Mikro API portu (varsayılan 8094).' },
+        { key: 'apiKey', label: 'API Anahtarı (apiKey)', type: 'password', required: true, secret: true },
+        { key: 'kullaniciKodu', label: 'Kullanıcı Kodu', type: 'text', required: true },
+        { key: 'password', label: 'Kullanıcı Şifresi', type: 'password', required: true, secret: true },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
+  {
+    id: 'NEBIM-V3',
+    displayName: 'Nebim V3 ERP',
+    country: 'TR',
+    protocol: 'custom',
+    readiness: 'SCAFFOLDED',
+    documentationStatus: 'DOCUMENTATION_REQUIRED',
+    credentialSchema: {
+      provider: 'nebim-v3',
+      name: 'Nebim V3 ERP',
+      fields: [
+        { key: 'baseUrl', label: 'Sunucu Adresi (Host/IP)', type: 'text', required: true, description: 'Nebim Integrator servisinin çalıştığı sunucu IP veya alan adı (http:// veya port yazılmaz).' },
+        { key: 'port', label: 'Port Numarası', type: 'number', required: true, defaultValue: '80', description: 'Integrator servis portu (varsayılan 80 veya 5440).' },
+        { key: 'servicePath', label: 'Servis Yolu', type: 'text', required: true, defaultValue: '/IntegratorService', description: 'Integrator servis dizin yolu.' },
+        { key: 'userGroupCode', label: 'Kullanıcı Grubu Kodu', type: 'text', required: true, description: 'User Group Code (sunucuda saklanmaz, Agent yerel kasasında tutulur).' },
+        { key: 'username', label: 'Kullanıcı Adı', type: 'text', required: true, description: 'Integrator API kullanıcı adı (sunucuda saklanmaz).' },
+        { key: 'password', label: 'Şifre', type: 'password', required: true, secret: true, description: 'Integrator API şifresi (sunucuda saklanmaz).' },
+        { key: 'maxSessions', label: 'Eşzamanlı Kullanıcı Sınırı (Lisans)', type: 'number', required: false, defaultValue: '1', description: 'Nebim lisansınızdan tüketilecek azami eşzamanlı kullanıcı sayısı (varsayılan 1).' },
+      ],
+    },
+    capabilities: { stockSync: 'NOT_SUPPORTED', salesInvoice: 'MOCK_ONLY' },
+    supportsMock: true,
+    supportsTest: false,
+    supportsProduction: false,
+  },
 ];
 
 const PROVIDER_THEMES: Record<string, { bg: string; text: string; badge: string; iconLetter: string }> = {
+  'NEBIM-V3': {
+    bg: 'bg-purple-600/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-500/20',
+    text: 'text-purple-700 dark:text-purple-300',
+    badge: 'Nebim V3',
+    iconLetter: 'N',
+  },
+  NEBIM: {
+    bg: 'bg-purple-600/10 text-purple-700 dark:bg-purple-500/20 dark:text-purple-300 border border-purple-500/20',
+    text: 'text-purple-700 dark:text-purple-300',
+    badge: 'Nebim V3',
+    iconLetter: 'N',
+  },
+  MIKRO: {
+    bg: 'bg-red-600/10 text-red-700 dark:bg-red-500/20 dark:text-red-300 border border-red-500/20',
+    text: 'text-red-700 dark:text-red-300',
+    badge: 'Mikro ERP',
+    iconLetter: 'M',
+  },
+  LOGO: {
+    bg: 'bg-sky-600/10 text-sky-700 dark:bg-sky-500/20 dark:text-sky-300 border border-sky-500/20',
+    text: 'text-sky-700 dark:text-sky-300',
+    badge: 'Logo Ailesi',
+    iconLetter: 'L',
+  },
   NETSIS: {
     bg: 'bg-blue-700/10 text-blue-800 dark:bg-blue-600/20 dark:text-blue-300 border border-blue-600/20',
     text: 'text-blue-800 dark:text-blue-300',
@@ -1101,6 +1173,8 @@ export default function AddAccountingModal({
     if (lower.includes('kolaybi')) return 'KOLAYBI';
     if (lower.includes('bizimhesap')) return 'BIZIMHESAP';
     if (lower.includes('parasut')) return 'PARASUT';
+    if (lower.includes('nebim')) return 'NEBIM-V3';
+    if (lower.includes('mikro')) return 'MIKRO';
 
     const match = DEFAULT_PROVIDERS.find(
       (p) => p.id.toLowerCase().replace(/[-_]/g, '') === lower,
@@ -1186,6 +1260,36 @@ export default function AddAccountingModal({
   const isLogoRest = resolvedProviderKey === 'LOGO-REST';
   const isLogoObjects = resolvedProviderKey === 'LOGO-OBJECTS';
   const isNetsis = resolvedProviderKey === 'NETSIS';
+  const isLogoFamily = isLogoRest || isLogoObjects || isNetsis || resolvedProviderKey === 'LOGO';
+  const isNebimV3 = resolvedProviderKey === 'NEBIM-V3';
+  const isMikro = resolvedProviderKey === 'MIKRO';
+
+  const handleLogoModelChange = (modelId: 'LOGO-REST' | 'LOGO-OBJECTS' | 'NETSIS') => {
+    setSelectedProviderId(modelId);
+    const target = DEFAULT_PROVIDERS.find((p) => p.id === modelId);
+    if (target) {
+      setName((prev) => {
+        if (
+          !prev ||
+          prev.includes('Logo') ||
+          prev.includes('Netsis') ||
+          prev === 'Muhasebe Entegrasyonu'
+        ) {
+          return `${target.displayName} Muhasebe`;
+        }
+        return prev;
+      });
+      setCredentials((prev) => {
+        const next: Record<string, string> = { ...prev };
+        target.credentialSchema?.fields?.forEach((f) => {
+          if (f.defaultValue && !next[f.key]) {
+            next[f.key] = f.defaultValue;
+          }
+        });
+        return next;
+      });
+    }
+  };
 
   const certExpiryDays = useMemo(() => {
     if (!isNetSuite || !credentials.certificateExpiresAt) return null;
@@ -1344,6 +1448,7 @@ export default function AddAccountingModal({
   const isProviderLocked = Boolean(initialProviderId || editingIntegration);
 
   const theme =
+    (isLogoFamily ? PROVIDER_THEMES.LOGO : null) ||
     PROVIDER_THEMES[resolvedProviderKey] ||
     PROVIDER_THEMES[activeProvider.id.toUpperCase()] ||
     PROVIDER_THEMES[selectedProviderId.toUpperCase()] || {
@@ -1420,21 +1525,33 @@ export default function AddAccountingModal({
           <div className="flex items-center justify-between gap-3">
             <div className="flex items-center gap-3">
               <div className={`flex h-11 w-11 items-center justify-center rounded-xl font-bold text-base shadow-xs ${theme.bg}`}>
-                {theme.iconLetter}
+                {isLogoFamily ? 'L' : theme.iconLetter}
               </div>
               <div>
                 <div className="flex items-center gap-2">
                   <h2 className="text-base font-bold text-slate-900 dark:text-white">
-                    {editingIntegration
+                    {isLogoFamily
+                      ? editingIntegration
+                        ? 'Logo ERP Ayarlarını Düzenle'
+                        : 'Logo ERP Bağlantı Kurulumu'
+                      : editingIntegration
                       ? `${activeProvider.displayName} Ayarlarını Düzenle`
                       : `${activeProvider.displayName} Bağlantı Kurulumu`}
                   </h2>
                   <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-[11px] font-bold ${theme.bg}`}>
-                    {theme.badge}
+                    {isLogoFamily
+                      ? isLogoRest
+                        ? 'Tiger REST'
+                        : isLogoObjects
+                        ? 'GO3 Objects'
+                        : 'Netsis NetOpenX'
+                      : theme.badge}
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-                  {activeProvider.displayName} API kimlik ve entegrasyon bilgilerini tanımlayın
+                  {isLogoFamily
+                    ? 'Logo modelinizi seçin ve gerekli bağlantı parametrelerini tanımlayın'
+                    : `${activeProvider.displayName} API kimlik ve entegrasyon bilgilerini tanımlayın`}
                 </p>
               </div>
             </div>
@@ -1452,6 +1569,91 @@ export default function AddAccountingModal({
         {/* Scrollable Form Body */}
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto p-6 space-y-5">
+            {/* Logo Family Model Selector (Tiger REST / GO3 Objects / Netsis NetOpenX) */}
+            {isLogoFamily && (
+              <div className="space-y-2.5 rounded-2xl border border-sky-500/30 bg-sky-50/50 dark:bg-sky-950/20 p-4">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-sky-950 dark:text-sky-200">
+                    Logo ERP Modelini Seçin <span className="text-red-500">*</span>
+                  </label>
+                  <span className="text-[11px] text-sky-700 dark:text-sky-300 font-medium">
+                    Kurulum yapmak istediğiniz Logo sürümü
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    {
+                      id: 'LOGO-REST' as const,
+                      title: 'Logo Tiger ERP',
+                      sub: 'Tiger 3 / Tiger Wings',
+                      tech: 'REST Servis (32001)',
+                      badge: 'REST',
+                      badgeColor: 'bg-sky-600/10 text-sky-700 dark:text-sky-300 border-sky-600/20',
+                    },
+                    {
+                      id: 'LOGO-OBJECTS' as const,
+                      title: 'Logo GO3 ERP',
+                      sub: 'GO3 / Go Plus / Tiger Plus',
+                      tech: 'Logo Objects (COM)',
+                      badge: 'COM Agent',
+                      badgeColor: 'bg-indigo-600/10 text-indigo-700 dark:text-indigo-300 border-indigo-600/20',
+                    },
+                    {
+                      id: 'NETSIS' as const,
+                      title: 'Logo Netsis ERP',
+                      sub: 'Netsis Standard / Enterprise',
+                      tech: 'NetOpenX / NOX REST',
+                      badge: 'NetOpenX',
+                      badgeColor: 'bg-blue-700/10 text-blue-800 dark:text-blue-300 border-blue-700/20',
+                    },
+                  ].map((model) => {
+                    const isSelected = resolvedProviderKey === model.id;
+                    return (
+                      <button
+                        key={model.id}
+                        type="button"
+                        onClick={() => handleLogoModelChange(model.id)}
+                        className={`group relative flex flex-col justify-between rounded-xl border p-3 text-left transition-all ${
+                          isSelected
+                            ? 'border-sky-600 bg-white dark:bg-slate-900 shadow-md ring-2 ring-sky-500/40'
+                            : 'border-slate-200/90 dark:border-slate-800 bg-white/70 dark:bg-slate-900/60 hover:border-sky-300 dark:hover:border-sky-700 hover:bg-white dark:hover:bg-slate-900'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white">
+                              {model.title}
+                            </span>
+                            <span
+                              className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold border ${model.badgeColor}`}
+                            >
+                              {model.badge}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-600 dark:text-slate-400 font-medium">
+                            {model.sub}
+                          </p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                            {model.tech}
+                          </p>
+                        </div>
+                        <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                          <span className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+                            {isSelected ? 'Seçili Model' : 'Seç'}
+                          </span>
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full transition-colors ${
+                              isSelected ? 'bg-sky-600 ring-2 ring-sky-400/40' : 'bg-slate-300 dark:bg-slate-700'
+                            }`}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* MOCK_READY Notice Banner for the active provider */}
             <div className="rounded-xl border border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 p-3.5 text-xs text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
               <ShieldCheckIcon className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400 mt-0.5" />
@@ -1639,6 +1841,48 @@ export default function AddAccountingModal({
                 </ul>
               </div>
             )}
+            {/* Nebim V3 guidance & License Warning (K14, K15 - docs/nebim.v3.agent.md §5, §8) */}
+            {isNebimV3 && (
+              <div className="rounded-xl border border-purple-500/30 bg-purple-50 dark:bg-purple-950/30 p-4 text-xs text-purple-900 dark:text-purple-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-purple-950 dark:text-purple-100">
+                  <InformationCircleIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  Nebim V3 Entegrasyon ve Lisans Bilgilendirmesi
+                </div>
+                <div className="rounded-lg border border-purple-400/40 bg-purple-100/70 dark:bg-purple-900/40 p-2.5 font-semibold text-purple-950 dark:text-purple-100 flex items-start gap-2">
+                  <ExclamationTriangleIcon className="h-4 w-4 shrink-0 text-purple-700 dark:text-purple-300 mt-0.5" />
+                  <span>
+                    <strong>Lisans Uyarısı (K14):</strong> Bu bağlantı Nebim lisansınızdan en fazla <strong>{credentials.maxSessions || 1}</strong> eşzamanlı kullanıcı tüketir. Tavanı aşan işlemler sıraya alınır.
+                  </span>
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-purple-800 dark:text-purple-300">
+                  <li><strong>Integrator Servis:</strong> Bağlantı Nebim Integrator REST API üzerinden kurulur. Varsayılan servis yolu <code>/IntegratorService</code>.</li>
+                  <li><strong>Agent Rotası:</strong> Nebim sunucusu doğrudan internete açılmaz; yerel ağdaki Windows sunucuda çalışan KroptOS Agent üzerinden güvenli dışarı yönlü tünelle bağlanılır.</li>
+                  <li><strong>Güvenlik (K1):</strong> Kullanıcı adı ve şifre yalnızca yerel Agent kasasında tutulur; buluta asla aktarılmaz.</li>
+                </ul>
+              </div>
+            )}
+
+            {/* Mikro ERP guidance & Agent Architecture (K1, K2, K8, K9, K10 - docs/mikro.agent.md §3, §4) */}
+            {isMikro && (
+              <div className="rounded-xl border border-red-500/30 bg-red-50 dark:bg-red-950/30 p-4 text-xs text-red-900 dark:text-red-200 space-y-2">
+                <div className="flex items-center gap-2 font-bold text-red-950 dark:text-red-100">
+                  <InformationCircleIcon className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  Mikro ERP (v16 / v17) Entegrasyon ve Agent Bilgilendirmesi
+                </div>
+                <div className="rounded-lg border border-red-400/40 bg-red-100/70 dark:bg-red-900/40 p-2.5 font-semibold text-red-950 dark:text-red-100 flex items-start gap-2">
+                  <ExclamationTriangleIcon className="h-4 w-4 shrink-0 text-red-700 dark:text-red-300 mt-0.5" />
+                  <span>
+                    <strong>KroptOS Agent Mimarisi (K9, K10):</strong> Mikro API yerel sunucuda çalışır ve Active-Active desteklemez. Bağlantı, sunucuya kurulan tek aktif KroptOS Agent üzerinden giden mTLS tüneliyle kurulur.
+                  </span>
+                </div>
+                <ul className="list-disc list-inside space-y-1 text-red-800 dark:text-red-300">
+                  <li><strong>Sürüm ve Port:</strong> Mikro <strong>v17</strong> için varsayılan port <code>8094</code>, <strong>v16</strong> için <code>8084</code>&apos;tür. Servis: <code>Mikro Desktop API</code> (IIS değildir).</li>
+                  <li><strong>Uçtan Uca Şifreleme (K1, K2):</strong> API Anahtarı, Kullanıcı Kodu ve Şifre sunucuya iletilmez; tarayıcıda Agent açık anahtarıyla şifrelenir ve yalnızca yerel sunucu kasasında tutulur.</li>
+                  <li><strong>Dinamik İmza (K8):</strong> Mikro token kullanmaz; her istekte <code>Tarih + Şifre &rarr; MD5</code> formatında anlık türetilir. Sunucu saat farkı denetlenir.</li>
+                  <li><strong>Önkoşul:</strong> Mikro API Başvuru Formu ile API lisansı tanımlanmış olmalıdır (<code>mikro.com.tr/mikro-program-api-basvuru</code>).</li>
+                </ul>
+              </div>
+            )}
 
             {/* Re-authorization required warning banner */}
             {isReauthRequired && (
@@ -1671,45 +1915,59 @@ export default function AddAccountingModal({
                   Muhasebe Programı Seçin <span className="text-red-500">*</span>
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {providers.map((p) => {
-                    const isSelected = p.id.toUpperCase() === selectedProviderId.toUpperCase();
-                    const pTheme = PROVIDER_THEMES[p.id.toUpperCase()] || theme;
-                    return (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handleProviderChange(p.id)}
-                        className={`group flex items-center justify-between rounded-xl border p-3 text-left transition-all ${
-                          isSelected
-                            ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 shadow-sm ring-1 ring-blue-600/30'
-                            : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span
-                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
-                              isSelected
-                                ? 'bg-blue-600 text-white shadow-sm'
-                                : `${pTheme.bg}`
-                            }`}
-                          >
-                            {pTheme.iconLetter}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-xs font-bold truncate text-slate-900 dark:text-white">
-                              {p.displayName}
-                            </p>
-                            <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                              {p.protocol.toUpperCase()} · {p.readiness}
-                            </p>
+                  {providers
+                    .filter((p) => p.id !== 'LOGO-OBJECTS' && p.id !== 'NETSIS')
+                    .map((p) => {
+                      const isLogoCard = p.id === 'LOGO-REST';
+                      const isSelected = isLogoCard
+                        ? isLogoFamily
+                        : p.id.toUpperCase() === selectedProviderId.toUpperCase();
+                      const pTheme = isLogoCard
+                        ? PROVIDER_THEMES.LOGO
+                        : PROVIDER_THEMES[p.id.toUpperCase()] || theme;
+                      const displayName = isLogoCard
+                        ? 'Logo ERP (Tiger · GO3 · Netsis)'
+                        : p.displayName;
+                      const protocolLabel = isLogoCard
+                        ? 'REST & COM · MOCK_READY'
+                        : `${p.protocol.toUpperCase()} · ${p.readiness}`;
+
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleProviderChange(p.id)}
+                          className={`group flex items-center justify-between rounded-xl border p-3 text-left transition-all ${
+                            isSelected
+                              ? 'border-blue-600 bg-blue-50/60 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 shadow-sm ring-1 ring-blue-600/30'
+                              : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span
+                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                                isSelected
+                                  ? 'bg-blue-600 text-white shadow-sm'
+                                  : `${pTheme.bg}`
+                              }`}
+                            >
+                              {pTheme.iconLetter}
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold truncate text-slate-900 dark:text-white">
+                                {displayName}
+                              </p>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                                {protocolLabel}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                        {isSelected && (
-                          <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600 dark:bg-blue-400" />
-                        )}
-                      </button>
-                    );
-                  })}
+                          {isSelected && (
+                            <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-blue-600 dark:bg-blue-400" />
+                          )}
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )}

@@ -12,6 +12,7 @@ import { IntegrationModule } from './modules/integration/integration.module';
 import { IntegrationSettingsModule } from './modules/integration-settings/integration-settings.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { AgentModule } from './modules/agent/agent.module';
 import { WmsModule } from './modules/wms/wms.module';
 import { ShipmentModule } from './modules/shipment/shipment.module';
 import { AuditModule } from './modules/audit/audit.module';
@@ -52,6 +53,7 @@ import { HealthController } from './modules/health/health.controller';
     ProfileModule,
     InventoryModule,
     AccountingModule,
+    AgentModule,
   ],
   controllers: [FilesController, HealthController],
 })

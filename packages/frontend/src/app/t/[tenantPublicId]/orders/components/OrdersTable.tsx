@@ -555,6 +555,11 @@ export default function OrdersTable({
                         <span className="text-[0.625rem] text-kp-text-tertiary font-semibold">
                           {order.source === 'trendyol' ? 'Trendyol Magros' : t('manualStore')}
                         </span>
+                        {order.store?.name && (
+                          <span className="ml-1 inline-flex items-center px-1.5 py-0.5 rounded text-[0.5625rem] font-medium bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
+                            {order.store.name}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </td>

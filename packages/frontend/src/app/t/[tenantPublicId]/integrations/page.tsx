@@ -114,10 +114,10 @@ export default function IntegrationsParentPage() {
         if (pid.includes('exact') && p.includes('exact')) return true;
         if (pid.includes('visma') && p.includes('visma')) return true;
         if (pid.includes('fortnox') && p.includes('fortnox')) return true;
-        if (pid.includes('netsuite') && p.includes('netsuite')) return true;
-        if (pid === 'logo_tiger' && p === 'logo-rest') return true;
-        if (pid === 'logo_go3' && p === 'logo-objects') return true;
+        if ((pid === 'logo' || pid.includes('logo')) && (p.includes('logo') || p === 'netsis')) return true;
         if (pid === 'netsis' && p === 'netsis') return true;
+        if (pid === 'mikro' && p === 'mikro') return true;
+        if ((pid === 'nebim' || pid === 'nebim-v3' || pid === 'nebim_v3') && (p.includes('nebim'))) return true;
         return false;
       });
       if (existing) {
@@ -142,9 +142,11 @@ export default function IntegrationsParentPage() {
         if (pid.includes('fatture') || pid.includes('fic')) targetProvider = 'FATTURE-IN-CLOUD';
         if (pid.includes('cegid')) targetProvider = 'CEGID-XRP-FLEX';
         if (pid.includes('pennylane')) targetProvider = 'PENNYLANE';
-        if (pid === 'logo_tiger') targetProvider = 'LOGO-REST';
+        if (pid === 'logo' || pid === 'logo_erp' || pid === 'logo_tiger') targetProvider = 'LOGO-REST';
         if (pid === 'logo_go3') targetProvider = 'LOGO-OBJECTS';
         if (pid === 'netsis') targetProvider = 'NETSIS';
+        if (pid === 'mikro') targetProvider = 'MIKRO';
+        if (pid === 'nebim' || pid === 'nebim-v3' || pid === 'nebim_v3') targetProvider = 'NEBIM-V3';
         setAccountingModalProviderId(targetProvider);
         setEditingAccountingItem(null);
       }

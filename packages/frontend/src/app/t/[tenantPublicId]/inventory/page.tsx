@@ -379,7 +379,7 @@ export default function InventoryPage() {
           lastCount: new Date(item.updatedAt).toLocaleDateString(),
           supplier: 'Default Supplier',
           category: item.product.category?.name || 'General',
-          brand: 'KroptOS',
+          brand: item.store?.name || 'KroptOS',
           updatedAt: new Date(item.updatedAt).toLocaleDateString(),
           abcClass: (item.availableQty > 100 ? 'A' : 'B') as any
         }));
@@ -420,11 +420,11 @@ export default function InventoryPage() {
   };
 
   useEffect(() => {
-    if (tenantContext?.storeId) {
+    if (tenantContext?.storeId || tenantContext?.agencyId) {
       fetchInventory();
       fetchMovements();
     }
-  }, [tenantContext?.storeId]);
+  }, [tenantContext?.storeId, tenantContext?.agencyId]);
 
   // Filter & Sort Logic
   const filteredProducts = products.filter(p => {

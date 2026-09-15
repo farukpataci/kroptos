@@ -42,6 +42,11 @@ import '../../integrations/accounting/logo-rest';
 import '../../integrations/accounting/logo-objects';
 import '../../integrations/accounting/netsis';
 import '../../integrations/accounting/mikro';
+import '../../integrations/accounting/nebim-v3';
+
+import { AgentModule } from '../agent/agent.module';
+import { AccountingProblemController } from './accounting-problem.controller';
+import { AccountingProblemService } from './accounting-problem.service';
 
 // Controllers
 import { AccountingController } from './accounting.controller';
@@ -53,13 +58,14 @@ import { DatevExportController } from './datev-export.controller';
 import { DatevExportService } from '../../integrations/accounting/datev/datev.export-service';
 
 @Module({
-  imports: [PrismaModule, ConfigModule, AuditModule],
+  imports: [PrismaModule, ConfigModule, AuditModule, AgentModule],
   controllers: [
     AccountingController,
     AccountingOAuthController,
     AccountingDocumentController,
     AccountingMappingController,
     AccountingProviderController,
+    AccountingProblemController,
     DatevExportController,
   ],
   providers: [
@@ -70,6 +76,7 @@ import { DatevExportService } from '../../integrations/accounting/datev/datev.ex
     AccountingConnectorFactory,
     AccountingService,
     AccountingDocumentService,
+    AccountingProblemService,
     AccountingMappingService,
     AccountingQueueService,
     AccountingSyncWorker,

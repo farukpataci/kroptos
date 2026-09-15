@@ -8,6 +8,8 @@ import { MarketplaceCredentialService } from '../../integrations/marketplaces/co
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
 import { IntegrationQueueService } from './integration-queue.service';
 import { ErpConnectorFactory } from '../../integrations/erp/core/ErpConnectorFactory';
+import { EcommerceConnectorFactory } from '../../integrations/ecommerce/core/EcommerceConnectorFactory';
+import { EcommerceCredentialService } from '../../integrations/ecommerce/core/EcommerceCredentialService';
 import { IntegrationSettingsService } from '../integration-settings/integration-settings.service';
 
 describe('IntegrationService', () => {
@@ -91,6 +93,8 @@ describe('IntegrationService', () => {
         { provide: MarketplaceCredentialService, useValue: mockCredentialService },
         { provide: MarketplaceConnectorFactory, useValue: mockConnectorFactory },
         { provide: ErpConnectorFactory, useValue: mockErpConnectorFactory },
+        { provide: EcommerceConnectorFactory, useValue: { create: jest.fn() } },
+        { provide: EcommerceCredentialService, useValue: { decrypt: jest.fn(), validate: jest.fn() } },
         { provide: IntegrationQueueService, useValue: mockIntegrationQueueService },
         { provide: IntegrationSettingsService, useValue: mockSettingsService },
         { provide: MarketplaceSettingsRegistry, useValue: mockSettingsRegistry },

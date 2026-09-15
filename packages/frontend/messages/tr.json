@@ -2317,6 +2317,17 @@
           "usernamePlaceholder": "api_user",
           "apiKey": "API Anahtarı / Şifresi",
           "apiKeyHelp": "OpenCart API kullanıcısına atanmış olan gizli API anahtarı."
+        },
+        "ikas": {
+          "storeUrl": "İkas Mağaza Adresi (Domain / URL)",
+          "storeUrlHelp": "İkas mağazanızın alan adı (ör. magazam veya magazam.myikas.com).",
+          "storeUrlPlaceholder": "magazam.myikas.com",
+          "apiToken": "Admin API Token (Erişim Belirteci)",
+          "apiTokenHelp": "İkas Admin Paneli > Ayarlar > Entegrasyonlar / API bölümünden oluşturulan API anahtarı.",
+          "clientId": "Client ID (Opsiyonel)",
+          "clientIdHelp": "İkas API uygulamanızın Client ID değeri.",
+          "clientSecret": "Client Secret (Opsiyonel)",
+          "clientSecretHelp": "İkas API uygulamanızın Client Secret anahtarı."
         }
       },
       "mapping": {

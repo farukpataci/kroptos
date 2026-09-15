@@ -81,6 +81,14 @@ export class AccountingDocumentController {
     return this.documentService.createPaymentDocument(dto, scope);
   }
 
+  @Post(':id/resolve-stuck')
+  @HttpCode(200)
+  @RequirePermission('accounting.manage')
+  @ApiOperation({ summary: 'Asılı belgeyi çöz: INVOICE_FIND_BY_REF → bulundu: created, bulunamadı: failed (§10.1)' })
+  async resolveStuck(@Param('id') id: string, @Req() req: Request) {
+    return this.documentService.resolveStuck(id, this.extractScope(req));
+  }
+
   @Post(':id/cancel-claim')
   @HttpCode(200)
   @RequirePermission('accounting.manage')

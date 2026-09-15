@@ -48,7 +48,7 @@ export default function ProductsPage() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  if (!tenantContext.storeId) {
+  if (!tenantContext.storeId && !tenantContext.agencyId) {
     return (
       <div className="flex h-[60vh] flex-col items-center justify-center text-center animate-fade-in">
         <TagIcon className="h-12 w-12 text-kp-text-tertiary animate-pulse" />

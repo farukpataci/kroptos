@@ -16,6 +16,7 @@ export interface Product {
   agencyId: string;
   clientId?: string;
   storeId: string;
+  store?: { id: string; name: string; publicId?: string };
   categoryId?: string;
   sku: string;
   name: string;
@@ -107,7 +108,7 @@ export function useProducts() {
   const PAGE_SIZE = 20;
 
   const fetchProducts = useCallback(async () => {
-    if (!tenantContext.storeId) {
+    if (!tenantContext.storeId && !tenantContext.agencyId) {
       setIsLoading(false);
       return;
     }
@@ -121,7 +122,7 @@ export function useProducts() {
     } finally {
       setIsLoading(false);
     }
-  }, [tenantContext.storeId]);
+  }, [tenantContext.storeId, tenantContext.agencyId]);
 
   const fetchCategories = useCallback(async () => {
     if (!tenantContext.agencyId) return;

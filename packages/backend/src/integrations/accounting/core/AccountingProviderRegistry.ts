@@ -46,6 +46,12 @@ export class AccountingProviderRegistry {
         fail(`readiness=${d.readiness} iken supportsProduction açılamaz`);
       }
     }
+    // D5 (docs/nebim.v3.agent.md §4): invoicePush SUPPORTED iken periodPolicy seçilmiş olmalı
+    if (d.capabilities?.invoicePush === CapabilityStatus.SUPPORTED) {
+      if (!d.periodPolicy || !['PERIOD_NUMBER', 'DATE_RANGE', 'ERP_ENFORCED'].includes(d.periodPolicy)) {
+        fail('invoicePush SUPPORTED iken geçerli bir periodPolicy (PERIOD_NUMBER | DATE_RANGE | ERP_ENFORCED) zorunludur');
+      }
+    }
     // connectorClass burada denetlenmez: spec dosyalarında döngüsel import sırası yüzünden kayıt anında
     // henüz tanımsız olabilir; get() sonrası factory zaten `new` ile patlar.
   }

@@ -7,6 +7,7 @@ import { IdeasoftConnector } from '../ideasoft/IdeasoftConnector';
 import { TicimaxConnector } from '../ticimax/TicimaxConnector';
 import { TsoftConnector } from '../tsoft/TsoftConnector';
 import { OpencartConnector } from '../opencart/OpencartConnector';
+import { IkasConnector } from '../ikas/IkasConnector';
 
 @Injectable()
 export class EcommerceConnectorFactory {
@@ -31,6 +32,8 @@ export class EcommerceConnectorFactory {
         return new TsoftConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'OPENCART':
         return new OpencartConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'IKAS':
+        return new IkasConnector(credentials, this.httpClient, this.rateLimiter, settings);
 
       default:
         throw new BadRequestException(

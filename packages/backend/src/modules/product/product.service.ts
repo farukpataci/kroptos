@@ -50,8 +50,8 @@ export class ProductService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
-    if (!activeStoreId && !isSuperAdmin) {
-      throw new BadRequestException('Active store context is required (x-store-id header)');
+    if (!activeStoreId && !activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency or store context is required (x-agency-id or x-store-id header)');
     }
 
     const whereClause: any = { deletedAt: null };
@@ -69,6 +69,9 @@ export class ProductService {
     const products = await this.prisma.product.findMany({
       where: whereClause,
       include: {
+        store: {
+          select: { id: true, name: true, publicId: true },
+        },
         category: {
           select: { id: true, name: true, slug: true },
         },
@@ -122,6 +125,9 @@ export class ProductService {
         deletedAt: null,
       },
       include: {
+        store: {
+          select: { id: true, name: true, publicId: true },
+        },
         category: {
           select: { id: true, name: true, slug: true },
         },
@@ -155,13 +161,16 @@ export class ProductService {
       throw new NotFoundException(`Product with ID '${id}' not found or soft-deleted`);
     }
 
-    if (!activeStoreId && !isSuperAdmin) {
-      throw new BadRequestException('Active store context is required (x-store-id header)');
+    if (!activeStoreId && !activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency or store context is required (x-agency-id or x-store-id header)');
     }
 
     if (!isSuperAdmin) {
-      if (product.storeId !== activeStoreId) {
+      if (activeStoreId && product.storeId !== activeStoreId) {
         throw new ForbiddenException('Access denied. Product belongs to a different store context.');
+      }
+      if (activeAgencyId && product.agencyId !== activeAgencyId) {
+        throw new ForbiddenException('Access denied. Product belongs to a different agency context.');
       }
     }
 
@@ -715,8 +724,8 @@ export class ProductService {
     // urunlerine dokunuyordu. Tenant header'i gondermemek istemcide erisilebilir bir
     // durum (lib/api.ts, selected_tenant bos olabilir), dolayisiyla "baglam yok" asla
     // "tum kiracilar" demek olamaz. Kontroller create() ile birebir ayni.
-    if (!activeStoreId && !isSuperAdmin) {
-      throw new BadRequestException('Active store context is required (x-store-id header)');
+    if (!activeStoreId && !activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency or store context is required (x-agency-id or x-store-id header)');
     }
 
     const productIds = Array.from(new Set(dto.productIds));
@@ -755,12 +764,7 @@ export class ProductService {
       deletedAt: null,
     };
     if (!isSuperAdmin) {
-      // storeId kosulsuz: yukaridaki 400 dolu olmasini garanti ediyor ve izolasyonu tek
-      // basina o sagliyor - Store satiri agency/client'i sabitliyor. clientId ve agencyId
-      // ek guvence; middleware ikisini de magazadan turetiyor ama client'siz magazalarda
-      // (store.clientId = null, tenant.middleware.ts:165) activeClient hic kurulmuyor.
-      // Onceki hata "hicbiri yoksa filtre de yok"tu; storeId'yi kosulsuz yazmak onu kapatir.
-      whereClause.storeId = activeStoreId;
+      if (activeStoreId) whereClause.storeId = activeStoreId;
       if (activeClientId) whereClause.clientId = activeClientId;
       if (activeAgencyId) whereClause.agencyId = activeAgencyId;
     }

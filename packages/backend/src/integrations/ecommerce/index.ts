@@ -4,3 +4,4 @@ export * from './ideasoft';
 export * from './ticimax';
 export * from './tsoft';
 export * from './opencart';
+export * from './ikas';

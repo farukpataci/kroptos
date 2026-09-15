@@ -66,8 +66,8 @@ export function NotificationSettingsForm() {
   return (
     <form onSubmit={handleSave} className="space-y-6 w-full">
       <div>
-        <h3 className="text-lg font-medium leading-6 text-gray-900">Notification Settings</h3>
-        <p className="mt-1 text-sm text-gray-500">Configure alert channels and event-driven trigger notifications.</p>
+        <h3 className="text-lg font-medium leading-6 text-gray-900">Bildirim & SMS Ayarları</h3>
+        <p className="mt-1 text-sm text-gray-500">Uyarı kanallarını ve olay odaklı tetikleyici bildirimleri yapılandırın.</p>
       </div>
 
       <div className="space-y-6">

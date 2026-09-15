@@ -27,6 +27,8 @@ export class TenantMiddleware implements NestMiddleware {
       '/auth/login',
       '/auth/refresh',
       '/auth/refresh-token',
+      // Agent kaydı: kimliksiz uç — yetki tek kullanımlık kayıt kodudur (docs/mikro.agent.md §9.3)
+      '/api/agents/enroll',
     ];
 
     // Check if the current route is public (check path, originalUrl, and url)

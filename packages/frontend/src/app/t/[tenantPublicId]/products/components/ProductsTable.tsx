@@ -420,9 +420,16 @@ export default function ProductsTable({
                         {/* Product Name */}
                         <td className="py-3 px-4">
                           <div>
-                            <p className="font-semibold text-kp-text-primary text-[0.75rem] group-hover:text-kp-accent transition-colors">
-                              {product.name}
-                            </p>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <p className="font-semibold text-kp-text-primary text-[0.75rem] group-hover:text-kp-accent transition-colors">
+                                {product.name}
+                              </p>
+                              {product.store?.name && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.5625rem] font-medium bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
+                                  {product.store.name}
+                                </span>
+                              )}
+                            </div>
                             {product.description && (
                               <p className="text-[0.625rem] text-kp-text-tertiary max-w-xs truncate">{product.description}</p>
                             )}
@@ -487,13 +494,18 @@ export default function ProductsTable({
                         {/* Bundle Product Name & SKU */}
                         <td className="py-3 px-4">
                           <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="px-1.5 py-0.5 rounded text-[0.5625rem] font-bold bg-kp-accent/10 text-kp-accent border border-kp-accent/20 uppercase">
                                 {t('bundle.badge')}
                               </span>
                               <p className="font-semibold text-kp-text-primary text-[0.75rem] group-hover:text-kp-accent transition-colors">
                                 {product.name}
                               </p>
+                              {product.store?.name && (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[0.5625rem] font-medium bg-kp-accent/10 text-kp-accent border border-kp-accent/20">
+                                  {product.store.name}
+                                </span>
+                              )}
                             </div>
                             <p className="font-mono text-[0.625rem] text-kp-text-tertiary mt-0.5">{product.sku}</p>
                           </div>

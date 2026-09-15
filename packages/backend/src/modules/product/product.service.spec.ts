@@ -53,10 +53,28 @@ describe('ProductService', () => {
   });
 
   describe('list', () => {
-    it('should throw BadRequestException if no active store context is passed for normal user', async () => {
+    it('should throw BadRequestException if no tenant context is passed for normal user', async () => {
       await expect(
-        service.list('agency-1', 'client-1', undefined, false),
+        service.list(undefined, undefined, undefined, false),
       ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should return products belonging to agency when store context is absent (all brands mode)', async () => {
+      const row = {
+        id: 'prod-1',
+        name: 'Product 1',
+        price: new Prisma.Decimal(1500),
+        basePrice: new Prisma.Decimal(1200),
+      };
+      mockPrismaService.product.findMany.mockResolvedValue([row]);
+
+      const result = await service.list('agency-1', undefined, undefined, false);
+      expect(result).toHaveLength(1);
+      const [args] = mockPrismaService.product.findMany.mock.calls[0];
+      expect(args.where).toEqual({
+        deletedAt: null,
+        agencyId: 'agency-1',
+      });
     });
 
     it('should return products belonging to storeId context', async () => {

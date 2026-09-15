@@ -49,9 +49,9 @@ describe('OrderService', () => {
   });
 
   describe('list', () => {
-    it('should throw BadRequestException if store context is missing and not super admin', async () => {
+    it('should throw BadRequestException if tenant context is missing and not super admin', async () => {
       await expect(
-        service.list('agency-1', 'client-1', undefined, false),
+        service.list(undefined, undefined, undefined, false),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -70,11 +70,31 @@ describe('OrderService', () => {
           agencyId: 'agency-1',
         },
         include: {
+          store: {
+            select: { id: true, name: true, publicId: true },
+          },
           items: true,
           timeline: { orderBy: { createdAt: 'desc' } },
         },
         orderBy: { createdAt: 'desc' },
       });
+    });
+
+    it('should return list of orders belonging to agency when store context is absent (all brands mode)', async () => {
+      const mockOrders = [{ id: 'order-1', orderNumber: 'ORD-123' }];
+      mockPrismaService.order.findMany.mockResolvedValue(mockOrders);
+
+      const result = await service.list('agency-1', undefined, undefined, false);
+
+      expect(result).toEqual(mockOrders);
+      expect(mockPrismaService.order.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: {
+            deletedAt: null,
+            agencyId: 'agency-1',
+          },
+        }),
+      );
     });
   });
 

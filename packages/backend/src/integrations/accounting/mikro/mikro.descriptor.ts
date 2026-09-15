@@ -25,6 +25,7 @@ export const MIKRO_DESCRIPTOR: AccountingProviderDescriptor = {
   vendorFamily: 'mikro',
   productScope: ['Mikro v16 (port 8084)', 'Mikro v17 (port 8094)'],
   requiresPeriod: true, // CalismaYili her istekte gövdededir (K4)
+  periodPolicy: 'PERIOD_NUMBER', // D5 (docs/nebim.v3.agent.md §4, §6)
   requiresBranch: false,
   commercialPrerequisite: 'accounting.prerequisite.mikro.apiApplication', // API Başvuru Formu → lisans ataması
 };

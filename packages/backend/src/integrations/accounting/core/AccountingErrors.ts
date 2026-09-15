@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, NotImplementedException } from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, NotImplementedException } from '@nestjs/common';
 
 export class IntegrationNotVerifiedError extends HttpException {
   constructor(provider: string, environment: string) {
@@ -125,3 +125,63 @@ export class CatalogSchemaDriftError extends HttpException {
     this.name = 'CatalogSchemaDriftError';
   }
 }
+
+/** D6 / K17 (docs/nebim.v3.agent.md §4, §6): zorunlu kayıt parametreleri eksikken yazma işi kuyruğa girmez. */
+export class PostingDefaultsMissingError extends HttpException {
+  readonly missingFields: string[];
+  readonly provider: string;
+
+  constructor(provider: string, missing: string[]) {
+    super(
+      `[${provider}] Zorunlu kayıt parametreleri eksik: ${missing.join(', ')} (posting_defaults_missing).`,
+      HttpStatus.BAD_REQUEST,
+    );
+    this.name = 'PostingDefaultsMissingError';
+    this.provider = provider;
+    this.missingFields = missing;
+  }
+}
+
+/** K14 (docs/nebim.v3.agent.md §5): eşzamanlı oturum tavanı lisans sınırıdır. */
+export class SessionLimitReachedError extends HttpException {
+  constructor(provider: string, maxSessions: number) {
+    super(
+      `[${provider}] Eşzamanlı oturum tavanına (${maxSessions}) ulaşıldı (erp_session_limit).`,
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+    this.name = 'SessionLimitReachedError';
+  }
+}
+
+/**
+ * K17: Kayıt parametreleri doğrulanmadan yazma işi kuyruğa girmez.
+ */
+export function assertPostingDefaults(
+  spec: readonly import('./AccountingTypes').PostingFieldSpec[] | undefined,
+  values: Record<string, any> | undefined | null,
+  jobType: 'INVOICE' | 'RECEIPT' | 'ORDER' | 'STOCK',
+  providerId: string,
+): void {
+  if (!spec || !spec.length) return;
+  if (values) {
+    const known = new Set(spec.map((s) => s.key));
+    for (const k of Object.keys(values)) {
+      if (!known.has(k)) {
+        throw new BadRequestException(`Tanımsız kayıt parametresi: ${k}`);
+      }
+    }
+  }
+  const missing: string[] = [];
+  for (const field of spec) {
+    if (field.required && field.appliesTo.includes(jobType)) {
+      const val = values ? values[field.key] : undefined;
+      if (val === undefined || val === null || val === '') {
+        missing.push(field.key);
+      }
+    }
+  }
+  if (missing.length > 0) {
+    throw new PostingDefaultsMissingError(providerId, missing);
+  }
+}
+

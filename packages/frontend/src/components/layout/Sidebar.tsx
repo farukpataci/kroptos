@@ -160,6 +160,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
         { label: 'Muhasebe (Ön Muhasebe)', href: `/t/${tenantPublicId}/integrations/accounting` },
         { label: 'Kargo & Taşıyıcı', href: `/t/${tenantPublicId}/integrations/carrier` },
         { label: 'ERP & Ticari', href: `/t/${tenantPublicId}/integrations/erp` },
+        { label: 'Agent Yönetimi', href: `/t/${tenantPublicId}/agents` },
       ],
     },
   ];

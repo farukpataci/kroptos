@@ -1559,6 +1559,7 @@ model AccountingIntegration {
   exclusiveAgentId      String?   // K9: bağlantı başına tek aktif Agent
   agentLeaseUntil       DateTime? // K9: kira; dolsa bile açık yazma işi varken devralma bloke
   transportSecurity     String?   // K10: null=localhost | 'PLAINTEXT_LAN' (denetimde görünür istisna)
+  maxSessions           Int       @default(1) // K14: eşzamanlılık tavanı bir lisans sınırıdır (Nebim vb.)
   credentialSetAt       DateTime? // K2: AGENT_LOCAL kimlik sunucuda YOK — yalnızca iz
   credentialSetBy       String?
   credentialFingerprint String?
@@ -1588,6 +1589,7 @@ model AccountingCompany {
   defaultRetailContactId String?             // KolayBi' B2C fallback perakende müşteri ID
   invoiceSeries       String?
   defaultAccountCodes Json?
+  postingDefaults     Json?                 // D6: sağlayıcının bildirdiği şemaya göre doğrulanır (K17)
   periodNo            String?               // Mikro CalismaYili / Logo dönem — SessionKey ekseni (K4)
   branchCode          String?               // Netsis şube — SessionKey ekseni (K4)
   isActive            Boolean               @default(true)
@@ -1675,6 +1677,7 @@ model AgentInstance {
   name            String    // "MERKEZ-SRV01"
   status          String    @default("PENDING") // PENDING | ACTIVE | OFFLINE | REVOKED
   publicKey       String    // K2: tarayıcıda credential bununla şifrelenir; sunucunun özel anahtarı YOK
+  tunnelSecret    String?   // hello HMAC doğrulaması için — encrypt() ile şifreli; cevapta ASLA dönmez
   certFingerprint String?
   agentVersion    String?
   osVersion       String?

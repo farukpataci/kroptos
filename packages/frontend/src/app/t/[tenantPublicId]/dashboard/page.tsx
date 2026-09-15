@@ -51,7 +51,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!tenantContext.agencyId || !tenantContext.storeId) {
+      if (!tenantContext.agencyId) {
         setIsLoading(false);
         return;
       }

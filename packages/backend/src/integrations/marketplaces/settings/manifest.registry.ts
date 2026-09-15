@@ -28,6 +28,7 @@ import { ideasoftOverride } from './providers/ideasoft.settings';
 import { ticimaxOverride } from './providers/ticimax.settings';
 import { tsoftOverride } from './providers/tsoft.settings';
 import { opencartOverride } from './providers/opencart.settings';
+import { ikasOverride } from './providers/ikas.settings';
 
 /**
  * The one place a marketplace is registered. Adding a provider is this list
@@ -58,6 +59,7 @@ const OVERRIDES: ProviderSettingsOverride[] = [
   ticimaxOverride,
   tsoftOverride,
   opencartOverride,
+  ikasOverride,
 ];
 
 @Injectable()

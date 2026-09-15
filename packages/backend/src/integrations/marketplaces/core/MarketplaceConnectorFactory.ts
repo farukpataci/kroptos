@@ -25,6 +25,7 @@ import { ShopifyMarketplaceAdapter } from '../../ecommerce/shopify/ShopifyMarket
 import { IdeasoftMarketplaceAdapter } from '../../ecommerce/ideasoft/IdeasoftMarketplaceAdapter';
 import { TsoftConnector } from '../tsoft/TsoftConnector';
 import { OpencartConnector } from '../opencart/OpencartConnector';
+import { IkasMarketplaceAdapter } from '../../ecommerce/ikas/IkasMarketplaceAdapter';
 
 @Injectable()
 export class MarketplaceConnectorFactory {
@@ -91,6 +92,8 @@ export class MarketplaceConnectorFactory {
         return new TsoftConnector(credentials, this.httpClient, this.rateLimiter, settings);
       case 'OPENCART':
         return new OpencartConnector(credentials, this.httpClient, this.rateLimiter, settings);
+      case 'IKAS':
+        return new IkasMarketplaceAdapter(credentials, this.httpClient, this.rateLimiter, settings);
       default:
         throw new BadRequestException(`Unsupported marketplace provider: ${provider}`);
     }

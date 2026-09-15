@@ -11,7 +11,13 @@ import { AuditLogService } from '../audit/audit.service';
 import {
   AccountingAmountMismatchError,
   AccountingIdempotencyError,
+  AccountingNetworkError,
+  CapabilityContractRequiredError,
 } from '../../integrations/accounting/core/AccountingErrors';
+import { AccountingProviderRegistry } from '../../integrations/accounting/core/AccountingProviderRegistry';
+import { canAutoPushInvoice } from '../../integrations/accounting/core/AccountingCapabilities';
+import { AgentJobService } from '../agent/agent-job.service';
+import { AgentService } from '../agent/agent.service';
 import { AccountingConnectorFactory } from '../../integrations/accounting/core/AccountingConnectorFactory';
 import { AccountingCredentialService } from '../../integrations/accounting/core/AccountingCredentialService';
 import {
@@ -39,7 +45,59 @@ export class AccountingDocumentService {
     private readonly credentialsService: AccountingCredentialService,
     private readonly mappingService: AccountingMappingService,
     @Optional() private readonly auditLogService?: AuditLogService,
+    @Optional() private readonly agentJobs?: AgentJobService,
+    @Optional() private readonly agentService?: AgentService,
   ) {}
+
+  /**
+   * Connector'ı rotaya göre kur: route=AGENT ise AgentTransport verilir (K5); connector Agent'ı bilmez.
+   * companyKey AccountingCompany satırından gelir (companyNo ← externalCompanyId, periodNo, branchCode) — K4.
+   */
+  private async buildConnector(
+    integration: {
+      id: string;
+      agencyId: string;
+      provider: string;
+      environment: string;
+      route: string;
+      agentId: string | null;
+      exclusiveAgentId: string | null;
+      agentLeaseUntil: Date | null;
+    },
+    credentials: Record<string, any>,
+    company?: { externalCompanyId: string; periodNo: string | null; branchCode: string | null; invoiceSeries: string | null },
+  ) {
+    const descriptor = AccountingProviderRegistry.has(integration.provider) ? AccountingProviderRegistry.get(integration.provider) : null;
+    if (descriptor && integration.route === 'AGENT' && descriptor.supportedRoutes?.includes('AGENT')) {
+      if (!this.agentJobs) throw new AccountingNetworkError('AGENT', 'Agent modülü yüklü değil');
+      const ConnectorClass = descriptor.connectorClass;
+      const probe = new ConnectorClass({}, 'MOCK');
+      const transport = await this.agentJobs.transportFor(integration, probe.forbiddenBodyKeys);
+      return this.connectorFactory.create(integration.provider, credentials, integration.environment as AccountingEnvironment, {
+        transport,
+        integrationId: integration.id,
+        companyKey: company ? { companyNo: company.externalCompanyId, periodNo: company.periodNo, branchCode: company.branchCode } : undefined,
+        invoiceSeries: company?.invoiceSeries ?? null,
+        methodVersions: descriptor.methodVersions,
+      });
+    }
+    return this.connectorFactory.create(integration.provider, credentials, integration.environment as AccountingEnvironment);
+  }
+
+  /** K11 — Agent rotası sağlayıcılarında geri okunamayan ERP'ye otomatik yazma AÇILMAZ (onaylı mod). */
+  private assertAutoPushAllowed(integration: { provider: string; environment: string }) {
+    if (!AccountingProviderRegistry.has(integration.provider)) return; // kayıtsız sağlayıcı: eski yol
+    const d = AccountingProviderRegistry.get(integration.provider);
+    if (!d.supportedRoutes?.length) return;
+    const status = d.capabilities.invoiceFindByRef ?? d.capabilities.findInvoiceByReference;
+    if (!canAutoPushInvoice(status, integration.environment as AccountingEnvironment)) {
+      throw new CapabilityContractRequiredError(
+        d.id,
+        'invoicePush',
+        'findInvoiceByRef SUPPORTED değil — otomatik fatura yazma kapalı, onaylı mod gerekir (K11).',
+      );
+    }
+  }
 
   /**
    * Reservation-first idempotency implementation for sales invoice emission.
@@ -66,6 +124,8 @@ export class AccountingDocumentService {
       throw new NotFoundException('Belirtilen firma bu entegrasyona ait değil.');
     }
 
+    this.assertAutoPushAllowed(integration);
+
     // 1. Check idempotency table first
     const existingDoc = await this.prisma.accountingDocument.findUnique({
       where: {
@@ -88,6 +148,12 @@ export class AccountingDocumentService {
       if (existingDoc.status === 'pending') {
         throw new AccountingIdempotencyError(
           `Bu belge (Ref: ${dto.referenceCode}) için şu an işlem devam etmektedir. Lütfen bekleyiniz.`,
+        );
+      }
+      if (existingDoc.status === 'stuck') {
+        // §10.1: asılı claim'in tek çıkışı INVOICE_FIND_BY_REF — yeniden yazma DENENMEZ
+        throw new AccountingIdempotencyError(
+          `Bu belge (Ref: ${dto.referenceCode}) ERP'de asılı kaldı; önce "çöz" (resolve-stuck) çalıştırılmalı.`,
         );
       }
     }
@@ -135,11 +201,7 @@ export class AccountingDocumentService {
       credentials.defaultRetailContactId = company.defaultRetailContactId;
     }
 
-    const connector = this.connectorFactory.create(
-      integration.provider,
-      credentials,
-      integration.environment as AccountingEnvironment,
-    );
+    const connector = await this.buildConnector(integration, credentials, company);
 
     try {
       // Pre-sync / match contact
@@ -229,14 +291,22 @@ export class AccountingDocumentService {
     } catch (err: any) {
       this.logger.error(`Fatura oluşturma hatası (Doc ID: ${documentId}): ${err.message}`);
       
-      // If error was an explicit validation error or rejection, mark failed
+      // Zaman aşımı / Agent çevrimdışı / tünel koptu → sonuç BİLİNMİYOR → 'stuck' (§10.1).
+      // Doğrulama/ret hataları → 'failed' (yazılmadığı kesin).
+      const unknownOutcome = err instanceof AccountingNetworkError;
       await this.prisma.accountingDocument.update({
         where: { id: documentId },
         data: {
-          status: 'failed',
+          status: unknownOutcome ? 'stuck' : 'failed',
           errorMessage: err.message || 'Bilinmeyen hata',
         },
       });
+      if (unknownOutcome) {
+        await this.agentService?.raiseProblem(scope.agencyId, integration.id, integration.exclusiveAgentId ?? integration.agentId, 'invoice_stuck', {
+          documentId,
+          referenceCode: dto.referenceCode,
+        });
+      }
       throw err;
     }
   }
@@ -302,11 +372,7 @@ export class AccountingDocumentService {
       ? this.credentialsService.decrypt(integration.credentials)
       : {};
 
-    const connector = this.connectorFactory.create(
-      integration.provider,
-      credentials,
-      integration.environment as AccountingEnvironment,
-    );
+    const connector = await this.buildConnector(integration, credentials, company);
 
     try {
       const result = await connector.recordPayment({
@@ -377,6 +443,47 @@ export class AccountingDocumentService {
   /**
    * Release or cancel a stuck pending claim.
    */
+  /**
+   * §10.1 — asılı claim'in TEK çıkışı: INVOICE_FIND_BY_REF.
+   *   bulundu    → externalId yaz, status='created'  (yazılmış, cevabı kaybolmuş)
+   *   bulunamadı → status='failed', yeniden denenebilir (yazılmamış)
+   */
+  async resolveStuck(id: string, scope: AccountingScope) {
+    const doc = await this.prisma.accountingDocument.findFirst({ where: { id, agencyId: scope.agencyId } });
+    if (!doc) throw new NotFoundException('Belge bulunamadı.');
+    if (doc.status !== 'stuck' && doc.status !== 'pending') {
+      throw new BadRequestException(`Belge '${doc.status}' durumunda; yalnızca stuck/pending çözülür.`);
+    }
+    const integration = await this.prisma.accountingIntegration.findFirst({
+      where: { id: doc.integrationId, agencyId: scope.agencyId, deletedAt: null },
+      include: { companies: true },
+    });
+    if (!integration) throw new NotFoundException('Muhasebe entegrasyonu bulunamadı.');
+    const company = integration.companies.find((c) => c.id === doc.companyId);
+    const credentials = integration.credentials ? this.credentialsService.decrypt(integration.credentials) : {};
+    const connector = await this.buildConnector(integration, credentials, company);
+    if (typeof connector.findInvoiceByReference !== 'function') {
+      throw new CapabilityContractRequiredError(integration.provider, 'invoiceFindByRef', 'Sağlayıcı geri okuma desteklemiyor; attach-external ile elle çözülür.');
+    }
+    const found = await connector.findInvoiceByReference(doc.referenceCode);
+    const updated = await this.prisma.accountingDocument.update({
+      where: { id },
+      data: found
+        ? { status: 'created', externalId: found.externalId, externalNumber: found.externalNumber, rawResponse: found.rawResponse as any, errorMessage: null }
+        : { status: 'failed', errorMessage: 'ERP tarafında bulunamadı — yazılmamış, yeniden denenebilir' },
+    });
+    await this.auditLogService?.createLog({
+      tenantId: scope.agencyId,
+      action: 'accounting.document.resolve_stuck',
+      module: 'accounting',
+      entityType: 'AccountingDocument',
+      entityId: doc.id,
+      entityDisplayName: doc.referenceCode,
+      description: found ? `Asılı belge ERP tarafında bulundu (${found.externalId})` : 'Asılı belge ERP tarafında yok → failed',
+    });
+    return updated;
+  }
+
   async cancelDocumentClaim(id: string, scope: AccountingScope) {
     const doc = await this.prisma.accountingDocument.findFirst({
       where: { id, agencyId: scope.agencyId },

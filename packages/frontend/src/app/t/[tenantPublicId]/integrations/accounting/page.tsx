@@ -11,6 +11,8 @@ import {
   BuildingOfficeIcon,
   LinkIcon,
   ArrowDownTrayIcon,
+  ShieldExclamationIcon,
+  CommandLineIcon,
 } from '@heroicons/react/24/outline';
 import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
@@ -18,6 +20,8 @@ import AccountingDocumentList from './components/AccountingDocumentList';
 import AccountingMappingList from './components/AccountingMappingList';
 import AccountingCompanyManager from './components/AccountingCompanyManager';
 import DatevExportManager from './components/DatevExportManager';
+import AccountingProblemQueue from './components/AccountingProblemQueue';
+import AgentJobList from './components/AgentJobList';
 import { AccountingIntegrationItem, AccountingCompanyItem } from './types';
 
 export default function AccountingIntegrationsPage() {
@@ -26,7 +30,7 @@ export default function AccountingIntegrationsPage() {
   const params = useParams();
   const tenantPublicId = params?.tenantPublicId as string;
 
-  const [activeTab, setActiveTab] = useState<'documents' | 'mappings' | 'companies' | 'datev'>('documents');
+  const [activeTab, setActiveTab] = useState<'documents' | 'mappings' | 'companies' | 'datev' | 'problems' | 'jobs'>('documents');
   const [integrations, setIntegrations] = useState<AccountingIntegrationItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -81,7 +85,7 @@ export default function AccountingIntegrationsPage() {
 
       {/* Tabs */}
       <div className="border-b border-slate-200 dark:border-slate-800">
-        <nav className="-mb-px flex space-x-6 text-xs font-medium">
+        <nav className="-mb-px flex flex-wrap gap-4 sm:space-x-6 text-xs font-medium">
           <button
             onClick={() => setActiveTab('documents')}
             className={`flex items-center gap-2 border-b-2 py-3 transition-colors font-semibold ${
@@ -129,6 +133,30 @@ export default function AccountingIntegrationsPage() {
             <ArrowDownTrayIcon className="h-4 w-4" />
             DATEV Dışa Aktarımı (EXTF)
           </button>
+
+          <button
+            onClick={() => setActiveTab('problems')}
+            className={`flex items-center gap-2 border-b-2 py-3 transition-colors font-semibold ${
+              activeTab === 'problems'
+                ? 'border-amber-500 text-amber-600 dark:text-amber-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <ShieldExclamationIcon className="h-4 w-4 text-amber-500" />
+            Problem Kuyruğu
+          </button>
+
+          <button
+            onClick={() => setActiveTab('jobs')}
+            className={`flex items-center gap-2 border-b-2 py-3 transition-colors font-semibold ${
+              activeTab === 'jobs'
+                ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                : 'border-transparent text-slate-500 dark:text-slate-400 hover:border-slate-300 dark:hover:border-slate-700 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            <CommandLineIcon className="h-4 w-4 text-blue-500" />
+            Agent İşleri
+          </button>
         </nav>
       </div>
 
@@ -149,6 +177,14 @@ export default function AccountingIntegrationsPage() {
 
       {activeTab === 'datev' && (
         <DatevExportManager companies={allCompanies} />
+      )}
+
+      {activeTab === 'problems' && (
+        <AccountingProblemQueue />
+      )}
+
+      {activeTab === 'jobs' && (
+        <AgentJobList />
       )}
     </div>
   );

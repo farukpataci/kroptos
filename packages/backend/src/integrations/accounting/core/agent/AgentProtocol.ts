@@ -30,6 +30,7 @@ export const AGENT_JOB_TYPES = [
   'INVOICE_FIND_BY_REF',
   'INVOICE_CANCEL',
   'CATALOG_QUERY',
+  'SESSION_RELEASE',
 ] as const;
 
 export type AgentJobType = (typeof AGENT_JOB_TYPES)[number];
@@ -105,6 +106,8 @@ export const PROBLEM_CODES = [
   'catalog_schema_drift',
   'job_expired',
   'job_type_rejected',
+  'posting_defaults_missing',
+  'session_leaked',
 ] as const;
 export type ProblemCode = (typeof PROBLEM_CODES)[number];
 

@@ -54,8 +54,8 @@ export class OrderService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
-    if (!activeStoreId && !isSuperAdmin) {
-      throw new BadRequestException('Active store context is required (x-store-id header)');
+    if (!activeStoreId && !activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency or store context is required (x-agency-id or x-store-id header)');
     }
 
     const whereClause: any = { deletedAt: null };
@@ -73,6 +73,9 @@ export class OrderService {
     return this.prisma.order.findMany({
       where: whereClause,
       include: {
+        store: {
+          select: { id: true, name: true, publicId: true },
+        },
         items: true,
         timeline: { orderBy: { createdAt: 'desc' } },
       },
@@ -87,8 +90,8 @@ export class OrderService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
-    if (!activeStoreId && !isSuperAdmin) {
-      throw new BadRequestException('Active store context is required (x-store-id header)');
+    if (!activeStoreId && !activeAgencyId && !isSuperAdmin) {
+      throw new BadRequestException('Active agency or store context is required (x-agency-id or x-store-id header)');
     }
 
     // The scope goes in `where`, not in a comparison after the read.
@@ -124,6 +127,9 @@ export class OrderService {
         deletedAt: null,
       },
       include: {
+        store: {
+          select: { id: true, name: true, publicId: true },
+        },
         items: true,
         timeline: { orderBy: { createdAt: 'desc' } },
       },

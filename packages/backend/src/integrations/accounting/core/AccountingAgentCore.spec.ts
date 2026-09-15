@@ -97,9 +97,10 @@ describe('Credential schema (K1/K2)', () => {
 });
 
 describe('AgentProtocol (K6 — kapalı küme)', () => {
-  it('14 iş tipi; küme dışı reddedilir', () => {
-    expect(AGENT_JOB_TYPES).toHaveLength(14);
+  it('15 iş tipi; küme dışı reddedilir', () => {
+    expect(AGENT_JOB_TYPES).toHaveLength(15);
     expect(isAgentJobType('INVOICE_PUSH')).toBe(true);
+    expect(isAgentJobType('SESSION_RELEASE')).toBe(true);
     expect(isAgentJobType('RUN_SQL')).toBe(false);
     expect(isAgentJobType('SHELL')).toBe(false);
   });
