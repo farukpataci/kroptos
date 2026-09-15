@@ -46,6 +46,7 @@ describe('PermissionGuard against the real database', () => {
   let clientId: string;
   let storeId: string;
   let userId: string;
+  let revokerId: string;
   let ownerRoleId: string;
 
   const ctx = (permission: string, active: { clientId?: string; storeId?: string } = {}): ExecutionContext => {
@@ -68,8 +69,9 @@ describe('PermissionGuard against the real database', () => {
     await cache.onModuleInit();
     before = await countAll();
 
-    const owner = await prisma.role.findFirst({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } });
-    if (!owner) throw new Error('agency_owner rolü yok; seed çalıştırılmalı');
+    // agency_admin: clients.create var, agencies.create yok, son-sahip korumasina girmez
+    const owner = await prisma.role.findFirst({ where: { key: 'agency_admin', agencyId: null, deletedAt: null } });
+    if (!owner) throw new Error('agency_admin rolü yok; seed çalıştırılmalı');
     ownerRoleId = owner.id;
 
     const agency = await prisma.agency.create({ data: { name: `pg ${suffix}`, slug: `pg-${suffix}` } });
@@ -84,13 +86,15 @@ describe('PermissionGuard against the real database', () => {
     storeId = store.id;
     const user = await prisma.user.create({ data: { email: `${suffix}@it.local`, passwordHash: 'x' } });
     userId = user.id;
+    const revoker = await prisma.user.create({ data: { email: `${suffix}.revoker@it.local`, passwordHash: 'x' } });
+    revokerId = revoker.id;
   }, 60000);
 
   afterAll(async () => {
     try {
       await prisma.auditLog.deleteMany({ where: { tenantId: agencyId } });
-      await prisma.userRole.deleteMany({ where: { userId } });
-      await prisma.user.deleteMany({ where: { id: userId } });
+      await prisma.userRole.deleteMany({ where: { userId: { in: [userId, revokerId] } } });
+      await prisma.user.deleteMany({ where: { id: { in: [userId, revokerId] } } });
       await prisma.store.deleteMany({ where: { id: storeId } });
       await prisma.client.deleteMany({ where: { id: clientId } });
       await prisma.agency.deleteMany({ where: { id: agencyId } });
@@ -112,7 +116,8 @@ describe('PermissionGuard against the real database', () => {
   });
 
   it('agency-wide role passes in agency, client AND store context (clientId equality regression)', async () => {
-    await rbac.assignRole({ userId, agencyId, roleId: ownerRoleId }, userId);
+    // Atayan: sistem super_admin (escalation kontrolunden muaf); fixture kullanicisinin henuz izni yok.
+    await rbac.assignRole({ userId, roleId: ownerRoleId }, { userId, agencyId, role: 'super_admin', roleIsSystem: true });
 
     await expect(guard.canActivate(ctx('clients.create'))).resolves.toBe(true);
     await expect(guard.canActivate(ctx('clients.create', { clientId }))).resolves.toBe(true);
@@ -126,7 +131,8 @@ describe('PermissionGuard against the real database', () => {
     const row = await prisma.userRole.findFirst({ where: { userId, agencyId, roleId: ownerRoleId, deletedAt: null } });
     expect(row).not.toBeNull();
 
-    await rbac.revokeRole({ userRoleId: row!.id }, userId);
+    // kendi rolunu geri alamaz -> ikinci bir aktor (sistem super_admin) adina
+    await rbac.revokeRole({ userRoleId: row!.id }, { userId: revokerId, agencyId, role: 'super_admin', roleIsSystem: true });
 
     await expect(guard.canActivate(ctx('clients.create'))).rejects.toThrow('No active role');
     await expect(guard.canActivate(ctx('clients.create', { clientId, storeId }))).rejects.toThrow('No active role');

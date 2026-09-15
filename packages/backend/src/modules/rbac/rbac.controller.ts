@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Req, UseGuards, HttpCode } from '@nestjs/c
 import { AuthGuard } from '@nestjs/passport';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { Request } from 'express';
-import { RbacService } from './rbac.service';
+import { RbacService, actorFromRequest } from './rbac.service';
 import { AssignRoleDto, RevokeRoleDto, RoleResponseDto, PermissionResponseDto } from './dto/rbac.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
@@ -34,24 +34,20 @@ export class RbacController {
 
   @Post('assign')
   @HttpCode(201)
-  @RequirePermission('agencies.create')
-  @ApiOperation({ summary: 'Assign a role to a user within a specific tenant context' })
+  @RequirePermission('users.manage')
+  @ApiOperation({ summary: 'Assign a role to a user within the ACTIVE tenant context' })
   @ApiResponse({ status: 201, description: 'Role assigned successfully' })
   async assignRole(@Body() dto: AssignRoleDto, @Req() req: Request) {
-    const user = (req as any).user;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
-    return this.rbacService.assignRole(dto, user.userId, ipAddress);
+    return this.rbacService.assignRole(dto, actorFromRequest(req));
   }
 
   @Post('revoke')
   @HttpCode(200)
-  @RequirePermission('agencies.create')
-  @ApiOperation({ summary: 'Revoke (soft-delete) user role mapping' })
+  @RequirePermission('users.manage')
+  @ApiOperation({ summary: 'Revoke (soft-delete) a user role mapping in the ACTIVE tenant' })
   @ApiResponse({ status: 200, description: 'Role assignment revoked successfully' })
   async revokeRole(@Body() dto: RevokeRoleDto, @Req() req: Request) {
-    const user = (req as any).user;
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
-    await this.rbacService.revokeRole(dto, user.userId, ipAddress);
+    await this.rbacService.revokeRole(dto, actorFromRequest(req));
     return { message: 'Role revoked successfully' };
   }
 }

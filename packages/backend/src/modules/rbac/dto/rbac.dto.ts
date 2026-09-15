@@ -1,14 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional } from 'class-validator';
 
+/**
+ * agencyId bilerek YOK: baglam istemciden degil, TenantMiddleware'in cozdugu
+ * req.activeAgency'den gelir. Eski DTO'daki agencyId cagiranin ajansiyla
+ * karsilastirilmiyordu - baska ajansa rol atanabiliyordu.
+ */
 export class AssignRoleDto {
   @ApiProperty({ example: 'cuid-user-id', description: 'User ID to assign the role to' })
   @IsString()
   userId: string;
-
-  @ApiProperty({ example: 'cuid-agency-id', description: 'Agency ID context' })
-  @IsString()
-  agencyId: string;
 
   @ApiPropertyOptional({ example: 'cuid-client-id', description: 'Optional Client ID context' })
   @IsString()

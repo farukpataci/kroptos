@@ -20,9 +20,10 @@ import { NotificationSettingsService } from './services/notification-settings.se
 import { ApiKeysService } from './services/api-keys.service';
 import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '@common/prisma/prisma.module';
+import { RbacModule } from '../rbac/rbac.module';
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [PrismaModule, AuditModule, RbacModule],
   controllers: [
     SettingsController,
     UsersController,
