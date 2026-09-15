@@ -160,7 +160,8 @@ describe('AuthService', () => {
       expect(response.agencies[0].role).toBe('agency_owner');
       const signedPayload: any = (mockJwtService.sign as jest.Mock).mock.calls[0]?.[0];
       expect(signedPayload.role).toBe('agency_owner');
-      expect(signedPayload.permissions).toEqual(['agencies.read']);
+      // izinler artık token'da değil (P2): guard DB'den okur
+      expect(signedPayload.permissions).toBeUndefined();
     });
 
     it('fails loudly when agency_owner is missing instead of falling back to super_admin', async () => {
@@ -256,7 +257,7 @@ describe('AuthService', () => {
       const signedPayload: any = (mockJwtService.sign as jest.Mock).mock.calls[0]?.[0];
       expect(signedPayload.agencyId).toBe('agency-a');
       expect(signedPayload.role).toBe('agency_owner');
-      expect(signedPayload.permissions).toEqual(['clients.create']);
+      expect(signedPayload.permissions).toBeUndefined();
     });
   });
 
@@ -412,7 +413,7 @@ describe('AuthService', () => {
 
       const signedPayload: any = (mockJwtService.sign as jest.Mock).mock.calls[0]?.[0];
       expect(signedPayload.role).toBe('store_manager');
-      expect(signedPayload.permissions).toEqual(['products.read']);
+      expect(signedPayload.permissions).toBeUndefined();
     });
   });
 });

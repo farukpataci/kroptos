@@ -4,14 +4,14 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request } from 'express';
 import { AgencyService } from './agency.service';
 import { CreateAgencyDto, UpdateAgencyDto, AgencyResponseDto } from './dto/agency.dto';
-import { RbacGuard } from '../../common/guards/rbac.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Agencies')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RbacGuard)
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller()
 export class AgencyController {
   constructor(private agencyService: AgencyService) {}

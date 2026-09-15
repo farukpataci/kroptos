@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
 import { isPlatformAdmin } from '../../common/constants/platform-admin';
 import { resolvePrimaryRole } from '../../common/utils/primary-role';
+import { buildUserRoleScopeWhere } from '../../common/utils/tenant-scope';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -61,8 +62,9 @@ export class AuthService {
     clientId: string | null = null,
     storeId: string | null = null,
     role: string = 'user',
-    permissions: string[] = [],
   ) {
+    // permissions[] bilerek yok: izinler her istekte DB'den (PermissionCache)
+    // okunur. Token'a gömülü izin, rol geri alındıktan sonra da geçerli kalıyordu.
     const payload = {
       userId,
       email,
@@ -71,7 +73,6 @@ export class AuthService {
       clientId,
       storeId,
       role,
-      permissions,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -145,10 +146,7 @@ export class AuthService {
       // bağlanıyordu: açık kayıt formu platform çapında tam yetki dağıtıyordu.
       // super_admin yalnız seed ile atanır; agency_owner seed'de yoksa sessizce
       // düşme, patla.
-      const ownerRole = await tx.role.findUnique({
-        where: { name: 'agency_owner' },
-        include: { permissions: true },
-      });
+      const ownerRole = await tx.role.findUnique({ where: { name: 'agency_owner' } });
       if (!ownerRole) {
         throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before registration");
       }
@@ -185,7 +183,6 @@ export class AuthService {
       null,
       null,
       result.role.name,
-      result.role.permissions.map((p) => p.name),
     );
 
     // 7. Save sessions
@@ -252,11 +249,7 @@ export class AuthService {
       },
       include: {
         agency: true,
-        role: {
-          include: {
-            permissions: true,
-          },
-        },
+        role: true,
       },
     });
 
@@ -265,7 +258,6 @@ export class AuthService {
     }
 
     const primaryUserRole = resolvePrimaryRole(userRoles)!;
-    const permissions = primaryUserRole.role.permissions.map((p) => p.name);
 
     const tokens = await this.generateTokens(
       user.id,
@@ -274,7 +266,6 @@ export class AuthService {
       primaryUserRole.clientId,
       primaryUserRole.storeId,
       primaryUserRole.role.name,
-      permissions,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
@@ -378,13 +369,7 @@ export class AuthService {
             userId,
             deletedAt: null,
           },
-          include: {
-            role: {
-              include: {
-                permissions: true,
-              },
-            },
-          },
+          include: { role: true },
         }),
       );
 
@@ -405,7 +390,6 @@ export class AuthService {
         userRole.clientId,
         userRole.storeId,
         userRole.role.name,
-        userRole.role.permissions.map((p) => p.name),
       );
 
       const newHash = this.hashToken(newTokens.refreshToken);
@@ -461,37 +445,15 @@ export class AuthService {
     }
 
     // Bir rol istenen bağlamı KAPSIYORSA geçiş yetkilidir. Kapsama semantiği
-    // TenantMiddleware ile aynı olmak zorunda (oradaki store dalının OR bloğu):
-    // ajans geneli rol altındaki her şeyi, client kapsamlı rol o client'ın
-    // mağazalarını, mağaza kapsamlı rol yalnızca kendi mağazasını kapsar.
-    //
-    // Önceki sorgu `clientId/storeId: dto.X || undefined` yazıyordu ve bu iki
-    // yönde birden yanlıştı: değer verilince TAM eşleşme arayıp ajans geneli
-    // rolü eliyordu (marka geçişi 403), verilmeyince de filtreyi tamamen
-    // kaldırıp mağaza kapsamlı bir rolün ajans geneli token almasına izin
-    // veriyordu. Aşağıdaki OR ikisini birden kapatıyor.
-    const coverage: Prisma.UserRoleWhereInput[] = [{ clientId: null, storeId: null }];
-    if (requestedClientId) {
-      coverage.push({ clientId: requestedClientId, storeId: null });
-    }
-    if (requestedStoreId) {
-      coverage.push({ storeId: requestedStoreId });
-    }
-
+    // PermissionGuard ve TenantMiddleware ile aynı: buildUserRoleScopeWhere.
     const candidates = await this.prisma.userRole.findMany({
-      where: {
+      where: buildUserRoleScopeWhere({
         userId,
         agencyId: dto.agencyId,
-        deletedAt: null,
-        OR: coverage,
-      },
-      include: {
-        role: {
-          include: {
-            permissions: true,
-          },
-        },
-      },
+        clientId: requestedClientId,
+        storeId: requestedStoreId,
+      }),
+      include: { role: true },
     });
 
     if (candidates.length === 0) {
@@ -518,7 +480,6 @@ export class AuthService {
       requestedClientId,
       requestedStoreId,
       userRole.role.name,
-      userRole.role.permissions.map((p) => p.name),
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);

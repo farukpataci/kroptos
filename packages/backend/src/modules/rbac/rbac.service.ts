@@ -1,12 +1,16 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { isSuperAdminRole } from '@common/constants/platform-admin';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { PermissionCacheService } from '@common/services/permission-cache.service';
 import { AssignRoleDto, RevokeRoleDto } from './dto/rbac.dto';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class RbacService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private permissionCache: PermissionCacheService,
+  ) {}
 
   // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
   // adlar: userId, tenantId (@map("agencyId")) ve newValue. Kalip: OrderService.writeAuditLog.
@@ -104,7 +108,7 @@ export class RbacService {
     }
 
     // 6. Perform assignment transactionally
-    return this.prisma.$transaction(async (tx) => {
+    const assigned = await this.prisma.$transaction(async (tx) => {
       // Check if this relation already exists (including soft-deleted ones)
       const existingUserRole = await tx.userRole.findFirst({
         where: {
@@ -156,6 +160,8 @@ export class RbacService {
 
       return userRole;
     });
+    await this.permissionCache.invalidateUser(dto.userId);
+    return assigned;
   }
 
   async revokeRole(dto: RevokeRoleDto, performedBy: string, ipAddress?: string) {
@@ -191,5 +197,6 @@ export class RbacService {
         },
       );
     });
+    await this.permissionCache.invalidateUser(userRole.userId);
   }
 }

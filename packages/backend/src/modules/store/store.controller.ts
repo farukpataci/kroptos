@@ -4,13 +4,13 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request } from 'express';
 import { StoreService } from './store.service';
 import { CreateStoreDto, UpdateStoreDto, StoreResponseDto } from './dto/store.dto';
-import { RbacGuard } from '../../common/guards/rbac.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Stores')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RbacGuard)
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller('/api/stores')
 export class StoreController {
   constructor(private storeService: StoreService) {}

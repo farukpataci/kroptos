@@ -4,13 +4,13 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request } from 'express';
 import { ClientService } from './client.service';
 import { CreateClientDto, UpdateClientDto, ClientResponseDto } from './dto/client.dto';
-import { RbacGuard } from '../../common/guards/rbac.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Clients')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RbacGuard)
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller('/api/clients')
 export class ClientController {
   constructor(private clientService: ClientService) {}

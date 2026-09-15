@@ -1,11 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RbacService } from './rbac.service';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { PermissionCacheService } from '@common/services/permission-cache.service';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 
 describe('RbacService', () => {
   let service: RbacService;
   let prisma: PrismaService;
+
+  const mockPermissionCache = { invalidateUser: jest.fn() };
 
   const mockPrismaService: any = {
     role: {
@@ -43,6 +46,7 @@ describe('RbacService', () => {
       providers: [
         RbacService,
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: PermissionCacheService, useValue: mockPermissionCache },
       ],
     }).compile();
 
