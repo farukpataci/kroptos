@@ -104,6 +104,16 @@ export class InvitationService {
     });
   }
 
+  /**
+   * TODO(P8): gercek mail saglayicisi takilinca KALDIR. ConsoleMailProvider asamasinda
+   * davet linki yalniz sunucu konsoluna dusuyor; gelistirmede UI'dan kopyalanabilsin diye
+   * production DISINDA yanita eklenir. Production'da ham token yanita ASLA girmez.
+   */
+  private withDevLink<T extends object>(row: T, rawToken: string): T & { devInviteUrl?: string } {
+    if (process.env.NODE_ENV === 'production') return row;
+    return { ...row, devInviteUrl: this.inviteUrl(rawToken) };
+  }
+
   private async sendInviteMail(email: string, rawToken: string, agencyName: string, roleName: string) {
     await this.mail.enqueue({
       to: email,
@@ -164,7 +174,7 @@ export class InvitationService {
     });
 
     await this.sendInviteMail(email, rawToken, agency.name, role.name);
-    return invitation;
+    return this.withDevLink(invitation, rawToken);
   }
 
   async list(query: ListInvitationsQueryDto, actor: ActorContext) {
@@ -211,7 +221,7 @@ export class InvitationService {
       return row;
     });
     await this.sendInviteMail(inv.email, rawToken, agency?.name ?? 'KroptOS', role.name);
-    return updated;
+    return this.withDevLink(updated, rawToken);
   }
 
   async revoke(id: string, actor: ActorContext) {

@@ -75,7 +75,18 @@ describe('InvitationService', () => {
       expect(data.invitedBy).toBe('admin');
       const link = mail.enqueue.mock.calls[0][0].text.match(/\/invite\/([a-f0-9]{64})/)[1];
       expect(sha(link)).toBe(data.tokenHash);
-      expect(JSON.stringify(res)).not.toContain(link);
+      // Gelistirmede devInviteUrl doner (TODO P8), production'da ASLA
+      expect(res.devInviteUrl).toContain(link);
+      const prev = process.env.NODE_ENV;
+      process.env.NODE_ENV = 'production';
+      try {
+        prisma.invitation.findFirst.mockResolvedValue(null);
+        const prod: any = await service.create({ email: 'new2@x.y', roleId: 'r-sm' }, actor);
+        expect(prod.devInviteUrl).toBeUndefined();
+        expect(JSON.stringify(prod)).not.toMatch(/[a-f0-9]{64}/);
+      } finally {
+        process.env.NODE_ENV = prev;
+      }
       expect(prisma.auditLog.create).toHaveBeenCalledWith({ data: expect.objectContaining({ action: 'invitation.created', entityDisplayName: 'new@x.y' }) });
       expect(JSON.stringify(prisma.auditLog.create.mock.calls[0][0])).not.toContain(link);
     });
