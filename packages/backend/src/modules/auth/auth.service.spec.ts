@@ -313,6 +313,61 @@ describe('AuthService', () => {
     });
   });
 
+  describe('getMe accessibleTenants', () => {
+    const agency = {
+      id: 'agency-1',
+      publicId: 'tn_a1',
+      name: 'Agency',
+      stores: [
+        { id: 's1', publicId: 'tn_s1', name: 'S1', agencyId: 'agency-1', clientId: 'c1' },
+        { id: 's2', publicId: 'tn_s2', name: 'S2', agencyId: 'agency-1', clientId: null },
+      ],
+    };
+    const meUser = { id: 'user-id', email: 'u@x.y', isActive: true };
+    const storeRole = { agencyId: 'agency-1', clientId: null, storeId: 's1', agency, client: null, role: { name: 'store_manager' } };
+    const agencyRole = { agencyId: 'agency-1', clientId: null, storeId: null, agency, client: null, role: { name: 'agency_owner' } };
+    const clientRole = { agencyId: 'agency-1', clientId: 'c1', storeId: null, agency, client: { id: 'c1', name: 'C1' }, role: { name: 'client_admin' } };
+
+    beforeEach(() => {
+      mockPrismaService.user.findUnique.mockResolvedValue(meUser);
+      mockPrismaService.storeUser.findMany.mockResolvedValue([]);
+    });
+
+    it('store-scoped only: NO agency entry, only that store', async () => {
+      mockPrismaService.userRole.findMany.mockResolvedValue([storeRole]);
+      const { accessibleTenants } = await service.getMe('user-id');
+      expect(accessibleTenants.map((t: any) => t.type)).toEqual(['brand']);
+      expect(accessibleTenants[0]).toMatchObject({ id: 's1', agencyId: 'agency-1', clientId: 'c1', storeId: 's1' });
+    });
+
+    it('agency-wide + store-scoped: agency entry and every store', async () => {
+      mockPrismaService.userRole.findMany.mockResolvedValue([storeRole, agencyRole]);
+      const { accessibleTenants } = await service.getMe('user-id');
+      expect(accessibleTenants.map((t: any) => `${t.type}:${t.id}`)).toEqual(['agency:agency-1', 'brand:s1', 'brand:s2']);
+    });
+
+    it('client-scoped: client entry plus only that client\'s stores', async () => {
+      mockPrismaService.userRole.findMany.mockResolvedValue([clientRole]);
+      const { accessibleTenants } = await service.getMe('user-id');
+      expect(accessibleTenants.map((t: any) => `${t.type}:${t.id}`)).toEqual(['client:c1', 'brand:s1']);
+      expect(accessibleTenants[0]).toMatchObject({ agencyId: 'agency-1', clientId: 'c1', storeId: null });
+    });
+
+    it('StoreUser rows are unioned with UserRole.storeId', async () => {
+      mockPrismaService.userRole.findMany.mockResolvedValue([storeRole]);
+      mockPrismaService.storeUser.findMany.mockResolvedValue([{ storeId: 's2', store: { ...agency.stores[1], agency } }]);
+      const { accessibleTenants } = await service.getMe('user-id');
+      expect(accessibleTenants.map((t: any) => `${t.type}:${t.id}`)).toEqual(['brand:s1', 'brand:s2']);
+    });
+
+    it('agency-wide role with StoreUser restriction lists only the allowed stores (old behaviour kept)', async () => {
+      mockPrismaService.userRole.findMany.mockResolvedValue([agencyRole]);
+      mockPrismaService.storeUser.findMany.mockResolvedValue([{ storeId: 's2', store: { ...agency.stores[1], agency } }]);
+      const { accessibleTenants } = await service.getMe('user-id');
+      expect(accessibleTenants.map((t: any) => `${t.type}:${t.id}`)).toEqual(['agency:agency-1', 'brand:s2']);
+    });
+  });
+
   describe('switchTenant', () => {
     const agencyWideRole = {
       agencyId: 'new-agency-id',

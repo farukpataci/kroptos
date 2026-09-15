@@ -4,7 +4,7 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
-import { isPlatformAdmin } from '../../common/constants/platform-admin';
+import { isPlatformAdmin, isSuperAdminRole } from '../../common/constants/platform-admin';
 import { resolvePrimaryRole } from '../../common/utils/primary-role';
 import { buildUserRoleScopeWhere } from '../../common/utils/tenant-scope';
 import { Prisma } from '@prisma/client';
@@ -529,59 +529,85 @@ export class AuthService {
     const userRoles = await this.prisma.userRole.findMany({
       where: { userId, deletedAt: null },
       include: {
-        agency: {
-          include: {
-            stores: {
-              where: { deletedAt: null },
-            },
-          },
-        },
+        agency: { include: { stores: { where: { deletedAt: null } } } },
+        client: { select: { id: true, name: true } },
         role: true,
       },
     });
 
     const storeUsers = await this.prisma.storeUser.findMany({
-      where: { userId, deletedAt: null },
-      select: { storeId: true },
+      where: { userId, deletedAt: null, store: { deletedAt: null } },
+      include: { store: { include: { agency: true } } },
     });
-    const allowedStoreIds = new Set(storeUsers.map((su) => su.storeId));
-    const hasSpecificStoreRestrictions = allowedStoreIds.size > 0;
 
-    const accessibleTenants: any[] = [];
-    const addedIds = new Set<string>();
+    // Girdi = kullanıcının GERÇEKTEN geçebileceği bağlam (switchTenant ve
+    // TenantMiddleware'in kapsama kuralıyla aynı). Ajans girdisi yalnız ajans
+    // geneli rolle çıkar: mağaza kapsamlı kullanıcıya ajans girdisi verilince
+    // login onu varsayılan seçiyor, her istek 403'e düşüyor ve /auth/me 403'ü
+    // oturumu siliyordu (P2.5 ★).
+    type Entry = {
+      id: string; publicId: string | null; name: string; type: 'agency' | 'client' | 'brand';
+      agencyId: string; clientId: string | null; storeId: string | null;
+    };
+    const agencies = new Map<string, Entry>();
+    const clients = new Map<string, Entry>();
+    const stores = new Map<string, Entry>();
+    const brand = (store: { id: string; publicId: string | null; name: string; agencyId: string; clientId: string | null }): Entry => ({
+      id: store.id,
+      publicId: store.publicId || `tn_${store.id}`,
+      name: store.name,
+      type: 'brand',
+      agencyId: store.agencyId,
+      clientId: store.clientId || null,
+      storeId: store.id,
+    });
+    // Ajans geneli rol + StoreUser kısıtı birlikteyse yalnız kısıttaki mağazalar (eski davranış korunur).
+    const restrictedTo = new Set(storeUsers.map((su) => su.storeId));
 
     for (const ur of userRoles) {
-      if (ur.agency && !addedIds.has(ur.agency.id)) {
-        addedIds.add(ur.agency.id);
-        accessibleTenants.push({
-          id: ur.agency.id,
-          publicId: ur.agency.publicId || `tn_${ur.agency.id}`,
-          name: ur.agency.name,
+      const agency = ur.agency;
+      const agencyStores = agency.stores ?? [];
+      const agencyWide = (!ur.clientId && !ur.storeId) || isSuperAdminRole(ur.role.name);
+      if (agencyWide) {
+        agencies.set(agency.id, {
+          id: agency.id,
+          publicId: agency.publicId || `tn_${agency.id}`,
+          name: agency.name,
           type: 'agency',
-          agencyId: ur.agency.id,
+          agencyId: agency.id,
           clientId: null,
           storeId: null,
         });
-
-        for (const store of ur.agency.stores || []) {
-          if (hasSpecificStoreRestrictions && !allowedStoreIds.has(store.id)) {
-            continue;
-          }
-
-          if (!addedIds.has(store.id)) {
-            addedIds.add(store.id);
-            accessibleTenants.push({
-              id: store.id,
-              publicId: store.publicId || `tn_${store.id}`,
-              name: store.name,
-              type: 'brand',
-              agencyId: ur.agency.id,
-              clientId: store.clientId || null,
-              storeId: store.id,
-            });
-          }
+        for (const s of agencyStores) {
+          if (restrictedTo.size > 0 && !restrictedTo.has(s.id)) continue;
+          stores.set(s.id, brand(s));
         }
+      } else if (ur.storeId) {
+        const s = agencyStores.find((x) => x.id === ur.storeId);
+        if (s) stores.set(s.id, brand(s));
+      } else if (ur.clientId && ur.client) {
+        // Client'ın publicId'si yok; UI bugün client bağlamına geçiş sunmuyor, girdi ileriye dönük.
+        clients.set(ur.client.id, {
+          id: ur.client.id,
+          publicId: null,
+          name: ur.client.name,
+          type: 'client',
+          agencyId: agency.id,
+          clientId: ur.client.id,
+          storeId: null,
+        });
+        for (const s of agencyStores) if (s.clientId === ur.clientId) stores.set(s.id, brand(s));
       }
+    }
+    for (const su of storeUsers) stores.set(su.store.id, brand(su.store));
+
+    const accessibleTenants: Entry[] = [...agencies.values(), ...clients.values(), ...stores.values()];
+    if (accessibleTenants.length === 0) {
+      console.warn(
+        `[getMe] user ${user.email} has no accessible tenant: roles=${JSON.stringify(
+          userRoles.map((ur) => ({ role: ur.role.name, agencyId: ur.agencyId, clientId: ur.clientId, storeId: ur.storeId })),
+        )} storeUsers=${storeUsers.length}`,
+      );
     }
 
     // The UI needs the role to decide what to show; it is advisory only, every

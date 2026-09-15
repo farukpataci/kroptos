@@ -86,8 +86,14 @@ export class AgencyTenantDto {
   @ApiProperty()
   name: string;
 
-  @ApiProperty()
-  role: string;
+  @ApiProperty({ required: false })
+  role?: string;
+
+  @ApiProperty({ required: false, enum: ['agency', 'client', 'brand'] })
+  type?: 'agency' | 'client' | 'brand';
+
+  @ApiProperty({ required: false })
+  agencyId?: string;
 
   @ApiProperty({ required: false, nullable: true })
   clientId?: string | null;

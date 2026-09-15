@@ -6,13 +6,14 @@
  * super_admin UserRole satırını agency_owner'a çevirir. Allowlist'tekiler
  * (varsayılan: common/constants/platform-admin.ts) dokunulmadan kalır.
  *
- *   npx ts-node prisma/scripts/backfill-super-admin.ts            # dry-run, yazmaz
+ *   npx ts-node prisma/scripts/backfill-super-admin.ts            # dry-run, yazmaz (.env otomatik yüklenir)
  *   npx ts-node prisma/scripts/backfill-super-admin.ts --apply    # uygular
  *
  * Kullanıcının aynı ajansta zaten agency_owner satırı varsa (unique
  * [userId, agencyId, roleId]) super_admin satırı soft-delete edilir, yenisi
  * açılmaz. Her değişiklik AuditLog'a 'role.backfill_super_admin' olarak yazılır.
  */
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { platformAdminEmails } from '../../src/common/constants/platform-admin';
 
