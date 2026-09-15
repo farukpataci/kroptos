@@ -92,7 +92,9 @@ function resolveLocale(rawLocale: string): string {
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const isAuthPage = pathname ? pathname.startsWith('/auth') : false;
+  // Public rotalar: oturum yok, /system/settings 401 verir ve apiFetch login'e atar.
+  // /invite/[token] (P9) da /auth gibi kimliksiz.
+  const isAuthPage = pathname ? pathname.startsWith('/auth') || pathname.startsWith('/invite/') : false;
 
   const [fallbackLocale, setFallbackLocale] = useState('tr');
 

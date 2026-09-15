@@ -36,6 +36,15 @@ interface AuthContextType {
   switchTenant: (agencyId: string, clientId: string | null, storeId: string | null) => Promise<void>;
   accessibleTenants: any[];
   refreshUserProfile: () => Promise<void>;
+  /** Sunucudan gelen oturum yanitini (login / davet kabulu) baglama uygular. */
+  applySession: (data: AuthResponse) => void;
+}
+
+export interface AuthResponse {
+  accessToken: string;
+  refreshToken?: string;
+  user: User;
+  agencies?: any[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -157,20 +166,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (!response.ok) throw new Error('Login failed');
 
-    const data = await response.json();
+    applySession(await response.json());
+  };
+
+  // Login ve davet kabulu ayni yanit seklini verir; ikisi de buradan gecer ki
+  // varsayilan baglam hep pickDefaultTenant ile secilsin (P2.6 kilitlenmesi).
+  const applySession = (data: AuthResponse) => {
     setUser(data.user);
     setAccessToken(data.accessToken);
     localStorage.setItem('auth', JSON.stringify({ user: data.user, accessToken: data.accessToken }));
-
-    // Populate accessible tenants
     setAccessibleTenants(data.agencies || []);
-
-    // Varsayılan bağlam: token'ın kapsamıyla eşleşen girdi (mağaza kapsamlı
-    // kullanıcıda mağaza), yoksa ilk girdi.
-    const def = pickDefaultTenant(data.agencies, data.accessToken);
+    const def = pickDefaultTenant(data.agencies || [], data.accessToken);
     if (def) setTenantContext(def);
-
-    // Refresh profile in background without blocking login navigation
+    // Refresh profile in background without blocking navigation
     refreshUserProfile().catch(console.error);
   };
 
@@ -254,6 +262,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         switchTenant,
         accessibleTenants,
         refreshUserProfile,
+        applySession,
       }}
     >
       {children}

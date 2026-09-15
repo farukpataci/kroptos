@@ -4517,5 +4517,30 @@
       "deleteConfirm": "Bu firma şubesini silmek istediğinizden emin misiniz?",
       "setDefault": "Bu firmayı varsayılan yap"
     }
+  },
+  "invite": {
+    "backToLogin": "Giriş sayfasına dön",
+    "sideText": "Çok kanallı ticaret, tek panel. Davet edildiğiniz ajansa katılın ve çalışmaya başlayın.",
+    "checking": "Davet doğrulanıyor...",
+    "title": "Davete Katıl",
+    "invitedTo": "<strong>{agency}</strong> ajansına <strong>{role}</strong> rolüyle davet edildiniz.",
+    "firstName": "Ad",
+    "lastName": "Soyad",
+    "password": "Şifre",
+    "passwordRepeat": "Şifre (tekrar)",
+    "passwordRule": "En az {min} karakter",
+    "passwordMismatch": "Şifreler eşleşmiyor",
+    "createAndJoin": "Hesabı oluştur ve katıl",
+    "join": "Daveti kabul et",
+    "existingUserNote": "Bu e-posta ile bir hesabınız zaten var; şifre sorulmaz, tek tıkla katılırsınız.",
+    "accepted": "Davet kabul edildi, yönlendiriliyorsunuz...",
+    "goneTitle": "Bu davet artık geçerli değil",
+    "goneDesc": "Bağlantının süresi dolmuş, iptal edilmiş ya da daha önce kullanılmış olabilir. Yeni bir davet için ajans yöneticinizle iletişime geçin.",
+    "errorTitle": "Davet bulunamadı",
+    "errorDesc": "Bağlantı hatalı ya da eksik olabilir. Davet e-postasındaki bağlantıyı olduğu gibi kullanın.",
+    "goToLogin": "Giriş yap",
+    "otherAccountTitle": "Bu davet başka bir hesap için",
+    "otherAccountDesc": "Şu an <strong>{current}</strong> olarak giriş yapmışsınız; davet <strong>{invited}</strong> adresine gönderilmiş. Devam etmek için önce çıkış yapın.",
+    "logoutAndContinue": "Çıkış yap ve devam et"
   }
 }

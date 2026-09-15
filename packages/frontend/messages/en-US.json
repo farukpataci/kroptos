@@ -788,5 +788,30 @@
       "created": "Role {name} created",
       "deleted": "Role {name} deleted"
     }
+  },
+  "invite": {
+    "backToLogin": "Back to sign in",
+    "sideText": "Multi-channel commerce, one panel. Join the agency you were invited to and get to work.",
+    "checking": "Verifying invitation...",
+    "title": "Join the Invitation",
+    "invitedTo": "You have been invited to <strong>{agency}</strong> with the <strong>{role}</strong> role.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "password": "Password",
+    "passwordRepeat": "Password (repeat)",
+    "passwordRule": "At least {min} characters",
+    "passwordMismatch": "Passwords do not match",
+    "createAndJoin": "Create account and join",
+    "join": "Accept invitation",
+    "existingUserNote": "An account with this email already exists; no password needed, join with one click.",
+    "accepted": "Invitation accepted, redirecting...",
+    "goneTitle": "This invitation is no longer valid",
+    "goneDesc": "The link may have expired, been revoked or already used. Ask your agency administrator for a new invitation.",
+    "errorTitle": "Invitation not found",
+    "errorDesc": "The link may be broken or incomplete. Use the link from the invitation email exactly as received.",
+    "goToLogin": "Sign in",
+    "otherAccountTitle": "This invitation is for another account",
+    "otherAccountDesc": "You are signed in as <strong>{current}</strong>; the invitation was sent to <strong>{invited}</strong>. Sign out first to continue.",
+    "logoutAndContinue": "Sign out and continue"
   }
 }

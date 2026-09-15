@@ -6,3 +6,4 @@ export * from './trendyol-global-countries';
 export * from './ebay-marketplaces';
 export * from './integration-settings';
 export * from './permissions';
+export * from './auth-rules';

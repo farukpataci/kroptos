@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsEmail, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from 'class-validator';
+import { PASSWORD_MIN_LENGTH } from '@kroptos/shared';
 
 export const INVITATION_STATUSES = ['pending', 'accepted', 'revoked', 'expired'] as const;
 export type InvitationStatus = (typeof INVITATION_STATUSES)[number];
@@ -49,10 +50,10 @@ export class ListInvitationsQueryDto {
 
 /** Kullanici sistemde YOKSA zorunlu; VARSA yok sayilir (sifre istenmez). */
 export class AcceptInvitationDto {
-  @ApiPropertyOptional({ description: 'Yeni kullanici icin zorunlu (min 8, RegisterDto ile ayni)' })
+  @ApiPropertyOptional({ description: 'Yeni kullanici icin zorunlu (PASSWORD_MIN_LENGTH, shared)' })
   @IsOptional()
   @IsString()
-  @MinLength(8)
+  @MinLength(PASSWORD_MIN_LENGTH)
   password?: string;
 
   @ApiPropertyOptional()

@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { PASSWORD_MIN_LENGTH } from '@kroptos/shared';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com', description: 'User email address' })
@@ -8,7 +9,7 @@ export class RegisterDto {
 
   @ApiProperty({ example: 'SecurePass123!', description: 'User password (min 8 chars)' })
   @IsString()
-  @MinLength(8)
+  @MinLength(PASSWORD_MIN_LENGTH)
   password: string;
 
   @ApiProperty({ example: 'John', description: 'First name' })
