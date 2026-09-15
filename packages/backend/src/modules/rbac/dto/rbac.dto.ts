@@ -31,28 +31,3 @@ export class RevokeRoleDto {
   @IsString()
   userRoleId: string;
 }
-
-export class PermissionResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiPropertyOptional()
-  description?: string;
-}
-
-export class RoleResponseDto {
-  @ApiProperty()
-  id: string;
-
-  @ApiProperty()
-  name: string;
-
-  @ApiPropertyOptional()
-  description?: string;
-
-  @ApiProperty({ type: [PermissionResponseDto] })
-  permissions: PermissionResponseDto[];
-}

@@ -72,22 +72,6 @@ export class RbacService {
     });
   }
 
-  async listRoles() {
-    return this.prisma.role.findMany({
-      where: { deletedAt: null },
-      include: {
-        permissions: true,
-      },
-      orderBy: { name: 'asc' },
-    });
-  }
-
-  async listPermissions() {
-    return this.prisma.permission.findMany({
-      orderBy: { name: 'asc' },
-    });
-  }
-
   /**
    * Rol bu ajansta atanabilir mi? Uc kural, tek yer (UsersService de kullanir):
    *  - super_admin hicbir kosulda (P1)
@@ -106,22 +90,29 @@ export class RbacService {
     if (isSuperAdminRole({ role: role.key, roleIsSystem: role.isSystem })) {
       throw new ForbiddenException(`Role '${role.key}' cannot be assigned at runtime`);
     }
-    if (!isSuperAdminRole(actor)) {
-      const mine =
-        (await this.permissionCache.getPermissions({
-          userId: actor.userId,
-          agencyId: actor.agencyId,
-          clientId: actor.clientId ?? null,
-          storeId: actor.storeId ?? null,
-        })) ?? [];
-      if (!mine.includes('*:*')) {
-        const missing = role.permissions.map((p) => p.name).filter((p) => !mine.includes(p));
-        if (missing.length) {
-          throw new ForbiddenException(`Cannot grant permissions you do not hold: ${missing.join(', ')}`);
-        }
-      }
-    }
+    await this.assertCanGrant(role.permissions.map((p) => p.name), actor);
     return role;
+  }
+
+  /**
+   * Escalation: cagiran, kendi izin kumesinde olmayan bir izni baskasina (rol atamasi
+   * ya da rol tanimi yoluyla) veremez. Sistem super_admin ve '*:*' sahibi muaf.
+   * Tek yer: assignRole, changeRole, davet ve RolesService create/update buradan gecer.
+   */
+  async assertCanGrant(permissionNames: string[], actor: ActorContext) {
+    if (isSuperAdminRole(actor)) return;
+    const mine =
+      (await this.permissionCache.getPermissions({
+        userId: actor.userId,
+        agencyId: actor.agencyId,
+        clientId: actor.clientId ?? null,
+        storeId: actor.storeId ?? null,
+      })) ?? [];
+    if (mine.includes('*:*')) return;
+    const missing = permissionNames.filter((p) => !mine.includes(p));
+    if (missing.length) {
+      throw new ForbiddenException(`Cannot grant permissions you do not hold: ${missing.join(', ')}`);
+    }
   }
 
   /** Ajansta bu kullanici disinda aktif, ajans geneli agency_owner var mi? */
