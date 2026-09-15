@@ -173,3 +173,6 @@ CREATE INDEX "AccountingIntegration_exclusiveAgentId_idx" ON "AccountingIntegrat
 -- CreateIndex
 CREATE INDEX "AccountingIntegration_deletedAt_idx" ON "AccountingIntegration"("deletedAt");
 
+-- AlterTable
+ALTER TABLE "AgentInstance" ADD COLUMN     "tunnelSecret" TEXT;
+

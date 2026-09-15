@@ -36,7 +36,8 @@ out/
 
 # Environment
 .env
-.env.*.local
+.env.*
+.env.staging
 
 # IDE
 vscode/

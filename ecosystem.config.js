@@ -1,6 +1,17 @@
 module.exports = {
   apps: [
     {
+      name: 'kroptos-redis',
+      script: 'C:/Users/Administrator/Desktop/kroptos-tools/memurai/Memurai/memurai.exe',
+      cwd: 'C:/Users/Administrator/Desktop/kroptos-tools/memurai/Memurai',
+    },
+    {
+      name: 'kroptos-redis-stg',
+      script: 'C:/Users/Administrator/Desktop/kroptos-tools/memurai/Memurai/memurai.exe',
+      args: '--port 6380',
+      cwd: 'C:/Users/Administrator/Desktop/kroptos-tools/memurai/Memurai',
+    },
+    {
       name: 'kroptos-backend',
       // `cwd` zorunlu: app.module.ts icinde `envFilePath: '.env'` process.cwd()'ye
       // gore cozuluyor ve repo kokunde .env yok. cwd verilmezse pm2 kok dizinden
@@ -20,6 +31,12 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
       },
+    },
+    {
+      name: 'kroptos-caddy',
+      script: './caddy.exe',
+      args: 'run --config Caddyfile',
+      cwd: '.',
     },
   ],
 };

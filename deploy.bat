@@ -19,10 +19,10 @@ if %errorlevel% neq 0 (
     goto :error
 )
 
-echo [3/5] Veritabanı semasi guncelleniyor (Migration)...
-call pnpm db:push
+echo [3/5] Veritabani migration uygulaniyor...
+call pnpm --filter @kroptos/backend exec prisma migrate deploy
 if %errorlevel% neq 0 (
-    echo [HATA] Prisma db:push basarisiz oldu!
+    echo [HATA] Migration basarisiz! Deploy iptal.
     goto :error
 )
 
