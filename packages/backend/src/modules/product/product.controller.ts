@@ -6,6 +6,7 @@ import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, ProductResponseDto, BulkActionDto } from './dto/product.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Products')
 @ApiBearerAuth()
@@ -19,7 +20,7 @@ export class ProductController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get()

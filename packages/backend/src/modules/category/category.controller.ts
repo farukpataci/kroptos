@@ -6,6 +6,7 @@ import { CategoryService } from './category.service';
 import { CreateCategoryDto, UpdateCategoryDto, CategoryResponseDto } from './dto/category.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Categories')
 @ApiBearerAuth()
@@ -19,7 +20,7 @@ export class CategoryController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get()

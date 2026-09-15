@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
+import { isSuperAdminRole } from '../constants/platform-admin';
 
 @Injectable()
 export class RbacGuard implements CanActivate {
@@ -43,8 +44,7 @@ export class RbacGuard implements CanActivate {
       const hasPermission =
         userPermissions.includes(requiredPermission) ||
         userPermissions.includes('*:*') ||
-        user.role === 'super_admin' ||
-        user.role === 'Super Admin';
+        isSuperAdminRole(user.role);
       if (!hasPermission) {
         throw new ForbiddenException(`Access denied. Missing permission: ${requiredPermission}`);
       }

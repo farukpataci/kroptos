@@ -111,8 +111,9 @@ describe('AuthService', () => {
         name: 'Agency Inc',
       });
       mockPrismaService.role.findUnique.mockResolvedValue({
-        id: 'role-id',
-        name: 'super_admin',
+        id: 'owner-role-id',
+        name: 'agency_owner',
+        permissions: [{ name: 'agencies.read' }, { name: 'clients.create' }],
       });
 
       const response = await service.register({
@@ -128,6 +129,52 @@ describe('AuthService', () => {
       expect(response.user.email).toBe('test@example.com');
       expect(response.agencies[0].name).toBe('Agency Inc');
       expect(mockPrismaService.session.create).toHaveBeenCalled();
+    });
+
+    it('assigns agency_owner (never super_admin) and never creates a role', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.agency.findFirst.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValue({ id: 'u1', email: 'a@b.c', isActive: true });
+      mockPrismaService.agency.create.mockResolvedValue({ id: 'ag1', name: 'A' });
+      mockPrismaService.role.findUnique.mockResolvedValue({
+        id: 'owner-role-id',
+        name: 'agency_owner',
+        permissions: [{ name: 'agencies.read' }],
+      });
+
+      const response = await service.register({
+        email: 'a@b.c',
+        password: 'Password123!',
+        firstName: 'A',
+        lastName: 'B',
+        agencyName: 'A',
+      });
+
+      expect(mockPrismaService.role.findUnique).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { name: 'agency_owner' } }),
+      );
+      expect(mockPrismaService.role.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.userRole.create).toHaveBeenCalledWith({
+        data: { userId: 'u1', agencyId: 'ag1', roleId: 'owner-role-id' },
+      });
+      expect(response.agencies[0].role).toBe('agency_owner');
+      const signedPayload: any = (mockJwtService.sign as jest.Mock).mock.calls[0]?.[0];
+      expect(signedPayload.role).toBe('agency_owner');
+      expect(signedPayload.permissions).toEqual(['agencies.read']);
+    });
+
+    it('fails loudly when agency_owner is missing instead of falling back to super_admin', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue(null);
+      mockPrismaService.agency.findFirst.mockResolvedValue(null);
+      mockPrismaService.user.create.mockResolvedValue({ id: 'u1', email: 'a@b.c' });
+      mockPrismaService.agency.create.mockResolvedValue({ id: 'ag1', name: 'A' });
+      mockPrismaService.role.findUnique.mockResolvedValue(null);
+
+      await expect(
+        service.register({ email: 'a@b.c', password: 'Password123!', firstName: 'A', lastName: 'B', agencyName: 'A' }),
+      ).rejects.toThrow("Role 'agency_owner' not found");
+      expect(mockPrismaService.role.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.userRole.create).not.toHaveBeenCalled();
     });
   });
 
@@ -175,6 +222,42 @@ describe('AuthService', () => {
       expect(response.user.email).toBe('test@example.com');
       expect(mockPrismaService.session.create).toHaveBeenCalled();
     });
+
+    it('picks the primary role by priority, not by row order', async () => {
+      const passwordHash = await bcrypt.hash('Password123!', 10);
+      mockPrismaService.user.findUnique.mockResolvedValue({
+        id: 'user-id',
+        email: 'test@example.com',
+        passwordHash,
+        isActive: true,
+      });
+      // DB sırası: viewer önce geliyor; eski kod userRoles[0] ile viewer token'ı basardı.
+      mockPrismaService.userRole.findMany.mockResolvedValue([
+        {
+          agencyId: 'agency-b',
+          clientId: null,
+          storeId: null,
+          createdAt: new Date('2026-01-01'),
+          agency: { id: 'agency-b', name: 'B', stores: [] },
+          role: { id: 'r-viewer', name: 'viewer', permissions: [{ name: 'orders.read' }] },
+        },
+        {
+          agencyId: 'agency-a',
+          clientId: null,
+          storeId: null,
+          createdAt: new Date('2026-02-01'),
+          agency: { id: 'agency-a', name: 'A', stores: [] },
+          role: { id: 'r-owner', name: 'agency_owner', permissions: [{ name: 'clients.create' }] },
+        },
+      ]);
+
+      await service.login({ email: 'test@example.com', password: 'Password123!' });
+
+      const signedPayload: any = (mockJwtService.sign as jest.Mock).mock.calls[0]?.[0];
+      expect(signedPayload.agencyId).toBe('agency-a');
+      expect(signedPayload.role).toBe('agency_owner');
+      expect(signedPayload.permissions).toEqual(['clients.create']);
+    });
   });
 
   describe('logout', () => {
@@ -208,12 +291,14 @@ describe('AuthService', () => {
         userId: 'user-id',
         isActive: true,
       });
-      mockPrismaService.userRole.findFirst.mockResolvedValue({
-        agencyId: 'agency-id',
-        clientId: null,
-        storeId: null,
-        role: { name: 'super_admin', permissions: [{ name: '*:*' }] },
-      });
+      mockPrismaService.userRole.findMany.mockResolvedValue([
+        {
+          agencyId: 'agency-id',
+          clientId: null,
+          storeId: null,
+          role: { name: 'super_admin', permissions: [{ name: '*:*' }] },
+        },
+      ]);
 
       const response = await service.refreshTokens('valid-refresh-token');
 

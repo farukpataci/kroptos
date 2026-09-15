@@ -132,7 +132,7 @@ describe('AgencyService', () => {
 
     it('should create agency, owner role, role association, and audit log', async () => {
       mockPrismaService.agency.findFirst.mockResolvedValue(null);
-      mockPrismaService.role.findUnique.mockResolvedValue({ id: 'role-id', name: 'Agency Owner' });
+      mockPrismaService.role.findUnique.mockResolvedValue({ id: 'role-id', name: 'agency_owner' });
       mockPrismaService.agency.create.mockResolvedValue({
         id: 'new-agency-id',
         name: 'Agency A',

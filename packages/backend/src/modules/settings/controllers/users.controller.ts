@@ -5,6 +5,7 @@ import { Request } from 'express';
 import { UsersService } from '../services/users.service';
 import { PermissionGuard } from '@common/guards/permission.guard';
 import { RequirePermission } from '@common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '@common/constants/platform-admin';
 
 @ApiTags('Users')
 @Controller('/api/system/users')
@@ -15,7 +16,7 @@ export class UsersController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get()

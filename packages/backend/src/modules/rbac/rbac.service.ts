@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { isSuperAdminRole } from '@common/constants/platform-admin';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { AssignRoleDto, RevokeRoleDto } from './dto/rbac.dto';
 import { Prisma } from '@prisma/client';
@@ -73,6 +74,10 @@ export class RbacService {
     });
     if (!role) {
       throw new NotFoundException(`Role with ID '${dto.roleId}' not found`);
+    }
+    // super_admin platform rolüdür: yalnız seed atar, hiçbir runtime akışı veremez.
+    if (isSuperAdminRole(role.name)) {
+      throw new ForbiddenException(`Role '${role.name}' cannot be assigned at runtime`);
     }
 
     // 4. Verify Client Context if provided

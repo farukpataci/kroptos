@@ -7,6 +7,7 @@ import { CreateOrderDto, UpdateOrderStatusDto, OrderResponseDto } from './dto/or
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -23,7 +24,7 @@ export class OrderController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get('/api/orders')

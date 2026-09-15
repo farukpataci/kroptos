@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PrismaService } from '../prisma/prisma.service';
+import { isSuperAdminRole } from '../constants/platform-admin';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
@@ -27,7 +28,7 @@ export class PermissionGuard implements CanActivate {
     }
 
     // Super Admin bypass
-    if (user.role === 'super_admin' || user.role === 'Super Admin') {
+    if (isSuperAdminRole(user.role)) {
       return true;
     }
 

@@ -18,7 +18,7 @@ export function platformAdminEmails(): string[] {
 }
 
 export function isSuperAdminRole(role?: string | null): boolean {
-  return role === 'super_admin' || role === 'Super Admin';
+  return role === 'super_admin';
 }
 
 /** Both conditions must hold: the super admin role *and* an allowlisted email. */

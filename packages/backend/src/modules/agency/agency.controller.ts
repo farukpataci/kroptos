@@ -7,6 +7,7 @@ import { CreateAgencyDto, UpdateAgencyDto, AgencyResponseDto } from './dto/agenc
 import { RbacGuard } from '../../common/guards/rbac.guard';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Agencies')
 @ApiBearerAuth()
@@ -17,7 +18,7 @@ export class AgencyController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get('/api/agencies')

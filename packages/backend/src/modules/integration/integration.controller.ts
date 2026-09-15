@@ -8,6 +8,7 @@ import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { decrypt } from '../../common/utils/encryption.util';
 import { maskCredentials } from '@kroptos/shared';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Integrations')
 @ApiBearerAuth()
@@ -21,7 +22,7 @@ export class IntegrationController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   private sanitizeResponse(integration: any) {

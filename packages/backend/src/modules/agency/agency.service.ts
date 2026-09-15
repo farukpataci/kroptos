@@ -141,31 +141,12 @@ export class AgencyService {
         },
       });
 
-      // 2. Find or create the "Agency Owner" role
-      let ownerRole = await tx.role.findUnique({
-        where: { name: 'Agency Owner' },
-      });
-
+      // 2. Seed'deki agency_owner rolü. Eskiden burada 'Agency Owner' adında
+      // '*:*' izinli bir rol yaratılıyordu — register'daki super_admin açığının
+      // ikizi (PermissionGuard '*:*' görünce her şeye izin verir).
+      const ownerRole = await tx.role.findUnique({ where: { name: 'agency_owner' } });
       if (!ownerRole) {
-        ownerRole = await tx.role.create({
-          data: {
-            name: 'Agency Owner',
-            description: 'Owner role with administrative privileges for an agency',
-          },
-        });
-
-        // Add a default wildcard permission for the owner
-        await tx.permission.upsert({
-          where: { name: '*:*' },
-          update: {},
-          create: {
-            name: '*:*',
-            description: 'Wildcard access permission',
-            roles: {
-              connect: { id: ownerRole.id },
-            },
-          },
-        });
+        throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before creating agencies");
       }
 
       // 3. Assign the creator as Agency Owner

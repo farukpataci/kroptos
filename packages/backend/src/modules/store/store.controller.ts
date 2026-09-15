@@ -6,6 +6,7 @@ import { StoreService } from './store.service';
 import { CreateStoreDto, UpdateStoreDto, StoreResponseDto } from './dto/store.dto';
 import { RbacGuard } from '../../common/guards/rbac.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Stores')
 @ApiBearerAuth()
@@ -16,7 +17,7 @@ export class StoreController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get()

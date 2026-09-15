@@ -2,6 +2,7 @@ import { Injectable, NestMiddleware, UnauthorizedException, ForbiddenException }
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { isSuperAdminRole } from '../constants/platform-admin';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
@@ -126,7 +127,7 @@ export class TenantMiddleware implements NestMiddleware {
         }
       }
 
-      const isSuper = role === 'super_admin' || role === 'Super Admin';
+      const isSuper = isSuperAdminRole(role);
 
       // 1. Validate Store access if storeId is requested
       if (storeId) {

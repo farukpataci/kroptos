@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RbacService } from './rbac.service';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { NotFoundException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 
 describe('RbacService', () => {
   let service: RbacService;
@@ -113,6 +113,17 @@ describe('RbacService', () => {
           'perf-by',
         ),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('refuses to assign super_admin at runtime', async () => {
+      mockPrismaService.user.findUnique.mockResolvedValue({ id: 'user-1' });
+      mockPrismaService.agency.findFirst.mockResolvedValue({ id: 'agency-1' });
+      mockPrismaService.role.findUnique.mockResolvedValue({ id: 'sa', name: 'super_admin' });
+
+      await expect(
+        service.assignRole({ userId: 'user-1', agencyId: 'agency-1', roleId: 'sa' }, 'perf-by'),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockPrismaService.userRole.create).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException if client does not belong to agency', async () => {

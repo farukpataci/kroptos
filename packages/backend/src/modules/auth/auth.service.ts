@@ -5,6 +5,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
 import { isPlatformAdmin } from '../../common/constants/platform-admin';
+import { resolvePrimaryRole } from '../../common/utils/primary-role';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -139,31 +140,17 @@ export class AuthService {
         },
       });
 
-      // 3. Create or find Super Admin role
-      let superAdminRole = await tx.role.findUnique({
-        where: { name: 'super_admin' },
+      // 3. Kayıt olan kullanıcı kendi ajansının SAHİBİDİR, platform yöneticisi
+      // değil. Eskiden burada super_admin verilip (yoksa yaratılıp) '*:*'
+      // bağlanıyordu: açık kayıt formu platform çapında tam yetki dağıtıyordu.
+      // super_admin yalnız seed ile atanır; agency_owner seed'de yoksa sessizce
+      // düşme, patla.
+      const ownerRole = await tx.role.findUnique({
+        where: { name: 'agency_owner' },
+        include: { permissions: true },
       });
-
-      if (!superAdminRole) {
-        superAdminRole = await tx.role.create({
-          data: {
-            name: 'super_admin',
-            description: 'Super administrator with full access',
-          },
-        });
-
-        // Seed default permission
-        await tx.permission.upsert({
-          where: { name: '*:*' },
-          update: {},
-          create: {
-            name: '*:*',
-            description: 'Wildcard access permission',
-            roles: {
-              connect: { id: superAdminRole.id },
-            },
-          },
-        });
+      if (!ownerRole) {
+        throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before registration");
       }
 
       // 4. Assign UserRole
@@ -171,7 +158,7 @@ export class AuthService {
         data: {
           userId: user.id,
           agencyId: agency.id,
-          roleId: superAdminRole.id,
+          roleId: ownerRole.id,
         },
       });
 
@@ -187,7 +174,7 @@ export class AuthService {
         { email: user.email, agencyName: agency.name },
       );
 
-      return { user, agency, role: superAdminRole };
+      return { user, agency, role: ownerRole };
     });
 
     // 6. Generate tokens
@@ -198,7 +185,7 @@ export class AuthService {
       null,
       null,
       result.role.name,
-      ['*:*'],
+      result.role.permissions.map((p) => p.name),
     );
 
     // 7. Save sessions
@@ -277,7 +264,7 @@ export class AuthService {
       throw new UnauthorizedException('User has no tenant assignments');
     }
 
-    const primaryUserRole = userRoles[0];
+    const primaryUserRole = resolvePrimaryRole(userRoles)!;
     const permissions = primaryUserRole.role.permissions.map((p) => p.name);
 
     const tokens = await this.generateTokens(
@@ -385,19 +372,21 @@ export class AuthService {
         throw new UnauthorizedException('Session not found or expired');
       }
 
-      const userRole = await this.prisma.userRole.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-        },
-        include: {
-          role: {
-            include: {
-              permissions: true,
+      const userRole = resolvePrimaryRole(
+        await this.prisma.userRole.findMany({
+          where: {
+            userId,
+            deletedAt: null,
+          },
+          include: {
+            role: {
+              include: {
+                permissions: true,
+              },
             },
           },
-        },
-      });
+        }),
+      );
 
       if (!userRole) {
         throw new UnauthorizedException('User has no active roles');
@@ -510,10 +499,12 @@ export class AuthService {
     }
 
     // Birden fazla rol aynı bağlamı kapsayabilir (ör. hem ajans geneli hem
-    // mağaza kapsamlı). En özel olan kazanır; aksi halde token'ın izin kümesi
-    // findFirst'in döndürdüğü rastgele satıra bağlı kalırdı.
-    const specificity = (ur: (typeof candidates)[number]) => (ur.storeId ? 3 : ur.clientId ? 2 : 1);
-    const userRole = candidates.reduce((best, cur) => (specificity(cur) > specificity(best) ? cur : best));
+    // mağaza kapsamlı). En özel olan kazanır; seçim kuralı resolvePrimaryRole'da.
+    const userRole = resolvePrimaryRole(candidates, {
+      agencyId: dto.agencyId,
+      clientId: requestedClientId,
+      storeId: requestedStoreId,
+    })!;
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -634,7 +625,7 @@ export class AuthService {
 
     // The UI needs the role to decide what to show; it is advisory only, every
     // protected route re-checks it server-side.
-    const role = userRoles[0]?.role?.name ?? null;
+    const role = resolvePrimaryRole(userRoles)?.role?.name ?? null;
 
     return {
       user: {

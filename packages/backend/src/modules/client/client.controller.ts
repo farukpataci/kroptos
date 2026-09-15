@@ -6,6 +6,7 @@ import { ClientService } from './client.service';
 import { CreateClientDto, UpdateClientDto, ClientResponseDto } from './dto/client.dto';
 import { RbacGuard } from '../../common/guards/rbac.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Clients')
 @ApiBearerAuth()
@@ -16,7 +17,7 @@ export class ClientController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user?.role);
   }
 
   @Get()
