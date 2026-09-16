@@ -43,6 +43,9 @@ export class AgencyController {
 
   @Get('/api/tenants/:tenantPublicId')
   @HttpCode(200)
+  // P13-3: izinsizdi (guard @RequirePermission yoksa geciriyor). Frontend'de cagrani yok
+  // (tenant secimi getMe.accessibleTenants'tan); katalogdaki 'ajans detayini gor' izni.
+  @RequirePermission('agencies.read')
   @ApiOperation({ summary: 'Get active agency details by public tenant ID' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
   async getByTenantPublicId(@Param('tenantPublicId') tenantPublicId: string, @Req() req: Request) {
