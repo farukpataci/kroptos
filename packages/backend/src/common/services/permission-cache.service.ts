@@ -5,6 +5,12 @@ import { buildUserRoleScopeWhere, TenantScope } from '../utils/tenant-scope';
 
 export const PERMISSION_CACHE_TTL_SECONDS = 60;
 
+export interface AccessSummary {
+  permissions: string[];
+  /** Baglami kapsayan rollerden biri SISTEM super_admin (key + isSystem). */
+  superAdmin: boolean;
+}
+
 /**
  * Bir kullanıcının bir bağlamdaki etkin izin kümesi: bağlamı kapsayan TÜM
  * rollerin izinlerinin BİRLEŞİMİ (en dar değil, en geniş). Redis'te 60 sn
@@ -49,29 +55,49 @@ export class PermissionCacheService implements OnModuleInit, OnModuleDestroy {
     return this.client?.isReady ? this.client : null;
   }
 
-  /** null = bağlamı kapsayan aktif rol yok. */
-  async getPermissions(scope: TenantScope): Promise<string[] | null> {
+  /**
+   * Bağlamdaki erişim özeti, TEK cache girdisi (JwtStrategy her istekte bunu okur; ek
+   * sorgu yok): izin birleşimi + kapsayan rollerden biri SİSTEM super_admin mi
+   * (P4 borcu: roleIsSystem token claim'inden değil buradan). Kullanıcı yok / pasif /
+   * silinmiş ya da bağlamı kapsayan aktif rol yoksa null.
+   */
+  async getAccess(scope: TenantScope): Promise<AccessSummary | null> {
     const key = this.key(scope);
     const redis = this.redis;
     if (redis) {
       const hit = await redis.get(key).catch(() => null);
-      if (hit !== null) return JSON.parse(hit);
+      if (hit !== null) {
+        const parsed = JSON.parse(hit);
+        // Eski format (P2: düz dizi) TTL içinde kendiliğinden düşer; yeniden çöz.
+        if (parsed && !Array.isArray(parsed)) return parsed as AccessSummary;
+        if (parsed === null) return null;
+      }
     }
 
-    const permissions = await this.resolveFromDb(scope);
+    const access = await this.resolveFromDb(scope);
     if (redis) {
-      await redis.set(key, JSON.stringify(permissions), { EX: PERMISSION_CACHE_TTL_SECONDS }).catch(() => undefined);
+      await redis.set(key, JSON.stringify(access), { EX: PERMISSION_CACHE_TTL_SECONDS }).catch(() => undefined);
     }
-    return permissions;
+    return access;
   }
 
-  async resolveFromDb(scope: TenantScope): Promise<string[] | null> {
+  /** null = bağlamı kapsayan aktif rol yok (ya da kullanıcı pasif). */
+  async getPermissions(scope: TenantScope): Promise<string[] | null> {
+    return (await this.getAccess(scope))?.permissions ?? null;
+  }
+
+  async resolveFromDb(scope: TenantScope): Promise<AccessSummary | null> {
+    const user = await this.prisma.user.findFirst({ where: { id: scope.userId, deletedAt: null }, select: { isActive: true } });
+    if (!user?.isActive) return null;
     const userRoles = await this.prisma.userRole.findMany({
       where: buildUserRoleScopeWhere(scope),
       include: { role: { include: { permissions: { select: { name: true } } } } },
     });
     if (userRoles.length === 0) return null;
-    return [...new Set(userRoles.flatMap((ur) => ur.role.permissions.map((p) => p.name)))];
+    return {
+      permissions: [...new Set(userRoles.flatMap((ur) => ur.role.permissions.map((p) => p.name)))],
+      superAdmin: userRoles.some((ur) => ur.role.key === 'super_admin' && ur.role.isSystem),
+    };
   }
 
   async invalidateUser(userId: string): Promise<void> {

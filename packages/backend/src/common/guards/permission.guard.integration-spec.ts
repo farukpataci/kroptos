@@ -6,6 +6,7 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import { PermissionGuard } from './permission.guard';
 import { PermissionCacheService } from '../services/permission-cache.service';
 import { RbacService } from '../../modules/rbac/rbac.service';
+import { SessionService } from '../../modules/auth/session.service';
 
 /**
  * PermissionGuard + PermissionCacheService + RbacService, gerçek Postgres ve
@@ -28,7 +29,7 @@ describe('PermissionGuard against the real database', () => {
 
   const prisma = new PrismaService();
   const cache = new PermissionCacheService(prisma);
-  const rbac = new RbacService(prisma, cache);
+  const rbac = new RbacService(prisma, cache, new SessionService(prisma, cache));
   const reflector = { getAllAndOverride: jest.fn() } as unknown as Reflector;
   const guard = new PermissionGuard(reflector, cache);
   const suffix = `itpg${Date.now()}`;

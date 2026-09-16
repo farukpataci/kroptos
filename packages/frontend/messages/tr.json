@@ -4547,5 +4547,19 @@
     "otherAccountTitle": "Bu davet başka bir hesap için",
     "otherAccountDesc": "Şu an <strong>{current}</strong> olarak giriş yapmışsınız; davet <strong>{invited}</strong> adresine gönderilmiş. Devam etmek için önce çıkış yapın.",
     "logoutAndContinue": "Çıkış yap ve devam et"
+  },
+  "profile": {
+    "sessions": {
+      "title": "Aktif Oturumlar",
+      "subtitle": "Hesabınıza açık oturumlar. Tanımadığınız bir cihaz varsa kapatın.",
+      "revokeOthers": "Diğer oturumları kapat",
+      "revoke": "Oturumu kapat",
+      "revoked": "Oturum kapatıldı",
+      "revokedOthers": "{count} oturum kapatıldı",
+      "current": "bu cihaz",
+      "lastUsed": "Son kullanım",
+      "unknownDevice": "Bilinmeyen cihaz",
+      "empty": "Aktif oturum yok"
+    }
   }
 }

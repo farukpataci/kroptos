@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, BadRequestException, ForbiddenException 
 import { isSuperAdminRole } from '@common/constants/platform-admin';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { PermissionCacheService } from '@common/services/permission-cache.service';
+import { SessionService } from '../auth/session.service';
 import { AssignRoleDto, RevokeRoleDto } from './dto/rbac.dto';
 import { Prisma } from '@prisma/client';
 
@@ -41,6 +42,7 @@ export class RbacService {
   constructor(
     private prisma: PrismaService,
     private permissionCache: PermissionCacheService,
+    private sessions: SessionService,
   ) {}
 
   // AuditLog semasinda performedBy/agencyId/changes alanlari yok; dogru
@@ -233,6 +235,7 @@ export class RbacService {
         { roleId: userRole.roleId, clientId: userRole.clientId, storeId: userRole.storeId },
       );
     });
-    await this.permissionCache.invalidateUser(userRole.userId);
+    // P11: bu kiracidaki erisim dusuyor; baska ajansta rolu yoksa oturumlar da kapanir.
+    await this.sessions.revokeForUserInTenant(userRole.userId, actor.agencyId, 'rbac.revoke', actor.userId);
   }
 }

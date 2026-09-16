@@ -7,6 +7,7 @@ import { ProfileInfoCard } from './components/ProfileInfoCard';
 import { AddressCard } from './components/AddressCard';
 import { SecurityCard } from './components/SecurityCard';
 import { DangerZoneCard } from './components/DangerZoneCard';
+import { ActiveSessionsCard } from './components/ActiveSessionsCard';
 
 const fetcher = (url: string) => apiFetch(url);
 
@@ -133,6 +134,8 @@ export default function ProfilePage() {
           onRefresh={async () => { await mutate(); }}
           onChangePassword={handleChangePassword}
         />
+
+        <ActiveSessionsCard />
 
         <DangerZoneCard />
       </div>

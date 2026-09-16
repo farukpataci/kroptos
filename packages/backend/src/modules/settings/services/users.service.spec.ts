@@ -3,8 +3,11 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { UsersService } from './users.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PermissionCacheService } from '../../../common/services/permission-cache.service';
+import { SessionService } from '../../auth/session.service';
 import { AuditLogService } from '../../audit/audit.service';
 import { RbacService, ActorContext } from '../../rbac/rbac.service';
+
+const mockSessions = { revokeForUserInTenant: jest.fn(), revokeAllForUser: jest.fn(), revokeForRole: jest.fn() };
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -39,6 +42,7 @@ describe('UsersService', () => {
         { provide: AuditLogService, useValue: audit },
         { provide: RbacService, useValue: rbac },
         { provide: PermissionCacheService, useValue: cache },
+        { provide: SessionService, useValue: mockSessions },
       ],
     }).compile();
     service = module.get(UsersService);

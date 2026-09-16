@@ -3,7 +3,10 @@ import { BadRequestException, ForbiddenException, NotFoundException } from '@nes
 import { RolesService } from './roles.service';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PermissionCacheService } from '../../../common/services/permission-cache.service';
+import { SessionService } from '../../auth/session.service';
 import { RbacService, ActorContext } from '../../rbac/rbac.service';
+
+const mockSessions = { revokeForUserInTenant: jest.fn(), revokeAllForUser: jest.fn(), revokeForRole: jest.fn() };
 
 describe('RolesService', () => {
   let service: RolesService;
@@ -26,6 +29,7 @@ describe('RolesService', () => {
         { provide: PrismaService, useValue: prisma },
         { provide: RbacService, useValue: rbac },
         { provide: PermissionCacheService, useValue: cache },
+        { provide: SessionService, useValue: mockSessions },
       ],
     }).compile();
     service = module.get(RolesService);

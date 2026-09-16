@@ -820,5 +820,19 @@
       "desc": "Your role does not allow viewing this section. Contact your agency administrator if you need access.",
       "backToDashboard": "Back to dashboard"
     }
+  },
+  "profile": {
+    "sessions": {
+      "title": "Active Sessions",
+      "subtitle": "Sessions open on your account. Close any device you do not recognise.",
+      "revokeOthers": "Sign out other sessions",
+      "revoke": "Sign out session",
+      "revoked": "Session signed out",
+      "revokedOthers": "{count} sessions signed out",
+      "current": "this device",
+      "lastUsed": "Last used",
+      "unknownDevice": "Unknown device",
+      "empty": "No active sessions"
+    }
   }
 }

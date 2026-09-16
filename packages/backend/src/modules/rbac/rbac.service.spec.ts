@@ -2,7 +2,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RbacService, ActorContext } from './rbac.service';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { PermissionCacheService } from '@common/services/permission-cache.service';
+import { SessionService } from '../auth/session.service';
 import { NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+
+const mockSessions = { revokeForUserInTenant: jest.fn(), revokeAllForUser: jest.fn(), revokeForRole: jest.fn() };
 
 describe('RbacService', () => {
   let service: RbacService;
@@ -29,6 +32,7 @@ describe('RbacService', () => {
         RbacService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: PermissionCacheService, useValue: mockPermissionCache },
+        { provide: SessionService, useValue: mockSessions },
       ],
     }).compile();
 
@@ -155,7 +159,7 @@ describe('RbacService', () => {
       expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({ action: 'revoke', oldValue: { roleId: 'role-1', clientId: null, storeId: 's1' } }),
       });
-      expect(mockPermissionCache.invalidateUser).toHaveBeenCalledWith('user-1');
+      expect(mockSessions.revokeForUserInTenant).toHaveBeenCalledWith('user-1', 'agency-1', 'rbac.revoke', 'admin-user');
     });
   });
 });

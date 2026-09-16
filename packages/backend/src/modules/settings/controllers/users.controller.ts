@@ -56,6 +56,14 @@ export class UsersController {
     await this.service.removeFromTenant(userId, actorFromRequest(req));
   }
 
+  @Delete(':id/sessions')
+  @HttpCode(200)
+  @RequirePermission('users.manage')
+  @ApiOperation({ summary: "Yoneticinin baskasinin tum oturumlarini kapatmasi (bu ajanstaki kullanici)" })
+  revokeSessions(@Param('id') userId: string, @Req() req: Request) {
+    return this.service.revokeSessions(userId, actorFromRequest(req));
+  }
+
   @Patch(':id/stores')
   @RequirePermission('system.settings.write')
   async updateUserStores(

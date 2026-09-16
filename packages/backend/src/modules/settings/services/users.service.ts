@@ -5,6 +5,7 @@ import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PermissionCacheService } from '../../../common/services/permission-cache.service';
 import { AuditLogService } from '../../audit/audit.service';
 import { ActorContext, RbacService } from '../../rbac/rbac.service';
+import { SessionService } from '../../auth/session.service';
 import { ChangeUserRoleDto, ListUsersQueryDto, UpdateUserDto } from '../dto/users.dto';
 
 /** Hassas alanlar (passwordHash, twoFactorSecret, twoFactorBackupCodes) BURADA YOK. */
@@ -48,6 +49,7 @@ export class UsersService {
     private auditLogService: AuditLogService,
     private rbac: RbacService,
     private permissionCache: PermissionCacheService,
+    private sessions: SessionService,
   ) {}
 
   /**
@@ -180,8 +182,9 @@ export class UsersService {
       newValue: { isActive: after.isActive, firstName: after.firstName, lastName: after.lastName, phone: after.phone },
       ipAddress: actor.ipAddress,
     });
-    // isActive degisimi yetkiyi etkiler (P11 JwtStrategy'de okuyacak); simdiden dusur.
     await this.permissionCache.invalidateUser(userId);
+    // P11: pasife alinan kullanicinin tum oturumlari kapanir (refresh ile token alamaz).
+    if (dto.isActive === false) await this.sessions.revokeAllForUser(userId, 'user.deactivated', { performedBy: actor.userId, tenantId: actor.agencyId });
     return after;
   }
 
@@ -242,6 +245,8 @@ export class UsersService {
     });
     // Kapsam daralinca getMe degisir; eski cache ile 403 yagmuru olmasin (P2.6).
     await this.permissionCache.invalidateUser(userId);
+    // P11: eski kapsamli erisim token'i JwtStrategy'de duser; baska ajansta rolu yoksa oturumlar kapanir.
+    await this.sessions.revokeForUserInTenant(userId, actor.agencyId, 'user.change_role', actor.userId);
     return this.findOne(userId, actor);
   }
 
@@ -282,6 +287,14 @@ export class UsersService {
       ipAddress: actor.ipAddress,
     });
     await this.permissionCache.invalidateUser(userId);
+    await this.sessions.revokeForUserInTenant(userId, actor.agencyId, 'user.remove_from_tenant', actor.userId);
+  }
+
+  /** Yoneticinin baskasini cikarmasi: hedef bu ajansta olmali (404 aksi halde). */
+  async revokeSessions(userId: string, actor: ActorContext) {
+    const user = await this.findInAgency(userId, actor);
+    const revoked = await this.sessions.revokeAllForUser(user.id, 'admin.revoke_sessions', { performedBy: actor.userId, tenantId: actor.agencyId });
+    return { revoked };
   }
 
   async updateUserStores(userId: string, storeIds: string[], actor: ActorContext) {

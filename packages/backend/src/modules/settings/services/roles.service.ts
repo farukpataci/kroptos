@@ -4,6 +4,7 @@ import { isPermissionKey, SYSTEM_ROLE_KEYS } from '@kroptos/shared';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 import { PermissionCacheService } from '../../../common/services/permission-cache.service';
 import { ActorContext, RbacService } from '../../rbac/rbac.service';
+import { SessionService } from '../../auth/session.service';
 import { CreateRoleDto, UpdateRoleDto } from '../dto/roles.dto';
 
 /**
@@ -25,6 +26,7 @@ export class RolesService {
     private prisma: PrismaService,
     private rbac: RbacService,
     private permissionCache: PermissionCacheService,
+    private sessions: SessionService,
   ) {}
 
   /** Sistem rolleri + bu ajansin ozel rolleri; userCount bu ajanstaki aktif atamalar. */
@@ -99,7 +101,11 @@ export class RolesService {
       });
       return row;
     });
-    if (added.length || removed.length) await this.permissionCache.invalidateRole(role.id);
+    if (added.length || removed.length) {
+      await this.permissionCache.invalidateRole(role.id);
+      // P11: izin matrisi degisti -> bu role bagli HERKESIN oturumlari kapanir (yeniden giris).
+      await this.sessions.revokeForRole(role.id, 'role.permissions_changed', actor.userId, actor.agencyId);
+    }
     return this.toDto(updated);
   }
 

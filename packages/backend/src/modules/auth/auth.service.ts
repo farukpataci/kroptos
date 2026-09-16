@@ -64,10 +64,13 @@ export class AuthService {
     clientId: string | null = null,
     storeId: string | null = null,
     role: { key: string; isSystem: boolean },
+    sessionId?: string,
   ) {
     // permissions[] bilerek yok: izinler her istekte DB'den (PermissionCache)
     // okunur. Token'a gömülü izin, rol geri alındıktan sonra da geçerli kalıyordu.
+    // sid: bu erisim token'inin ait oldugu Session (oturum listesinde "mevcut" isareti).
     const payload = {
+      sid: sessionId ?? null,
       userId,
       email,
       tenantId: agencyId, // Multi-tenant context: agencyId represents the root tenant
@@ -180,6 +183,7 @@ export class AuthService {
     });
 
     // 6. Generate tokens
+    const sessionId = crypto.randomUUID();
     const tokens = await this.generateTokens(
       result.user.id,
       result.user.email,
@@ -187,12 +191,14 @@ export class AuthService {
       null,
       null,
       result.role,
+      sessionId,
     );
 
     // 7. Save sessions
     const tokenHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId: result.user.id,
         tokenHash,
         ipAddress: ipAddress || null,
@@ -263,6 +269,7 @@ export class AuthService {
 
     const primaryUserRole = resolvePrimaryRole(userRoles)!;
 
+    const sessionId = crypto.randomUUID();
     const tokens = await this.generateTokens(
       user.id,
       user.email,
@@ -270,11 +277,13 @@ export class AuthService {
       primaryUserRole.clientId,
       primaryUserRole.storeId,
       primaryUserRole.role,
+      sessionId,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId: user.id,
         tokenHash,
         deviceInfo: deviceInfo || null,
@@ -349,9 +358,10 @@ export class AuthService {
       throw new ForbiddenException('No role covers the requested tenant context');
     }
 
-    const tokens = await this.generateTokens(userId, user.email, scope.agencyId, scope.clientId ?? null, scope.storeId ?? null, userRole.role);
+    const sessionId = crypto.randomUUID();
+    const tokens = await this.generateTokens(userId, user.email, scope.agencyId, scope.clientId ?? null, scope.storeId ?? null, userRole.role, sessionId);
     await this.prisma.session.create({
-      data: { userId, tokenHash: this.hashToken(tokens.refreshToken), ipAddress: ipAddress || null, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+      data: { id: sessionId, userId, tokenHash: this.hashToken(tokens.refreshToken), ipAddress: ipAddress || null, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
     });
     await this.prisma.refreshToken.create({
       data: { userId, tokenHash: await this.hashPassword(tokens.refreshToken), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
@@ -424,6 +434,12 @@ export class AuthService {
         throw new UnauthorizedException('Session not found or expired');
       }
 
+      // Pasife alinmis / silinmis kullanici refresh ile yeni erisim token'i ALAMAZ (P11).
+      const account = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null, isActive: true }, select: { id: true } });
+      if (!account) {
+        throw new UnauthorizedException('Account is inactive');
+      }
+
       const userRole = resolvePrimaryRole(
         await this.prisma.userRole.findMany({
           where: {
@@ -444,6 +460,7 @@ export class AuthService {
         data: { isActive: false },
       });
 
+      const sessionId = crypto.randomUUID();
       const newTokens = await this.generateTokens(
         userId,
         payload.email,
@@ -451,11 +468,15 @@ export class AuthService {
         userRole.clientId,
         userRole.storeId,
         userRole.role,
+        sessionId,
       );
 
       const newHash = this.hashToken(newTokens.refreshToken);
       await this.prisma.session.create({
         data: {
+          id: sessionId,
+          lastUsedAt: new Date(),
+          deviceInfo: session.deviceInfo,
           userId,
           tokenHash: newHash,
           ipAddress: ipAddress || null,
@@ -534,6 +555,7 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
+    const sessionId = crypto.randomUUID();
     const tokens = await this.generateTokens(
       userId,
       user.email,
@@ -541,11 +563,13 @@ export class AuthService {
       requestedClientId,
       requestedStoreId,
       userRole.role,
+      sessionId,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId,
         tokenHash,
         ipAddress: ipAddress || null,

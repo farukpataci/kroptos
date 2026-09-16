@@ -14,6 +14,7 @@ describe('AuthService', () => {
   const mockPrismaService: any = {
     user: {
       findUnique: jest.fn(),
+      findFirst: jest.fn().mockResolvedValue({ id: 'user-id' }),
       create: jest.fn(),
     },
     agency: {
@@ -79,6 +80,7 @@ describe('AuthService', () => {
     jwt = module.get<JwtService>(JwtService);
 
     jest.clearAllMocks();
+    mockPrismaService.user.findFirst.mockResolvedValue({ id: 'user-id' }); // refresh: hesap aktif mi (P11)
   });
 
   it('should be defined', () => {
@@ -499,5 +501,22 @@ describe('AuthService.getMe permissions (P10)', () => {
     // baglam verilmezse birincil rolun kapsami
     const me2 = await svc.getMe('u1');
     expect(me2.user.permissions).toEqual(['orders.read', 'clients.create']);
+  });
+});
+
+describe('AuthService.refreshTokens (P11)', () => {
+  it('refuses to mint a new access token for a deactivated user', async () => {
+    const prisma: any = {
+      session: { findFirst: jest.fn().mockResolvedValue({ id: 's1', userId: 'u1', isActive: true }), update: jest.fn(), create: jest.fn() },
+      user: { findFirst: jest.fn().mockResolvedValue(null) }, // isActive=false → null
+      userRole: { findMany: jest.fn() },
+      refreshToken: { create: jest.fn() },
+      auditLog: { create: jest.fn() },
+    };
+    const jwt: any = { verify: jest.fn(() => ({ userId: 'u1', email: 'u@x.y' })), sign: jest.fn(() => 't') };
+    const svc = new AuthService(prisma, jwt, { getPermissions: jest.fn() } as any);
+    await expect(svc.refreshTokens('rt')).rejects.toThrow(UnauthorizedException);
+    expect(prisma.session.create).not.toHaveBeenCalled();
+    expect(prisma.userRole.findMany).not.toHaveBeenCalled();
   });
 });

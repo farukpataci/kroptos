@@ -18,6 +18,7 @@ describe('PermissionGuard', () => {
 
   let rows: any[] = [];
   const prisma: any = {
+    user: { findFirst: jest.fn(async () => ({ isActive: true })) },
     userRole: {
       findMany: jest.fn(async ({ where }) => {
         const or: any[] = where.OR;

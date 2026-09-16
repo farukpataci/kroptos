@@ -4,12 +4,14 @@ import { AuditLogService } from '@modules/audit/audit.service';
 import { encrypt } from '@common/utils/encryption.util';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { SessionService } from '../auth/session.service';
 
 @Injectable()
 export class ProfileService {
   constructor(
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
+    private sessions: SessionService,
   ) {}
 
   async getProfile(userId: string) {
@@ -202,6 +204,10 @@ export class ProfileService {
       ipAddress: ip,
       userAgent,
     });
+
+    // P11: sifre degisti -> tum oturumlar kapanir (bu istegin erisim token'i 15 dk icinde
+    // doger; refresh artik calismaz, kullanici yeni sifreyle girer).
+    await this.sessions.revokeAllForUser(userId, 'profile.password_changed', { tenantId: agencyId });
 
     return { success: true };
   }

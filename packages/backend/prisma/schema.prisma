@@ -781,6 +781,8 @@ model Session {
   isActive   Boolean  @default(true)
   expiresAt  DateTime
   createdAt  DateTime @default(now())
+  // Son refresh ani (P11); erisim token'i kullanimi yazilmaz (istek basina write olurdu)
+  lastUsedAt DateTime?
   updatedAt  DateTime @updatedAt
 
   @@index([userId])
