@@ -13,6 +13,9 @@ import { IntegrationModule } from './modules/integration/integration.module';
 import { IntegrationSettingsModule } from './modules/integration-settings/integration-settings.module';
 import { PrismaModule } from './common/prisma/prisma.module';
 import { TenantMiddleware } from './common/middleware/tenant.middleware';
+import { RlsContextMiddleware } from './common/middleware/rls-context.middleware';
+import { RlsBindInterceptor } from './common/interceptors/rls-bind.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AgentModule } from './modules/agent/agent.module';
 import { WmsModule } from './modules/wms/wms.module';
 import { ShipmentModule } from './modules/shipment/shipment.module';
@@ -58,9 +61,12 @@ import { HealthController } from './modules/health/health.controller';
     AgentModule,
   ],
   controllers: [FilesController, HealthController],
+  // RLS (P12 Adım 2): guard'lardan sonra istek bağlamını kiracıya bağlar.
+  providers: [{ provide: APP_INTERCEPTOR, useClass: RlsBindInterceptor }],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('*');
+    // RLS bağlam kapsayıcısı TenantMiddleware'den ÖNCE açılır (pre-auth = sistem bağlamı).
+    consumer.apply(RlsContextMiddleware, TenantMiddleware).forRoutes('*');
   }
 }

@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { Queue, Worker } from 'bullmq';
 import { Shipment } from '@prisma/client';
 import {
@@ -115,7 +116,8 @@ export class CarrierTrackingWorker implements OnModuleInit, OnModuleDestroy {
    * now rather than at the next half hour.
    */
   async sweep(): Promise<{ groups: number; shipments: number }> {
-    const pollable = await this.prisma.shipment.findMany({
+    // RLS (P12): tarama kiracılar arasıdır → açık sistem bağlamı; her grup kendi ajansında koşar.
+    const pollable = await runAsSystem('carrier-tracking:sweep', () => this.prisma.shipment.findMany({
       where: {
         deletedAt: null,
         // The source filter, and the one that matters: only parcels we bought a
@@ -138,7 +140,7 @@ export class CarrierTrackingWorker implements OnModuleInit, OnModuleDestroy {
       },
       orderBy: { updatedAt: 'asc' },
       take: MAX_SHIPMENTS_PER_SWEEP,
-    });
+    }));
 
     // Keyed by tenant AND connection: the same carrier belonging to two
     // agencies is two sets of credentials and must never share a batch.
@@ -151,7 +153,7 @@ export class CarrierTrackingWorker implements OnModuleInit, OnModuleDestroy {
     }
 
     for (const group of groups.values()) {
-      await this.pollGroup(group).catch((error: any) => {
+      await runWithTenant(group[0].agencyId, () => this.pollGroup(group)).catch((error: any) => {
         // One carrier being down does not stop the other carriers' parcels.
         console.error(`[carrier-tracking] group failed: ${error?.message ?? error}`);
       });

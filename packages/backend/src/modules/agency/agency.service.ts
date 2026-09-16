@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { runAsSystem } from '@common/prisma/tenant-context';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateAgencyDto, UpdateAgencyDto } from './dto/agency.dto';
 import { Prisma } from '@prisma/client';
@@ -43,7 +44,12 @@ export class AgencyService {
     }
   }
 
-  async list(userId: string, isSuperAdmin: boolean) {
+  /** RLS (P12): üyelik listesi kiracılar arası (UserRole) → açık sistem bağlamı; where'deki userId filtresi kalır. */
+  list(userId: string, isSuperAdmin: boolean) {
+    return runAsSystem('agency:list membership', () => this.listUnscoped(userId, isSuperAdmin));
+  }
+
+  private async listUnscoped(userId: string, isSuperAdmin: boolean) {
     if (isSuperAdmin) {
       return this.prisma.agency.findMany({
         where: { deletedAt: null },
@@ -66,7 +72,12 @@ export class AgencyService {
     });
   }
 
-  async get(id: string, userId: string, isSuperAdmin: boolean) {
+  /** RLS (P12): /api/tenants/:publicId tenant ÇÖZÜMÜDÜR — aktif bağlam henüz o ajans değil → açık sistem bağlamı; üyelik where'de. */
+  get(id: string, userId: string, isSuperAdmin: boolean) {
+    return runAsSystem('agency:get membership', () => this.getUnscoped(id, userId, isSuperAdmin));
+  }
+
+  private async getUnscoped(id: string, userId: string, isSuperAdmin: boolean) {
     // Bulgu 7: uyelik where'de (kullanicinin rolu olan ajanslar); uye olmadigi ajans/magaza 404,
     // 403 degil -> id/publicId'nin varligi sizmaz. Bu uc tenant cozumu icin cok-ajansli kalir.
     const membership = isSuperAdmin ? {} : { users: { some: { userId, deletedAt: null } } };

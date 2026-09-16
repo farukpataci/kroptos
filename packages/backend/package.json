@@ -14,7 +14,9 @@
     "test:cov": "jest --coverage",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src",
-    "postbuild": "node scripts/write-build-info.js"
+    "postbuild": "node scripts/write-build-info.js",
+    "db:push": "node prisma/scripts/with-migration-url.js npx prisma db push --skip-generate",
+    "db:seed": "node prisma/scripts/with-migration-url.js npx prisma db seed"
   },
   "dependencies": {
     "@kroptos/shared": "workspace:*",

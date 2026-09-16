@@ -96,7 +96,8 @@ export async function run(prisma: PrismaClient, APPLY: boolean) {
 }
 
 if (require.main === module) {
-  const prisma = new PrismaClient();
+  // RLS (P12): script superuser ile bağlanır (DATABASE_MIGRATION_URL).
+  const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL } } });
   run(prisma, process.argv.includes('--apply'))
     .catch((error) => {
       console.error(error);

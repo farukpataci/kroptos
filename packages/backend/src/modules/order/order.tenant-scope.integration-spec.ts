@@ -2,6 +2,8 @@ import { config as loadEnv } from 'dotenv';
 import { join } from 'path';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { asSystemClient } from '@common/prisma/testing';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { OrderService } from './order.service';
 
 /**
@@ -31,8 +33,11 @@ import { OrderService } from './order.service';
 describe('OrderService.get tenant scope, against the real database', () => {
   loadEnv({ path: join(__dirname, '../../../.env') });
 
-  const prisma = new PrismaService();
-  const service = new OrderService(prisma);
+  // RLS (P12): fixture/sayım sistem bağlamında; servis, istek hattındaki gibi kiracı bağlamında çağrılır.
+  const raw = new PrismaService();
+  const prisma = asSystemClient(raw);
+  const service = new OrderService(raw);
+  const asTenant = <T>(agencyId: string, fn: () => Promise<T>) => runWithTenant(agencyId, fn);
   const suffix = `its${Date.now()}`;
 
   /** Row counts taken before any fixture exists, re-checked after cleanup. */
@@ -99,7 +104,7 @@ describe('OrderService.get tenant scope, against the real database', () => {
         );
       }
     } finally {
-      await prisma.$disconnect();
+      await raw.$disconnect();
     }
   }, 60000);
 
@@ -107,12 +112,12 @@ describe('OrderService.get tenant scope, against the real database', () => {
   const asA = () => [a.agency.id, undefined, a.store.id, false] as const;
 
   it('reads its own order by id', async () => {
-    const found = await service.get(a.order.id, ...asA());
+    const found = await asTenant(a.agency.id, () => service.get(a.order.id, ...asA()));
     expect(found.id).toBe(a.order.id);
   });
 
   it('reads its own order by publicId', async () => {
-    const found = await service.get(a.order.publicId!, ...asA());
+    const found = await asTenant(a.agency.id, () => service.get(a.order.publicId!, ...asA()));
     expect(found.id).toBe(a.order.id);
   });
 
@@ -121,7 +126,7 @@ describe('OrderService.get tenant scope, against the real database', () => {
    * indistinguishable, or the status code confirms that the id is real.
    */
   it("answers 404 for another tenant's order id, never 403", async () => {
-    await expect(service.get(b.order.id, ...asA())).rejects.toBeInstanceOf(NotFoundException);
+    await expect(asTenant(a.agency.id, () => service.get(b.order.id, ...asA()))).rejects.toBeInstanceOf(NotFoundException);
   });
 
   /**
@@ -131,23 +136,25 @@ describe('OrderService.get tenant scope, against the real database', () => {
    * itself rather than just its existence.
    */
   it("answers 404 for another tenant's publicId, never 403", async () => {
-    await expect(service.get(b.order.publicId!, ...asA())).rejects.toBeInstanceOf(NotFoundException);
+    await expect(asTenant(a.agency.id, () => service.get(b.order.publicId!, ...asA()))).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('answers 404 the same way for an id nobody owns', async () => {
-    await expect(service.get(`ord_${suffix}_nobody`, ...asA())).rejects.toBeInstanceOf(
+    await expect(asTenant(a.agency.id, () => service.get(`ord_${suffix}_nobody`, ...asA()))).rejects.toBeInstanceOf(
       NotFoundException,
     );
   });
 
   it('still lets a super admin across tenants', async () => {
-    const found = await service.get(b.order.id, undefined, undefined, undefined, true);
+    // super admin: RlsBindInterceptor sistem bağlamı verir
+    const found = await runAsSystem('super_admin', () => service.get(b.order.id, undefined, undefined, undefined, true));
     expect(found.id).toBe(b.order.id);
   });
 
-  it('still refuses a non-super-admin with no store context', async () => {
+  // b9ead7b: ajans bağlamı tek başına yeterli (x-agency-id); hiç bağlam yoksa 400.
+  it('still refuses a non-super-admin with no context at all', async () => {
     await expect(
-      service.get(a.order.id, a.agency.id, undefined, undefined, false),
+      asTenant(a.agency.id, () => service.get(a.order.id, undefined, undefined, undefined, false)),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

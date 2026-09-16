@@ -2,6 +2,8 @@ import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { asSystemClient } from '@common/prisma/testing';
+import { tenantContextStorage } from '@common/prisma/tenant-context';
 import { encrypt } from '../../common/utils/encryption.util';
 import { CarrierConnectorFactory } from '../../integrations/carriers/core/CarrierConnectorFactory';
 import { CarrierCredentialService } from '../../integrations/carriers/core/CarrierCredentialService';
@@ -28,6 +30,7 @@ import { ShipmentModule } from './shipment.module';
 describe('F-4: shipment idempotency against the real database', () => {
   let app: INestApplication;
   let prisma: PrismaService;
+  let raw: PrismaService;
   let baseUrl: string;
 
   const createShipment = jest.fn();
@@ -144,12 +147,15 @@ describe('F-4: shipment idempotency against the real database', () => {
       req.user = { userId: req.headers['x-test-user'], agencyId: agency, clientId: null, role: 'tester' };
       req.activeAgency = { id: agency };
       req.activeStore = store ? { id: store } : undefined;
-      next();
+      // RLS (P12): üretimde RlsContextMiddleware + RlsBindInterceptor'ın yaptığı bağlama; burada tek adımda.
+      tenantContextStorage.run(agency ? { mode: 'tenant', agencyId: agency } : { mode: 'system', reason: 'request:pre-auth' }, () => next());
     });
 
-    prisma = app.get(PrismaService);
+    // RLS (P12): fixture ve sayımlar açık sistem bağlamında (asSystemClient); HTTP yolu kiracı bağlamında.
+    raw = app.get(PrismaService);
+    prisma = asSystemClient(raw);
     try {
-      await prisma.$connect();
+      await raw.$connect();
     } catch (error: any) {
       throw new Error(
         'Bu suite canli Postgres gerektiriyor (packages/backend/.env -> DATABASE_URL). ' +

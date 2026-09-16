@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { runAsSystem } from '@common/prisma/tenant-context';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { PermissionCacheService } from '@common/services/permission-cache.service';
 
@@ -29,11 +30,11 @@ export class SessionService {
   }
 
   /** Başkasının oturumu → 404 (varlığı sızmaz). */
-  async revokeOne(userId: string, sessionId: string, reason: string) {
+  async revokeOne(userId: string, sessionId: string, reason: string, tenantId?: string | null) {
     const s = await this.prisma.session.findFirst({ where: { id: sessionId, userId, isActive: true }, select: { id: true } });
     if (!s) throw new NotFoundException('Session not found');
     await this.prisma.session.update({ where: { id: s.id }, data: { isActive: false } });
-    await this.audit(userId, userId, reason, { sessionId: s.id });
+    await this.audit(userId, userId, reason, { sessionId: s.id }, tenantId);
   }
 
   async revokeAllForUser(userId: string, reason: string, opts: { exceptSessionId?: string | null; performedBy?: string; tenantId?: string | null } = {}) {
@@ -50,7 +51,11 @@ export class SessionService {
 
   async revokeForUserInTenant(userId: string, agencyId: string, reason: string, performedBy?: string) {
     await this.permissionCache.invalidateUser(userId);
-    const elsewhere = await this.prisma.userRole.count({ where: { userId, deletedAt: null, agencyId: { not: agencyId } } });
+    // RLS (P12): "başka ajansta rolü var mı" kiracılar arası bir soru → açık sistem bağlamı; aksi halde
+    // kiracı bağlamında hep 0 döner ve oturumlar yanlışlıkla kapanır.
+    const elsewhere = await runAsSystem('session:roles-elsewhere', () =>
+      this.prisma.userRole.count({ where: { userId, deletedAt: null, agencyId: { not: agencyId } } }),
+    );
     if (elsewhere > 0) return 0; // erişim token'ı bu kiracıda zaten 401; diğer ajanslar için oturum kalır
     return this.revokeAllForUser(userId, reason, { performedBy, tenantId: agencyId });
   }

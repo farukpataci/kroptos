@@ -24,7 +24,8 @@ export class SessionController {
   @ApiOperation({ summary: 'Mevcut haric diger tum oturumlari kapat' })
   async revokeOthers(@Req() req: Request) {
     const u = req.user as any;
-    const revoked = await this.sessions.revokeAllForUser(u.userId, 'user.logout_others', { exceptSessionId: u.sessionId });
+    // RLS (P12): audit satırı kiracı bağlamında yazılır; tenantId boş kalırsa WITH CHECK reddeder.
+    const revoked = await this.sessions.revokeAllForUser(u.userId, 'user.logout_others', { exceptSessionId: u.sessionId, tenantId: u.agencyId });
     return { revoked };
   }
 
@@ -33,6 +34,6 @@ export class SessionController {
   @ApiOperation({ summary: 'Tek oturumu kapat (mevcut olan kapatilamaz; UI zaten gostermez)' })
   async revokeOne(@Param('id') id: string, @Req() req: Request) {
     const u = req.user as any;
-    await this.sessions.revokeOne(u.userId, id, 'user.logout_session');
+    await this.sessions.revokeOne(u.userId, id, 'user.logout_session', u.agencyId);
   }
 }

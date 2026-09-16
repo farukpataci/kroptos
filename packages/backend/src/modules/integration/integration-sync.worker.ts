@@ -1,6 +1,7 @@
 import { Injectable, Inject, forwardRef, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { ConfigService } from '@nestjs/config';
 import { MarketplaceCredentialService } from '../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { MarketplaceConnectorFactory } from '../../integrations/marketplaces/core/MarketplaceConnectorFactory';
@@ -50,7 +51,7 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     this.worker = new Worker(
       'integration-sync',
       async (job: Job) => {
-        await this.processJob(job.data);
+        await this.processInTenant(job.data);
       },
       {
         connection: connectionConfig,
@@ -70,7 +71,7 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
     // Register In-Memory fallback listener
     syncEventEmitter.on('job', async (data) => {
       try {
-        await this.processJob(data);
+        await this.processInTenant(data);
       } catch (err) {
         console.error('[InMemoryQueue] Job processing failed:', err);
       }
@@ -158,6 +159,20 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         },
       });
     }
+  }
+
+  /**
+   * RLS (P12): worker istek dışında koşar, bağlamı kendisi kurar. integrationId'den
+   * ajans SİSTEM bağlamında (tek sorgu) çözülür; iş kiracı bağlamında koşar — sync,
+   * integration.agencyId dışına ne okuyabilir ne yazabilir. Entegrasyon yoksa job
+   * hata verir (sessiz boş dönüş yok).
+   */
+  private async processInTenant(data: { queueRecordId: string; integrationId: string; eventType: string; payload: any }) {
+    const owner = await runAsSystem('integration-sync:resolve-tenant', () =>
+      this.prisma.integration.findUnique({ where: { id: data.integrationId }, select: { agencyId: true } }),
+    );
+    if (!owner) throw new Error(`Integration with ID '${data.integrationId}' not found (tenant resolution)`);
+    return runWithTenant(owner.agencyId, () => this.processJob(data));
   }
 
   private async processJob(data: {

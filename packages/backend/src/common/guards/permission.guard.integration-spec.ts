@@ -5,6 +5,8 @@ import { Reflector } from '@nestjs/core';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { PermissionGuard } from './permission.guard';
 import { PermissionCacheService } from '../services/permission-cache.service';
+import { asSystemClient } from '../prisma/testing';
+import { runAsSystem, runWithTenant } from '../prisma/tenant-context';
 import { RbacService } from '../../modules/rbac/rbac.service';
 import { SessionService } from '../../modules/auth/session.service';
 
@@ -27,9 +29,12 @@ import { SessionService } from '../../modules/auth/session.service';
 describe('PermissionGuard against the real database', () => {
   loadEnv({ path: join(__dirname, '../../../.env') });
 
-  const prisma = new PrismaService();
-  const cache = new PermissionCacheService(prisma);
-  const rbac = new RbacService(prisma, cache, new SessionService(prisma, cache));
+  // RLS (P12): fixture/sayım sistem bağlamında; guard üretimde pre-auth (sistem), rbac kiracı bağlamında çağrılır.
+  const raw = new PrismaService();
+  const prisma = asSystemClient(raw);
+  const cache = new PermissionCacheService(raw);
+  const rbac = new RbacService(raw, cache, new SessionService(raw, cache));
+  const can = (c: ExecutionContext) => runAsSystem('request:pre-auth', () => guard.canActivate(c) as Promise<boolean>);
   const reflector = { getAllAndOverride: jest.fn() } as unknown as Reflector;
   const guard = new PermissionGuard(reflector, cache);
   const suffix = `itpg${Date.now()}`;
@@ -108,23 +113,23 @@ describe('PermissionGuard against the real database', () => {
       }
     } finally {
       await cache.onModuleDestroy();
-      await prisma.$disconnect();
+      await raw.$disconnect();
     }
   }, 60000);
 
   it('no role at all → 403', async () => {
-    await expect(guard.canActivate(ctx('clients.create'))).rejects.toThrow(ForbiddenException);
+    await expect(can(ctx('clients.create'))).rejects.toThrow(ForbiddenException);
   });
 
   it('agency-wide role passes in agency, client AND store context (clientId equality regression)', async () => {
     // Atayan: sistem super_admin (escalation kontrolunden muaf); fixture kullanicisinin henuz izni yok.
-    await rbac.assignRole({ userId, roleId: ownerRoleId }, { userId, agencyId, role: 'super_admin', roleIsSystem: true });
+    await runWithTenant(agencyId, () => rbac.assignRole({ userId, roleId: ownerRoleId }, { userId, agencyId, role: 'super_admin', roleIsSystem: true }));
 
-    await expect(guard.canActivate(ctx('clients.create'))).resolves.toBe(true);
-    await expect(guard.canActivate(ctx('clients.create', { clientId }))).resolves.toBe(true);
-    await expect(guard.canActivate(ctx('clients.create', { clientId, storeId }))).resolves.toBe(true);
+    await expect(can(ctx('clients.create'))).resolves.toBe(true);
+    await expect(can(ctx('clients.create', { clientId }))).resolves.toBe(true);
+    await expect(can(ctx('clients.create', { clientId, storeId }))).resolves.toBe(true);
     // sahip olmadığı izin yine 403
-    await expect(guard.canActivate(ctx('agencies.create', { clientId }))).rejects.toThrow('Missing permission');
+    await expect(can(ctx('agencies.create', { clientId }))).rejects.toThrow('Missing permission');
   });
 
   it('revoke → the very next check with the same context is 403 (no 60 s wait)', async () => {
@@ -133,9 +138,9 @@ describe('PermissionGuard against the real database', () => {
     expect(row).not.toBeNull();
 
     // kendi rolunu geri alamaz -> ikinci bir aktor (sistem super_admin) adina
-    await rbac.revokeRole({ userRoleId: row!.id }, { userId: revokerId, agencyId, role: 'super_admin', roleIsSystem: true });
+    await runWithTenant(agencyId, () => rbac.revokeRole({ userRoleId: row!.id }, { userId: revokerId, agencyId, role: 'super_admin', roleIsSystem: true }));
 
-    await expect(guard.canActivate(ctx('clients.create'))).rejects.toThrow('No active role');
-    await expect(guard.canActivate(ctx('clients.create', { clientId, storeId }))).rejects.toThrow('No active role');
+    await expect(can(ctx('clients.create'))).rejects.toThrow('No active role');
+    await expect(can(ctx('clients.create', { clientId, storeId }))).rejects.toThrow('No active role');
   });
 });

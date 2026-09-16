@@ -1,7 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 import { generatePublicId } from './common/utils/id-generator';
 
-const prisma = new PrismaClient();
+// RLS (P12): seed/script superuser ile bağlanır; uygulama rolü kiracı tablolarını bağlamsız göremez.
+const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL } } });
 
 async function main() {
   console.log('Populating missing publicId values for all tables...');

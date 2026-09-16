@@ -1,4 +1,5 @@
 import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { runAsSystem } from '@common/prisma/tenant-context';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
@@ -500,7 +501,16 @@ export class AuthService {
     }
   }
 
-  async switchTenant(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
+  /**
+   * RLS (P12): hedef kiracının rolü mevcut token'ın ajansı DIŞINDA olabilir; üyelik
+   * doğrulaması kiracılar arası okuma ister → açık sistem bağlamı. Kapsam kontrolü
+   * (buildUserRoleScopeWhere) uygulama katmanında aynen kalır.
+   */
+  switchTenant(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
+    return runAsSystem('auth:switch-tenant membership', () => this.switchTenantUnscoped(userId, dto, ipAddress));
+  }
+
+  private async switchTenantUnscoped(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
     // İstenen bağlamı DB'den çöz; istemcinin gönderdiği clientId'ye güvenme.
     // Mağaza verilmişse gerçek clientId mağaza kaydından gelir ve mağazanın
     // hedef ajansa ait olduğu da böylece doğrulanmış olur.
@@ -596,7 +606,12 @@ export class AuthService {
    * @param active Aktif baglam (controller: middleware'in cozdugu activeX ?? token;
    *   login: birincil rolun kapsami). user.permissions bu baglama gore hesaplanir.
    */
-  async getMe(userId: string, active?: { agencyId?: string | null; clientId?: string | null; storeId?: string | null }) {
+  /** RLS (P12): accessibleTenants kullanıcının TÜM ajanslarını listeler (tenant değiştirici) → açık sistem bağlamı. */
+  getMe(userId: string, active?: { agencyId?: string | null; clientId?: string | null; storeId?: string | null }) {
+    return runAsSystem('auth:getMe cross-agency membership', () => this.getMeUnscoped(userId, active));
+  }
+
+  private async getMeUnscoped(userId: string, active?: { agencyId?: string | null; clientId?: string | null; storeId?: string | null }) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
