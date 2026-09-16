@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateCategoryDto, UpdateCategoryDto } from './dto/category.dto';
 import { Prisma } from '@prisma/client';
@@ -116,17 +116,13 @@ export class CategoryService {
       throw new BadRequestException('Active agency context is required (x-agency-id header)');
     }
 
+    // Kapsam where'de; baska ajansin kaydi 404 (403 degil: varligi sizmaz).
     const category = await this.prisma.category.findFirst({
-      where: { id, deletedAt: null },
+      where: { id, deletedAt: null, ...(isSuperAdmin ? {} : { agencyId: activeAgencyId }) },
     });
 
     if (!category) {
       throw new NotFoundException(`Category with ID '${id}' not found or soft-deleted`);
-    }
-
-    // Verify context access if context is provided
-    if (!isSuperAdmin && category.agencyId !== activeAgencyId) {
-      throw new ForbiddenException('Access denied. Category belongs to a different agency context.');
     }
 
     return category;
@@ -140,10 +136,10 @@ export class CategoryService {
     activeStoreId?: string,
     ipAddress?: string,
   ) {
-    // Determine the context fields. Use values from dto, or fall back to active context
-    const agencyId = dto.agencyId || activeAgencyId;
-    const clientId = dto.clientId || activeClientId || null;
-    const storeId = dto.storeId || activeStoreId || null;
+    // Kapsam yalnizca dogrulanmis aktif baglamdan (P12a bulgu 1); govdeden tenant alani okunmaz.
+    const agencyId = activeAgencyId;
+    const clientId = activeClientId || null;
+    const storeId = activeStoreId || null;
 
     if (!agencyId) {
       throw new BadRequestException('Agency ID context is required to create a category');

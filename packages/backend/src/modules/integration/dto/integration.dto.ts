@@ -3,20 +3,7 @@ import { IsString, IsOptional, IsObject, IsIn } from 'class-validator';
 import { INTEGRATION_STATUSES, IntegrationStatus } from '@kroptos/shared';
 
 export class CreateIntegrationDto {
-  @ApiProperty({ example: 'cuid-agency-id', description: 'Agency ID context' })
-  @IsString()
-  agencyId: string;
-
-  @ApiPropertyOptional({ example: 'cuid-client-id', description: 'Optional Client ID context' })
-  @IsString()
-  @IsOptional()
-  clientId?: string;
-
-  @ApiPropertyOptional({ example: 'cuid-store-id', description: 'Optional Store ID context' })
-  @IsString()
-  @IsOptional()
-  storeId?: string;
-
+  // P12a: agencyId/clientId/storeId gövdeden alınmaz; kapsam yalnızca doğrulanmış aktif bağlamdan gelir.
   @ApiProperty({ example: 'trendyol', description: 'Integration provider name' })
   @IsString()
   provider: string;

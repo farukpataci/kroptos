@@ -2,6 +2,7 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateClientDto, UpdateClientDto } from './dto/client.dto';
 import { Prisma } from '@prisma/client';
+import { ActorContext } from '../rbac/rbac.service';
 
 @Injectable()
 export class ClientService {
@@ -45,44 +46,32 @@ export class ClientService {
     }
   }
 
-  private async getAuthorizedAgencyIds(userId: string, isSuperAdmin: boolean): Promise<string[] | null> {
-    if (isSuperAdmin) return null;
-    const userRoles = await this.prisma.userRole.findMany({
-      where: { userId, deletedAt: null },
-      select: { agencyId: true },
-    });
-    return userRoles.map((ur) => ur.agencyId);
+  /**
+   * Bulgu 7/8: kapsam AKTIF baglamdir (JwtStrategy/TenantMiddleware zaten bu baglami
+   * kapsayan rolu dogruladi), kullanicinin tum ajanslari degil. Client kapsamli
+   * baglamda yalniz o client gorunur; baska ajansin client'i 404 (varligi sizmaz).
+   */
+  private scopeWhere(actor: ActorContext, isSuperAdmin: boolean): Prisma.ClientWhereInput {
+    if (isSuperAdmin) return {};
+    return { agencyId: actor.agencyId, ...(actor.clientId ? { id: actor.clientId } : {}) };
   }
 
-  async list(userId: string, isSuperAdmin: boolean) {
-    const agencyIds = await this.getAuthorizedAgencyIds(userId, isSuperAdmin);
-
-    if (isSuperAdmin || !agencyIds) {
-      return this.prisma.client.findMany({
-        where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
-      });
-    }
-
+  async list(actor: ActorContext, isSuperAdmin: boolean) {
     return this.prisma.client.findMany({
-      where: {
-        deletedAt: null,
-        agencyId: { in: agencyIds },
-      },
+      where: { deletedAt: null, ...this.scopeWhere(actor, isSuperAdmin) },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async get(id: string, userId: string, isSuperAdmin: boolean) {
+  async get(id: string, actor: ActorContext, isSuperAdmin: boolean) {
     const client = await this.prisma.client.findFirst({
-      where: { id, deletedAt: null },
+      // AND: kapsam client baglaminda kendi id'sini tasir; spread ile parametreyi ezmesin (canli probede yakalandi).
+      where: { AND: [{ id, deletedAt: null }, this.scopeWhere(actor, isSuperAdmin)] },
     });
 
     if (!client) {
       throw new NotFoundException('Client not found or soft-deleted');
     }
-
-    await this.verifyAgencyAccess(client.agencyId, userId, isSuperAdmin);
 
     return client;
   }
@@ -122,8 +111,9 @@ export class ClientService {
     });
   }
 
-  async update(id: string, dto: UpdateClientDto, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    const client = await this.get(id, userId, isSuperAdmin);
+  async update(id: string, dto: UpdateClientDto, actor: ActorContext, isSuperAdmin: boolean) {
+    const { userId, ipAddress } = actor;
+    const client = await this.get(id, actor, isSuperAdmin);
 
     return this.prisma.$transaction(async (tx) => {
       const updatedClient = await tx.client.update({
@@ -160,8 +150,9 @@ export class ClientService {
     });
   }
 
-  async delete(id: string, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    const client = await this.get(id, userId, isSuperAdmin);
+  async delete(id: string, actor: ActorContext, isSuperAdmin: boolean) {
+    const { userId, ipAddress } = actor;
+    const client = await this.get(id, actor, isSuperAdmin);
 
     await this.prisma.$transaction(async (tx) => {
       const now = new Date();

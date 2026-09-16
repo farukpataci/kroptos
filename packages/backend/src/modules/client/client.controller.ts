@@ -7,6 +7,7 @@ import { CreateClientDto, UpdateClientDto, ClientResponseDto } from './dto/clien
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { isSuperAdminRole } from '../../common/constants/platform-admin';
+import { actorFromRequest } from '../rbac/rbac.service';
 
 @ApiTags('Clients')
 @ApiBearerAuth()
@@ -26,9 +27,7 @@ export class ClientController {
   @ApiOperation({ summary: 'List all active clients within user authorized agency contexts' })
   @ApiResponse({ status: 200, type: [ClientResponseDto] })
   async list(@Req() req: Request) {
-    const user = req.user as any;
-    const isSuperAdmin = this.checkSuperAdmin(req);
-    return this.clientService.list(user.userId, isSuperAdmin);
+    return this.clientService.list(actorFromRequest(req), this.checkSuperAdmin(req));
   }
 
   @Get(':id')
@@ -37,9 +36,7 @@ export class ClientController {
   @ApiOperation({ summary: 'Get active client details' })
   @ApiResponse({ status: 200, type: ClientResponseDto })
   async get(@Param('id') id: string, @Req() req: Request) {
-    const user = req.user as any;
-    const isSuperAdmin = this.checkSuperAdmin(req);
-    return this.clientService.get(id, user.userId, isSuperAdmin);
+    return this.clientService.get(id, actorFromRequest(req), this.checkSuperAdmin(req));
   }
 
   @Post()
@@ -64,10 +61,7 @@ export class ClientController {
     @Body() dto: UpdateClientDto,
     @Req() req: Request,
   ) {
-    const user = req.user as any;
-    const isSuperAdmin = this.checkSuperAdmin(req);
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
-    return this.clientService.update(id, dto, user.userId, isSuperAdmin, ipAddress);
+    return this.clientService.update(id, dto, actorFromRequest(req), this.checkSuperAdmin(req));
   }
 
   @Delete(':id')
@@ -76,10 +70,7 @@ export class ClientController {
   @ApiOperation({ summary: 'Soft delete client and cascade to its stores' })
   @ApiResponse({ status: 204, description: 'Client soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {
-    const user = req.user as any;
-    const isSuperAdmin = this.checkSuperAdmin(req);
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
-    await this.clientService.delete(id, user.userId, isSuperAdmin, ipAddress);
+    await this.clientService.delete(id, actorFromRequest(req), this.checkSuperAdmin(req));
     return;
   }
 }

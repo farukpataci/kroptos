@@ -104,11 +104,15 @@ describe('AgencyService', () => {
       await expect(service.get('invalid-id', 'user-id', false)).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if user has no role in the agency', async () => {
-      mockPrismaService.agency.findFirst.mockResolvedValue({ id: 'agency-id', name: 'Agency A' });
-      mockPrismaService.userRole.findFirst.mockResolvedValue(null);
+    // P12a bulgu 7: uyelik where'de; uye olunmayan ajans 404 (403 oracle yok)
+    it('agency the user has no role in → 404, membership inside the where of both lookups', async () => {
+      mockPrismaService.agency.findFirst.mockResolvedValue(null);
+      mockPrismaService.store.findFirst.mockResolvedValue(null);
 
-      await expect(service.get('agency-id', 'user-id', false)).rejects.toThrow(ForbiddenException);
+      await expect(service.get('agency-id', 'user-id', false)).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.agency.findFirst.mock.calls[0][0].where).toMatchObject({ users: { some: { userId: 'user-id', deletedAt: null } } });
+      expect(mockPrismaService.store.findFirst.mock.calls[0][0].where.agency).toMatchObject({ users: { some: { userId: 'user-id', deletedAt: null } } });
+      expect(mockPrismaService.userRole.findFirst).not.toHaveBeenCalled();
     });
 
     it('should bypass user check and return agency if super admin', async () => {

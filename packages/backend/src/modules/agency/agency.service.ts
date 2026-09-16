@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateAgencyDto, UpdateAgencyDto } from './dto/agency.dto';
 import { Prisma } from '@prisma/client';
@@ -67,6 +67,9 @@ export class AgencyService {
   }
 
   async get(id: string, userId: string, isSuperAdmin: boolean) {
+    // Bulgu 7: uyelik where'de (kullanicinin rolu olan ajanslar); uye olmadigi ajans/magaza 404,
+    // 403 degil -> id/publicId'nin varligi sizmaz. Bu uc tenant cozumu icin cok-ajansli kalir.
+    const membership = isSuperAdmin ? {} : { users: { some: { userId, deletedAt: null } } };
     let agency = await this.prisma.agency.findFirst({
       where: {
         OR: [
@@ -74,6 +77,7 @@ export class AgencyService {
           { publicId: id },
         ],
         deletedAt: null,
+        ...membership,
       },
     });
 
@@ -85,6 +89,7 @@ export class AgencyService {
             { publicId: id },
           ],
           deletedAt: null,
+          agency: { deletedAt: null, ...membership },
         },
         include: { agency: true },
       });
@@ -95,21 +100,6 @@ export class AgencyService {
 
     if (!agency) {
       throw new NotFoundException(`Agency context '${id}' not found or soft-deleted`);
-    }
-
-    // Verify access
-    if (!isSuperAdmin) {
-      const userRole = await this.prisma.userRole.findFirst({
-        where: {
-          userId,
-          agencyId: agency.id,
-          deletedAt: null,
-        },
-      });
-
-      if (!userRole) {
-        throw new ForbiddenException('Access denied. You do not belong to this agency.');
-      }
     }
 
     return agency;

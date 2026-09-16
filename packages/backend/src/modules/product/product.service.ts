@@ -44,6 +44,16 @@ export class ProductService {
     }
   }
 
+  /** Baska ajansin urunune bundle/cross-sell/parent baglanamaz; eksik id → 403 (bulkAction ile ayni: sayim oracle olmasin). */
+  private async assertProductsInAgency(ids: string[], agencyId: string) {
+    const unique = [...new Set(ids.filter(Boolean))];
+    if (unique.length === 0) return;
+    const found = await this.prisma.product.count({ where: { id: { in: unique }, agencyId, deletedAt: null } });
+    if (found !== unique.length) {
+      throw new ForbiddenException('Access denied. One or more related products belong to a different tenant context.');
+    }
+  }
+
   async list(
     activeAgencyId?: string,
     activeClientId?: string,
@@ -236,6 +246,16 @@ export class ProductService {
       }
     } catch (_) {}
 
+    // Bulgu 4: bundle/cross-sell/varyant-ebeveyn urunleri aktif ajansa ait olmali (bulk 403 kalibi).
+    await this.assertProductsInAgency(
+      [
+        ...(dto.bundleItems ?? []).map((i) => i.childProductId),
+        ...(dto.crossSellProducts ?? []).map((i) => i.targetProductId),
+        ...(dto.parentId ? [dto.parentId] : []),
+      ],
+      agencyId,
+    );
+
     return this.prisma.$transaction(async (tx) => {
       const product = await tx.product.create({
         data: {
@@ -375,6 +395,16 @@ export class ProductService {
         throw new BadRequestException(`Product with SKU '${dto.sku}' already exists in this store`);
       }
     }
+
+    // Bulgu 4: bundle/cross-sell/varyant-ebeveyn urunleri aktif ajansa ait olmali (bulk 403 kalibi).
+    await this.assertProductsInAgency(
+      [
+        ...(dto.bundleItems ?? []).map((i) => i.childProductId),
+        ...(dto.crossSellProducts ?? []).map((i) => i.targetProductId),
+        ...(dto.parentId ? [dto.parentId] : []),
+      ],
+      product.agencyId,
+    );
 
     const result = await this.prisma.$transaction(async (tx) => {
       const updatedProduct = await tx.product.update({

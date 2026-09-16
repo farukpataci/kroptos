@@ -12,6 +12,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { actorFromRequest } from '../rbac/rbac.service';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { AccountingDocumentService } from './accounting-document.service';
@@ -35,15 +36,9 @@ export class AccountingDocumentController {
   constructor(private readonly documentService: AccountingDocumentService) {}
 
   private extractScope(req: Request): AccountingScope {
-    const activeAgency = (req as any).activeAgency;
-    const activeClient = (req as any).activeClient;
-    const activeStore = (req as any).activeStore;
-
-    const agencyId = activeAgency?.id || (req.headers['x-agency-id'] as string);
-    const clientId = activeClient?.id || (req.headers['x-client-id'] as string);
-    const storeId = activeStore?.id || (req.headers['x-store-id'] as string);
-
-    return { agencyId, clientId, storeId };
+    // Bulgu 6: ham header tenant filtresi olamaz; yalnizca TenantMiddleware'in dogruladigi baglam.
+    const actor = actorFromRequest(req);
+    return { agencyId: actor.agencyId, clientId: actor.clientId ?? undefined, storeId: actor.storeId ?? undefined };
   }
 
   @Get()

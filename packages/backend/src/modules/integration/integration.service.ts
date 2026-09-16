@@ -4,7 +4,6 @@ import {
   forwardRef,
   NotFoundException,
   BadRequestException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateIntegrationDto, UpdateIntegrationDto } from './dto/integration.dto';
@@ -168,6 +167,8 @@ export class IntegrationService {
       throw new BadRequestException('Active agency context is required (x-agency-id header)');
     }
 
+    // Kapsam where'de; baska ajans/magaza/client kaydi 404 (403 degil: varligi sizmaz).
+    // Magaza/client baglaminda ust seviye (null) kayitlar da gorunur, eski davranisla ayni.
     const integration = await this.prisma.integration.findFirst({
       where: {
         OR: [
@@ -175,24 +176,20 @@ export class IntegrationService {
           { publicId: id },
         ],
         deletedAt: null,
+        ...(isSuperAdmin
+          ? {}
+          : {
+              agencyId: activeAgencyId,
+              AND: [
+                ...(activeStoreId ? [{ OR: [{ storeId: null }, { storeId: activeStoreId }] }] : []),
+                ...(activeClientId ? [{ OR: [{ clientId: null }, { clientId: activeClientId }] }] : []),
+              ],
+            }),
       },
     });
 
     if (!integration) {
       throw new NotFoundException(`Integration with ID '${id}' not found or soft-deleted`);
-    }
-
-    if (!isSuperAdmin) {
-      if (integration.agencyId !== activeAgencyId) {
-        throw new ForbiddenException('Access denied. Integration belongs to a different agency.');
-      }
-      // If scoped to store or client specifically
-      if (integration.storeId && activeStoreId && integration.storeId !== activeStoreId) {
-        throw new ForbiddenException('Access denied. Integration belongs to a different store.');
-      }
-      if (integration.clientId && activeClientId && integration.clientId !== activeClientId) {
-        throw new ForbiddenException('Access denied. Integration belongs to a different client.');
-      }
     }
 
     return integration;
@@ -206,9 +203,10 @@ export class IntegrationService {
     activeStoreId?: string,
     ipAddress?: string,
   ) {
-    const agencyId = dto.agencyId || activeAgencyId;
-    const clientId = dto.clientId || activeClientId || null;
-    const storeId = dto.storeId || activeStoreId || null;
+    // Kapsam yalnizca dogrulanmis aktif baglamdan (P12a bulgu 1); govdeden tenant alani okunmaz.
+    const agencyId = activeAgencyId;
+    const clientId = activeClientId || null;
+    const storeId = activeStoreId || null;
 
     if (!agencyId) {
       throw new BadRequestException('Agency ID context is required');
@@ -633,9 +631,11 @@ export class IntegrationService {
     activeStoreId?: string,
     isSuperAdmin?: boolean,
   ) {
+    // Bulgu 2: eslemeler urun uzerinden ajansa kapsanir; baska ajansin urunu bos liste doner.
     return this.prisma.productMapping.findMany({
       where: {
         productId,
+        ...(isSuperAdmin ? {} : { product: { agencyId: activeAgencyId } }),
       },
       include: {
         integration: true,
@@ -666,9 +666,9 @@ export class IntegrationService {
       isSuperAdmin,
     );
 
-    // Verify local product exists
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
+    // Bulgu 3: urun de aktif ajansa ait olmali; degilse 404 (varligi sizmaz).
+    const product = await this.prisma.product.findFirst({
+      where: { id: productId, deletedAt: null, ...(isSuperAdmin ? {} : { agencyId: activeAgencyId }) },
     });
 
     if (!product) {
