@@ -1,6 +1,7 @@
 import { PrismaClient, Prisma } from '@prisma/client';
 import { PERMISSIONS, DEFAULT_ROLES } from '@kroptos/shared';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 
 // RLS (P12): seed/script superuser ile bağlanır; uygulama rolü kiracı tablolarını bağlamsız göremez.
 const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL } } });
@@ -51,28 +52,44 @@ async function main() {
     }
   }
 
-  // 3. Create a default global user (super_admin)
+  // 3. Default global user (super_admin) — P13-2:
+  //  - sifre ASLA sabit degil: SEED_SUPERADMIN_PASSWORD; yoksa production/staging'de
+  //    kullanici OLUSTURULMAZ (uyari), development'ta rastgele uretilip konsola basilir
+  //  - var olan kullanicinin sifresi ASLA sifirlanmaz (SEED_TEST_PASSWORD deseniyle ayni:
+  //    yalniz yoksa olusturulur); rol atamasi idempotent
   console.log('Seeding default Super Admin user...');
   const defaultEmail = 'superadmin@kroptos.com';
-  const defaultPassword = 'Password123!';
-  const hashedPassword = await bcrypt.hash(defaultPassword, 10);
 
   const superAdminRole = await prisma.role.findFirst({ where: { key: 'super_admin', agencyId: null, deletedAt: null } });
   if (!superAdminRole) {
     throw new Error('super_admin role not found after seeding roles');
   }
 
-  const defaultUser = await prisma.user.upsert({
-    where: { email: defaultEmail },
-    update: { passwordHash: hashedPassword },
-    create: {
-      email: defaultEmail,
-      passwordHash: hashedPassword,
-      firstName: 'System',
-      lastName: 'SuperAdmin',
-      isActive: true,
-    },
-  });
+  let defaultUser = await prisma.user.findUnique({ where: { email: defaultEmail } });
+  let printedPassword: string | null = null;
+  if (defaultUser) {
+    console.log(`Super Admin ${defaultEmail} already exists; password left untouched.`);
+  } else {
+    const env = process.env.NODE_ENV ?? 'development';
+    let password = process.env.SEED_SUPERADMIN_PASSWORD;
+    if (!password && env !== 'development' && env !== 'test') {
+      console.warn(`SEED_SUPERADMIN_PASSWORD not set and NODE_ENV=${env}: Super Admin user NOT created. Set it and re-run the seed.`);
+    } else {
+      if (!password) {
+        password = crypto.randomBytes(18).toString('base64url');
+        printedPassword = password;
+      }
+      defaultUser = await prisma.user.create({
+        data: {
+          email: defaultEmail,
+          passwordHash: await bcrypt.hash(password, 10),
+          firstName: 'System',
+          lastName: 'SuperAdmin',
+          isActive: true,
+        },
+      });
+    }
+  }
 
   // Seed default Agency if not present
   const defaultAgency = await prisma.agency.upsert({
@@ -86,20 +103,25 @@ async function main() {
   });
 
   // Map user to role (bilesik unique P3 ile kalkti; eski upsert gibi soft-deleted satira da dokunmaz)
-  const existingAssignment = await prisma.userRole.findFirst({
-    where: { userId: defaultUser.id, agencyId: defaultAgency.id, roleId: superAdminRole.id, clientId: null, storeId: null },
-  });
-  if (!existingAssignment) {
-    await prisma.userRole.create({
-      data: { userId: defaultUser.id, agencyId: defaultAgency.id, roleId: superAdminRole.id },
+  if (defaultUser) {
+    const existingAssignment = await prisma.userRole.findFirst({
+      where: { userId: defaultUser.id, agencyId: defaultAgency.id, roleId: superAdminRole.id, clientId: null, storeId: null },
     });
+    if (!existingAssignment) {
+      await prisma.userRole.create({
+        data: { userId: defaultUser.id, agencyId: defaultAgency.id, roleId: superAdminRole.id },
+      });
+    }
   }
 
   // 4. Seed Multi-tenant Test Data for Staging / Dev
   await seedTestTenants();
 
   console.log('Seed completed successfully.');
-  console.log(`Default Super Admin: ${defaultEmail} / ${defaultPassword}`);
+  if (printedPassword) {
+    // Yalniz bu kosuda uretilen rastgele sifre; bir daha gosterilmez.
+    console.log(`Default Super Admin created: ${defaultEmail} / ${printedPassword}  (generated once — store it now)`);
+  }
 }
 
 async function seedTestTenants() {
