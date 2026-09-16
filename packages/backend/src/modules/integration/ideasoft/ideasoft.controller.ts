@@ -13,6 +13,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { IntegrationQueueService } from '../integration-queue.service';
 import { EcommerceHttpClient } from '../../../integrations/ecommerce/core';
 import { IdeasoftTokenResponse } from '../../../integrations/ecommerce/ideasoft/IdeasoftTypes';
@@ -85,9 +86,13 @@ export class IdeasoftController {
     @Param('integrationId') integrationId: string,
     @Req() req: Request,
   ) {
-    const integration = await this.prisma.integration.findFirst({
-      where: { id: integrationId, provider: 'ideasoft', deletedAt: null },
-    });
+    // Public uc: kiraci yalniz integrationId'den cozulur -> tek sorgu ACIK sistem baglaminda,
+    // kuyruk yazimi o kiracida (RLS). NOT: bu uc imza dogrulamasi YAPMIYOR (P13 raporu).
+    const integration = await runAsSystem('webhook:ideasoft resolve-integration', () =>
+      this.prisma.integration.findFirst({
+        where: { id: integrationId, provider: 'ideasoft', deletedAt: null },
+      }),
+    );
 
     if (!integration) {
       throw new NotFoundException(`IdeaSoft integration '${integrationId}' not found.`);
@@ -98,19 +103,21 @@ export class IdeasoftController {
 
     this.logger.log(`Received IdeaSoft webhook event '${topic}' for integration: ${integrationId}`);
 
-    if (topic.includes('order')) {
-      await this.queueService.addSyncJob(integration.id, 'sync_orders', {
-        source: 'webhook',
-        topic,
-        orderId: payload?.id || payload?.orderId,
-      });
-    } else if (topic.includes('product') || topic.includes('stock')) {
-      await this.queueService.addSyncJob(integration.id, 'sync_products', {
-        source: 'webhook',
-        topic,
-        productId: payload?.id || payload?.productId,
-      });
-    }
+    await runWithTenant(integration.agencyId, async () => {
+      if (topic.includes('order')) {
+        await this.queueService.addSyncJob(integration.id, 'sync_orders', {
+          source: 'webhook',
+          topic,
+          orderId: payload?.id || payload?.orderId,
+        });
+      } else if (topic.includes('product') || topic.includes('stock')) {
+        await this.queueService.addSyncJob(integration.id, 'sync_products', {
+          source: 'webhook',
+          topic,
+          productId: payload?.id || payload?.productId,
+        });
+      }
+    });
 
     return { received: true };
   }

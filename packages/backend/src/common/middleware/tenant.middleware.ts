@@ -34,6 +34,12 @@ export class TenantMiddleware implements NestMiddleware {
       // Davet kabulu: kimliksiz uc - yetki tek kullanimlik davet token'i (P6). Korumali
       // yonetim uclari /api/system/invitations altinda, bu prefix onlari kapsamaz.
       '/api/invitations/',
+      // Webhook/callback uclari (P13): pazaryeri/e-ticaret sistemi Bearer gondermez. Dar
+      // prefix: /api/integrations/ altindaki korumali yonetim uclari kapsanmaz. Kimlik
+      // integrationId + saglayici imzasidir (imza durumu icin controller notlarina bak).
+      '/api/integrations/woocommerce/webhook/',
+      '/api/integrations/ideasoft/webhook/',
+      '/api/integrations/ideasoft/callback',
     ];
 
     // Check if the current route is public (check path, originalUrl, and url)
