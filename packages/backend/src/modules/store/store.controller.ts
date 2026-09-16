@@ -45,10 +45,7 @@ export class StoreController {
   @ApiOperation({ summary: 'Create a new store sales channel' })
   @ApiResponse({ status: 201, type: StoreResponseDto })
   async create(@Body() dto: CreateStoreDto, @Req() req: Request) {
-    const user = req.user as any;
-    const isSuperAdmin = this.checkSuperAdmin(req);
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
-    return this.storeService.create(dto, user.userId, isSuperAdmin, ipAddress);
+    return this.storeService.create(dto, actorFromRequest(req));
   }
 
   @Patch(':id')

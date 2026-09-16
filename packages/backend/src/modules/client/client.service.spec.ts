@@ -113,18 +113,15 @@ describe('ClientService', () => {
   });
 
   describe('create', () => {
-    it('should create client and audit log', async () => {
-      mockPrismaService.userRole.findFirst.mockResolvedValue({ id: 'ur-1' });
+    // P12b 0a: agencyId govdeden degil aktif baglamdan; userRole yeniden sorgulanmaz
+    it('takes the agency from the actor; body agencyId is ignored; audits under the active agency', async () => {
       mockPrismaService.client.create.mockResolvedValue({ id: 'new-client-id', agencyId: 'agency-1', name: 'New Client' });
 
-      const result = await service.create(
-        { agencyId: 'agency-1', name: 'New Client', email: 'client@example.com' },
-        'user-id',
-        false,
-      );
+      const result = await service.create({ agencyId: 'agency-B', name: 'New Client', email: 'client@example.com' } as any, actor);
 
       expect(result.id).toBe('new-client-id');
-      expect(mockPrismaService.client.create).toHaveBeenCalled();
+      expect(mockPrismaService.userRole.findFirst).not.toHaveBeenCalled();
+      expect(mockPrismaService.client.create.mock.calls[0][0].data).toMatchObject({ agencyId: 'agency-1', name: 'New Client' });
       expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           action: 'create',

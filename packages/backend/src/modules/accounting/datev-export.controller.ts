@@ -55,7 +55,7 @@ export class DatevExportController {
 
     // Bulgu 6: ham header tenant filtresi olamaz; yalnizca dogrulanmis aktif baglam.
     const agencyId = actorFromRequest(req).agencyId;
-    const userId = user?.id;
+    const userId = user?.userId; // JWT kullanicisi userId tasir, id degil (P12b 0b)
     const userEmail = user?.email;
     const userName = user?.name;
     const ipAddress = req.ip || (req.headers['x-forwarded-for'] as string);

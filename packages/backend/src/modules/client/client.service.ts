@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateClientDto, UpdateClientDto } from './dto/client.dto';
 import { Prisma } from '@prisma/client';
@@ -36,16 +36,6 @@ export class ClientService {
     }
   }
 
-  private async verifyAgencyAccess(agencyId: string, userId: string, isSuperAdmin: boolean) {
-    if (isSuperAdmin) return;
-    const userRole = await this.prisma.userRole.findFirst({
-      where: { userId, agencyId, deletedAt: null },
-    });
-    if (!userRole) {
-      throw new ForbiddenException(`Access denied. You do not belong to agency '${agencyId}'.`);
-    }
-  }
-
   /**
    * Bulgu 7/8: kapsam AKTIF baglamdir (JwtStrategy/TenantMiddleware zaten bu baglami
    * kapsayan rolu dogruladi), kullanicinin tum ajanslari degil. Client kapsamli
@@ -76,13 +66,14 @@ export class ClientService {
     return client;
   }
 
-  async create(dto: CreateClientDto, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    await this.verifyAgencyAccess(dto.agencyId, userId, isSuperAdmin);
+  async create(dto: CreateClientDto, actor: ActorContext) {
+    // Kapsam aktif baglam (P12b 0a): ajans govdeden degil, dogrulanmis baglamdan.
+    const { userId, ipAddress, agencyId } = actor;
 
     return this.prisma.$transaction(async (tx) => {
       const client = await tx.client.create({
         data: {
-          agencyId: dto.agencyId,
+          agencyId,
           name: dto.name,
           legalName: dto.legalName || null,
           taxNumber: dto.taxNumber || null,

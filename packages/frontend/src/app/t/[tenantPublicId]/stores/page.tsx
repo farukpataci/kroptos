@@ -135,8 +135,6 @@ export default function StoresPage() {
         // Create store
         const payload = {
           ...formData,
-          agencyId: tenantContext.agencyId,
-          clientId: tenantContext.clientId || undefined,
         };
         const created = await apiFetch<Store>('/stores', {
           method: 'POST',

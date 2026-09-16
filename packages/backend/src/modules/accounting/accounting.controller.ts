@@ -43,7 +43,7 @@ export class AccountingController {
   private extractUser(req: Request) {
     const user = (req as any).user;
     return {
-      id: user?.id,
+      id: user?.userId, // JWT kullanicisi userId tasir (P12b 0b)
       email: user?.email,
       name: user?.name || user?.username,
       ip: req.ip || (req.headers['x-forwarded-for'] as string),

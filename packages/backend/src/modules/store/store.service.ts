@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/store.dto';
 import { Prisma } from '@prisma/client';
@@ -61,16 +61,6 @@ export class StoreService {
     };
   }
 
-  private async verifyAgencyAccess(agencyId: string, userId: string, isSuperAdmin: boolean) {
-    if (isSuperAdmin) return;
-    const userRole = await this.prisma.userRole.findFirst({
-      where: { userId, agencyId, deletedAt: null },
-    });
-    if (!userRole) {
-      throw new ForbiddenException(`Access denied. You do not belong to agency '${agencyId}'.`);
-    }
-  }
-
   async list(actor: ActorContext, isSuperAdmin: boolean) {
     return this.prisma.store.findMany({
       where: { deletedAt: null, ...this.scopeWhere(actor, isSuperAdmin) },
@@ -91,21 +81,14 @@ export class StoreService {
     return store;
   }
 
-  async create(dto: CreateStoreDto, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    await this.verifyAgencyAccess(dto.agencyId, userId, isSuperAdmin);
-
-    if (dto.clientId) {
-      const client = await this.prisma.client.findFirst({
-        where: { id: dto.clientId, agencyId: dto.agencyId, deletedAt: null },
-      });
-      if (!client) {
-        throw new BadRequestException(`Client '${dto.clientId}' does not exist or does not belong to agency '${dto.agencyId}'`);
-      }
-    }
+  async create(dto: CreateStoreDto, actor: ActorContext) {
+    // Kapsam aktif baglam (P12b 0a): ajans ve client govdeden degil, dogrulanmis baglamdan.
+    const { userId, ipAddress, agencyId } = actor;
+    const clientId = actor.clientId ?? null;
 
     const slug = dto.slug ? this.generateSlug(dto.slug) : this.generateSlug(dto.name);
     const existingStore = await this.prisma.store.findFirst({
-      where: { agencyId: dto.agencyId, slug, deletedAt: null },
+      where: { agencyId, slug, deletedAt: null },
     });
 
     if (existingStore) {
@@ -115,8 +98,8 @@ export class StoreService {
     return this.prisma.$transaction(async (tx) => {
       const store = await tx.store.create({
         data: {
-          agencyId: dto.agencyId,
-          clientId: dto.clientId || null,
+          agencyId,
+          clientId,
           name: dto.name,
           slug,
           domain: dto.domain || null,

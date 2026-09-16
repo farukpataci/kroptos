@@ -105,7 +105,7 @@ export class AccountingDocumentController {
     const scope = this.extractScope(req);
     const user = (req as any).user;
     return this.documentService.cancelLocally(id, dto, scope, {
-      id: user?.id,
+      id: user?.userId, // JWT kullanicisi userId tasir (P12b 0b)
       email: user?.email,
       name: user?.name,
       ip: req.ip,
@@ -124,7 +124,7 @@ export class AccountingDocumentController {
     const scope = this.extractScope(req);
     const user = (req as any).user;
     return this.documentService.attachExternal(id, dto, scope, {
-      id: user?.id,
+      id: user?.userId, // JWT kullanicisi userId tasir (P12b 0b)
       email: user?.email,
       name: user?.name,
       ip: req.ip,

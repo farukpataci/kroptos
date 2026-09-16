@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { StoreService } from './store.service';
 import { PrismaService } from '@common/prisma/prisma.service';
-import { NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { ActorContext } from '../rbac/rbac.service';
 
 const actor: ActorContext = { userId: 'user-1', agencyId: 'agency-1', clientId: null, storeId: null, ipAddress: '127.0.0.1' };
@@ -118,56 +118,39 @@ describe('StoreService', () => {
   });
 
   describe('create', () => {
-    it('should throw ForbiddenException if user does not belong to agency', async () => {
-      mockPrismaService.userRole.findFirst.mockResolvedValue(null);
+    // P12b 0a: agencyId/clientId govdeden degil aktif baglamdan; userRole yeniden sorgulanmaz
+    it('takes agency + client from the actor, not the body; body tenant fields are ignored', async () => {
+      mockPrismaService.store.findFirst.mockResolvedValue(null);
+      mockPrismaService.store.create.mockResolvedValue({ id: 'store-123', agencyId: 'agency-1', name: 'New Store', slug: 'new-store' });
 
-      await expect(
-        service.create({ agencyId: 'agency-1', name: 'New Store' }, 'user-1', false),
-      ).rejects.toThrow(ForbiddenException);
+      await service.create({ agencyId: 'agency-B', clientId: 'client-B', name: 'New Store' } as any, { ...actor, clientId: 'client-1' });
+
+      expect(mockPrismaService.userRole.findFirst).not.toHaveBeenCalled();
+      expect(mockPrismaService.store.create.mock.calls[0][0].data).toMatchObject({ agencyId: 'agency-1', clientId: 'client-1' });
+      expect(mockPrismaService.store.findFirst).toHaveBeenCalledWith({ where: { agencyId: 'agency-1', slug: 'new-store', deletedAt: null } });
     });
 
-    it('should throw BadRequestException if client does not belong to agency', async () => {
-      mockPrismaService.userRole.findFirst.mockResolvedValue({ id: 'ur-1' });
-      mockPrismaService.client.findFirst.mockResolvedValue(null);
-
-      await expect(
-        service.create({ agencyId: 'agency-1', clientId: 'client-1', name: 'New Store' }, 'user-1', false),
-      ).rejects.toThrow(BadRequestException);
+    it('agency-wide context → clientId null', async () => {
+      mockPrismaService.store.findFirst.mockResolvedValue(null);
+      mockPrismaService.store.create.mockResolvedValue({ id: 's', agencyId: 'agency-1' });
+      await service.create({ name: 'X' }, actor);
+      expect(mockPrismaService.store.create.mock.calls[0][0].data.clientId).toBeNull();
     });
 
     it('should throw BadRequestException if store with slug already exists', async () => {
-      mockPrismaService.userRole.findFirst.mockResolvedValue({ id: 'ur-1' });
       mockPrismaService.store.findFirst.mockResolvedValue({ id: 'existing-store' });
 
-      await expect(
-        service.create({ agencyId: 'agency-1', name: 'New Store' }, 'user-1', false),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.create({ name: 'New Store' }, actor)).rejects.toThrow(BadRequestException);
     });
 
     it('should successfully create store and write audit log', async () => {
-      mockPrismaService.userRole.findFirst.mockResolvedValue({ id: 'ur-1' });
-      // slug availability check returns null
       mockPrismaService.store.findFirst.mockResolvedValue(null);
-
-      const mockStore = {
-        id: 'store-123',
-        agencyId: 'agency-1',
-        name: 'New Store',
-        slug: 'new-store',
-        domain: 'store.com',
-        status: 'active',
-      };
+      const mockStore = { id: 'store-123', agencyId: 'agency-1', name: 'New Store', slug: 'new-store', domain: 'store.com' };
       mockPrismaService.store.create.mockResolvedValue(mockStore);
 
-      const result = await service.create(
-        { agencyId: 'agency-1', name: 'New Store', slug: 'new-store', domain: 'store.com' },
-        'user-1',
-        false,
-        '127.0.0.1',
-      );
+      const result = await service.create({ name: 'New Store', slug: 'new-store', domain: 'store.com' }, actor);
 
       expect(result).toEqual(mockStore);
-      expect(mockPrismaService.store.create).toHaveBeenCalled();
       expect(mockPrismaService.auditLog.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           action: 'create',
@@ -175,6 +158,7 @@ describe('StoreService', () => {
           entityId: 'store-123',
           userId: 'user-1',
           tenantId: 'agency-1',
+          ipAddress: '127.0.0.1',
         }),
       });
     });

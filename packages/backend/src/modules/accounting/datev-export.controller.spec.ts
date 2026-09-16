@@ -76,7 +76,7 @@ describe('DatevExportController', () => {
   const mockReq = {
     headers: { 'x-agency-id': 'agency-1' },
     activeAgency: { id: 'agency-1' },
-    user: { id: 'user-1', email: 'test@kroptos.com', name: 'Tester' },
+    user: { userId: 'user-1', email: 'test@kroptos.com', name: 'Tester' },
     ip: '127.0.0.1',
   } as any;
 
@@ -97,6 +97,8 @@ describe('DatevExportController', () => {
       );
 
       expect(res.success).toBe(true);
+      // P12b 0b: JWT kullanicisi userId tasir; audit kimsiz yazilmasin
+      expect(mockExportService.generateExport.mock.calls[0][1]).toMatchObject({ agencyId: 'agency-1', userId: 'user-1' });
       expect(res.batchId).toBe('batch_test_123');
       expect(res.downloadToken).toBe('mock-signed-token-xyz');
       expect(res.downloadUrl).toContain('batch_test_123');

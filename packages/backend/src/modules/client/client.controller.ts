@@ -45,10 +45,7 @@ export class ClientController {
   @ApiOperation({ summary: 'Create new client under an agency' })
   @ApiResponse({ status: 201, type: ClientResponseDto })
   async create(@Body() dto: CreateClientDto, @Req() req: Request) {
-    const user = req.user as any;
-    const isSuperAdmin = this.checkSuperAdmin(req);
-    const ipAddress = req.ip || req.headers['x-forwarded-for'] as string;
-    return this.clientService.create(dto, user.userId, isSuperAdmin, ipAddress);
+    return this.clientService.create(dto, actorFromRequest(req));
   }
 
   @Patch(':id')
