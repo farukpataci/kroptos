@@ -18,11 +18,13 @@ import { MarketplaceSettingsRegistry } from '../../integrations/marketplaces/set
 
 import { WooCommerceWebhookController } from './woocommerce/woocommerce-webhook.controller';
 import { IdeasoftController } from './ideasoft/ideasoft.controller';
+import { IdeasoftOauthStateService } from './ideasoft/ideasoft-oauth-state.service';
 
 @Module({
   imports: [PrismaModule, forwardRef(() => IntegrationSettingsModule)],
   controllers: [IntegrationController, WooCommerceWebhookController, IdeasoftController],
   providers: [
+    IdeasoftOauthStateService,
     IntegrationService,
     MarketplaceHttpClient,
     MarketplaceRateLimiter,
