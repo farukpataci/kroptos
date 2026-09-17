@@ -172,15 +172,23 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
       this.prisma.integration.findUnique({ where: { id: data.integrationId }, select: { agencyId: true } }),
     );
     if (!owner) throw new Error(`Integration with ID '${data.integrationId}' not found (tenant resolution)`);
-    return runWithTenant(owner.agencyId, () => this.processJob(data));
+    return runWithTenant(owner.agencyId, () => this.processJob(data, owner.agencyId));
   }
 
-  private async processJob(data: {
-    queueRecordId: string;
-    integrationId: string;
-    eventType: string;
-    payload: any;
-  }) {
+  /**
+   * `agencyId` is the tenant the job runs under (the one processInTenant bound).
+   * It is passed in rather than re-read because the failure log below must be
+   * written even when the integration lookup inside `try` is what failed.
+   */
+  private async processJob(
+    data: {
+      queueRecordId: string;
+      integrationId: string;
+      eventType: string;
+      payload: any;
+    },
+    agencyId: string,
+  ) {
     const { queueRecordId, integrationId, eventType, payload } = data;
     const startTime = Date.now();
 
@@ -841,10 +849,12 @@ export class IntegrationSyncWorker implements OnModuleInit, OnModuleDestroy {
         data: { status: 'error' },
       });
 
-      // Log the API exception
+      // Log the API exception under the integration's own tenant: 'system' is
+      // not a tenant, so under RLS the row was rejected (42501) and the failure
+      // reason was lost.
       await this.prisma.apiLog.create({
         data: {
-          agencyId: 'system',
+          agencyId,
           integrationId,
           endpoint: `bullmq:integration-sync:${eventType}`,
           method: 'QUEUE',
