@@ -55,16 +55,20 @@ export class WooCommerceWebhookController {
 
     // 3. Decrypt credentials to obtain webhook secret
     const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
+    // WooCommerce webhook'u kendi "Secret" alanıyla imzalar; API ile yaratılan webhook'ta bu
+    // varsayılan olarak API kullanıcısının consumerSecret'ıdır. P14-3: secret ZORUNLU — eski
+    // `if (secret)` deseni secret yoksa imzasız isteği kabul ediyordu (kontrol fiilen opsiyoneldi).
     const secret = credentials.webhookSecret || credentials.consumerSecret;
-
-    if (secret) {
-      const isValid = WooCommerceWebhook.verifySignature(rawBody, signature, secret);
-      if (!isValid) {
-        this.logger.warn(
-          `Invalid webhook signature for WooCommerce integration ${integrationId} (topic: ${topic})`,
-        );
-        throw new UnauthorizedException('Geçersiz WooCommerce webhook imzası.');
-      }
+    if (!secret) {
+      this.logger.warn(`WooCommerce webhook refused: integration ${integrationId} has no webhookSecret/consumerSecret`);
+      throw new UnauthorizedException('Webhook secret is not configured for this integration.');
+    }
+    // verifySignature: HMAC-SHA256 base64, crypto.timingSafeEqual (uzunluk farkı → false)
+    if (!WooCommerceWebhook.verifySignature(rawBody, signature, secret)) {
+      this.logger.warn(
+        `Invalid webhook signature for WooCommerce integration ${integrationId} (topic: ${topic})`,
+      );
+      throw new UnauthorizedException('Geçersiz WooCommerce webhook imzası.');
     }
 
     // 4. Deduplicate deliveries
