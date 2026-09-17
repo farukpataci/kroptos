@@ -23,6 +23,7 @@ export class AgencyController {
 
   @Get('/api/agencies')
   @HttpCode(200)
+  @RequirePermission('agencies.read')
   @ApiOperation({ summary: 'List all active agencies accessible to current user context' })
   @ApiResponse({ status: 200, type: [AgencyResponseDto] })
   async list(@Req() req: Request) {
@@ -33,6 +34,7 @@ export class AgencyController {
 
   @Get('/api/agencies/:id')
   @HttpCode(200)
+  @RequirePermission('agencies.read')
   @ApiOperation({ summary: 'Get active agency details' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
   async get(@Param('id') id: string, @Req() req: Request) {

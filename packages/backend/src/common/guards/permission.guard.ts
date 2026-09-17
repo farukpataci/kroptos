@@ -16,8 +16,11 @@ export class PermissionGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    // P14-4: fail-closed. @RequirePermission'sız handler "izin gerekmiyor" değil, "izin
+    // unutulmuş" demektir (GET /api/tenants ve /api/agencies böyle açık kalmıştı). Kimliksiz
+    // uçlar bu guard'ın altına girmez; kimlikli ama izinsiz uç isteniyorsa açıkça yazılır.
     if (!requiredPermission) {
-      return true; // No permission required
+      throw new ForbiddenException('Access denied. No permission is declared for this endpoint.');
     }
 
     const request = context.switchToHttp().getRequest();

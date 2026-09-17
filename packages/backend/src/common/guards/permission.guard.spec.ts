@@ -50,9 +50,11 @@ describe('PermissionGuard', () => {
     (reflector.getAllAndOverride as jest.Mock).mockReturnValue('orders.read');
   });
 
-  it('passes through when no permission is required', async () => {
+  // P14-4: fail-closed — @RequirePermission unutulmus handler gecmez, izin cozumu hic calismaz
+  it('REJECTS a handler with no @RequirePermission (fail-closed), without consulting the cache', async () => {
     (reflector.getAllAndOverride as jest.Mock).mockReturnValue(undefined);
-    await expect(guard.canActivate(ctx(undefined))).resolves.toBe(true);
+    await expect(guard.canActivate(ctx(undefined))).rejects.toThrow('No permission is declared');
+    expect(prisma.userRole.findMany).not.toHaveBeenCalled();
   });
 
   it('agency-wide role is NOT rejected in a client/store context (regression of clientId equality bug)', async () => {
