@@ -83,6 +83,8 @@ export class OrderAutomationProcessor implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
+    if (!data?.orderId) return;
+
     // 1. Fetch order with items
     const order = await this.prisma.order.findUnique({
       where: { id: data.orderId },

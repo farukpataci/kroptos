@@ -274,6 +274,7 @@ export default function OrderAutomationPage() {
             rules={rules}
             isLoading={isLoading}
             canManage={canManage}
+            onCreate={openCreate}
             onEdit={openEdit}
             onToggle={handleToggle}
             onDuplicate={handleDuplicate}

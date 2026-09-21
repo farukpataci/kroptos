@@ -17,11 +17,13 @@ import {
   BoltIcon,
 } from '@heroicons/react/24/outline';
 import { AutomationRule } from '../types';
+import { TRIGGER_METADATA } from '../constants/automationCatalog';
 
 interface RulesTabProps {
   rules: AutomationRule[];
   isLoading: boolean;
   canManage: boolean;
+  onCreate?: () => void;
   onEdit: (rule: AutomationRule) => void;
   onToggle: (rule: AutomationRule, nextState: boolean) => Promise<any>;
   onDuplicate: (ruleId: string) => Promise<any>;
@@ -36,6 +38,7 @@ export default function RulesTab({
   rules,
   isLoading,
   canManage,
+  onCreate,
   onEdit,
   onToggle,
   onDuplicate,
@@ -122,6 +125,16 @@ export default function RulesTab({
                       <div className="text-[11px] text-kp-text-tertiary">
                         Yeni bir kural oluşturun veya "Hazır Tarifler" sekmesinden şablon seçin.
                       </div>
+                      {canManage && onCreate && (
+                        <button
+                          type="button"
+                          onClick={onCreate}
+                          className="mt-2 inline-flex items-center gap-1.5 rounded-kp-md bg-kp-accent px-3.5 py-1.5 text-xs font-semibold text-white shadow-xs hover:bg-kp-accent/90 transition-all"
+                        >
+                          <BoltIcon className="h-4 w-4" />
+                          <span>Yeni Kural Oluştur</span>
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -182,9 +195,18 @@ export default function RulesTab({
 
                     {/* Trigger Badge */}
                     <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="inline-flex items-center rounded-kp-xs bg-kp-bg px-2 py-0.5 font-mono text-[11px] font-semibold text-kp-text-secondary">
-                        {rule.triggerType}
-                      </span>
+                      {(() => {
+                        const tm = TRIGGER_METADATA[rule.triggerType];
+                        return (
+                          <span
+                            className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
+                              tm?.badgeColor || 'bg-kp-bg text-kp-text-secondary border-kp-border'
+                            }`}
+                          >
+                            {tm?.badge || rule.triggerType}
+                          </span>
+                        );
+                      })()}
                     </td>
 
                     {/* Conditions and Actions chips */}
