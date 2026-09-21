@@ -19,6 +19,8 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AgentModule } from './modules/agent/agent.module';
 import { WmsModule } from './modules/wms/wms.module';
 import { ShipmentModule } from './modules/shipment/shipment.module';
+import { NotificationModule } from './modules/notification/notification.module';
+import { NotificationTemplateModule } from './modules/notification-template/notification-template.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { IntegrationLogModule } from './modules/integration-log/integration-log.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
@@ -50,6 +52,8 @@ import { HealthController } from './modules/health/health.controller';
     IntegrationSettingsModule,
     WmsModule,
     ShipmentModule,
+    NotificationModule,
+    NotificationTemplateModule,
     AuditModule,
     IntegrationLogModule,
     AnalyticsModule,
