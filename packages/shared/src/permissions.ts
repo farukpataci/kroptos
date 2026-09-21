@@ -8,7 +8,8 @@
  *
  * Kaynak birleşimi (2026-09-15): canlı DB 54 izin + seed'in DB'ye henüz
  * inmemiş 4 izni (agent.read, agent.manage, accounting.credential.manage,
- * accounting.invoice.push) + P4'ün eklediği 8 izin = 66.
+ * accounting.invoice.push) + P4'ün eklediği 8 izin = 66;
+ * 2026-09-21 bildirim şablonları 7 izin = 73.
  */
 export const PERMISSION_CATEGORIES = [
   'Katalog',
@@ -91,6 +92,13 @@ export const PERMISSIONS = [
   P('shipments.cancel', 'Gönderi iptal', 'Cancel shipments at the carrier', 'Sipariş & Sevkiyat'),
   P('shipments.label.print', 'Kargo etiketi yazdır', 'Print or download shipping labels', 'Sipariş & Sevkiyat'),
   P('shipments.handover', 'Kargoya teslim', 'Hand parcels to the courier and print the manifest', 'Sipariş & Sevkiyat'),
+  P('notification_template.read', 'Bildirim şablonlarını gör', 'View e-mail/SMS notification templates', 'Sipariş & Sevkiyat'),
+  P('notification_template.create', 'Bildirim şablonu oluştur', 'Create or customize notification templates', 'Sipariş & Sevkiyat'),
+  P('notification_template.update', 'Bildirim şablonu düzenle', 'Edit, toggle or restore notification templates', 'Sipariş & Sevkiyat'),
+  P('notification_template.delete', 'Bildirim şablonu sil', 'Delete customized notification templates', 'Sipariş & Sevkiyat'),
+  P('notification_template.test_send', 'Test bildirimi gönder', 'Send a test e-mail/SMS from a template', 'Sipariş & Sevkiyat'),
+  P('notification_log.read', 'Bildirim günlüğünü gör', 'View notification delivery log and retry failures', 'Sipariş & Sevkiyat'),
+  P('notification_provider.manage', 'Bildirim sağlayıcısını yönet', 'Configure e-mail/SMS providers', 'Sistem'),
 
   // ---- Entegrasyon ----
   P('integrations.read', 'Entegrasyonları gör', 'View integrations and their settings (secrets masked)', 'Entegrasyon'),
@@ -165,6 +173,7 @@ export const DEFAULT_ROLES: RoleDef[] = [
       'integration.logs.read', 'integration.logs.manage',
       'carriers.read', 'carriers.create', 'carriers.update', 'carriers.delete',
       'shipments.read', 'shipments.create', 'shipments.cancel', 'shipments.label.print', 'shipments.handover',
+      'notification_template.read', 'notification_template.create', 'notification_template.update', 'notification_template.delete', 'notification_template.test_send', 'notification_log.read', 'notification_provider.manage',
     ],
   },
   {
@@ -188,6 +197,7 @@ export const DEFAULT_ROLES: RoleDef[] = [
       'integration.logs.read', 'integration.logs.manage',
       'carriers.read',
       'shipments.read',
+      'notification_template.read', 'notification_log.read',
     ],
   },
   {
@@ -206,6 +216,7 @@ export const DEFAULT_ROLES: RoleDef[] = [
       'stock.allocation.read',
       'carriers.read', 'carriers.create', 'carriers.update', 'carriers.delete',
       'shipments.read', 'shipments.create', 'shipments.cancel', 'shipments.label.print', 'shipments.handover',
+      'notification_template.read', 'notification_template.create', 'notification_template.update', 'notification_template.delete', 'notification_template.test_send', 'notification_log.read',
     ],
   },
   {
@@ -219,6 +230,7 @@ export const DEFAULT_ROLES: RoleDef[] = [
       'wms.view', 'wms.print', 'wms.labels.view', 'wms.stock.view', 'wms.stock.update',
       'carriers.read',
       'shipments.read', 'shipments.create', 'shipments.label.print', 'shipments.handover',
+      'notification_template.read', 'notification_template.create', 'notification_template.update', 'notification_template.test_send', 'notification_log.read',
     ],
   },
   {
