@@ -19,6 +19,8 @@ async function main() {
     { name: 'products.create', description: 'Add new products' },
     { name: 'orders.read', description: 'View client orders' },
     { name: 'orders.update', description: 'Modify orders' },
+    { name: 'orders.automation.read', description: 'View order automation rules and run history' },
+    { name: 'orders.automation.manage', description: 'Create, change, run or delete order automation rules' },
     { name: 'integrations.manage', description: 'Manage third-party integrations' },
     { name: 'integrations.read', description: 'View integrations and their settings (secrets masked)' },
     { name: 'integrations.settings.update', description: 'Change, reset or restore integration settings' },
@@ -100,6 +102,8 @@ async function main() {
         'products.create',
         'orders.read',
         'orders.update',
+        'orders.automation.read',
+        'orders.automation.manage',
         'integrations.manage',
         'integrations.read',
         'integrations.settings.update',
@@ -161,6 +165,8 @@ async function main() {
         'products.create',
         'orders.read',
         'orders.update',
+        'orders.automation.read',
+        'orders.automation.manage',
         'integrations.read',
         'integrations.settings.update',
         'wms.view',
@@ -190,6 +196,8 @@ async function main() {
         'products.create',
         'orders.read',
         'orders.update',
+        'orders.automation.read',
+        'orders.automation.manage',
         'integrations.read',
         'wms.view',
         'wms.manage',
@@ -223,6 +231,8 @@ async function main() {
         'products.create',
         'orders.read',
         'orders.update',
+        'orders.automation.read',
+        'orders.automation.manage',
         'wms.view',
         'wms.print',
         'wms.labels.view',
@@ -241,6 +251,7 @@ async function main() {
       permissions: [
         'stores.read',
         'orders.read',
+        'orders.automation.read',
         'accounting.export',
         'analytics.read',
         'analytics.export',
@@ -253,6 +264,7 @@ async function main() {
       permissions: [
         'products.read',
         'orders.read',
+        'orders.automation.read',
         'warehouse.manage',
         'wms.view',
         'wms.print',
@@ -272,12 +284,12 @@ async function main() {
     {
       name: 'support',
       description: 'Customer support staff reading issues, tickets, and order logs',
-      permissions: ['clients.read', 'stores.read', 'orders.read'],
+      permissions: ['clients.read', 'stores.read', 'orders.read', 'orders.automation.read'],
     },
     {
       name: 'viewer',
       description: 'Read-only profile context viewer',
-      permissions: ['agencies.read', 'clients.read', 'stores.read', 'products.read', 'orders.read'],
+      permissions: ['agencies.read', 'clients.read', 'stores.read', 'products.read', 'orders.read', 'orders.automation.read'],
     },
   ];
 
@@ -935,6 +947,220 @@ async function seedTestTenants() {
             eventType: tl.eventType,
             oldValue: tl.oldValue ?? null,
             newValue: tl.newValue ?? null,
+          },
+        });
+      }
+    }
+  }
+
+  // Seed 8 Inactive Automation Recipes for the first store
+  if (firstStoreOfA) {
+    console.log('Seeding 8 automation recipe rules for firstStoreOfA...');
+    const recipeTemplates = [
+      {
+        name: 'Kapıda Ödeme Yüksek Tutar Teyidi',
+        description: 'Kapıda ödemeli ve tutarı 1000 TL üzeri siparişleri beklet, teyit-gerekli etiketi ekle ve bildirim gönder.',
+        triggerType: 'ORDER_CREATED',
+        triggerConfig: {},
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'paymentMethod', operator: 'eq', value: 'cod' },
+            { field: 'totalAmount', operator: 'gte', value: 1000 },
+          ],
+        },
+        actions: [
+          { type: 'HOLD_ORDER', config: { reason: 'Kapıda ödeme yüksek tutar teyidi' } },
+          { type: 'ADD_TAG', config: { tag: 'teyit-gerekli' } },
+          { type: 'SEND_NOTIFICATION', config: { channel: 'internal', message: 'Yüksek tutarlı kapıda ödeme siparişi onay bekliyor' } },
+        ],
+        priority: 10,
+        stopProcessing: false,
+        runOncePerOrder: true,
+        isActive: false,
+      },
+      {
+        name: 'Büyük Paket Kargo Yönlendirme',
+        description: 'Toplam desi 30 üzeri olan siparişleri Aras Kargo\'ya ata ve buyuk-paket etiketi ekle.',
+        triggerType: 'ORDER_CREATED',
+        triggerConfig: {},
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'totalDesi', operator: 'gt', value: 30 },
+          ],
+        },
+        actions: [
+          { type: 'ASSIGN_CARRIER', config: { carrierId: 'aras', carrierName: 'Aras Kargo' } },
+          { type: 'ADD_TAG', config: { tag: 'buyuk-paket' } },
+        ],
+        priority: 20,
+        stopProcessing: false,
+        runOncePerOrder: true,
+        isActive: false,
+      },
+      {
+        name: 'Ödenen Siparişi Otomatik Onayla ve Fatura Kes',
+        description: 'Ödeme alındığında siparişi Onaylandı durumuna al ve e-fatura oluştur.',
+        triggerType: 'PAYMENT_RECEIVED',
+        triggerConfig: {},
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'paymentStatus', operator: 'eq', value: 'PAID' },
+          ],
+        },
+        actions: [
+          { type: 'SET_ORDER_STATUS', config: { status: 'CONFIRMED' } },
+          { type: 'CREATE_INVOICE', config: { autoSend: true } },
+        ],
+        priority: 30,
+        stopProcessing: false,
+        runOncePerOrder: true,
+        isActive: false,
+      },
+      {
+        name: 'Geciken Kargo Müşteri Bilgilendirme',
+        description: 'Kargoya verildi durumunda 72 saattir teslim edilmemiş siparişlere gecikme etiketi ekle ve müşteriye SMS gönder.',
+        triggerType: 'ORDER_IDLE',
+        triggerConfig: { idleStatus: 'SHIPPED', idleHours: 72 },
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'status', operator: 'eq', value: 'SHIPPED' },
+          ],
+        },
+        actions: [
+          { type: 'ADD_TAG', config: { tag: 'gecikme' } },
+          { type: 'SEND_NOTIFICATION', config: { channel: 'sms', templateCode: 'SHIPMENT_DELAY', recipient: 'customer' } },
+        ],
+        priority: 40,
+        stopProcessing: false,
+        runOncePerOrder: false,
+        isActive: false,
+      },
+      {
+        name: 'Hazırlanması Geciken Sipariş Dahili Uyarı',
+        description: 'Onaylandı durumunda 24 saattir kargoya verilmemiş siparişler için sorumlu personele dahili uyarı gönder.',
+        triggerType: 'ORDER_IDLE',
+        triggerConfig: { idleStatus: 'CONFIRMED', idleHours: 24 },
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'status', operator: 'eq', value: 'CONFIRMED' },
+          ],
+        },
+        actions: [
+          { type: 'ADD_TAG', config: { tag: 'geciken-sevkiyat' } },
+          { type: 'SEND_NOTIFICATION', config: { channel: 'email', templateCode: 'SHIPMENT_PREPARATION_ALERT', recipient: 'internal' } },
+        ],
+        priority: 50,
+        stopProcessing: false,
+        runOncePerOrder: false,
+        isActive: false,
+      },
+      {
+        name: 'İlk Sipariş Hoş Geldin ve Teşekkür',
+        description: 'Müşterinin mağazadaki ilk siparişine yeni-musteri etiketi ekle ve teşekkür e-postası ilet.',
+        triggerType: 'ORDER_CREATED',
+        triggerConfig: {},
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'isFirstOrder', operator: 'eq', value: true },
+          ],
+        },
+        actions: [
+          { type: 'ADD_TAG', config: { tag: 'yeni-musteri' } },
+          { type: 'SEND_NOTIFICATION', config: { channel: 'email', templateCode: 'WELCOME_FIRST_ORDER', recipient: 'customer' } },
+        ],
+        priority: 60,
+        stopProcessing: false,
+        runOncePerOrder: true,
+        isActive: false,
+      },
+      {
+        name: 'Marmara Bölgesi Depo Yönlendirme',
+        description: 'İstanbul, Kocaeli, Bursa veya Tekirdağ teslimatlı siparişleri Marmara Ana Depo\'ya yönlendir.',
+        triggerType: 'ORDER_CREATED',
+        triggerConfig: {},
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [
+            { field: 'shippingCity', operator: 'in', value: ['İstanbul', 'Kocaeli', 'Bursa', 'Tekirdağ'] },
+          ],
+        },
+        actions: [
+          { type: 'ASSIGN_WAREHOUSE', config: { warehouseId: 'marmara-depo', warehouseName: 'Marmara Ana Depo' } },
+        ],
+        priority: 70,
+        stopProcessing: false,
+        runOncePerOrder: true,
+        isActive: false,
+      },
+      {
+        name: 'Kargo Teslimat İstisnası Adres Teyidi',
+        description: 'Kargo firması teslimat istisnası bildirdiğinde siparişi beklet ve müşteriye adres teyit SMS\'i gönder.',
+        triggerType: 'SHIPMENT_EXCEPTION',
+        triggerConfig: {},
+        conditions: {
+          version: 1,
+          operator: 'and',
+          conditions: [],
+        },
+        actions: [
+          { type: 'HOLD_ORDER', config: { reason: 'Kargo teslimat istisnası: adres ulaşılamadı' } },
+          { type: 'ADD_TAG', config: { tag: 'kargo-istisna' } },
+          { type: 'SEND_NOTIFICATION', config: { channel: 'sms', templateCode: 'CARRIER_EXCEPTION_ALERT', recipient: 'customer' } },
+        ],
+        priority: 80,
+        stopProcessing: true,
+        runOncePerOrder: false,
+        isActive: false,
+      },
+    ];
+
+    for (const r of recipeTemplates) {
+      const existing = await prisma.automationRule.findFirst({
+        where: {
+          storeId: firstStoreOfA.id,
+          name: r.name,
+          deletedAt: null,
+        },
+      });
+
+      if (!existing) {
+        const createdRule = await prisma.automationRule.create({
+          data: {
+            agencyId: firstStoreOfA.agencyId,
+            clientId: firstStoreOfA.clientId,
+            storeId: firstStoreOfA.id,
+            name: r.name,
+            description: r.description,
+            triggerType: r.triggerType,
+            triggerConfig: r.triggerConfig,
+            conditions: r.conditions,
+            actions: r.actions,
+            priority: r.priority,
+            stopProcessing: r.stopProcessing,
+            runOncePerOrder: r.runOncePerOrder,
+            isActive: r.isActive,
+            version: 1,
+          },
+        });
+
+        await prisma.automationRuleVersion.create({
+          data: {
+            ruleId: createdRule.id,
+            version: 1,
+            snapshot: createdRule,
           },
         });
       }

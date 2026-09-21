@@ -4055,6 +4055,148 @@
       "unknown": "Tanımsız"
     }
   },
+  "orderAutomation": {
+    "title": "Otomasyon",
+    "subtitle": "Koşul gerçekleştiğinde otomatik çalışan sipariş kuralları.",
+    "loadFailed": "Otomasyon kuralları yüklenemedi.",
+    "scopeNote": "Buradaki kurallar sipariş tetikleyicileridir ve yalnız seçili mağazanın siparişlerine uygulanır. Ürün ve stok kuralları ayrı sayfadadır.",
+    "metaUnavailable": "Seçenek listesi sunucudan alınamadı; kural formu açılamıyor.",
+    "runResult": "Çalıştı: {applied} uygulandı, {skipped} atlandı, {failed} başarısız.",
+    "confirmDelete": "\"{name}\" kuralı silinsin mi? Kural durur; daha önce uygulanmış değişiklikler geri alınmaz.",
+    "storeRequired": {
+      "title": "Mağaza Seçimi Gerekli",
+      "desc": "Otomasyon kuralları mağaza bazlıdır. Üst menüden bir mağaza seçin."
+    },
+    "empty": {
+      "title": "Henüz kural yok",
+      "desc": "İlk kuralı oluşturun: bir tetikleyici seçin, koşulları daraltın ve siparişe uygulanacak aksiyonu belirleyin."
+    },
+    "actions": {
+      "newRule": "Yeni Kural",
+      "preview": "Önizle",
+      "runNow": "Şimdi çalıştır",
+      "runNeedsActive": "Pasif kural çalıştırılamaz",
+      "pause": "Duraklat",
+      "activate": "Etkinleştir"
+    },
+    "columns": {
+      "priority": "Öncelik",
+      "name": "Kural",
+      "trigger": "Tetikleyici",
+      "conditions": "Koşullar",
+      "action": "Aksiyon",
+      "matchCount": "Uygulanan",
+      "lastRunAt": "Son Çalışma",
+      "state": "Durum",
+      "operations": "İşlemler"
+    },
+    "state": {
+      "active": "Etkin",
+      "paused": "Duraklatıldı"
+    },
+    "triggers": {
+      "order_created": "Sipariş oluşturuldu",
+      "order_status_changed": "Sipariş durumu değişti",
+      "payment_status_changed": "Ödeme durumu değişti",
+      "fulfillment_status_changed": "Karşılama durumu değişti",
+      "order_pending_too_long": "Sipariş uzun süredir bekliyor"
+    },
+    "actionTypes": {
+      "set_status": "Sipariş durumunu değiştir",
+      "set_payment_status": "Ödeme durumunu değiştir",
+      "set_fulfillment_status": "Karşılama durumunu değiştir",
+      "cancel_order": "Siparişi iptal et",
+      "add_note": "Sipariş notu ekle"
+    },
+    "fields": {
+      "source": "Kaynak",
+      "status": "Sipariş durumu",
+      "paymentStatus": "Ödeme durumu",
+      "fulfillmentStatus": "Karşılama durumu",
+      "total": "Tutar",
+      "minTotal": "Alt tutar sınırı",
+      "maxTotal": "Üst tutar sınırı",
+      "currency": "Para birimi",
+      "city": "Teslimat ili",
+      "poolOnly": "Yalnız havuz siparişleri",
+      "nonPoolOnly": "Havuz dışı siparişler",
+      "waitedMinutes": "{minutes} dakikadan uzun bekleyen",
+      "everyOrder": "Her sipariş"
+    },
+    "orderStatus": {
+      "pending": "Beklemede",
+      "processing": "İşleniyor",
+      "shipped": "Kargoda",
+      "delivered": "Teslim edildi",
+      "cancelled": "İptal"
+    },
+    "paymentStatus": {
+      "pending": "Beklemede",
+      "paid": "Ödendi",
+      "partially_refunded": "Kısmi iade",
+      "refunded": "İade edildi",
+      "failed": "Başarısız"
+    },
+    "fulfillmentStatus": {
+      "unfulfilled": "Hazırlanmadı",
+      "partially_fulfilled": "Kısmen hazırlandı",
+      "fulfilled": "Hazırlandı",
+      "returned": "İade"
+    },
+    "modal": {
+      "title": "Kural Oluştur",
+      "editTitle": "Kuralı Düzenle",
+      "subtitle": "Tetikleyici gerçekleştiğinde, koşulları sağlayan siparişlere aksiyon uygulanır.",
+      "name": "Kural Adı",
+      "nameHint": "Örn. Ödemesi alınan siparişleri işleme al",
+      "description": "Açıklama",
+      "trigger": "Tetikleyici",
+      "priority": "Öncelik",
+      "priorityHint": "Küçük olan önce çalışır.",
+      "conditions": "Koşullar",
+      "action": "Aksiyon",
+      "actionType": "Aksiyon tipi",
+      "actionValue": "Hedef değer",
+      "selectValue": "Seçin…",
+      "note": "Not (isteğe bağlı)",
+      "noteRequired": "Eklenecek not",
+      "olderThanMinutes": "Bekleme eşiği (dakika)",
+      "currencyHint": "Tutar koşulu kullanıyorsanız para birimini de belirtin; 500 TRY ile 500 USD aynı eşik değildir.",
+      "effectiveFromNote": "Kural yalnız kaydedildikten sonra oluşan siparişlere uygulanır; geçmiş siparişler toplu olarak değiştirilmez."
+    },
+    "validation": {
+      "nameRequired": "Kural adı zorunludur.",
+      "actionValueRequired": "Seçilen aksiyon bir hedef değer gerektiriyor.",
+      "noteRequired": "Not ekleme aksiyonu için not metni zorunludur.",
+      "waitRequired": "Bekleme tetikleyicisi için dakika değeri zorunludur."
+    },
+    "preview": {
+      "title": "Önizleme",
+      "matched": "Eşleşen sipariş",
+      "scanned": "Taranan sipariş",
+      "samples": "Örnek siparişler",
+      "noMatch": "Şu anda bu kurala uyan sipariş yok.",
+      "more": "ve {count} sipariş daha.",
+      "orderNumber": "Sipariş No",
+      "customer": "Müşteri"
+    },
+    "history": {
+      "title": "Son Çalışmalar",
+      "subtitle": "Kuralların hangi siparişe ne yaptığı. Atlananlar da listelenir.",
+      "when": "Zaman",
+      "rule": "Kural",
+      "order": "Sipariş",
+      "result": "Sonuç",
+      "detail": "Ayrıntı",
+      "empty": "Henüz çalışma kaydı yok.",
+      "deletedRule": "(silinmiş kural)",
+      "status": {
+        "applied": "Uygulandı",
+        "skipped": "Atlandı",
+        "failed": "Başarısız"
+      }
+    }
+  },
   "productStock": {
     "title": "Stok Kontrolü",
     "subtitle": "SKU bazında stok durumu, kritik eşikler ve hızlı stok düzeltme.",

@@ -401,6 +401,10 @@ model Order {
   currency          String    @default("USD")
   idempotencyKey    String?
   notes             String?
+  tags              String[]  @default([])
+  isHold            Boolean   @default(false)
+  holdReason        String?
+  priority          String?   @default("normal")
   createdBy         String
   publicId          String?   @unique
   createdAt         DateTime  @default(now())
@@ -411,6 +415,7 @@ model Order {
   timeline          OrderTimeline[]
   auditLogs         AuditLog[]
   wmsPackagingTasks WmsPackagingTask[]
+  automationRuns    AutomationRun[]
 
   @@unique([storeId, idempotencyKey])
   @@unique([storeId, orderNumber])
@@ -1782,4 +1787,122 @@ model AccountingProblem {
 
   @@unique([agencyId, integrationId, code, companyKey])
   @@index([agencyId])
+}
+
+// ==================== Order Automation ====================
+
+model AutomationRule {
+  id              String    @id @default(cuid())
+  agencyId        String
+  clientId        String?
+  storeId         String
+
+  name            String
+  description     String?
+  isActive        Boolean   @default(false)
+  priority        Int       @default(100)
+  scopeLevel      String    @default("STORE") // STORE, CLIENT, AGENCY
+
+  /// ORDER_CREATED | ORDER_STATUS_CHANGED | PAYMENT_RECEIVED | SHIPMENT_CREATED |
+  /// SHIPMENT_DELIVERED | SHIPMENT_EXCEPTION | RETURN_REQUESTED | ORDER_CANCELLED |
+  /// STOCK_INSUFFICIENT | ORDER_IDLE | SCHEDULED
+  triggerType     String
+  triggerConfig   Json      @default("{}")
+
+  /// AND / OR logic tree, schema versioned
+  conditions      Json      @default("{\"version\":1,\"operator\":\"and\",\"conditions\":[]}")
+
+  /// Sequential actions array: [{ type, config }]
+  actions         Json      @default("[]")
+
+  stopProcessing  Boolean   @default(false)
+  runOncePerOrder Boolean   @default(false)
+  version         Int       @default(1)
+
+  createdById     String?
+  updatedById     String?
+  lastRunAt       DateTime?
+  runCount        Int       @default(0)
+  errorCount      Int       @default(0)
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  versions        AutomationRuleVersion[]
+  runs            AutomationRun[]
+
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([storeId, triggerType, isActive])
+  @@index([priority])
+  @@index([deletedAt])
+}
+
+model AutomationRuleVersion {
+  id          String         @id @default(cuid())
+  ruleId      String
+  rule        AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  version     Int
+  snapshot    Json
+  createdAt   DateTime       @default(now())
+  createdById String?
+
+  @@unique([ruleId, version])
+  @@index([ruleId])
+}
+
+model AutomationRun {
+  id             String                @id @default(cuid())
+  agencyId       String
+  clientId       String?
+  storeId        String
+
+  ruleId         String
+  rule           AutomationRule        @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  ruleVersion    Int                   @default(1)
+
+  orderId        String
+  order          Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  triggerEvent   String
+  eventId        String
+  matched        Boolean               @default(false)
+  conditionTrace Json?
+
+  /// MATCHED_SUCCESS | PARTIAL_FAILURE | FAILED | NOT_MATCHED | SKIPPED_LOOP | SKIPPED_ONCE | DRY_RUN
+  status         String
+  depth          Int                   @default(0)
+  durationMs     Int?
+  isDryRun       Boolean               @default(false)
+
+  createdAt      DateTime              @default(now())
+
+  actionRuns     AutomationActionRun[]
+
+  @@unique([ruleId, eventId])
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([storeId, createdAt])
+  @@index([orderId])
+  @@index([ruleId, createdAt])
+}
+
+model AutomationActionRun {
+  id           String        @id @default(cuid())
+  runId        String
+  run          AutomationRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+  index        Int
+  actionType   String
+  /// SUCCESS | FAILED | SKIPPED | SCHEDULED
+  status       String
+  input        Json?
+  output       Json?
+  errorMessage String?
+  attempts     Int           @default(1)
+  scheduledFor DateTime?
+  createdAt    DateTime      @default(now())
+
+  @@index([runId])
+  @@index([status])
 }

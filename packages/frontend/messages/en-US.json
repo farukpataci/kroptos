@@ -324,6 +324,148 @@
       "unknown": "Undeclared"
     }
   },
+  "orderAutomation": {
+    "title": "Automation",
+    "subtitle": "Order rules that run by themselves when a condition is met.",
+    "loadFailed": "Automation rules could not be loaded.",
+    "scopeNote": "These rules are order triggers and apply only to the selected store. Product and stock rules live on their own page.",
+    "metaUnavailable": "The option list could not be fetched; the rule form cannot open.",
+    "runResult": "Run finished: {applied} applied, {skipped} skipped, {failed} failed.",
+    "confirmDelete": "Delete the rule \"{name}\"? The rule stops; changes it already applied are not reverted.",
+    "storeRequired": {
+      "title": "Pick a store first",
+      "desc": "Automation rules are store-scoped. Select a store from the top menu."
+    },
+    "empty": {
+      "title": "No rules yet",
+      "desc": "Create the first rule: pick a trigger, narrow it with conditions, and choose the action to apply to the order."
+    },
+    "actions": {
+      "newRule": "New rule",
+      "preview": "Preview",
+      "runNow": "Run now",
+      "runNeedsActive": "A paused rule cannot be run",
+      "pause": "Pause",
+      "activate": "Activate"
+    },
+    "columns": {
+      "priority": "Priority",
+      "name": "Rule",
+      "trigger": "Trigger",
+      "conditions": "Conditions",
+      "action": "Action",
+      "matchCount": "Applied",
+      "lastRunAt": "Last run",
+      "state": "State",
+      "operations": "Actions"
+    },
+    "state": {
+      "active": "Active",
+      "paused": "Paused"
+    },
+    "triggers": {
+      "order_created": "Order created",
+      "order_status_changed": "Order status changed",
+      "payment_status_changed": "Payment status changed",
+      "fulfillment_status_changed": "Fulfillment status changed",
+      "order_pending_too_long": "Order waiting too long"
+    },
+    "actionTypes": {
+      "set_status": "Change order status",
+      "set_payment_status": "Change payment status",
+      "set_fulfillment_status": "Change fulfillment status",
+      "cancel_order": "Cancel the order",
+      "add_note": "Add an order note"
+    },
+    "fields": {
+      "source": "Source",
+      "status": "Order status",
+      "paymentStatus": "Payment status",
+      "fulfillmentStatus": "Fulfillment status",
+      "total": "Total",
+      "minTotal": "Minimum total",
+      "maxTotal": "Maximum total",
+      "currency": "Currency",
+      "city": "Shipping city",
+      "poolOnly": "Pool orders only",
+      "nonPoolOnly": "Non-pool orders",
+      "waitedMinutes": "waiting longer than {minutes} minutes",
+      "everyOrder": "Every order"
+    },
+    "orderStatus": {
+      "pending": "Pending",
+      "processing": "Processing",
+      "shipped": "Shipped",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "paymentStatus": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "partially_refunded": "Partially refunded",
+      "refunded": "Refunded",
+      "failed": "Failed"
+    },
+    "fulfillmentStatus": {
+      "unfulfilled": "Unfulfilled",
+      "partially_fulfilled": "Partially fulfilled",
+      "fulfilled": "Fulfilled",
+      "returned": "Returned"
+    },
+    "modal": {
+      "title": "Create rule",
+      "editTitle": "Edit rule",
+      "subtitle": "When the trigger fires, the action is applied to orders that meet the conditions.",
+      "name": "Rule name",
+      "nameHint": "e.g. Move paid orders into processing",
+      "description": "Description",
+      "trigger": "Trigger",
+      "priority": "Priority",
+      "priorityHint": "Lower runs first.",
+      "conditions": "Conditions",
+      "action": "Action",
+      "actionType": "Action type",
+      "actionValue": "Target value",
+      "selectValue": "Select…",
+      "note": "Note (optional)",
+      "noteRequired": "Note to add",
+      "olderThanMinutes": "Waiting threshold (minutes)",
+      "currencyHint": "If you use an amount condition, set the currency too: 500 TRY and 500 USD are not the same threshold.",
+      "effectiveFromNote": "The rule applies only to orders created after it is saved; past orders are not changed in bulk."
+    },
+    "validation": {
+      "nameRequired": "Rule name is required.",
+      "actionValueRequired": "The selected action needs a target value.",
+      "noteRequired": "The add-note action needs note text.",
+      "waitRequired": "The waiting trigger needs a value in minutes."
+    },
+    "preview": {
+      "title": "Preview",
+      "matched": "Matching orders",
+      "scanned": "Orders scanned",
+      "samples": "Sample orders",
+      "noMatch": "No order matches this rule right now.",
+      "more": "and {count} more orders.",
+      "orderNumber": "Order no",
+      "customer": "Customer"
+    },
+    "history": {
+      "title": "Recent runs",
+      "subtitle": "What each rule did to which order. Skipped rows are listed too.",
+      "when": "When",
+      "rule": "Rule",
+      "order": "Order",
+      "result": "Result",
+      "detail": "Detail",
+      "empty": "No run records yet.",
+      "deletedRule": "(deleted rule)",
+      "status": {
+        "applied": "Applied",
+        "skipped": "Skipped",
+        "failed": "Failed"
+      }
+    }
+  },
   "productStock": {
     "title": "Stock Control",
     "subtitle": "Stock per SKU, critical thresholds and quick adjustments.",
