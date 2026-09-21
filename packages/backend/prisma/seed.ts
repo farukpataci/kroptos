@@ -911,6 +911,93 @@ async function seedTestTenants() {
   }
 
   console.log('Multi-tenant test data seeding complete.');
+
+  // Seed 5 system export presets (docs/export.md §5)
+  console.log('Seeding order export system presets...');
+  const allStores = await prisma.store.findMany({ select: { id: true, agencyId: true, clientId: true } });
+  
+  const systemPresets = [
+    {
+      name: 'Muhasebe (Kalem Bazlı)',
+      description: 'Kalem başına; sipariş no, tarih, fatura no, ürün, KDV oranı, tutarlar ve ödeme yöntemi.',
+      rowMode: 'LINE_ITEM',
+      format: 'XLSX',
+      columns: [
+        'orderNumber', 'orderDate', 'invoiceNumber', 'itemName', 'itemSku',
+        'itemQuantity', 'itemUnitPrice', 'itemTaxRate', 'itemTotal', 'itemDiscount',
+        'shippingFee', 'paymentMethod', 'currency'
+      ],
+      formatOptions: { delimiter: ';', encoding: 'utf-8-bom', useBOM: true, timezone: 'Europe/Istanbul' },
+    },
+    {
+      name: 'Kargo / Depo Çıkış Listesi',
+      description: 'Sipariş başına; alıcı, telefon, adres, il/ilçe, kargo firması ve takip bilgileri.',
+      rowMode: 'ORDER',
+      format: 'XLSX',
+      columns: [
+        'orderNumber', 'orderDate', 'customerName', 'customerPhone', 'shippingCity',
+        'shippingDistrict', 'shippingLine1', 'carrierName', 'trackingNumber', 'totalAmount', 'currency'
+      ],
+      formatOptions: { delimiter: ';', encoding: 'utf-8-bom', useBOM: true, timezone: 'Europe/Istanbul' },
+    },
+    {
+      name: 'Pazaryeri Mutabakatı',
+      description: 'Sipariş başına; pazaryeri, sipariş no, brüt tutar ve durum.',
+      rowMode: 'ORDER',
+      format: 'XLSX',
+      columns: [
+        'orderNumber', 'source', 'marketplaceOrderNumber', 'totalAmount', 'currency', 'status', 'paymentStatus'
+      ],
+      formatOptions: { delimiter: ';', encoding: 'utf-8-bom', useBOM: true, timezone: 'Europe/Istanbul' },
+    },
+    {
+      name: 'İade Raporu',
+      description: 'Kalem başına; iade kodları, nedenler, tutarlar ve durumlar.',
+      rowMode: 'LINE_ITEM',
+      format: 'XLSX',
+      columns: [
+        'orderNumber', 'orderDate', 'itemName', 'itemSku', 'itemQuantity', 'itemTotal', 'status'
+      ],
+      formatOptions: { delimiter: ';', encoding: 'utf-8-bom', useBOM: true, timezone: 'Europe/Istanbul' },
+    },
+    {
+      name: 'Basit Sipariş Listesi',
+      description: 'Sipariş no, tarih, müşteri, toplam tutar ve durum.',
+      rowMode: 'ORDER',
+      format: 'XLSX',
+      columns: [
+        'orderNumber', 'orderDate', 'customerName', 'totalAmount', 'currency', 'status', 'paymentStatus', 'fulfillmentStatus'
+      ],
+      formatOptions: { delimiter: ';', encoding: 'utf-8-bom', useBOM: true, timezone: 'Europe/Istanbul' },
+    },
+  ];
+
+  for (const st of allStores) {
+    for (const p of systemPresets) {
+      const existing = await prisma.orderExportPreset.findFirst({
+        where: { storeId: st.id, name: p.name },
+      });
+      if (!existing) {
+        await prisma.orderExportPreset.create({
+          data: {
+            agencyId: st.agencyId,
+            clientId: st.clientId,
+            storeId: st.id,
+            name: p.name,
+            description: p.description,
+            isSystemDefault: true,
+            isShared: true,
+            rowMode: p.rowMode,
+            format: p.format,
+            columns: p.columns,
+            filters: {},
+            formatOptions: p.formatOptions,
+          },
+        });
+      }
+    }
+  }
+  console.log('Order export presets seeded.');
 }
 
 main()

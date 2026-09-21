@@ -10,6 +10,7 @@ import { ProductModule } from './modules/product/product.module';
 import { CategoryModule } from './modules/category/category.module';
 import { OrderModule } from './modules/order/order.module';
 import { OrderAutomationModule } from './modules/order-automation/order-automation.module';
+import { OrderExportModule } from './modules/order-export/order-export.module';
 import { IntegrationModule } from './modules/integration/integration.module';
 import { IntegrationSettingsModule } from './modules/integration-settings/integration-settings.module';
 import { PrismaModule } from './common/prisma/prisma.module';
@@ -50,6 +51,7 @@ import { HealthController } from './modules/health/health.controller';
     CategoryModule,
     OrderModule,
     OrderAutomationModule,
+    OrderExportModule,
     IntegrationModule,
     IntegrationSettingsModule,
     WmsModule,

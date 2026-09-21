@@ -2093,3 +2093,102 @@ model NotificationProviderConfig {
   @@unique([agencyId, channel])
   @@index([agencyId])
 }
+
+// ---------------------------------------------------------------------------
+// Siparişleri Dışa Aktar (Order Export) — docs/export.md
+// ---------------------------------------------------------------------------
+
+model OrderExportPreset {
+  id              String                @id @default(cuid())
+  agencyId        String
+  clientId        String?
+  storeId         String
+  name            String
+  description     String?
+  isSystemDefault Boolean               @default(false)
+  isShared        Boolean               @default(true)
+  createdById     String?
+  filters         Json                  @default("{}")
+  columns         Json                  @default("[]")
+  rowMode         String                @default("ORDER") // ORDER | LINE_ITEM
+  format          String                @default("XLSX") // CSV | XLSX
+  formatOptions   Json                  @default("{}")
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  deletedAt       DateTime?
+
+  jobs            OrderExportJob[]
+  schedules       OrderExportSchedule[]
+
+  @@unique([storeId, name])
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([deletedAt])
+}
+
+model OrderExportJob {
+  id                String               @id @default(cuid())
+  agencyId          String
+  clientId          String?
+  storeId           String
+  presetId          String?
+  preset            OrderExportPreset?   @relation(fields: [presetId], references: [id], onDelete: SetNull)
+  requestedById     String?
+  filters           Json                 @default("{}")
+  columns           Json                 @default("[]")
+  rowMode           String               @default("ORDER")
+  format            String               @default("XLSX")
+  formatOptions     Json                 @default("{}")
+  status            String               @default("QUEUED") // QUEUED | PROCESSING | COMPLETED | FAILED | CANCELLED | EXPIRED
+  progress          Int                  @default(0)
+  totalRows         Int?
+  processedRows     Int                  @default(0)
+  fileKey           String?
+  fileName          String?
+  fileSize          Int?
+  expiresAt         DateTime?
+  errorMessage      String?
+  includesPii       Boolean              @default(false)
+  scheduleId        String?
+  schedule          OrderExportSchedule? @relation(fields: [scheduleId], references: [id], onDelete: SetNull)
+  startedAt         DateTime?
+  completedAt       DateTime?
+  downloadCount     Int                  @default(0)
+  downloadTokenHash String?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  deletedAt         DateTime?
+
+  @@index([storeId, createdAt])
+  @@index([requestedById, createdAt])
+  @@index([status])
+  @@index([agencyId])
+}
+
+model OrderExportSchedule {
+  id                  String            @id @default(cuid())
+  agencyId            String
+  clientId            String?
+  storeId             String
+  name                String
+  presetId            String
+  preset              OrderExportPreset @relation(fields: [presetId], references: [id], onDelete: Cascade)
+  cron                String            @default("0 8 * * 1")
+  timezone            String            @default("Europe/Istanbul")
+  relativeRange       String            @default("LAST_7_DAYS") // YESTERDAY | LAST_7_DAYS | LAST_WEEK | LAST_MONTH | MONTH_TO_DATE
+  recipients          String[]          @default([])
+  isActive            Boolean           @default(true)
+  lastRunAt           DateTime?
+  nextRunAt           DateTime?
+  consecutiveFailures Int               @default(0)
+  createdById         String?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  deletedAt           DateTime?
+
+  jobs                OrderExportJob[]
+
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([isActive, nextRunAt])
+}
