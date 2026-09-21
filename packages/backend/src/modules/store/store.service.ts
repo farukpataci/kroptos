@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateStoreDto, UpdateStoreDto } from './dto/store.dto';
 import { Prisma } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
+import { ActorContext } from '../rbac/rbac.service';
 
 @Injectable()
 export class StoreService {
@@ -45,111 +46,49 @@ export class StoreService {
     }
   }
 
-  private async getAllowedStoreIdsAndAgencies(userId: string, isSuperAdmin: boolean) {
-    if (isSuperAdmin) {
-      return { allAllowedStoreIds: null, generalAgencyIds: null };
-    }
-
-    // 1. Get store IDs from StoreUser model
-    const storeUsers = await this.prisma.storeUser.findMany({
-      where: { userId, deletedAt: null },
-      select: { storeId: true },
-    });
-    const specificStoreIds = storeUsers.map((su) => su.storeId);
-
-    // 2. Get store IDs from UserRole model (where storeId is explicitly assigned)
-    const userRolesWithStore = await this.prisma.userRole.findMany({
-      where: { userId, storeId: { not: null }, deletedAt: null },
-      select: { storeId: true },
-    });
-    const roleStoreIds = userRolesWithStore.map((ur) => ur.storeId!);
-
-    const allAllowedStoreIds = [...new Set([...specificStoreIds, ...roleStoreIds])];
-
-    // 3. Get general agency roles (where the user has access to the entire agency, storeId is null)
-    const userRolesGeneral = await this.prisma.userRole.findMany({
-      where: { userId, storeId: null, deletedAt: null },
-      select: { agencyId: true },
-    });
-    const generalAgencyIds = userRolesGeneral.map((ur) => ur.agencyId);
-
-    return { allAllowedStoreIds, generalAgencyIds };
+  /**
+   * Bulgu 7/8/9: kapsam AKTIF baglamdir (JwtStrategy/TenantMiddleware bu baglami kapsayan
+   * rolu zaten dogruladi); kullanicinin tum ajanslari/rol satirlari yeniden taranmaz.
+   * Bu ayni zamanda client kapsamli rolun (storeId: null) "ajans geneli" sayilmasi
+   * bug'ini kapatir. Baska ajans/client/magaza kaydi 404 (varligi sizmaz).
+   */
+  private scopeWhere(actor: ActorContext, isSuperAdmin: boolean): Prisma.StoreWhereInput {
+    if (isSuperAdmin) return {};
+    return {
+      agencyId: actor.agencyId,
+      ...(actor.clientId ? { clientId: actor.clientId } : {}),
+      ...(actor.storeId ? { id: actor.storeId } : {}),
+    };
   }
 
-  private async verifyStoreAccess(store: any, userId: string, isSuperAdmin: boolean) {
-    if (isSuperAdmin) return;
-
-    const { allAllowedStoreIds, generalAgencyIds } = await this.getAllowedStoreIdsAndAgencies(userId, isSuperAdmin);
-
-    const hasSpecificAccess = allAllowedStoreIds?.includes(store.id);
-    const hasGeneralAccess = generalAgencyIds?.includes(store.agencyId);
-
-    if (!hasSpecificAccess && !hasGeneralAccess) {
-      throw new ForbiddenException(`Access denied. You are not authorized for store '${store.id}'.`);
-    }
-  }
-
-  private async verifyAgencyAccess(agencyId: string, userId: string, isSuperAdmin: boolean) {
-    if (isSuperAdmin) return;
-    const userRole = await this.prisma.userRole.findFirst({
-      where: { userId, agencyId, deletedAt: null },
-    });
-    if (!userRole) {
-      throw new ForbiddenException(`Access denied. You do not belong to agency '${agencyId}'.`);
-    }
-  }
-
-  async list(userId: string, isSuperAdmin: boolean) {
-    const { allAllowedStoreIds, generalAgencyIds } = await this.getAllowedStoreIdsAndAgencies(userId, isSuperAdmin);
-
-    if (isSuperAdmin || (!allAllowedStoreIds && !generalAgencyIds)) {
-      return this.prisma.store.findMany({
-        where: { deletedAt: null },
-        orderBy: { createdAt: 'desc' },
-      });
-    }
-
+  async list(actor: ActorContext, isSuperAdmin: boolean) {
     return this.prisma.store.findMany({
-      where: {
-        deletedAt: null,
-        OR: [
-          { id: { in: allAllowedStoreIds || [] } },
-          { agencyId: { in: generalAgencyIds || [] } },
-        ],
-      },
+      where: { deletedAt: null, ...this.scopeWhere(actor, isSuperAdmin) },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async get(id: string, userId: string, isSuperAdmin: boolean) {
+  async get(id: string, actor: ActorContext, isSuperAdmin: boolean) {
     const store = await this.prisma.store.findFirst({
-      where: { id, deletedAt: null },
+      // AND: kapsam magaza baglaminda kendi id'sini tasir; spread ile parametreyi ezmesin (canli probede yakalandi).
+      where: { AND: [{ id, deletedAt: null }, this.scopeWhere(actor, isSuperAdmin)] },
     });
 
     if (!store) {
       throw new NotFoundException('Store not found or soft-deleted');
     }
 
-    await this.verifyStoreAccess(store, userId, isSuperAdmin);
-
     return store;
   }
 
-  async create(dto: CreateStoreDto, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    await this.verifyAgencyAccess(dto.agencyId, userId, isSuperAdmin);
-
-    if (dto.clientId) {
-      const client = await this.prisma.client.findFirst({
-        where: { id: dto.clientId, agencyId: dto.agencyId, deletedAt: null },
-      });
-      if (!client) {
-        throw new BadRequestException(`Client '${dto.clientId}' does not exist or does not belong to agency '${dto.agencyId}'`);
-      }
-    }
+  async create(dto: CreateStoreDto, actor: ActorContext) {
+    // Kapsam aktif baglam (P12b 0a): ajans ve client govdeden degil, dogrulanmis baglamdan.
+    const { userId, ipAddress, agencyId } = actor;
+    const clientId = actor.clientId ?? null;
 
     const slug = dto.slug ? this.generateSlug(dto.slug) : this.generateSlug(dto.name);
     const existingStore = await this.prisma.store.findFirst({
-      where: { agencyId: dto.agencyId, slug, deletedAt: null },
+      where: { agencyId, slug, deletedAt: null },
     });
 
     if (existingStore) {
@@ -159,8 +98,8 @@ export class StoreService {
     return this.prisma.$transaction(async (tx) => {
       const store = await tx.store.create({
         data: {
-          agencyId: dto.agencyId,
-          clientId: dto.clientId || null,
+          agencyId,
+          clientId,
           name: dto.name,
           slug,
           domain: dto.domain || null,
@@ -190,8 +129,9 @@ export class StoreService {
     });
   }
 
-  async update(id: string, dto: UpdateStoreDto, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    const store = await this.get(id, userId, isSuperAdmin);
+  async update(id: string, dto: UpdateStoreDto, actor: ActorContext, isSuperAdmin: boolean) {
+    const { userId, ipAddress } = actor;
+    const store = await this.get(id, actor, isSuperAdmin);
 
     let slug: string | undefined;
     if (dto.slug || dto.name) {
@@ -245,8 +185,9 @@ export class StoreService {
     });
   }
 
-  async delete(id: string, userId: string, isSuperAdmin: boolean, ipAddress?: string) {
-    const store = await this.get(id, userId, isSuperAdmin);
+  async delete(id: string, actor: ActorContext, isSuperAdmin: boolean) {
+    const { userId, ipAddress } = actor;
+    const store = await this.get(id, actor, isSuperAdmin);
 
     await this.prisma.$transaction(async (tx) => {
       const now = new Date();

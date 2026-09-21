@@ -122,7 +122,6 @@ export default function ClientsPage() {
         // Create client
         const payload = {
           ...formData,
-          agencyId: tenantContext.agencyId,
         };
         const created = await apiFetch<Client>('/clients', {
           method: 'POST',

@@ -14,6 +14,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
+import { actorFromRequest } from '../rbac/rbac.service';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { PrismaService } from '../../common/prisma/prisma.service';
@@ -50,11 +51,11 @@ export class DatevExportController {
   ) {}
 
   private extractScope(req: Request) {
-    const activeAgency = (req as any).activeAgency;
     const user = (req as any).user;
 
-    const agencyId = activeAgency?.id || (req.headers['x-agency-id'] as string);
-    const userId = user?.id;
+    // Bulgu 6: ham header tenant filtresi olamaz; yalnizca dogrulanmis aktif baglam.
+    const agencyId = actorFromRequest(req).agencyId;
+    const userId = user?.userId; // JWT kullanicisi userId tasir, id degil (P12b 0b)
     const userEmail = user?.email;
     const userName = user?.name;
     const ipAddress = req.ip || (req.headers['x-forwarded-for'] as string);

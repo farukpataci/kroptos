@@ -25,6 +25,7 @@ import {
   SaveIntegrationSettingsDto,
   ValidateIntegrationSettingsDto,
 } from './dto/integration-settings.dto';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Integration Settings')
 @ApiBearerAuth()
@@ -45,7 +46,7 @@ export class IntegrationSettingsController {
       agencyId: (req as any).activeAgency?.id,
       clientId: (req as any).activeClient?.id,
       storeId: (req as any).activeStore?.id,
-      isSuperAdmin: user?.role === 'super_admin' || user?.role === 'Super Admin',
+      isSuperAdmin: isSuperAdminRole(user),
       userId: user?.userId,
       userName: user?.email,
       ipAddress: req.ip || (req.headers['x-forwarded-for'] as string),

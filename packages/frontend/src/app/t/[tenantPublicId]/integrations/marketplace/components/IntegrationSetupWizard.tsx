@@ -12,7 +12,6 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { apiFetch } from '@/lib/api';
-import { useAuth } from '@/lib/auth-context';
 import type { IntegrationStatus, ProviderSettingsManifest, SettingsSection } from '@kroptos/shared';
 import { useIntegrationSettings } from '../hooks/useIntegrationSettings';
 import { SettingsSchemaRenderer } from './SettingsSchemaRenderer';
@@ -53,7 +52,6 @@ export function IntegrationSetupWizard({
   onFinished,
 }: Props) {
   const t = useTranslations();
-  const { tenantContext } = useAuth();
 
   const [phase, setPhase] = useState<Phase>(existing ? 'configure' : 'credentials');
   const [integration, setIntegration] = useState<Integration | null>(existing ?? null);
@@ -142,9 +140,6 @@ export function IntegrationSetupWizard({
           name,
           provider,
           providerType: 'marketplace',
-          agencyId: tenantContext.agencyId,
-          clientId: tenantContext.clientId || undefined,
-          storeId: tenantContext.storeId || undefined,
           credentials,
         }),
       });

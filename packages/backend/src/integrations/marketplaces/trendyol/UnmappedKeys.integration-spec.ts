@@ -1,6 +1,8 @@
 import { config as loadEnv } from 'dotenv';
 import { join } from 'path';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { asSystemClient } from '@common/prisma/testing';
+import { runWithTenant } from '@common/prisma/tenant-context';
 import { IntegrationSyncWorker } from '../../../modules/integration/integration-sync.worker';
 import { MarketplaceHttpClient } from '../core/MarketplaceHttpClient';
 import { MarketplaceRateLimiter } from '../core/MarketplaceRateLimiter';
@@ -26,7 +28,9 @@ import { TrendyolConnector } from './TrendyolConnector';
 describe('unmapped keys and the cargo block, from a live Trendyol read', () => {
   loadEnv({ path: join(__dirname, '../../../../.env') });
 
-  const prisma = new PrismaService();
+  // RLS (P12): sayım/temizlik sistem bağlamında; worker kaydı kiracı bağlamında (üretimdeki gibi).
+  const raw = new PrismaService();
+  const prisma = asSystemClient(raw);
   const tenantId = `it-unmapped-${Date.now()}`;
   let logsBefore: number;
 
@@ -48,20 +52,20 @@ describe('unmapped keys and the cargo block, from a live Trendyol read', () => {
 
   // Only prisma is reached: onModuleInit is never called, so no Redis, no queue.
   const worker = new IntegrationSyncWorker(
-    prisma,
+    raw,
     null as any,
     null as any,
     null as any,
     null as any,
     null as any,
   );
-  const record = (c: any) => (worker as any).recordUnmappedKeys(tenantId, 'TRENDYOL', c);
+  const record = (c: any) => runWithTenant(tenantId, () => (worker as any).recordUnmappedKeys(tenantId, 'TRENDYOL', c));
 
   beforeAll(async () => {
     for (const key of ['TY_SELLER', 'TY_KEY', 'TY_SECRET']) {
       if (!process.env[key]) throw new Error(`${key} yok; canlı okuma yapılamaz.`);
     }
-    await prisma.$connect();
+    await raw.$connect();
     logsBefore = await prisma.integrationLog.count();
   });
 
@@ -70,7 +74,7 @@ describe('unmapped keys and the cargo block, from a live Trendyol read', () => {
     const after = await prisma.integrationLog.count();
     // The row count has to come back to where it started, or a fixture leaked.
     expect(after).toBe(logsBefore);
-    await prisma.$disconnect();
+    await raw.$disconnect();
   });
 
   it('writes the dropped key names, and only the names, as a warning', async () => {

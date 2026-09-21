@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { usePathname, useParams, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth-context';
+import { usePermission } from '@/hooks/usePermission';
+import { requiredPermissionFor } from '@/lib/route-permissions';
 import { useTranslations } from 'next-intl';
 import { isNavItemActive } from '@/lib/nav-active';
 import {
@@ -57,6 +59,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
   const searchParams = useSearchParams();
   const params = useParams();
   const { user, logout, tenantContext, accessibleTenants } = useAuth();
+  const { can, isLoading: permLoading } = usePermission();
   const t = useTranslations('navigation');
 
   const currentAgency = accessibleTenants.find((a: any) => a.id === tenantContext.agencyId);
@@ -77,7 +80,7 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
     }));
   };
 
-  const navGroups: NavGroup[] = [
+  const allNavGroups: NavGroup[] = [
     {
       id: 'dashboard',
       label: t('dashboard'),
@@ -164,6 +167,20 @@ export default function Sidebar({ isCollapsed, onToggleCollapse, isMobileOpen, o
       ],
     },
   ];
+
+  // Yetkiye duyarli menu (UX; guvenlik siniri backend). Rota -> izin tablosu
+  // lib/route-permissions.ts: layout'un 403 ekraniyla AYNI kaynak. Izinler
+  // yuklenene kadar gate'li ogeler cizilmez (flicker yok); yuklenince yetkisiz
+  // href'ler atilir, cocugu kalmayan grup gizlenir.
+  const visible = (href?: string) => {
+    if (!href) return true;
+    const required = requiredPermissionFor(href.split('?')[0]);
+    if (!required) return true; // dashboard, destek: izin istemez, yuklenirken de gorunur
+    return !permLoading && can(required);
+  };
+  const navGroups: NavGroup[] = allNavGroups
+    .map((g) => (g.children ? { ...g, children: g.children.filter((c) => visible(c.href)) } : g))
+    .filter((g) => (g.children ? g.children.length > 0 : visible(g.href)));
 
   const isChildActive = (href: string, exact?: boolean) =>
     isNavItemActive(pathname, searchParams, href, exact);

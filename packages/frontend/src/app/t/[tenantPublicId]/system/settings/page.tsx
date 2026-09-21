@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { GeneralSettingsForm } from './components/GeneralSettingsForm';
-import { UsersTable } from './components/UsersTable';
-import { RoleList } from './components/RoleList';
+import UsersPanel from './components/UsersPanel';
+import RoleList from './components/RoleList';
 import { TenantSettingsForm } from './components/TenantSettingsForm';
 import { OrderSettingsForm } from './components/OrderSettingsForm';
 import { WarehouseSettingsForm } from './components/WarehouseSettingsForm';
@@ -62,7 +62,7 @@ export default function SystemSettingsPage() {
         {/* Tab Content Area */}
         <div className="w-full bg-white p-6 rounded-2xl shadow-sm border border-gray-100 min-h-[500px]">
           {activeTab === 'general' && <GeneralSettingsForm />}
-          {activeTab === 'users' && <UsersTable />}
+          {activeTab === 'users' && <UsersPanel />}
           {activeTab === 'roles' && <RoleList />}
           {activeTab === 'tenant' && <TenantSettingsForm />}
           {activeTab === 'orders' && <OrderSettingsForm />}

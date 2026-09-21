@@ -38,6 +38,8 @@ out/
 .env
 .env.*
 .env.staging
+!.env.example
+.env.*.local
 
 # IDE
 vscode/

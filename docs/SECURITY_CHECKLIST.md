@@ -3,143 +3,109 @@
 ## Executive Summary
 KroptOS handles sensitive commerce data for multiple tenants. **Zero tolerance for cross-tenant data leaks**. All security requirements are **mandatory** for production deployment.
 
+> **Durum (2026-09-16, `feature/multi-user`):** 1, 3 ve 4. bölümler **uygulanan** kodu
+> anlatır (P1–P12, kanıtlar commit gövdelerinde). 2, 5–10. bölümler gereksinim şablonudur;
+> uygulamayla birebir örtüşmeyen kod örnekleri içerebilir, kaynak koda göre okuyun.
+
 ---
 
 ## 1. Multi-Tenant Isolation
 
-### 1.1 Tenant Middleware (MANDATORY)
-**Requirement**: Every API request must validate tenant context before processing any data operation.
+Hiyerarşi **ajans → client → mağaza**. Üstteki rol alttaki her şeyi kapsar
+(CLAUDE.md Kural 3). İzolasyon üç kilitle sağlanır; hiçbiri diğerinin yerine geçmez:
 
-**Implementation**:
-```typescript
-// src/common/middleware/tenant.middleware.ts
-@Injectable()
-export class TenantMiddleware implements NestMiddleware {
-  constructor(private jwtService: JwtService) {}
+| Kilit | Nerede | Ne yapar |
+|---|---|---|
+| 1. Bağlam doğrulama | `common/middleware/tenant.middleware.ts` | `x-agency-id / x-client-id / x-store-id` header'larını JWT'nin kullanıcısının **kapsayan** rolüne karşı doğrular (`buildUserRoleScopeWhere`), `req.activeAgency/activeClient/activeStore` yazar; kapsam dışı → 403 |
+| 2. Uygulama katmanı kapsaması | her servis | `agencyId` (ve varsa client/store) **where**'de; include'lar da kapsanır; başka kiracının kaydı **404** (403 değil — varlık oracle'ı yok) |
+| 3. Postgres RLS | `prisma/scripts/p12-rls-0*.sql` + `common/prisma/prisma.service.ts` | 68 tabloda satır seviyesi politika; uygulama filtresi unutulsa bile satır gelmez / yazılamaz |
 
-  use(req: Request, res: Response, next: NextFunction) {
-    const authHeader = req.headers.authorization;
-    if (!authHeader) throw new UnauthorizedException('Missing token');
+### 1.1 Tenant Middleware (UYGULANDI)
+- Ham header **asla** tenant filtresi değildir (Kural 2). Filtre yalnız `TenantMiddleware`'in
+  yazdığı `req.activeAgency` ya da JWT'den okunur. Servislere aktör `actorFromRequest(req)`
+  (`modules/rbac/rbac.service.ts`) ile geçer; agencyId yoksa 400.
+- İstek gövdesinden tenant alanı **alınmaz**: `Create*Dto`'larda `agencyId/clientId/storeId`
+  yok (Category, Integration, Client, Store — P12a/P12b); `ValidationPipe`
+  `forbidNonWhitelisted` gövdede gelirse **400**. Kapsam seçimi gerektiren DTO'lar
+  (`AssignRoleDto`, `ChangeUserRoleDto`, `CreateInvitationDto`) yalnız aktif ajans içinde
+  client/store seçer ve doğrulanır.
+- Bilinen açık (rapor): `accounting.dto` gövde `storeId/clientId` öncelikli (agencyId
+  controller'da ezilir); `agent CreateEnrollmentCodeDto.clientId` ajansa ait olduğu
+  doğrulanmıyor. Muhasebe/agent modülü ayrı iş.
 
-    const token = authHeader.replace('Bearer ', '');
-    const payload = this.jwtService.verify(token);
-    
-    // Extract tenant context from JWT
-    req['tenantId'] = payload.tenantId;
-    req['userId'] = payload.userId;
-    req['role'] = payload.role;
-    
-    // Set PostgreSQL session variable for RLS
-    // (executed before any DB query)
-    req['pg'] = {
-      setting: async () => {
-        await db.$executeRaw`
-          SET app.agency_id = ${payload.tenantId}::uuid
-        `;
-      }
-    };
-    
-    next();
-  }
-}
+**Doğrulama**
+- [x] Token yok → 401; geçersiz → 401 (`JwtStrategy`, her istekte DB/cache doğrulamalı)
+- [x] Geçerli token, kapsam dışı `x-agency-id` → 403 (`test/tenant-isolation.e2e-spec.ts`)
+- [x] Gövdede `agencyId=B` ile POST /clients, /stores, /categories, /integrations → 400; B'de satır yok
 
-// Register in app.module.ts
-export class AppModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(TenantMiddleware).forRoutes('*');
-  }
-}
-```
+### 1.2 Row-Level Security (UYGULANDI — P12 Adım 2, aşamalı)
+**DB tarafı** (`prisma/scripts/`, psql ile uygulanır; migrations dizini YOK, `pnpm db:push` "already in sync" verir):
+- `p12-rls-00-role.sql`: uygulama rolü **`kroptos_app` LOGIN NOSUPERUSER NOBYPASSRLS**,
+  tabloların sahibi değil (sahip = postgres). Yardımcı fonksiyon:
+  ```sql
+  app_rls_allowed(col) = current_setting('app.rls_bypass', true) = 'on'
+                      OR (col IS NOT NULL AND col = current_setting('app.agency_id', true))
+  ```
+- `p12-rls-01..04-wave*.sql`: 4 dalga, her tabloda `ENABLE ROW LEVEL SECURITY` + tek
+  `FOR ALL` politikası, **USING ve WITH CHECK aynı koşul** (okuma kadar yazma da kapalı).
+  - 54 `agencyId` tablosu doğrudan; `AuditLog` (Prisma `tenantId` → DB kolonu `agencyId`) ve
+    `IntegrationLog` (`tenantId`) kolon adıyla; `Role.agencyId IS NULL` (sistem rolleri) herkese
+    görünür; `AuditLog`/`CarrierWebhookEvent` NULL satırları yalnız bypass görür.
+  - `agencyId`'siz 12 çocuk tablo üst tablo üzerinden `EXISTS(... app_rls_allowed(üst.agencyId))`:
+    OrderItem, OrderTimeline, InventoryAdjustment, IntegrationSettingRevision, ProductMapping,
+    BundleItem, CrossSellProduct, WebhookEvent, StoreUser, WarehouseZone, WarehouseLocation,
+    AccountingSyncCursor.
+  - Geri alma: `ALTER TABLE "T" DISABLE ROW LEVEL SECURITY` (politika kalabilir).
+- Bağlantılar: `DATABASE_URL` = `kroptos_app` (uygulama); `DATABASE_MIGRATION_URL` = superuser
+  (şema `pnpm db:push`, seed `pnpm db:seed`, `prisma/scripts/*.ts`, psql). Superuser ve tablo
+  sahibi RLS'i **her zaman** atlar; uygulama asla bu bağlantıyla çalışmaz.
 
-**Verification**:
-- [ ] Token missing → 401 Unauthorized
-- [ ] Invalid token → 401 Unauthorized
-- [ ] Token valid, but user accesses different tenantId → 403 Forbidden
-- [ ] Tenant context set on every request
+**Uygulama tarafı** (`common/prisma/`):
+- `tenant-context.ts`: AsyncLocalStorage bağlamı `{tenant, agencyId}` | `{system, reason}`;
+  `runWithTenant(agencyId, fn)` / `runAsSystem(reason, fn)` — reason zorunlu, log'a düşer.
+- `prisma.service.ts` (`$extends`): her işlem `[set_config('app.agency_id' | 'app.rls_bypass',
+  …, true), işlem]` batch transaction'ı (`SET LOCAL` eşdeğeri); interactive/batch
+  `$transaction` başında bir kez set. **Bağlam yoksa**: `WARN [PrismaRls] Query without tenant
+  context: Model.op` (çağrı noktası başına dakikada bir) ve sorgu **bypass almadan** koşar →
+  kiracı tabloları boş / yazma reddi. Sessiz filtresiz çalışma yok.
+- İstek hattı: `RlsContextMiddleware` (TenantMiddleware'den **önce**) `system:request:pre-auth`
+  açar — kiracı çözümü, `JwtStrategy`, `PermissionGuard` kiracı bilinmeden koşar;
+  `RlsBindInterceptor` (global, guard'lardan sonra) `activeAgency ?? JWT.agencyId` → **tenant**,
+  platform super admin (key `super_admin` **ve** `isSystem`, DB'den) → **system**.
+- Bağlamsız yerler açık bağlam kurar: `integration-sync.worker` (agencyId `runAsSystem` ile tek
+  sorguda çözülür, iş `runWithTenant`), `carrier-tracking.worker` (tarama sistem, grup başına
+  kiracı), `accounting-sync.worker` (job.scope.agencyId), `agent-gateway` (hello sistem,
+  sonrası Agent'ın ajansı). Tasarım gereği kiracılar arası okumalar: `auth.getMe`,
+  `auth.switchTenant`, `agency.list/get`, `session.revokeForUserInTenant` → `runAsSystem`.
 
-### 1.2 Row-Level Security (RLS) in PostgreSQL (MANDATORY)
-**Requirement**: Database enforces tenant isolation at row level; application layer cannot bypass.
+**Doğrulama** (hepsi `feature/multi-user` d258818'de canlı ölçüldü)
+- [x] psql, `kroptos_app`: bağlamsız `SELECT count(*) FROM "Product"` → 0; `SET app.agency_id=A`
+      → yalnız A; `SET LOCAL app.agency_id=A` iken `agencyId=B` INSERT → `42501 violates row-level security policy`
+- [x] `pg_roles`: `kroptos_app` rolsuper=f rolbypassrls=f; `pg_stat_activity`: API bu rolle bağlı
+- [x] HTTP: `product.get` uygulama katmanında id ile kapsamsız okuyup sonra 403 verir; A kullanıcısı
+      B ürün id'si → **404** (satırı RLS gizledi; RLS istek hattına bağlı olmasa 403 olurdu)
+- [x] `test/tenant-isolation.e2e-spec.ts`: uygulama filtresi kasıtlı kaldırılmış
+      `product.findMany({ where: { id: B } })` A bağlamında boş; WITH CHECK reddi
+- [x] Worker: BullMQ `sync_stock` job'ı kiracı bağlamında tamamlandı, ApiLog kiracıda, "not found" yok
+- [x] API log'unda bağlamsız sorgu uyarısı 0 (probe ve worker koşuları boyunca)
 
-**Implementation**:
-```sql
--- Enable RLS on all tenant-scoped tables
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+### 1.3 Application-Level Access Control (UYGULANDI)
+Kalıplar (CLAUDE.md Kural 1, 3, 7):
+- **Kapsam where'e iner**, include'lara da: `where: { deletedAt: null, userRoles: { some: { agencyId } } }, include: { userRoles: { where: { agencyId } } }`.
+- **Tekil okuma**: `findFirst({ where: { AND: [{ id, deletedAt: null }, scope] } })` → yoksa **404**.
+  Client/mağaza kapsamlı bağlamda `scope` kendi id'sini taşır; spread ile parametreyi ezmesin (AND).
+- **İlişkili id'ler**: bundle/cross-sell/varyant-ebeveyn (`assertProductsInAgency`) ve toplu işlemler:
+  `count({ id: { in }, agencyId })` ≠ istenen → **403**, hiçbir yazma yok (sayım oracle olmasın).
+- **Listeler aktif bağlamdır**, kullanıcının tüm ajansları değil (client/store list).
+- Kullanılmayan kapsam parametresi = hata: `agencyId` imzada alınıp where'e konmamışsa sızıntıdır
+  (`logo-stock`, `getProductMappings` vakaları).
+- Mock'lu birim testi kanıt değildir; kiracı davranışı canlı ölçülür: satır sayısı → fixture →
+  gerçek HTTP → `finally` sil → sayı başa döner (`pnpm test:integration`, `pnpm test:e2e`).
 
--- Policy: Only rows matching session agency_id are visible
-CREATE POLICY products_rls ON products
-    FOR ALL
-    USING (agency_id = current_setting('app.agency_id')::uuid)
-    WITH CHECK (agency_id = current_setting('app.agency_id')::uuid);
-
-CREATE POLICY orders_rls ON orders
-    FOR ALL
-    USING (agency_id = current_setting('app.agency_id')::uuid);
-
--- For users: users can only see users within their agency
-CREATE POLICY users_rls ON users
-    FOR SELECT
-    USING (
-      id = current_user_id()  -- See self
-      OR agency_id = current_setting('app.agency_id')::uuid  -- Or in same agency
-    );
-```
-
-**Verification**:
-- [ ] Direct SQL query (bypassing app): `SELECT * FROM products;` returns no results
-- [ ] Query with correct session: `SET app.agency_id = '...'; SELECT * FROM products;` returns filtered results
-- [ ] Attempt INSERT/UPDATE to wrong agency_id → Permission denied error
-
-### 1.3 Application-Level Access Control
-**Requirement**: Redundant filtering in NestJS (defense-in-depth; RLS is not sufficient alone).
-
-**Implementation**:
-```typescript
-// src/common/guards/tenant.guard.ts
-@Injectable()
-export class TenantGuard implements CanActivate {
-  constructor(private prisma: PrismaService) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const { agencyId } = request.params;
-    const currentTenantId = request['tenantId'];
-
-    // Check if user has access to requested tenant
-    const hasAccess = await this.prisma.userRole.findFirst({
-      where: {
-        userId: request['userId'],
-        agencyId: agencyId,
-      },
-    });
-
-    if (!hasAccess) {
-      throw new ForbiddenException(
-        `User does not have access to agency ${agencyId}`
-      );
-    }
-
-    return true;
-  }
-}
-
-// Apply on controller
-@Controller('/agencies/:agencyId/products')
-@UseGuards(AuthGuard, TenantGuard)
-export class ProductController {
-  @Get()
-  listProducts(@Param('agencyId') agencyId: string) {
-    // Additional application filtering
-    return this.productService.list(agencyId);
-  }
-}
-```
-
-**Verification**:
-- [ ] User A tries to access agency B's products → 403 Forbidden
-- [ ] User has role but no permission for action → 403 Forbidden
-- [ ] Correct tenant & role → 200 OK
+**Doğrulama**
+- [x] A kullanıcısı B'nin category/integration/client/store/tenant id'si → 404 (5/5)
+- [x] A kullanıcısı B'nin ürününü bundle/cross-sell/parent olarak veremez → 403, satır yok
+- [x] Rol, izin, kullanıcı uçları aktif ajans dışını görmez/yazamaz (P5/P7 probe'ları)
 
 ---
 
@@ -239,311 +205,102 @@ ENCRYPTION_KEY=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4
 
 ## 3. Authentication & JWT Strategy
 
-### 3.1 JWT Token Structure (MANDATORY)
-**Requirement**: JWT payload must include tenant context for every request validation.
+### 3.1 JWT Token Structure (UYGULANDI)
+Erişim token'ı 15 dk, yenileme 7 gün. **İzin listesi JWT'de taşınmaz** (P2): izinler her
+istekte DB'den (60 sn Redis cache) çözülür; rol matrisi değişince token bayatlamaz.
 
-**JWT Payload**:
 ```json
-{
-  "sub": "user-uuid-id",
-  "email": "user@example.com",
-  "tenantId": "agency-uuid-id",
-  "clientId": "client-uuid-id (optional)",
-  "storeId": "store-uuid-id (optional)",
-  "role": "admin | manager | staff",
-  "permissions": ["product:create", "order:read", "order:update:status"],
-  "iat": 1704067200,
-  "exp": 1704070800,
-  "iss": "kroptosapi"
-}
+{ "sid": "<Session.id>", "userId": "…", "email": "…",
+  "tenantId": "…", "agencyId": "…", "clientId": null, "storeId": null,
+  "role": "<Role.key>", "roleIsSystem": true }
 ```
+- `role` = `Role.key` (ad değil). Platform süper yöneticisi `isSuperAdminRole({ role, roleIsSystem })`:
+  key `super_admin` **ve** `isSystem` — tenant'ın açtığı `super_admin` adlı rol bypass alamaz (P7);
+  `PlatformAdminGuard` ayrıca e-posta allowlist'i ister.
+- Birincil rol seçimi deterministik: `resolvePrimaryRole` (bağlam özgüllüğü > ROLE_PRIORITY >
+  createdAt) — `findFirst` rastgeleliği yok (P1, Kural 4).
+- `JwtStrategy.validate` her istekte `PermissionCacheService.getAccess`: kullanıcı aktif mi, silinmiş
+  mi, token'ın bağlamını kapsayan rolü var mı; `roleIsSystem` **DB'den**. Başarısızlık **401**
+  (403 değil: istemci 403'te bağlamı düşürüp yeniden dener, 401 oturumu temizler).
+- `sid` → `Session` satırı (`tokenHash` = sha256(refresh), `lastUsedAt`); "mevcut oturum" işareti.
 
-**Implementation**:
-```typescript
-// src/auth/jwt.strategy.ts
-@Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(private configService: ConfigService) {
-    super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
-    });
-  }
+**Doğrulama**
+- [x] Pasife alınan / rolü düşürülen kullanıcının eski access token'ı → 401 (e2e + P11 probe)
+- [x] Tenant rolü `key='super_admin', isSystem=false` → B ürünü 404, B header'ı 403 (e2e)
+- [x] Mağaza kapsamlı kullanıcı kilitlenmez: getMe brand girdisi + izinler, mağaza bağlamı 200 (P2.6)
 
-  async validate(payload: any) {
-    return {
-      userId: payload.sub,
-      email: payload.email,
-      tenantId: payload.tenantId,
-      role: payload.role,
-      permissions: payload.permissions,
-    };
-  }
-}
+### 3.2 Refresh Token Rotation & Session Revocation (UYGULANDI — P11)
+- `POST /api/auth/refresh`: eski satır silinir, yeni çift verilir; pasif/silinmiş kullanıcı → 401.
+- `SessionService`: `revokeAllForUser` (Session.isActive=false + RefreshToken sil +
+  cache invalidate + audit `session.revoke`, **tenantId dolu**), `revokeOne` (başkasınınki 404),
+  `revokeForUserInTenant` (başka ajansta rolü kalıyorsa oturumlar korunur — kiracılar arası
+  soru, `runAsSystem`), `revokeForRole`.
+- Tetikleyiciler: rol kaldırma / değiştirme / tenant'tan çıkarma, rol izin matrisi değişimi,
+  `isActive=false`, şifre değişimi. Davet kabulünde yok.
+- Uçlar: `GET/DELETE /api/system/sessions`, `DELETE /api/system/sessions/:id`,
+  `DELETE /api/system/users/:id/sessions` (`users.manage`).
 
-// JWT signing on login
-@Service()
-export class AuthService {
-  constructor(private jwtService: JwtService) {}
+**Doğrulama**
+- [x] Aynı refresh token ikinci kez → 401; pasif kullanıcı refresh → 401
+- [x] Başkasının oturumu DELETE → 404; diğer oturumları kapat → `{revoked:n}` + audit kiracıyla
 
-  async login(user: User, tenantId: string) {
-    const permissions = await this.getRolePermissions(user.id, tenantId);
-    
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      tenantId,
-      role: user.role,
-      permissions,
-    };
+### 3.3 Password Security (UYGULANDI)
+bcrypt 12 tur (`auth.service`); kural tek kaynak `@kroptos/shared` `passwordProblem`
+(`PASSWORD_MIN_LENGTH=8`), davet kabulü ve profil şifre değişimi aynı kuralı kullanır.
 
-    return {
-      accessToken: this.jwtService.sign(payload, {
-        expiresIn: '1h',
-      }),
-      refreshToken: this.jwtService.sign(payload, {
-        expiresIn: '7d',
-      }),
-    };
-  }
-}
-```
+### 3.4 Invitation Flow (UYGULANDI — P6/P9)
+- `POST /api/system/invitations` (`users.manage`): davet **aktif ajans** içinde; client/store
+  kapsamı doğrulanır; token DB'de yalnız sha256 hash; bekleyen davet varsa yenisi açılmaz.
+- Public `GET /api/invitations/:token`, `POST /api/invitations/:token/accept` (guard yok,
+  `publicRoutes`; rate limit); kabul → UserRole yazılır, `StoreUser` **yazılmaz**; oturum çifti döner.
+- `devInviteUrl` yalnız `NODE_ENV !== 'production'` (TODO: gerçek mail sağlayıcısında kaldır).
 
-**Verification**:
-- [ ] Decode JWT at jwt.io: payload contains tenantId
-- [ ] Change tenantId in token → signature invalid
-- [ ] Token older than 1 hour (accessToken) → 401 Unauthorized
-
-### 3.2 Refresh Token Rotation (RECOMMENDED)
-**Requirement**: Refresh tokens are revoked after use; new refresh token issued.
-
-**Implementation**:
-```typescript
-// Database: refresh_tokens table
-// ├─ id, user_id, token_hash, expires_at, created_at
-
-@Service()
-export class RefreshTokenService {
-  async issueRefreshToken(user: User) {
-    const refreshToken = this.jwtService.sign(
-      { sub: user.id },
-      { expiresIn: '7d' }
-    );
-
-    const tokenHash = hash(refreshToken); // bcrypt hash
-    await this.prisma.refreshToken.create({
-      data: {
-        userId: user.id,
-        tokenHash,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      },
-    });
-
-    return refreshToken;
-  }
-
-  async rotateRefreshToken(oldToken: string) {
-    const payload = this.jwtService.verify(oldToken);
-    const tokenHash = hash(oldToken);
-
-    // Check if token exists and not expired
-    const storedToken = await this.prisma.refreshToken.findFirst({
-      where: {
-        userId: payload.sub,
-        tokenHash,
-        expiresAt: { gt: new Date() },
-      },
-    });
-
-    if (!storedToken) throw new UnauthorizedException('Invalid refresh token');
-
-    // Revoke old token
-    await this.prisma.refreshToken.delete({ where: { id: storedToken.id } });
-
-    // Issue new tokens
-    return this.issueRefreshToken(await this.prisma.user.findUnique({
-      where: { id: payload.sub }
-    }));
-  }
-}
-```
-
-**Verification**:
-- [ ] Use refresh token once → success
-- [ ] Try reusing same token → 401 Unauthorized
-
-### 3.3 Password Security (MANDATORY)
-**Requirement**: Passwords hashed with bcrypt (minimum 10 salt rounds).
-
-**Implementation**:
-```typescript
-import * as bcrypt from 'bcrypt';
-
-@Service()
-export class UserService {
-  async hashPassword(plaintext: string): Promise<string> {
-    return bcrypt.hash(plaintext, 10); // 10 rounds
-  }
-
-  async verifyPassword(plaintext: string, hash: string): Promise<boolean> {
-    return bcrypt.compare(plaintext, hash);
-  }
-
-  async createUser(email: string, password: string) {
-    const passwordHash = await this.hashPassword(password);
-    return this.prisma.user.create({
-      data: {
-        email,
-        passwordHash,
-      },
-    });
-  }
-
-  async validateCredentials(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new UnauthorizedException('Invalid credentials');
-
-    const isValid = await this.verifyPassword(password, user.passwordHash);
-    if (!isValid) throw new UnauthorizedException('Invalid credentials');
-
-    return user;
-  }
-}
-```
-
-**Verification**:
-- [ ] `hashPassword('test')` → different hash each time
-- [ ] `verifyPassword('test', hash)` → true
-- [ ] `verifyPassword('wrong', hash)` → false
-- [ ] Database shows no plaintext passwords
+**Doğrulama**
+- [x] Token ikinci kez kabul → 4xx, tek UserRole (e2e)
+- [x] `POST /api/auth/register` → rol `agency_owner` (e2e, P1)
 
 ---
 
 ## 4. Role-Based Access Control (RBAC)
 
-### 4.1 Permission Matrix (MANDATORY)
-**Requirement**: All data access validated against role permissions.
+### 4.1 Permission Catalog & Guard (UYGULANDI — P4/P7)
+- **Tek kaynak** `packages/shared/src/permissions.ts`: 66 izin `kaynak.aksiyon` biçiminde
+  (`products.read`, `orders.update`; iki nokta kalıbı YOK), `PERMISSION_CATEGORIES`,
+  `DEFAULT_ROLES` 9 sistem rolü (`super_admin`, `agency_owner`, `agency_admin`, `client_manager`,
+  `store_manager`, `warehouse_staff`, `sales_rep`, `viewer`, …), `SYSTEM_ROLE_KEYS`. Seed oradan okur;
+  `@RequirePermission` ile kullanılan her izin katalogda **tanımlı** olmalı (Kural 5).
+- `Role`: `agencyId NULL + isSystem` = sistem rolü (dokunulmaz); `agencyId dolu` = ajansın özel rolü.
+  Partial unique index'ler (`role_system_key_uq`, `role_agency_key_uq`, `userrole_scope_uq`) yalnız
+  SQL'de (`prisma/scripts/p3-role-schema.sql`).
+- `PermissionGuard` (`common/guards/permission.guard.ts`): izinler DB/cache'ten
+  (`perm:{userId}:{agencyId}:{clientId|-}:{storeId|-}`), kapsayan rollerin **birleşimi**;
+  `*:*` yalnız sistem `super_admin`. Eksik izin → 403.
+- `RolesService` sınırları: sistem rolü PATCH/DELETE → 403; başka ajansın rolü → 404;
+  rezerve key'ler ve `'*:*'` tenant rolüne verilmez; **escalation**: aktör sahip olmadığı izni
+  veremez (`assertCanGrant`); izin matrisi değişince role bağlı herkesin oturumu kapanır.
+- `RbacService.assignRole/revokeRole`: rol sistem-ya-da-kendi-ajansı (yoksa 404),
+  `super_admin` atanamaz (403), kendi rolünü kaldırma 400, **son `agency_owner`** kaldırılamaz /
+  pasife alınamaz (400); atama kapsamı (client/store) aktif ajans içinde doğrulanır.
 
-| Role | Product CRUD | Order Create | Order Update Status | User Mgmt | Agency Edit |
-|------|--------------|--------------|---------------------|-----------|-------------|
-| Super Admin | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Agency Admin | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Client Manager | ✓ | ✓ | ✓ | (own store) | ✗ |
-| Store Manager | ✓ | ✓ | ✓ | (own store) | ✗ |
-| Warehouse Staff | ✓ (view) | ✓ (view) | ✓ | ✗ | ✗ |
-| Sales Rep | ✓ (view) | ✓ | ✗ | ✗ | ✗ |
+**Doğrulama**
+- [x] Yabancı rol atama 404, super_admin atama 403, self-revoke 400, son sahip 400 (probe + e2e)
+- [x] Yabancı rol PATCH 404, sistem rolü PATCH 403, `*:*` 403 (probe + e2e)
+- [x] `permission.guard.integration-spec`: gerçek DB'de kapsama (ajans → client → mağaza)
 
-**Implementation**:
-```typescript
-// src/rbac/decorators/require-permission.decorator.ts
-export const RequirePermission = (permission: string) =>
-  SetMetadata('permission', permission);
+### 4.2 Audit Trail (UYGULANDI, konsolidasyon açık)
+- Her mutasyon kendi transaction'ında `auditLog.create` ile yazılır (`tx: Prisma.TransactionClient`,
+  `any` değil); alan adları şemadan: `tenantId` (DB kolonu `agencyId`), `userId`, `entityType`,
+  `entityId`, `action`, `oldValue/newValue`. **try/catch yok**: audit yazılamıyorsa mutasyon
+  geri alınır (P5 bulgusu). RLS altında `tenantId` boş audit satırı kiracı bağlamında **reddedilir**
+  (42501) — sessiz kayıp yerine hata.
+- Rol/atama/oturum olayları: `role.create|update|delete` (izin diff'i `added/removed`),
+  `rbac.assign|revoke`, `session.revoke`, `user.*`, `invitation.*`.
+- Açık: bazı eski servisler hâlâ `AuditLogService.createLog` (try/catch'li) kullanıyor;
+  `profile.service` rol adını (`'owner'`) key yerine karşılaştırıyor — ayrı iş.
 
-// src/rbac/guards/permission.guard.ts
-@Injectable()
-export class PermissionGuard implements CanActivate {
-  constructor(private reflector: Reflector, private rbacService: RbacService) {}
-
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const permission = this.reflector.get<string>(
-      'permission',
-      context.getHandler(),
-    );
-    if (!permission) return true; // No permission required
-
-    const request = context.switchToHttp().getRequest();
-    const { userId, tenantId } = request;
-
-    const hasPermission = await this.rbacService.hasPermission(
-      userId,
-      tenantId,
-      permission,
-    );
-
-    if (!hasPermission) {
-      throw new ForbiddenException(
-        `User lacks permission: ${permission}`
-      );
-    }
-
-    return true;
-  }
-}
-
-// Usage in controller
-@Controller('/products')
-@UseGuards(AuthGuard, PermissionGuard)
-export class ProductController {
-  @Post()
-  @RequirePermission('product:create')
-  create(@Body() dto: CreateProductDto) {
-    return this.productService.create(dto);
-  }
-
-  @Patch(':id/archive')
-  @RequirePermission('product:delete')
-  delete(@Param('id') id: string) {
-    return this.productService.softDelete(id);
-  }
-}
-```
-
-**Verification**:
-- [ ] User without "product:create" tries POST /products → 403 Forbidden
-- [ ] User with "product:create" role → 201 Created
-- [ ] Admin always has all permissions
-
-### 4.2 Audit Trail for RBAC Changes (MANDATORY)
-**Requirement**: Any role/permission changes logged with user, timestamp, old/new values.
-
-**Implementation**:
-```typescript
-// src/audit/interceptors/audit.interceptor.ts
-@Injectable()
-export class AuditInterceptor implements NestInterceptor {
-  constructor(private auditService: AuditService) {}
-
-  async intercept(context: ExecutionContext, next: CallHandler) {
-    const request = context.switchToHttp().getRequest();
-    const { method, path } = request;
-    const startTime = Date.now();
-
-    return next.handle().pipe(
-      tap(async (data) => {
-        const duration = Date.now() - startTime;
-
-        // Log mutation operations
-        if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
-          await this.auditService.log({
-            entityType: path.split('/')[1], // Extract from path
-            entityId: request.params.id,
-            action: this.mapMethodToAction(method),
-            changes: {
-              oldValue: request.body.__old, // Set by business logic
-              newValue: data,
-            },
-            performedBy: request.user.userId,
-            performedAt: new Date(),
-            ipAddress: request.ip,
-          });
-        }
-      }),
-    );
-  }
-
-  private mapMethodToAction(method: string) {
-    return method === 'POST' ? 'create'
-         : method === 'DELETE' ? 'delete'
-         : 'update';
-  }
-}
-```
-
-**Verification**:
-- [ ] Create user with role "Manager" → audit log shows action: "create", newValue: {role: "Manager"}
-- [ ] Change user role to "Admin" → audit log shows changes: {role: {old: "Manager", new: "Admin"}}
-- [ ] Query audit logs by entity_id → shows all mutations in chronological order
+**Doğrulama**
+- [x] Oturum kapatma / rol değişimi audit satırı kiracıyla (P11h probe)
+- [x] `datev-export` / accounting audit aktörü `user.userId` (P12b 0b; önceden hep boştu)
 
 ---
 
@@ -861,6 +618,19 @@ jobs:
 - [ ] Incident response drills scheduled
 
 ---
+
+## 11. Doğrulama Komutları (kiracı izolasyonu)
+
+```bash
+# packages/backend
+pnpm test                                   # birim (mock'lu; kanıt değil, regresyon)
+pnpm test:integration                       # canlı Postgres: guard zinciri, order/shipment kapsamı
+API_PORT=3101 CORS_ORIGINS=http://localhost:3100 node dist/main.js &
+pnpm test:e2e                               # gerçek HTTP + RLS: test/tenant-isolation.e2e-spec.ts
+pnpm db:push                                # superuser (DATABASE_MIGRATION_URL); "already in sync" beklenir
+psql "$DATABASE_MIGRATION_URL" -c "select rolname, rolsuper, rolbypassrls from pg_roles where rolname='kroptos_app'"   # f / f
+```
+Her kanıt: satır sayısı al → fixture → gerçek çağrı → `finally` sil → sayı başa döndü (CLAUDE.md Kural 7).
 
 ## References
 - OWASP Top 10: https://owasp.org/www-project-top-ten/

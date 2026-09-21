@@ -4,24 +4,26 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { Request } from 'express';
 import { AgencyService } from './agency.service';
 import { CreateAgencyDto, UpdateAgencyDto, AgencyResponseDto } from './dto/agency.dto';
-import { RbacGuard } from '../../common/guards/rbac.guard';
+import { PermissionGuard } from '../../common/guards/permission.guard';
 import { PlatformAdminGuard } from '../../common/guards/platform-admin.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Agencies')
 @ApiBearerAuth()
-@UseGuards(AuthGuard('jwt'), RbacGuard)
+@UseGuards(AuthGuard('jwt'), PermissionGuard)
 @Controller()
 export class AgencyController {
   constructor(private agencyService: AgencyService) {}
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user);
   }
 
   @Get('/api/agencies')
   @HttpCode(200)
+  @RequirePermission('agencies.read')
   @ApiOperation({ summary: 'List all active agencies accessible to current user context' })
   @ApiResponse({ status: 200, type: [AgencyResponseDto] })
   async list(@Req() req: Request) {
@@ -32,6 +34,7 @@ export class AgencyController {
 
   @Get('/api/agencies/:id')
   @HttpCode(200)
+  @RequirePermission('agencies.read')
   @ApiOperation({ summary: 'Get active agency details' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
   async get(@Param('id') id: string, @Req() req: Request) {
@@ -42,6 +45,9 @@ export class AgencyController {
 
   @Get('/api/tenants/:tenantPublicId')
   @HttpCode(200)
+  // P13-3: izinsizdi (guard @RequirePermission yoksa geciriyor). Frontend'de cagrani yok
+  // (tenant secimi getMe.accessibleTenants'tan); katalogdaki 'ajans detayini gor' izni.
+  @RequirePermission('agencies.read')
   @ApiOperation({ summary: 'Get active agency details by public tenant ID' })
   @ApiResponse({ status: 200, type: AgencyResponseDto })
   async getByTenantPublicId(@Param('tenantPublicId') tenantPublicId: string, @Req() req: Request) {

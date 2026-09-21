@@ -6,6 +6,7 @@ import { ProductService } from './product.service';
 import { CreateProductDto, UpdateProductDto, ProductResponseDto, BulkActionDto } from './dto/product.dto';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Products')
 @ApiBearerAuth()
@@ -19,7 +20,7 @@ export class ProductController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user);
   }
 
   @Get()
@@ -98,7 +99,7 @@ export class ProductController {
 
   @Patch(':id')
   @HttpCode(200)
-  @RequirePermission('products.create')
+  @RequirePermission('products.update')
   @ApiOperation({ summary: 'Update product details' })
   @ApiResponse({ status: 200, type: ProductResponseDto })
   async update(
@@ -127,7 +128,7 @@ export class ProductController {
 
   @Delete(':id')
   @HttpCode(204)
-  @RequirePermission('products.create')
+  @RequirePermission('products.delete')
   @ApiOperation({ summary: 'Soft delete product' })
   @ApiResponse({ status: 204, description: 'Product soft-deleted successfully' })
   async delete(@Param('id') id: string, @Req() req: Request) {

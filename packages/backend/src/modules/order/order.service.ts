@@ -3,6 +3,7 @@ import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { Prisma } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
+import { emitOrderChanged } from './order.events';
 
 @Injectable()
 export class OrderService {
@@ -292,6 +293,10 @@ export class OrderService {
       );
 
       return order;
+    }).then((order) => {
+      // Transaction bitti; bildirim dinleyicisi bundan sonra devreye girer.
+      emitOrderChanged({ orderId: order.id, agencyId, clientId, storeId, kind: 'created', newValue: order.status });
+      return order;
     });
   }
 
@@ -386,6 +391,15 @@ export class OrderService {
       );
 
       return updatedOrder;
+    }).then((updatedOrder) => {
+      const base = { orderId: order.id, agencyId: order.agencyId, clientId: order.clientId, storeId: order.storeId };
+      if (updates.status !== undefined) {
+        emitOrderChanged({ ...base, kind: 'status', oldValue: order.status, newValue: updatedOrder.status });
+      }
+      if (updates.paymentStatus !== undefined) {
+        emitOrderChanged({ ...base, kind: 'payment', oldValue: order.paymentStatus, newValue: updatedOrder.paymentStatus });
+      }
+      return updatedOrder;
     });
   }
 
@@ -436,6 +450,9 @@ export class OrderService {
         { oldValue: order.status, newValue: 'cancelled' },
       );
 
+      return updatedOrder;
+    }).then((updatedOrder) => {
+      emitOrderChanged({ orderId: order.id, agencyId: order.agencyId, clientId: order.clientId, storeId: order.storeId, kind: 'cancelled', oldValue: order.status, newValue: 'cancelled' });
       return updatedOrder;
     });
   }

@@ -2,6 +2,8 @@ import { Injectable, NestMiddleware, UnauthorizedException, ForbiddenException }
 import { Request, Response, NextFunction } from 'express';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
+import { isSuperAdminRole } from '../constants/platform-admin';
+import { buildUserRoleScopeWhere } from '../utils/tenant-scope';
 
 @Injectable()
 export class TenantMiddleware implements NestMiddleware {
@@ -29,6 +31,15 @@ export class TenantMiddleware implements NestMiddleware {
       '/auth/refresh-token',
       // Agent kaydı: kimliksiz uç — yetki tek kullanımlık kayıt kodudur (docs/mikro.agent.md §9.3)
       '/api/agents/enroll',
+      // Davet kabulu: kimliksiz uc - yetki tek kullanimlik davet token'i (P6). Korumali
+      // yonetim uclari /api/system/invitations altinda, bu prefix onlari kapsamaz.
+      '/api/invitations/',
+      // Webhook/callback uclari (P13): pazaryeri/e-ticaret sistemi Bearer gondermez. Dar
+      // prefix: /api/integrations/ altindaki korumali yonetim uclari kapsanmaz. Kimlik
+      // integrationId + saglayici imzasidir (imza durumu icin controller notlarina bak).
+      '/api/integrations/woocommerce/webhook/',
+      '/api/integrations/ideasoft/webhook/',
+      '/api/integrations/ideasoft/callback',
     ];
 
     // Check if the current route is public (check path, originalUrl, and url)
@@ -56,21 +67,22 @@ export class TenantMiddleware implements NestMiddleware {
       const tokenAgencyId = payload.agencyId;
       const tokenClientId = payload.clientId;
       const role = payload.role;
-      const permissions = payload.permissions || [];
 
       if (!userId) {
         throw new UnauthorizedException('Invalid token payload: missing user identification');
       }
 
-      // Attach user context to request
+      // Attach user context to request. İzin listesi yok: PermissionGuard
+      // DB'den okur (PermissionCacheService).
       reqAny.user = {
         userId,
         email: payload.email,
         tenantId,
         agencyId: tokenAgencyId,
         clientId: tokenClientId,
+        storeId: payload.storeId ?? null,
         role,
-        permissions,
+        roleIsSystem: payload.roleIsSystem === true,
       };
 
       // Resolve requested resource IDs from headers or path parameters
@@ -126,7 +138,7 @@ export class TenantMiddleware implements NestMiddleware {
         }
       }
 
-      const isSuper = role === 'super_admin' || role === 'Super Admin';
+      const isSuper = isSuperAdminRole({ role, roleIsSystem: payload.roleIsSystem });
 
       // 1. Validate Store access if storeId is requested
       if (storeId) {
@@ -149,16 +161,7 @@ export class TenantMiddleware implements NestMiddleware {
           });
 
           const hasUserRole = await this.prisma.userRole.findFirst({
-            where: {
-              userId,
-              agencyId: store.agencyId,
-              deletedAt: null,
-              OR: [
-                { storeId },
-                { storeId: null, clientId: store.clientId },
-                { storeId: null, clientId: null },
-              ],
-            },
+            where: buildUserRoleScopeWhere({ userId, agencyId: store.agencyId, clientId: store.clientId, storeId }),
           });
 
           if (!hasStoreUser && !hasUserRole) {
@@ -196,15 +199,7 @@ export class TenantMiddleware implements NestMiddleware {
 
         if (!isSuper) {
           const hasUserRole = await this.prisma.userRole.findFirst({
-            where: {
-              userId,
-              agencyId: client.agencyId,
-              deletedAt: null,
-              OR: [
-                { clientId },
-                { clientId: null },
-              ],
-            },
+            where: buildUserRoleScopeWhere({ userId, agencyId: client.agencyId, clientId }),
           });
 
           if (!hasUserRole) {
@@ -234,12 +229,10 @@ export class TenantMiddleware implements NestMiddleware {
         }
 
         if (!isSuper) {
+          // Ajans geneli bağlam yalnız ajans geneli rolle açılır; client/mağaza
+          // kapsamlı rol burada yetmez (switchTenant ile aynı kural).
           const hasUserRole = await this.prisma.userRole.findFirst({
-            where: {
-              userId,
-              agencyId,
-              deletedAt: null,
-            },
+            where: buildUserRoleScopeWhere({ userId, agencyId }),
           });
 
           if (!hasUserRole) {

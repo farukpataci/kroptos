@@ -77,20 +77,36 @@ describe('CategoryService', () => {
       await expect(service.get('invalid-id', 'agency-1')).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if category agency context mismatch', async () => {
-      mockPrismaService.category.findFirst.mockResolvedValue({ id: 'cat-1', agencyId: 'agency-different' });
+    // P12a bulgu 7: agencyId where'de; baska ajansin kategorisi 404 (403 oracle yok)
+    it("another agency's category → 404 with agencyId in the where clause", async () => {
+      mockPrismaService.category.findFirst.mockResolvedValue(null);
 
-      await expect(service.get('cat-1', 'agency-1')).rejects.toThrow(ForbiddenException);
+      await expect(service.get('cat-1', 'agency-1')).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.category.findFirst).toHaveBeenCalledWith({ where: { id: 'cat-1', deletedAt: null, agencyId: 'agency-1' } });
     });
   });
 
   describe('create', () => {
+    // P12a bulgu 1: govdedeki tenant alanlari okunmaz; kapsam aktif baglamdir
+    it('ignores agencyId/clientId/storeId in the body; scope comes from the active context', async () => {
+      mockPrismaService.category.findFirst.mockResolvedValue(null); // slug bos
+      mockPrismaService.category.create.mockResolvedValue({ id: 'cat-1', agencyId: 'agency-A', name: 'X', slug: 'x' });
+      await service.create(
+        { agencyId: 'agency-B', clientId: 'client-B', storeId: 'store-B', name: 'X' } as any,
+        'user-1',
+        'agency-A',
+        'client-A',
+        'store-A',
+      );
+      expect(mockPrismaService.category.create.mock.calls[0][0].data).toMatchObject({ agencyId: 'agency-A', clientId: 'client-A', storeId: 'store-A' });
+    });
+
     it('should throw BadRequestException if parent category does not exist', async () => {
       mockPrismaService.category.findFirst.mockResolvedValue(null); // Parent doesn't exist
 
       await expect(
         service.create(
-          { agencyId: 'agency-1', parentId: 'parent-1', name: 'Subcat' },
+          { parentId: 'parent-1', name: 'Subcat' },
           'user-1',
           'agency-1',
         ),
@@ -104,7 +120,7 @@ describe('CategoryService', () => {
 
       await expect(
         service.create(
-          { agencyId: 'agency-1', parentId: 'parent-1', name: 'Subcat', slug: 'subcat' },
+          { parentId: 'parent-1', name: 'Subcat', slug: 'subcat' },
           'user-1',
           'agency-1',
         ),
@@ -120,7 +136,7 @@ describe('CategoryService', () => {
       mockPrismaService.category.create.mockResolvedValue(createdCat);
 
       const result = await service.create(
-        { agencyId: 'agency-1', parentId: 'parent-1', name: 'Subcat', slug: 'subcat' },
+        { parentId: 'parent-1', name: 'Subcat', slug: 'subcat' },
         'user-1',
         'agency-1',
         'client-1',

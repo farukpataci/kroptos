@@ -7,6 +7,7 @@ import { CreateOrderDto, UpdateOrderStatusDto, OrderResponseDto } from './dto/or
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { PrismaService } from '../../common/prisma/prisma.service';
+import { isSuperAdminRole } from '../../common/constants/platform-admin';
 
 @ApiTags('Orders')
 @ApiBearerAuth()
@@ -23,7 +24,7 @@ export class OrderController {
 
   private checkSuperAdmin(req: Request): boolean {
     const user = (req as any).user;
-    return user?.role === 'super_admin' || user?.role === 'Super Admin';
+    return isSuperAdminRole(user);
   }
 
   @Get('/api/orders')
@@ -162,7 +163,7 @@ export class OrderController {
 
   @Post('/api/orders/:id/cancel')
   @HttpCode(200)
-  @RequirePermission('orders.update')
+  @RequirePermission('orders.cancel')
   @ApiOperation({ summary: 'Cancel order processing' })
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async cancel(@Param('id') id: string, @Req() req: Request) {
@@ -186,7 +187,7 @@ export class OrderController {
 
   @Post('/api/orders/:id/refund')
   @HttpCode(200)
-  @RequirePermission('orders.update')
+  @RequirePermission('orders.cancel')
   @ApiOperation({ summary: 'Refund order payments' })
   @ApiResponse({ status: 200, type: OrderResponseDto })
   async refund(@Param('id') id: string, @Req() req: Request) {

@@ -2,20 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateCategoryDto {
-  @ApiProperty({ example: 'cuid-agency-id', description: 'Agency ID context' })
-  @IsString()
-  agencyId: string;
-
-  @ApiPropertyOptional({ example: 'cuid-client-id', description: 'Optional Client ID context' })
-  @IsString()
-  @IsOptional()
-  clientId?: string;
-
-  @ApiPropertyOptional({ example: 'cuid-store-id', description: 'Optional Store ID context' })
-  @IsString()
-  @IsOptional()
-  storeId?: string;
-
+  // P12a: agencyId/clientId/storeId gövdeden alınmaz; kapsam yalnızca doğrulanmış aktif bağlamdan gelir.
   @ApiPropertyOptional({ example: 'cuid-parent-id', description: 'Optional parent category ID' })
   @IsString()
   @IsOptional()

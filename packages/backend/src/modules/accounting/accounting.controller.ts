@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth, ApiHeader, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
+import { actorFromRequest } from '../rbac/rbac.service';
 import { PermissionGuard } from '../../common/guards/permission.guard';
 import { RequirePermission } from '../../common/decorators/require-permission.decorator';
 import { AccountingService, AccountingScope } from './accounting.service';
@@ -34,21 +35,15 @@ export class AccountingController {
   constructor(private readonly accountingService: AccountingService) {}
 
   private extractScope(req: Request): AccountingScope {
-    const activeAgency = (req as any).activeAgency;
-    const activeClient = (req as any).activeClient;
-    const activeStore = (req as any).activeStore;
-
-    const agencyId = activeAgency?.id || (req.headers['x-agency-id'] as string);
-    const clientId = activeClient?.id || (req.headers['x-client-id'] as string);
-    const storeId = activeStore?.id || (req.headers['x-store-id'] as string);
-
-    return { agencyId, clientId, storeId };
+    // Bulgu 6: ham header tenant filtresi olamaz; yalnizca TenantMiddleware'in dogruladigi baglam.
+    const actor = actorFromRequest(req);
+    return { agencyId: actor.agencyId, clientId: actor.clientId ?? undefined, storeId: actor.storeId ?? undefined };
   }
 
   private extractUser(req: Request) {
     const user = (req as any).user;
     return {
-      id: user?.id,
+      id: user?.userId, // JWT kullanicisi userId tasir (P12b 0b)
       email: user?.email,
       name: user?.name || user?.username,
       ip: req.ip || (req.headers['x-forwarded-for'] as string),

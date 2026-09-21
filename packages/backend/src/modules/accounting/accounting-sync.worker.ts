@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { Job, Worker } from 'bullmq';
 import { AccountingDocumentService } from './accounting-document.service';
 import { AccountingService } from './accounting.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import {
   AccountingJobData,
   accountingSyncEventEmitter,
@@ -58,7 +59,7 @@ export class AccountingSyncWorker implements OnModuleInit, OnModuleDestroy {
     this.keepAliveInterval = setInterval(
       async () => {
         try {
-          await this.accountingService.runKeepAliveJob();
+          await runAsSystem('accounting:keep-alive', () => this.accountingService.runKeepAliveJob());
         } catch (err: any) {
           this.logger.error(`Sage keep-alive job failed: ${err.message}`);
         }
@@ -69,12 +70,13 @@ export class AccountingSyncWorker implements OnModuleInit, OnModuleDestroy {
 
   async processJob(data: AccountingJobData): Promise<void> {
     this.logger.log(`Processing accounting job: ${data.jobType}`);
+    // RLS (P12): job kendi kiracı bağlamını taşır (scope.agencyId); keep-alive kiracılar arası.
     if (data.jobType === 'create_invoice') {
-      await this.documentService.createInvoiceDocument(data.payload, data.scope);
+      await runWithTenant(data.scope.agencyId, () => this.documentService.createInvoiceDocument(data.payload, data.scope));
     } else if (data.jobType === 'record_payment') {
-      await this.documentService.createPaymentDocument(data.payload, data.scope);
+      await runWithTenant(data.scope.agencyId, () => this.documentService.createPaymentDocument(data.payload, data.scope));
     } else if (data.jobType === 'keep_alive_tokens') {
-      await this.accountingService.runKeepAliveJob();
+      await runAsSystem('accounting:keep-alive', () => this.accountingService.runKeepAliveJob());
     }
   }
 

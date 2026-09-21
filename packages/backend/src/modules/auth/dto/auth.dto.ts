@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { PASSWORD_MIN_LENGTH } from '@kroptos/shared';
 
 export class RegisterDto {
   @ApiProperty({ example: 'user@example.com', description: 'User email address' })
@@ -8,7 +9,7 @@ export class RegisterDto {
 
   @ApiProperty({ example: 'SecurePass123!', description: 'User password (min 8 chars)' })
   @IsString()
-  @MinLength(8)
+  @MinLength(PASSWORD_MIN_LENGTH)
   password: string;
 
   @ApiProperty({ example: 'John', description: 'First name' })
@@ -74,6 +75,16 @@ export class UserResponseDto {
 
   @ApiProperty()
   twoFactorEnabled: boolean;
+
+  @ApiPropertyOptional({ nullable: true, description: 'Aktif baglamdaki rol key' })
+  role?: string | null;
+
+  @ApiPropertyOptional()
+  isPlatformAdmin?: boolean;
+
+  /** Aktif baglamdaki etkin izinler (JWT'de DEGIL; her cagrida DB/cache). Sistem super_admin icin ['*:*']. */
+  @ApiPropertyOptional({ type: [String] })
+  permissions?: string[];
 }
 
 export class AgencyTenantDto {
@@ -86,8 +97,17 @@ export class AgencyTenantDto {
   @ApiProperty()
   name: string;
 
-  @ApiProperty()
-  role: string;
+  @ApiProperty({ required: false })
+  role?: string;
+
+  @ApiProperty({ required: false, enum: ['agency', 'client', 'brand'] })
+  type?: 'agency' | 'client' | 'brand';
+
+  @ApiProperty({ required: false })
+  agencyId?: string;
+
+  @ApiProperty({ required: false, type: [String], description: 'Bu baglamdaki etkin izinler' })
+  permissions?: string[];
 
   @ApiProperty({ required: false, nullable: true })
   clientId?: string | null;

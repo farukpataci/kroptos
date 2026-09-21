@@ -1,62 +1,54 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { PrismaService } from '../prisma/prisma.service';
+import { isSuperAdminRole } from '../constants/platform-admin';
+import { PermissionCacheService } from '../services/permission-cache.service';
 
 @Injectable()
 export class PermissionGuard implements CanActivate {
   constructor(
     private reflector: Reflector,
-    private prisma: PrismaService,
+    private permissionCache: PermissionCacheService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermission = this.reflector.get<string>(
-      'permission',
+    const requiredPermission = this.reflector.getAllAndOverride<string>('permission', [
       context.getHandler(),
-    );
+      context.getClass(),
+    ]);
 
+    // P14-4: fail-closed. @RequirePermission'sız handler "izin gerekmiyor" değil, "izin
+    // unutulmuş" demektir (GET /api/tenants ve /api/agencies böyle açık kalmıştı). Kimliksiz
+    // uçlar bu guard'ın altına girmez; kimlikli ama izinsiz uç isteniyorsa açıkça yazılır.
     if (!requiredPermission) {
-      return true; // No permission required
+      throw new ForbiddenException('Access denied. No permission is declared for this endpoint.');
     }
 
     const request = context.switchToHttp().getRequest();
-    const user = (request as any).user;
+    const user = request.user;
 
     if (!user) {
       throw new ForbiddenException('User context not found');
     }
 
-    // Super Admin bypass
-    if (user.role === 'super_admin' || user.role === 'Super Admin') {
+    if (isSuperAdminRole(user)) {
       return true;
     }
 
-    // Dynamic database check for active tenant role & permissions to ensure real-time enforcement
-    const userRole = await this.prisma.userRole.findFirst({
-      where: {
-        userId: user.userId,
-        agencyId: user.agencyId,
-        clientId: user.clientId || null,
-        deletedAt: null,
-      },
-      include: {
-        role: {
-          include: {
-            permissions: true,
-          },
-        },
-      },
+    // İzin DB'den (60 sn cache'li) okunur, JWT'den değil: rol geri alındığında
+    // token süresi dolmadan yetki düşmeli. Bağlam TenantMiddleware'in çözdüğü
+    // aktif kayıtlardan gelir; header yoksa token'daki bağlam kullanılır.
+    const permissions = await this.permissionCache.getPermissions({
+      userId: user.userId,
+      agencyId: request.activeAgency?.id ?? user.agencyId,
+      clientId: request.activeClient?.id ?? user.clientId ?? null,
+      storeId: request.activeStore?.id ?? user.storeId ?? null,
     });
 
-    if (!userRole) {
+    if (!permissions) {
       throw new ForbiddenException('Access denied. No active role in the current tenant context.');
     }
 
-    const hasPermission = userRole.role.permissions.some(
-      (p) => p.name === requiredPermission || p.name === '*:*',
-    );
-
-    if (!hasPermission) {
+    if (!permissions.includes(requiredPermission) && !permissions.includes('*:*')) {
       throw new ForbiddenException(`Access denied. Missing permission: ${requiredPermission}`);
     }
 

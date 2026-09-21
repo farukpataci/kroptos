@@ -12,6 +12,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Request } from 'express';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { MarketplaceCredentialService } from '../../../integrations/marketplaces/core/MarketplaceCredentialService';
 import { WooCommerceWebhook } from '../../../integrations/marketplaces/woocommerce/WooCommerceWebhook';
 import { IntegrationQueueService } from '../integration-queue.service';
@@ -37,10 +38,13 @@ export class WooCommerceWebhookController {
     @Headers('x-wc-webhook-delivery-id') deliveryId: string,
     @Req() req: Request,
   ) {
-    // 1. Find integration record
-    const integration = await this.prisma.integration.findFirst({
-      where: { id: integrationId, provider: 'woocommerce', deletedAt: null },
-    });
+    // 1. Find integration record. Public uc: istek baglami yok, kiraci yalniz integrationId'den
+    // cozulur -> tek sorgu ACIK sistem baglaminda; kalan her sey (kuyruk yazimi) o kiracida.
+    const integration = await runAsSystem('webhook:woocommerce resolve-integration', () =>
+      this.prisma.integration.findFirst({
+        where: { id: integrationId, provider: 'woocommerce', deletedAt: null },
+      }),
+    );
 
     if (!integration) {
       throw new NotFoundException(`WooCommerce integration '${integrationId}' not found.`);
@@ -51,16 +55,20 @@ export class WooCommerceWebhookController {
 
     // 3. Decrypt credentials to obtain webhook secret
     const credentials = this.credentialService.decrypt(integration.credentialsEncrypted);
+    // WooCommerce webhook'u kendi "Secret" alanıyla imzalar; API ile yaratılan webhook'ta bu
+    // varsayılan olarak API kullanıcısının consumerSecret'ıdır. P14-3: secret ZORUNLU — eski
+    // `if (secret)` deseni secret yoksa imzasız isteği kabul ediyordu (kontrol fiilen opsiyoneldi).
     const secret = credentials.webhookSecret || credentials.consumerSecret;
-
-    if (secret) {
-      const isValid = WooCommerceWebhook.verifySignature(rawBody, signature, secret);
-      if (!isValid) {
-        this.logger.warn(
-          `Invalid webhook signature for WooCommerce integration ${integrationId} (topic: ${topic})`,
-        );
-        throw new UnauthorizedException('Geçersiz WooCommerce webhook imzası.');
-      }
+    if (!secret) {
+      this.logger.warn(`WooCommerce webhook refused: integration ${integrationId} has no webhookSecret/consumerSecret`);
+      throw new UnauthorizedException('Webhook secret is not configured for this integration.');
+    }
+    // verifySignature: HMAC-SHA256 base64, crypto.timingSafeEqual (uzunluk farkı → false)
+    if (!WooCommerceWebhook.verifySignature(rawBody, signature, secret)) {
+      this.logger.warn(
+        `Invalid webhook signature for WooCommerce integration ${integrationId} (topic: ${topic})`,
+      );
+      throw new UnauthorizedException('Geçersiz WooCommerce webhook imzası.');
     }
 
     // 4. Deduplicate deliveries
@@ -73,19 +81,21 @@ export class WooCommerceWebhookController {
     const payload = req.body;
     this.logger.log(`Received WooCommerce webhook topic: '${topic}' for integration: ${integrationId}`);
 
-    if (topic?.startsWith('order.')) {
-      await this.queueService.addSyncJob(integration.id, 'sync_orders', {
-        source: 'webhook',
-        topic,
-        orderId: payload?.id,
-      });
-    } else if (topic?.startsWith('product.')) {
-      await this.queueService.addSyncJob(integration.id, 'sync_products', {
-        source: 'webhook',
-        topic,
-        productId: payload?.id,
-      });
-    }
+    await runWithTenant(integration.agencyId, async () => {
+      if (topic?.startsWith('order.')) {
+        await this.queueService.addSyncJob(integration.id, 'sync_orders', {
+          source: 'webhook',
+          topic,
+          orderId: payload?.id,
+        });
+      } else if (topic?.startsWith('product.')) {
+        await this.queueService.addSyncJob(integration.id, 'sync_products', {
+          source: 'webhook',
+          topic,
+          productId: payload?.id,
+        });
+      }
+    });
 
     // Always answer 200 immediately
     return { received: true };

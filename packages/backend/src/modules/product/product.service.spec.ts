@@ -16,7 +16,10 @@ describe('ProductService', () => {
       create: jest.fn(),
       update: jest.fn(),
       updateMany: jest.fn(),
+      count: jest.fn(),
     },
+    bundleItem: { createMany: jest.fn(), deleteMany: jest.fn() },
+    crossSellProduct: { createMany: jest.fn(), deleteMany: jest.fn() },
     category: {
       findFirst: jest.fn(),
     },
@@ -219,6 +222,54 @@ describe('ProductService', () => {
           tenantId: 'agency-1',
         }),
       });
+    });
+  });
+
+  // P12a bulgu 4: bundle/cross-sell/varyant-ebeveyn urunleri aktif ajansa ait olmali
+  describe('related products (bundle / cross-sell / parent)', () => {
+    const dto: any = {
+      sku: 'B1', name: 'Bundle', price: 10, basePrice: 9,
+      bundleItems: [{ childProductId: 'prod-A', quantity: 1 }, { childProductId: 'prod-A', quantity: 2 }],
+      crossSellProducts: [{ targetProductId: 'prod-B' }],
+      parentId: 'prod-P',
+    };
+
+    it('create: count mismatch → 403 before anything is written', async () => {
+      mockPrismaService.product.findFirst.mockResolvedValue(null); // SKU available
+      mockPrismaService.product.count.mockResolvedValue(2); // 3 unique ids, only 2 in agency
+
+      await expect(service.create(dto, 'user-1', 'agency-1', 'client-1', 'store-1', false)).rejects.toThrow(ForbiddenException);
+      expect(mockPrismaService.product.count).toHaveBeenCalledWith({
+        where: { id: { in: ['prod-A', 'prod-B', 'prod-P'] }, agencyId: 'agency-1', deletedAt: null },
+      });
+      expect(mockPrismaService.product.create).not.toHaveBeenCalled();
+      expect(mockPrismaService.bundleItem.createMany).not.toHaveBeenCalled();
+    });
+
+    it('create: all related ids in the agency → written', async () => {
+      mockPrismaService.product.findFirst.mockResolvedValue(null);
+      mockPrismaService.product.count.mockResolvedValue(3);
+      mockPrismaService.product.create.mockResolvedValue({ id: 'prod-N', agencyId: 'agency-1' });
+
+      await service.create(dto, 'user-1', 'agency-1', 'client-1', 'store-1', false);
+      expect(mockPrismaService.bundleItem.createMany).toHaveBeenCalled();
+      expect(mockPrismaService.crossSellProduct.createMany).toHaveBeenCalled();
+    });
+
+    it('update: same check against the product\'s own agency; no ids → no query', async () => {
+      const own = { id: 'prod-1', agencyId: 'agency-1', clientId: 'client-1', storeId: 'store-1', sku: 'S' };
+      mockPrismaService.product.findFirst.mockResolvedValue(own);
+      mockPrismaService.product.count.mockResolvedValue(0);
+
+      await expect(
+        service.update('prod-1', { crossSellProducts: [{ targetProductId: 'prod-B' }] } as any, 'user-1', 'agency-1', 'client-1', 'store-1', false),
+      ).rejects.toThrow(ForbiddenException);
+      expect(mockPrismaService.crossSellProduct.deleteMany).not.toHaveBeenCalled();
+
+      mockPrismaService.product.count.mockClear();
+      mockPrismaService.product.update.mockResolvedValue(own);
+      await service.update('prod-1', { name: 'Renamed' } as any, 'user-1', 'agency-1', 'client-1', 'store-1', false);
+      expect(mockPrismaService.product.count).not.toHaveBeenCalled();
     });
   });
 

@@ -35,6 +35,7 @@ interface Agency {
  */
 export default function AgenciesPage() {
   const t = useTranslations('agencies');
+  const tc = useTranslations('common');
   const toast = useToast();
   const { user, tenantContext, switchTenant } = useAuth();
 
@@ -241,7 +242,7 @@ export default function AgenciesPage() {
                           {!isCurrent && (
                             <button
                               type="button"
-                              onClick={() => switchTenant(agency.id, null, null)}
+                              onClick={() => switchTenant(agency.id, null, null).catch((err: any) => toast.error(err?.message || tc('unknownError')))}
                               className="rounded-kp-md border border-kp-border px-2.5 py-1.5 text-[0.625rem] font-bold text-kp-text-secondary transition-colors hover:border-kp-accent hover:text-kp-accent"
                             >
                               {t('actions.switch')}

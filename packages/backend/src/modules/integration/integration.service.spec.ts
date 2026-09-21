@@ -26,6 +26,8 @@ describe('IntegrationService', () => {
     apiLog: {
       create: jest.fn(),
     },
+    productMapping: { findMany: jest.fn(), upsert: jest.fn() },
+    product: { findFirst: jest.fn() },
     auditLog: {
       create: jest.fn(),
     },
@@ -192,15 +194,55 @@ describe('IntegrationService', () => {
       ).rejects.toThrow(NotFoundException);
     });
 
-    it('should throw ForbiddenException if integration agency context mismatch', async () => {
-      mockPrismaService.integration.findFirst.mockResolvedValue({
-        id: 'int-1',
-        agencyId: 'agency-different',
-      });
+    // P12a bulgu 7: kapsam where'de; baska ajans/magaza/client kaydi 404 (403 oracle yok)
+    it("another tenant's integration → 404; agency + store/client coverage sit in the where", async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue(null);
 
       await expect(
         service.get('int-1', 'agency-1', 'client-1', 'store-1', false),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.integration.findFirst.mock.calls[0][0].where).toEqual({
+        OR: [{ id: 'int-1' }, { publicId: 'int-1' }],
+        deletedAt: null,
+        agencyId: 'agency-1',
+        AND: [
+          { OR: [{ storeId: null }, { storeId: 'store-1' }] },
+          { OR: [{ clientId: null }, { clientId: 'client-1' }] },
+        ],
+      });
+    });
+
+    it('super admin: no tenant filter', async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue({ id: 'int-1' });
+      await service.get('int-1', undefined, undefined, undefined, true);
+      expect(mockPrismaService.integration.findFirst.mock.calls[0][0].where).toEqual({
+        OR: [{ id: 'int-1' }, { publicId: 'int-1' }],
+        deletedAt: null,
+      });
+    });
+  });
+
+  describe('product mappings (P12a bulgu 2/3)', () => {
+    it('getProductMappings scopes through product.agencyId', async () => {
+      mockPrismaService.productMapping.findMany.mockResolvedValue([]);
+      await service.getProductMappings('prod-1', 'agency-1', 'client-1', 'store-1', false);
+      expect(mockPrismaService.productMapping.findMany.mock.calls[0][0].where).toEqual({
+        productId: 'prod-1',
+        product: { agencyId: 'agency-1' },
+      });
+    });
+
+    it("upsertProductMapping: another agency's product → 404, nothing written", async () => {
+      mockPrismaService.integration.findFirst.mockResolvedValue({ id: 'int-1', agencyId: 'agency-1' });
+      mockPrismaService.product.findFirst.mockResolvedValue(null);
+
+      await expect(
+        service.upsertProductMapping('prod-B', 'int-1', 'mc', 'MC', {}, 'agency-1', 'client-1', 'store-1', false),
+      ).rejects.toThrow(NotFoundException);
+      expect(mockPrismaService.product.findFirst).toHaveBeenCalledWith({
+        where: { id: 'prod-B', deletedAt: null, agencyId: 'agency-1' },
+      });
+      expect(mockPrismaService.productMapping.upsert).not.toHaveBeenCalled();
     });
   });
 
@@ -217,7 +259,6 @@ describe('IntegrationService', () => {
 
       const result = await service.create(
         {
-          agencyId: 'agency-1',
           provider: 'trendyol',
           providerType: 'marketplace',
           name: 'Trendyol',
@@ -242,6 +283,20 @@ describe('IntegrationService', () => {
       const encryptedValue = mockPrismaService.integration.create.mock.calls[0][0].data.credentialsEncrypted;
       const decrypted = JSON.parse(decrypt(encryptedValue));
       expect(decrypted).toEqual({ apiKey: 'key123', apiSecret: 'secret123' });
+    });
+
+    // P12a bulgu 1: govdedeki tenant alanlari (DTO'dan cikti, ValidationPipe whitelist'i zaten atar)
+    // servis katmaninda da okunmaz; kapsam aktif baglamdir.
+    it('ignores agencyId/clientId/storeId in the body; scope comes from the active context', async () => {
+      mockPrismaService.integration.create.mockResolvedValue({ id: 'int-1', agencyId: 'agency-A', provider: 'trendyol', providerType: 'marketplace', name: 'X' });
+      await service.create(
+        { agencyId: 'agency-B', clientId: 'client-B', storeId: 'store-B', provider: 'trendyol', providerType: 'marketplace', name: 'X', credentials: { apiKey: 'k' } } as any,
+        'user-1',
+        'agency-A',
+        'client-A',
+        'store-A',
+      );
+      expect(mockPrismaService.integration.create.mock.calls[0][0].data).toMatchObject({ agencyId: 'agency-A', clientId: 'client-A', storeId: 'store-A' });
     });
   });
 

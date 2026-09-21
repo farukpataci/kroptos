@@ -2,7 +2,10 @@
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAuth } from '@/lib/auth-context';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, usePathname } from 'next/navigation';
+import { usePermission } from '@/hooks/usePermission';
+import { requiredPermissionFor } from '@/lib/route-permissions';
+import Forbidden from '@/components/layout/Forbidden';
 import { useEffect } from 'react';
 
 export default function DashboardGroupLayout({
@@ -12,6 +15,8 @@ export default function DashboardGroupLayout({
 }) {
   const { isAuthenticated, isLoading, tenantContext, accessibleTenants, switchTenant } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+  const { can, isLoading: permLoading } = usePermission();
   const params = useParams();
   const tenantPublicId = params?.tenantPublicId as string;
 
@@ -74,6 +79,16 @@ export default function DashboardGroupLayout({
 
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Rota izni (UX katmani; gercek koruma backend guard'lari). Izinler yuklenene kadar
+  // icerik cizilmez ki flicker olmasin; yetkisiz rotada 403 ekrani, dashboard'a atma yok.
+  const required = requiredPermissionFor(pathname);
+  if (required && permLoading) {
+    return <DashboardLayout><div className="p-8 text-sm text-kp-text-tertiary animate-pulse">…</div></DashboardLayout>;
+  }
+  if (required && !can(required)) {
+    return <DashboardLayout><Forbidden permission={required} /></DashboardLayout>;
   }
 
   return <DashboardLayout>{children}</DashboardLayout>;

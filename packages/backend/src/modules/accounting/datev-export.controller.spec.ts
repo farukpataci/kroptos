@@ -1,6 +1,6 @@
 import { DatevExportController } from './datev-export.controller';
 import { DatevExportService } from '../../integrations/accounting/datev/datev.export-service';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 
 describe('DatevExportController', () => {
   let controller: DatevExportController;
@@ -72,11 +72,18 @@ describe('DatevExportController', () => {
     );
   });
 
+  // P12a bulgu 6: kapsam TenantMiddleware'in yazdigi activeAgency'den; ham header tek basina yetmez.
   const mockReq = {
     headers: { 'x-agency-id': 'agency-1' },
-    user: { id: 'user-1', email: 'test@kroptos.com', name: 'Tester' },
+    activeAgency: { id: 'agency-1' },
+    user: { userId: 'user-1', email: 'test@kroptos.com', name: 'Tester' },
     ip: '127.0.0.1',
   } as any;
+
+  it('raw x-agency-id header without a validated context → 400', async () => {
+    const headerOnly = { ...mockReq, activeAgency: undefined, user: { id: 'user-1' } };
+    await expect(controller.listExports('comp-1', headerOnly)).rejects.toThrow(BadRequestException);
+  });
 
   describe('generateExport', () => {
     it('calls service, caches buffer, and returns download URL and token', async () => {
@@ -90,6 +97,8 @@ describe('DatevExportController', () => {
       );
 
       expect(res.success).toBe(true);
+      // P12b 0b: JWT kullanicisi userId tasir; audit kimsiz yazilmasin
+      expect(mockExportService.generateExport.mock.calls[0][1]).toMatchObject({ agencyId: 'agency-1', userId: 'user-1' });
       expect(res.batchId).toBe('batch_test_123');
       expect(res.downloadToken).toBe('mock-signed-token-xyz');
       expect(res.downloadUrl).toContain('batch_test_123');

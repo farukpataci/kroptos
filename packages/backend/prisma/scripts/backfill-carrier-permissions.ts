@@ -20,9 +20,11 @@
  *
  *   npx ts-node prisma/scripts/backfill-carrier-permissions.ts
  */
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// RLS (P12): seed/script superuser ile bağlanır; uygulama rolü kiracı tablolarını bağlamsız göremez.
+const prisma = new PrismaClient({ datasources: { db: { url: process.env.DATABASE_MIGRATION_URL ?? process.env.DATABASE_URL } } });
 
 const PERMISSIONS: { name: string; description: string }[] = [
   { name: 'carriers.read', description: 'View carrier connections' },
@@ -89,7 +91,8 @@ async function main() {
 
   const missingRoles: string[] = [];
   for (const [roleName, permissionNames] of Object.entries(ROLE_GRANTS)) {
-    const role = await prisma.role.findUnique({ where: { name: roleName } });
+    // findFirst by name: P3 öncesi ve sonrası şemada aynı çalışır (name her ikisinde var)
+    const role = await prisma.role.findFirst({ where: { name: roleName } });
     if (!role) {
       missingRoles.push(roleName);
       continue;

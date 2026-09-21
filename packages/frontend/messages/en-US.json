@@ -252,7 +252,7 @@
     },
     "templates": {
       "title": "Email / SMS Templates",
-      "subtitle": "The messages sent to buyers on order events."
+      "subtitle": "E-mail and SMS templates tied to order events, delivery log and provider settings."
     },
     "automation": {
       "title": "Automation",
@@ -308,10 +308,9 @@
   },
   "orderStatuses": {
     "title": "Order Statuses",
-    "subtitle": "The statuses the system writes, and how many orders sit in each.",
+    "subtitle": "Statuses the system writes, custom statuses the agency defined, and the number of orders in each.",
     "loadFailed": "Status counts could not be loaded.",
     "create": "Add Status",
-    "createDisabled": "No endpoint stores a custom status yet; coming soon.",
     "unknownNote": "{count} statuses are not on the system list. Marketplace mappers write status as free text.",
     "columns": {
       "name": "Status",
@@ -321,8 +320,15 @@
     },
     "kind": {
       "system": "System",
-      "unknown": "Undeclared"
-    }
+      "unknown": "Undeclared",
+      "custom": "Custom"
+    },
+    "keyHint": "Generated from the name if left empty; lowercase letters, digits and underscores only.",
+    "keyTaken": "The key '{key}' is already in use.",
+    "color": "Color",
+    "created": "Status added.",
+    "removed": "Status removed.",
+    "removeBlocked": "Orders are in this status; move them first."
   },
   "orderAutomation": {
     "title": "Automation",
@@ -846,6 +852,279 @@
       "deleteSuccess": "Company branch deleted",
       "deleteConfirm": "Are you sure you want to delete this company branch?",
       "setDefault": "Set as default company"
+    }
+  },
+  "system": {
+    "users": {
+      "title": "User Management",
+      "subtitle": "Manage users, roles and store access in the active agency",
+      "invite": "Invite User",
+      "loadFailed": "Users could not be loaded",
+      "searchPlaceholder": "Search by name or email...",
+      "allRoles": "All roles",
+      "allStatuses": "All statuses",
+      "active": "Active",
+      "inactive": "Inactive",
+      "you": "you",
+      "colUser": "User",
+      "colRole": "Role / Scope",
+      "colStores": "Store Access",
+      "colStatus": "Status",
+      "colActions": "Actions",
+      "emptyTitle": "No users found",
+      "emptyDesc": "Change the filters or invite a new user.",
+      "allStores": "All Stores",
+      "scope": "Scope",
+      "scopeAgency": "Agency-wide",
+      "changeRole": "Change Role",
+      "changeRoleNote": "Existing role assignments in this agency are closed; the selected role and scope become the single assignment.",
+      "roleChanged": "Role updated",
+      "selfRoleHint": "You cannot change your own role",
+      "editStores": "Edit Store Access",
+      "storesNote": "If no store is selected the user can access every store their role covers.",
+      "storesSaved": "Store access saved",
+      "remove": "Remove from Agency",
+      "selfRemoveHint": "You cannot remove yourself",
+      "removed": "User removed from the agency",
+      "removeConfirm": "<strong>{name}</strong> will be removed from this agency.",
+      "removeNote": "The account is not deleted; only role and store assignments in this agency are closed."
+    },
+    "invitations": {
+      "modalTitle": "Invite User",
+      "modalDesc": "An invitation email is sent; on acceptance the user joins this agency.",
+      "email": "Email",
+      "role": "Role",
+      "customRole": "custom",
+      "scope": "Scope",
+      "scopeAgency": "Agency-wide",
+      "scopeStore": "Store: {name}",
+      "send": "Send Invitation",
+      "sent": "Invitation sent to {email}",
+      "copy": "Copy",
+      "copied": "Link copied",
+      "devLinkNote": "Development environment: no mail provider, the invitation link is shown here. This box goes away once a real provider is wired.",
+      "pendingTitle": "Pending Invitations",
+      "empty": "No pending invitations",
+      "expiresAt": "Expires",
+      "actions": "Actions",
+      "resend": "Resend",
+      "resent": "Invitation resent",
+      "revoke": "Revoke",
+      "revoked": "Invitation revoked"
+    },
+    "roles": {
+      "title": "Roles & Permissions",
+      "subtitle": "System roles are read-only; create agency roles and edit their permissions",
+      "loadFailed": "Roles could not be loaded",
+      "listTitle": "Roles",
+      "newRole": "New Role",
+      "addRole": "Add Role",
+      "namePlaceholder": "Role name (e.g. Purchasing)",
+      "descPlaceholder": "Short description...",
+      "empty": "No roles",
+      "selectRole": "Select a role on the left",
+      "systemRole": "System role",
+      "customRole": "Agency role",
+      "readOnly": "Read-only",
+      "systemHint": "System roles cannot be edited or deleted",
+      "inUseHint": "This role is assigned to {count} user(s); reassign them first",
+      "permCount": "{count} permissions",
+      "userCount": "{count} users",
+      "deleteRole": "Delete Role",
+      "deleteConfirm": "Role <strong>{name}</strong> will be deleted.",
+      "saved": "Role saved",
+      "created": "Role {name} created",
+      "deleted": "Role {name} deleted"
+    }
+  },
+  "invite": {
+    "backToLogin": "Back to sign in",
+    "sideText": "Multi-channel commerce, one panel. Join the agency you were invited to and get to work.",
+    "checking": "Verifying invitation...",
+    "title": "Join the Invitation",
+    "invitedTo": "You have been invited to <strong>{agency}</strong> with the <strong>{role}</strong> role.",
+    "firstName": "First name",
+    "lastName": "Last name",
+    "password": "Password",
+    "passwordRepeat": "Password (repeat)",
+    "passwordRule": "At least {min} characters",
+    "passwordMismatch": "Passwords do not match",
+    "createAndJoin": "Create account and join",
+    "join": "Accept invitation",
+    "existingUserNote": "An account with this email already exists; no password needed, join with one click.",
+    "accepted": "Invitation accepted, redirecting...",
+    "goneTitle": "This invitation is no longer valid",
+    "goneDesc": "The link may have expired, been revoked or already used. Ask your agency administrator for a new invitation.",
+    "errorTitle": "Invitation not found",
+    "errorDesc": "The link may be broken or incomplete. Use the link from the invitation email exactly as received.",
+    "goToLogin": "Sign in",
+    "otherAccountTitle": "This invitation is for another account",
+    "otherAccountDesc": "You are signed in as <strong>{current}</strong>; the invitation was sent to <strong>{invited}</strong>. Sign out first to continue.",
+    "logoutAndContinue": "Sign out and continue"
+  },
+  "common": {
+    "forbidden": {
+      "title": "You do not have access to this page",
+      "desc": "Your role does not allow viewing this section. Contact your agency administrator if you need access.",
+      "backToDashboard": "Back to dashboard"
+    }
+  },
+  "profile": {
+    "sessions": {
+      "title": "Active Sessions",
+      "subtitle": "Sessions open on your account. Close any device you do not recognise.",
+      "revokeOthers": "Sign out other sessions",
+      "revoke": "Sign out session",
+      "revoked": "Session signed out",
+      "revokedOthers": "{count} sessions signed out",
+      "current": "this device",
+      "lastUsed": "Last used",
+      "unknownDevice": "Unknown device",
+      "empty": "No active sessions"
+    }
+  },
+  "notificationTemplates": {
+    "noContext": "Select an agency in the top bar to see templates.",
+    "editingLevel": "Editing level:",
+    "scopeHint": "The most specific template wins: Store → Brand → Agency → System. Pick a brand/store in the top bar to edit that level; \"All brands\" is the agency level.",
+    "tabs": {
+      "templates": "Templates",
+      "logs": "Delivery log",
+      "providers": "Provider settings"
+    },
+    "channel": {
+      "EMAIL": "E-mail",
+      "SMS": "SMS"
+    },
+    "level": {
+      "SYSTEM": "System",
+      "AGENCY": "Agency",
+      "CLIENT": "Brand",
+      "STORE": "Store"
+    },
+    "locales": {
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "status": {
+      "QUEUED": "Queued",
+      "SENT": "Sent",
+      "DELIVERED": "Delivered",
+      "FAILED": "Failed",
+      "SKIPPED": "Skipped"
+    },
+    "filters": {
+      "allChannels": "All channels",
+      "allStatuses": "All statuses",
+      "allEvents": "All events",
+      "search": "Search template name or subject…",
+      "orderId": "Order id"
+    },
+    "events": {
+      "ORDER_CREATED": "Order received",
+      "ORDER_CONFIRMED": "Order confirmed",
+      "ORDER_SHIPPED": "Order shipped",
+      "ORDER_OUT_FOR_DELIVERY": "Out for delivery",
+      "ORDER_DELIVERED": "Delivered",
+      "ORDER_CANCELLED": "Order cancelled",
+      "PAYMENT_RECEIVED": "Payment received",
+      "PAYMENT_FAILED": "Payment failed",
+      "COD_REMINDER": "Cash on delivery reminder",
+      "RETURN_REQUESTED": "Return requested",
+      "RETURN_APPROVED": "Return approved",
+      "RETURN_RECEIVED": "Return received",
+      "REFUND_COMPLETED": "Refund completed",
+      "INVOICE_CREATED": "Invoice created",
+      "ORDER_STATUS_CHANGED": "Order status changed"
+    },
+    "table": {
+      "event": "Event",
+      "updated": "Updated",
+      "never": "—",
+      "delay": "{minutes} min delay",
+      "edit": "Edit",
+      "customize": "Customize",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "toggleHint": "Inherited from a higher level; customize it to change.",
+      "activated": "Template activated.",
+      "deactivated": "Template deactivated.",
+      "empty": "No templates found."
+    },
+    "editor": {
+      "transactionalNote": "Transactional notification: do not add campaign/discount content (commercial messages are a separate, consent-based module).",
+      "name": "Template name",
+      "subject": "Subject",
+      "senderName": "Sender name",
+      "replyTo": "Reply-to",
+      "bodyHtml": "HTML body",
+      "bodyText": "SMS body",
+      "bodyTextAlt": "Plain-text alternative",
+      "bodyTextAltHint": "Generated from the HTML if left empty.",
+      "smsSenderId": "SMS sender id",
+      "delay": "Send delay (minutes)",
+      "smsCount": "{chars} characters · {segments} segments",
+      "turkishWarning": "Turkish characters (ç, ğ, ı, ş, İ) lower the segment limit to 70/67.",
+      "variables": "Variables",
+      "variablesHint": "Click a field, then a variable; it is inserted at the cursor.",
+      "helpersHint": "Helpers: {{formatCurrency order.total order.currency}} · {{formatDate order.date}} · {{upper store.name}} · {{#each order.items}}…{{/each}} · {{#if shipment.trackingNumber}}…{{/if}}",
+      "focusFirst": "Click a text field first.",
+      "preview": "Preview",
+      "sampleData": "Sample data",
+      "sampleNote": "Shown with sample data; pick a real order to verify.",
+      "fixIssues": "{count} validation issue(s); fix them to preview.",
+      "line": "Line {line}",
+      "versions": "Version history",
+      "noVersions": "No versions yet; the first save creates one.",
+      "restore": "Restore",
+      "current": "Current",
+      "sameAsCurrent": "Same as current content.",
+      "testSend": "Send test",
+      "testHint": "Sends the unsaved content; logged as a test.",
+      "send": "Send",
+      "testQueued": "Test queued; see the delivery log.",
+      "saved": "Template saved.",
+      "customized": "Template copied to this level; you can edit it now.",
+      "restored": "Version restored.",
+      "readOnlyRole": "You can view this template; you do not have edit permission.",
+      "inheritedFrom": "This template comes from the {level} level. Customize it to change it here.",
+      "unsaved": "Unsaved changes.",
+      "discardConfirm": "Changes will be lost — close anyway?",
+      "discard": "Close"
+    },
+    "logs": {
+      "date": "Date",
+      "channel": "Channel",
+      "event": "Event",
+      "order": "Order",
+      "recipient": "Recipient",
+      "status": "Status",
+      "provider": "Provider",
+      "attempts": "Attempts",
+      "retry": "Retry",
+      "retried": "Re-queued.",
+      "empty": "No records.",
+      "total": "{count} records",
+      "template": "Template",
+      "messageId": "Provider message id",
+      "sentAt": "Sent at",
+      "error": "Error"
+    },
+    "providers": {
+      "provider": "Provider",
+      "active": "Active",
+      "configured": "Configured: {provider}",
+      "notConfigured": "No provider configured; sends are logged as \"Skipped\".",
+      "names": {
+        "smtp": "SMTP",
+        "netgsm": "Netgsm",
+        "console": "Console (development)"
+      },
+      "consoleNote": "The console provider does not send; it writes the message to the server log.",
+      "secretKept": "Stored; leave empty to keep.",
+      "test": "Test connection",
+      "testOk": "Connection OK ({provider}).",
+      "saved": "Provider settings saved."
     }
   }
 }

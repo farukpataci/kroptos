@@ -2,10 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsEmail, IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateClientDto {
-  @ApiProperty({ example: 'cuid-agency-id', description: 'Agency ID the client belongs to' })
-  @IsString()
-  agencyId: string;
-
+  // P12b: agencyId/clientId gövdeden alınmaz; kapsam yalnızca doğrulanmış aktif bağlamdan gelir.
   @ApiProperty({ example: 'Acme Corp', description: 'Firma / Müşteri Adı' })
   @IsString()
   name: string;

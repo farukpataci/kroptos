@@ -7,6 +7,7 @@ import type { Duplex } from 'stream';
 import Redis from 'ioredis';
 import { WebSocket, WebSocketServer } from 'ws';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import {
   AgentJob,
   AgentResult,
@@ -121,7 +122,8 @@ export class AgentGatewayService implements OnModuleInit, OnModuleDestroy {
       }
       if (msg.kind === 'hello') {
         clearTimeout(helloTimer);
-        session = await this.handleHello(ws, msg);
+        // RLS (P12): kimlik tünel gizinden çözülür, kiracı henüz yok → açık sistem bağlamı.
+        session = await runAsSystem('agent-gateway:hello', () => this.handleHello(ws, msg));
         return;
       }
       if (!session || session.agentId !== msg.agentId) {
@@ -134,17 +136,21 @@ export class AgentGatewayService implements OnModuleInit, OnModuleDestroy {
         return;
       }
       session.lastSeenAt = Date.now();
-      switch (msg.kind) {
-        case 'heartbeat':
-          await this.handleHeartbeat(session, msg.clockIso, msg.erpVersion);
-          break;
-        case 'result':
-          await this.handleResult(session, msg.result);
-          break;
-        case 'credential_ack':
-          await this.agentService.envelopeDelivered(msg.envelopeId, msg.ok, msg.error);
-          break;
-      }
+      // RLS (P12): oturum kurulduktan sonra her mesaj Agent'ın ajansı bağlamında işlenir.
+      const active = session;
+      await runWithTenant(active.agencyId, async () => {
+        switch (msg.kind) {
+          case 'heartbeat':
+            await this.handleHeartbeat(active, msg.clockIso, msg.erpVersion);
+            break;
+          case 'result':
+            await this.handleResult(active, msg.result);
+            break;
+          case 'credential_ack':
+            await this.agentService.envelopeDelivered(msg.envelopeId, msg.ok, msg.error);
+            break;
+        }
+      });
     });
 
     ws.on('close', () => {
@@ -152,9 +158,10 @@ export class AgentGatewayService implements OnModuleInit, OnModuleDestroy {
       if (session && this.sessions.get(session.agentId)?.socket === ws) {
         this.sessions.delete(session.agentId);
         void this.sub?.unsubscribe(`agent:${session.agentId}`).catch(() => undefined);
-        void this.prisma.agentInstance
-          .updateMany({ where: { id: session.agentId, status: 'ACTIVE' }, data: { status: 'OFFLINE', connectedNodeId: null } })
-          .catch(() => undefined);
+        const closing = session;
+        void runWithTenant(closing.agencyId, () =>
+          this.prisma.agentInstance.updateMany({ where: { id: closing.agentId, status: 'ACTIVE' }, data: { status: 'OFFLINE', connectedNodeId: null } }),
+        ).catch(() => undefined);
         this.logger.log(`agent ${session.agentId} ayrıldı`);
       }
     });
@@ -336,7 +343,9 @@ export class AgentGatewayService implements OnModuleInit, OnModuleDestroy {
         if (!s) return;
         this.send(s.socket, msg);
         if (msg.kind === 'job') {
-          void this.prisma.agentJob.updateMany({ where: { id: msg.job.jobId, status: 'queued' }, data: { status: 'dispatched' } }).catch(() => undefined);
+          void runWithTenant(s.agencyId, () =>
+            this.prisma.agentJob.updateMany({ where: { id: msg.job.jobId, status: 'queued' }, data: { status: 'dispatched' } }),
+          ).catch(() => undefined);
         }
       }
     } catch (e: any) {

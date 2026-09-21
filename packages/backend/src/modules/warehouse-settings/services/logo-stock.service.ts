@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../common/prisma/prisma.service';
 
 @Injectable()
@@ -49,7 +49,15 @@ export class LogoStockIntegrationService {
     });
   }
 
+  // Bulgu 5: id tek basina yeterli degil; once ajans kapsaminda bulunmali (warehouses.service kalibi), yoksa 404.
+  private async findScoped(id: string, agencyId: string) {
+    const row = await this.prisma.logoProductMapping.findFirst({ where: { id, agencyId }, select: { id: true } });
+    if (!row) throw new NotFoundException('Logo product mapping not found');
+    return row;
+  }
+
   async update(id: string, data: any, agencyId: string) {
+    await this.findScoped(id, agencyId);
     return this.prisma.logoProductMapping.update({
       where: { id },
       data: {
@@ -66,6 +74,7 @@ export class LogoStockIntegrationService {
   }
 
   async remove(id: string, agencyId: string) {
+    await this.findScoped(id, agencyId);
     return this.prisma.logoProductMapping.delete({
       where: { id },
     });

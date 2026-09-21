@@ -1,10 +1,14 @@
 import { Injectable, UnauthorizedException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { runAsSystem } from '@common/prisma/tenant-context';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '@common/prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { RegisterDto, LoginDto, SwitchTenantDto, RefreshDto, AuthResponseDto } from './dto/auth.dto';
-import { isPlatformAdmin } from '../../common/constants/platform-admin';
+import { isPlatformAdmin, isSuperAdminRole } from '../../common/constants/platform-admin';
+import { resolvePrimaryRole } from '../../common/utils/primary-role';
+import { buildUserRoleScopeWhere } from '../../common/utils/tenant-scope';
+import { PermissionCacheService } from '../../common/services/permission-cache.service';
 import { Prisma } from '@prisma/client';
 
 @Injectable()
@@ -12,6 +16,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private permissionCache: PermissionCacheService,
   ) {}
 
   private hashToken(token: string): string {
@@ -59,18 +64,23 @@ export class AuthService {
     agencyId: string,
     clientId: string | null = null,
     storeId: string | null = null,
-    role: string = 'user',
-    permissions: string[] = [],
+    role: { key: string; isSystem: boolean },
+    sessionId?: string,
   ) {
+    // permissions[] bilerek yok: izinler her istekte DB'den (PermissionCache)
+    // okunur. Token'a gömülü izin, rol geri alındıktan sonra da geçerli kalıyordu.
+    // sid: bu erisim token'inin ait oldugu Session (oturum listesinde "mevcut" isareti).
     const payload = {
+      sid: sessionId ?? null,
       userId,
       email,
       tenantId: agencyId, // Multi-tenant context: agencyId represents the root tenant
       agencyId,
       clientId,
       storeId,
-      role,
-      permissions,
+      // Makine adi + sistem rolu mu: isSuperAdminRole ikisini birden ister (gorunen ad okunmaz).
+      role: role.key,
+      roleIsSystem: role.isSystem,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -139,31 +149,14 @@ export class AuthService {
         },
       });
 
-      // 3. Create or find Super Admin role
-      let superAdminRole = await tx.role.findUnique({
-        where: { name: 'super_admin' },
-      });
-
-      if (!superAdminRole) {
-        superAdminRole = await tx.role.create({
-          data: {
-            name: 'super_admin',
-            description: 'Super administrator with full access',
-          },
-        });
-
-        // Seed default permission
-        await tx.permission.upsert({
-          where: { name: '*:*' },
-          update: {},
-          create: {
-            name: '*:*',
-            description: 'Wildcard access permission',
-            roles: {
-              connect: { id: superAdminRole.id },
-            },
-          },
-        });
+      // 3. Kayıt olan kullanıcı kendi ajansının SAHİBİDİR, platform yöneticisi
+      // değil. Eskiden burada super_admin verilip (yoksa yaratılıp) '*:*'
+      // bağlanıyordu: açık kayıt formu platform çapında tam yetki dağıtıyordu.
+      // super_admin yalnız seed ile atanır; agency_owner seed'de yoksa sessizce
+      // düşme, patla.
+      const ownerRole = await tx.role.findFirst({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } });
+      if (!ownerRole) {
+        throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before registration");
       }
 
       // 4. Assign UserRole
@@ -171,7 +164,7 @@ export class AuthService {
         data: {
           userId: user.id,
           agencyId: agency.id,
-          roleId: superAdminRole.id,
+          roleId: ownerRole.id,
         },
       });
 
@@ -187,24 +180,26 @@ export class AuthService {
         { email: user.email, agencyName: agency.name },
       );
 
-      return { user, agency, role: superAdminRole };
+      return { user, agency, role: ownerRole };
     });
 
     // 6. Generate tokens
+    const sessionId = crypto.randomUUID();
     const tokens = await this.generateTokens(
       result.user.id,
       result.user.email,
       result.agency.id,
       null,
       null,
-      result.role.name,
-      ['*:*'],
+      result.role,
+      sessionId,
     );
 
     // 7. Save sessions
     const tokenHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId: result.user.id,
         tokenHash,
         ipAddress: ipAddress || null,
@@ -236,7 +231,7 @@ export class AuthService {
           id: result.agency.id,
           publicId: result.agency.publicId,
           name: result.agency.name,
-          role: result.role.name,
+          role: result.role.key,
           clientId: null,
           storeId: null,
         },
@@ -265,11 +260,7 @@ export class AuthService {
       },
       include: {
         agency: true,
-        role: {
-          include: {
-            permissions: true,
-          },
-        },
+        role: true,
       },
     });
 
@@ -277,22 +268,23 @@ export class AuthService {
       throw new UnauthorizedException('User has no tenant assignments');
     }
 
-    const primaryUserRole = userRoles[0];
-    const permissions = primaryUserRole.role.permissions.map((p) => p.name);
+    const primaryUserRole = resolvePrimaryRole(userRoles)!;
 
+    const sessionId = crypto.randomUUID();
     const tokens = await this.generateTokens(
       user.id,
       user.email,
       primaryUserRole.agencyId,
       primaryUserRole.clientId,
       primaryUserRole.storeId,
-      primaryUserRole.role.name,
-      permissions,
+      primaryUserRole.role,
+      sessionId,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId: user.id,
         tokenHash,
         deviceInfo: deviceInfo || null,
@@ -320,7 +312,11 @@ export class AuthService {
       { email: user.email },
     );
 
-    const { accessibleTenants } = await this.getMe(user.id);
+    const { accessibleTenants, user: me } = await this.getMe(user.id, {
+      agencyId: primaryUserRole.agencyId,
+      clientId: primaryUserRole.clientId,
+      storeId: primaryUserRole.storeId,
+    });
 
     return {
       accessToken: tokens.accessToken,
@@ -332,6 +328,60 @@ export class AuthService {
         lastName: user.lastName || undefined,
         isActive: user.isActive,
         twoFactorEnabled: user.twoFactorEnabled,
+        role: me.role,
+        isPlatformAdmin: me.isPlatformAdmin,
+        permissions: me.permissions,
+      },
+      agencies: accessibleTenants,
+    };
+  }
+
+  /**
+   * Sifresiz oturum acar: davet kabulu gibi kimligi baska yoldan kanitlanmis akislar
+   * icin. Token, verilen kapsami kapsayan role gore uretilir (switchTenant kurali);
+   * kapsayan rol yoksa 403.
+   */
+  async issueSessionFor(
+    userId: string,
+    scope: { agencyId: string; clientId?: string | null; storeId?: string | null },
+    ipAddress?: string,
+  ): Promise<AuthResponseDto> {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null, isActive: true } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+    const candidates = await this.prisma.userRole.findMany({
+      where: buildUserRoleScopeWhere({ userId, agencyId: scope.agencyId, clientId: scope.clientId ?? null, storeId: scope.storeId ?? null }),
+      include: { role: true },
+    });
+    const userRole = resolvePrimaryRole(candidates, scope);
+    if (!userRole) {
+      throw new ForbiddenException('No role covers the requested tenant context');
+    }
+
+    const sessionId = crypto.randomUUID();
+    const tokens = await this.generateTokens(userId, user.email, scope.agencyId, scope.clientId ?? null, scope.storeId ?? null, userRole.role, sessionId);
+    await this.prisma.session.create({
+      data: { id: sessionId, userId, tokenHash: this.hashToken(tokens.refreshToken), ipAddress: ipAddress || null, expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+    });
+    await this.prisma.refreshToken.create({
+      data: { userId, tokenHash: await this.hashPassword(tokens.refreshToken), expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) },
+    });
+
+    const { accessibleTenants, user: me } = await this.getMe(userId, scope);
+    return {
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        firstName: user.firstName || undefined,
+        lastName: user.lastName || undefined,
+        isActive: user.isActive,
+        twoFactorEnabled: user.twoFactorEnabled,
+        role: me.role,
+        isPlatformAdmin: me.isPlatformAdmin,
+        permissions: me.permissions,
       },
       agencies: accessibleTenants,
     };
@@ -385,19 +435,21 @@ export class AuthService {
         throw new UnauthorizedException('Session not found or expired');
       }
 
-      const userRole = await this.prisma.userRole.findFirst({
-        where: {
-          userId,
-          deletedAt: null,
-        },
-        include: {
-          role: {
-            include: {
-              permissions: true,
-            },
+      // Pasife alinmis / silinmis kullanici refresh ile yeni erisim token'i ALAMAZ (P11).
+      const account = await this.prisma.user.findFirst({ where: { id: userId, deletedAt: null, isActive: true }, select: { id: true } });
+      if (!account) {
+        throw new UnauthorizedException('Account is inactive');
+      }
+
+      const userRole = resolvePrimaryRole(
+        await this.prisma.userRole.findMany({
+          where: {
+            userId,
+            deletedAt: null,
           },
-        },
-      });
+          include: { role: true },
+        }),
+      );
 
       if (!userRole) {
         throw new UnauthorizedException('User has no active roles');
@@ -409,19 +461,23 @@ export class AuthService {
         data: { isActive: false },
       });
 
+      const sessionId = crypto.randomUUID();
       const newTokens = await this.generateTokens(
         userId,
         payload.email,
         userRole.agencyId,
         userRole.clientId,
         userRole.storeId,
-        userRole.role.name,
-        userRole.role.permissions.map((p) => p.name),
+        userRole.role,
+        sessionId,
       );
 
       const newHash = this.hashToken(newTokens.refreshToken);
       await this.prisma.session.create({
         data: {
+          id: sessionId,
+          lastUsedAt: new Date(),
+          deviceInfo: session.deviceInfo,
           userId,
           tokenHash: newHash,
           ipAddress: ipAddress || null,
@@ -445,7 +501,16 @@ export class AuthService {
     }
   }
 
-  async switchTenant(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
+  /**
+   * RLS (P12): hedef kiracının rolü mevcut token'ın ajansı DIŞINDA olabilir; üyelik
+   * doğrulaması kiracılar arası okuma ister → açık sistem bağlamı. Kapsam kontrolü
+   * (buildUserRoleScopeWhere) uygulama katmanında aynen kalır.
+   */
+  switchTenant(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
+    return runAsSystem('auth:switch-tenant membership', () => this.switchTenantUnscoped(userId, dto, ipAddress));
+  }
+
+  private async switchTenantUnscoped(userId: string, dto: SwitchTenantDto, ipAddress?: string): Promise<{ accessToken: string; refreshToken: string }> {
     // İstenen bağlamı DB'den çöz; istemcinin gönderdiği clientId'ye güvenme.
     // Mağaza verilmişse gerçek clientId mağaza kaydından gelir ve mağazanın
     // hedef ajansa ait olduğu da böylece doğrulanmış olur.
@@ -472,37 +537,15 @@ export class AuthService {
     }
 
     // Bir rol istenen bağlamı KAPSIYORSA geçiş yetkilidir. Kapsama semantiği
-    // TenantMiddleware ile aynı olmak zorunda (oradaki store dalının OR bloğu):
-    // ajans geneli rol altındaki her şeyi, client kapsamlı rol o client'ın
-    // mağazalarını, mağaza kapsamlı rol yalnızca kendi mağazasını kapsar.
-    //
-    // Önceki sorgu `clientId/storeId: dto.X || undefined` yazıyordu ve bu iki
-    // yönde birden yanlıştı: değer verilince TAM eşleşme arayıp ajans geneli
-    // rolü eliyordu (marka geçişi 403), verilmeyince de filtreyi tamamen
-    // kaldırıp mağaza kapsamlı bir rolün ajans geneli token almasına izin
-    // veriyordu. Aşağıdaki OR ikisini birden kapatıyor.
-    const coverage: Prisma.UserRoleWhereInput[] = [{ clientId: null, storeId: null }];
-    if (requestedClientId) {
-      coverage.push({ clientId: requestedClientId, storeId: null });
-    }
-    if (requestedStoreId) {
-      coverage.push({ storeId: requestedStoreId });
-    }
-
+    // PermissionGuard ve TenantMiddleware ile aynı: buildUserRoleScopeWhere.
     const candidates = await this.prisma.userRole.findMany({
-      where: {
+      where: buildUserRoleScopeWhere({
         userId,
         agencyId: dto.agencyId,
-        deletedAt: null,
-        OR: coverage,
-      },
-      include: {
-        role: {
-          include: {
-            permissions: true,
-          },
-        },
-      },
+        clientId: requestedClientId,
+        storeId: requestedStoreId,
+      }),
+      include: { role: true },
     });
 
     if (candidates.length === 0) {
@@ -510,29 +553,33 @@ export class AuthService {
     }
 
     // Birden fazla rol aynı bağlamı kapsayabilir (ör. hem ajans geneli hem
-    // mağaza kapsamlı). En özel olan kazanır; aksi halde token'ın izin kümesi
-    // findFirst'in döndürdüğü rastgele satıra bağlı kalırdı.
-    const specificity = (ur: (typeof candidates)[number]) => (ur.storeId ? 3 : ur.clientId ? 2 : 1);
-    const userRole = candidates.reduce((best, cur) => (specificity(cur) > specificity(best) ? cur : best));
+    // mağaza kapsamlı). En özel olan kazanır; seçim kuralı resolvePrimaryRole'da.
+    const userRole = resolvePrimaryRole(candidates, {
+      agencyId: dto.agencyId,
+      clientId: requestedClientId,
+      storeId: requestedStoreId,
+    })!;
 
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
 
+    const sessionId = crypto.randomUUID();
     const tokens = await this.generateTokens(
       userId,
       user.email,
       dto.agencyId,
       requestedClientId,
       requestedStoreId,
-      userRole.role.name,
-      userRole.role.permissions.map((p) => p.name),
+      userRole.role,
+      sessionId,
     );
 
     const tokenHash = this.hashToken(tokens.refreshToken);
     await this.prisma.session.create({
       data: {
+        id: sessionId,
         userId,
         tokenHash,
         ipAddress: ipAddress || null,
@@ -555,7 +602,16 @@ export class AuthService {
     return tokens;
   }
 
-  async getMe(userId: string) {
+  /**
+   * @param active Aktif baglam (controller: middleware'in cozdugu activeX ?? token;
+   *   login: birincil rolun kapsami). user.permissions bu baglama gore hesaplanir.
+   */
+  /** RLS (P12): accessibleTenants kullanıcının TÜM ajanslarını listeler (tenant değiştirici) → açık sistem bağlamı. */
+  getMe(userId: string, active?: { agencyId?: string | null; clientId?: string | null; storeId?: string | null }) {
+    return runAsSystem('auth:getMe cross-agency membership', () => this.getMeUnscoped(userId, active));
+  }
+
+  private async getMeUnscoped(userId: string, active?: { agencyId?: string | null; clientId?: string | null; storeId?: string | null }) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -577,70 +633,108 @@ export class AuthService {
     const userRoles = await this.prisma.userRole.findMany({
       where: { userId, deletedAt: null },
       include: {
-        agency: {
-          include: {
-            stores: {
-              where: { deletedAt: null },
-            },
-          },
-        },
+        agency: { include: { stores: { where: { deletedAt: null } } } },
+        client: { select: { id: true, name: true } },
         role: true,
       },
     });
 
     const storeUsers = await this.prisma.storeUser.findMany({
-      where: { userId, deletedAt: null },
-      select: { storeId: true },
+      where: { userId, deletedAt: null, store: { deletedAt: null } },
+      include: { store: { include: { agency: true } } },
     });
-    const allowedStoreIds = new Set(storeUsers.map((su) => su.storeId));
-    const hasSpecificStoreRestrictions = allowedStoreIds.size > 0;
 
-    const accessibleTenants: any[] = [];
-    const addedIds = new Set<string>();
+    // Girdi = kullanıcının GERÇEKTEN geçebileceği bağlam (switchTenant ve
+    // TenantMiddleware'in kapsama kuralıyla aynı). Ajans girdisi yalnız ajans
+    // geneli rolle çıkar: mağaza kapsamlı kullanıcıya ajans girdisi verilince
+    // login onu varsayılan seçiyor, her istek 403'e düşüyor ve /auth/me 403'ü
+    // oturumu siliyordu (P2.5 ★).
+    type Entry = {
+      id: string; publicId: string | null; name: string; type: 'agency' | 'client' | 'brand';
+      agencyId: string; clientId: string | null; storeId: string | null;
+    };
+    const agencies = new Map<string, Entry>();
+    const clients = new Map<string, Entry>();
+    const stores = new Map<string, Entry>();
+    const brand = (store: { id: string; publicId: string | null; name: string; agencyId: string; clientId: string | null }): Entry => ({
+      id: store.id,
+      publicId: store.publicId || `tn_${store.id}`,
+      name: store.name,
+      type: 'brand',
+      agencyId: store.agencyId,
+      clientId: store.clientId || null,
+      storeId: store.id,
+    });
+    // Ajans geneli rol + StoreUser kısıtı birlikteyse yalnız kısıttaki mağazalar (eski davranış korunur).
+    const restrictedTo = new Set(storeUsers.map((su) => su.storeId));
 
     for (const ur of userRoles) {
-      if (ur.agency && !addedIds.has(ur.agency.id)) {
-        addedIds.add(ur.agency.id);
-        accessibleTenants.push({
-          id: ur.agency.id,
-          publicId: ur.agency.publicId || `tn_${ur.agency.id}`,
-          name: ur.agency.name,
+      const agency = ur.agency;
+      const agencyStores = agency.stores ?? [];
+      const agencyWide = (!ur.clientId && !ur.storeId) || isSuperAdminRole({ role: ur.role.key, roleIsSystem: ur.role.isSystem });
+      if (agencyWide) {
+        agencies.set(agency.id, {
+          id: agency.id,
+          publicId: agency.publicId || `tn_${agency.id}`,
+          name: agency.name,
           type: 'agency',
-          agencyId: ur.agency.id,
+          agencyId: agency.id,
           clientId: null,
           storeId: null,
         });
-
-        for (const store of ur.agency.stores || []) {
-          if (hasSpecificStoreRestrictions && !allowedStoreIds.has(store.id)) {
-            continue;
-          }
-
-          if (!addedIds.has(store.id)) {
-            addedIds.add(store.id);
-            accessibleTenants.push({
-              id: store.id,
-              publicId: store.publicId || `tn_${store.id}`,
-              name: store.name,
-              type: 'brand',
-              agencyId: ur.agency.id,
-              clientId: store.clientId || null,
-              storeId: store.id,
-            });
-          }
+        for (const s of agencyStores) {
+          if (restrictedTo.size > 0 && !restrictedTo.has(s.id)) continue;
+          stores.set(s.id, brand(s));
         }
+      } else if (ur.storeId) {
+        const s = agencyStores.find((x) => x.id === ur.storeId);
+        if (s) stores.set(s.id, brand(s));
+      } else if (ur.clientId && ur.client) {
+        // Client'ın publicId'si yok; UI bugün client bağlamına geçiş sunmuyor, girdi ileriye dönük.
+        clients.set(ur.client.id, {
+          id: ur.client.id,
+          publicId: null,
+          name: ur.client.name,
+          type: 'client',
+          agencyId: agency.id,
+          clientId: ur.client.id,
+          storeId: null,
+        });
+        for (const s of agencyStores) if (s.clientId === ur.clientId) stores.set(s.id, brand(s));
       }
+    }
+    for (const su of storeUsers) stores.set(su.store.id, brand(su.store));
+
+    // Her girdiye o baglamdaki etkin izin kumesi: buildUserRoleScopeWhere + birlesim
+    // (PermissionCacheService, 60 sn cache). JWT'ye KONMAZ (P2). Sistem super_admin icin
+    // katalogdaki haliyle ['*:*'] doner; genisletilmez, istemci can() wildcard'i tanir.
+    const permsFor = async (scope: { agencyId: string; clientId?: string | null; storeId?: string | null }) =>
+      (await this.permissionCache.getPermissions({ userId, agencyId: scope.agencyId, clientId: scope.clientId ?? null, storeId: scope.storeId ?? null })) ?? [];
+    const accessibleTenants: (Entry & { permissions: string[] })[] = await Promise.all(
+      [...agencies.values(), ...clients.values(), ...stores.values()].map(async (e) => ({ ...e, permissions: await permsFor(e) })),
+    );
+    if (accessibleTenants.length === 0) {
+      console.warn(
+        `[getMe] user ${user.email} has no accessible tenant: roles=${JSON.stringify(
+          userRoles.map((ur) => ({ role: ur.role.key, agencyId: ur.agencyId, clientId: ur.clientId, storeId: ur.storeId })),
+        )} storeUsers=${storeUsers.length}`,
+      );
     }
 
     // The UI needs the role to decide what to show; it is advisory only, every
     // protected route re-checks it server-side.
-    const role = userRoles[0]?.role?.name ?? null;
+    const primaryRow = resolvePrimaryRole(userRoles, active?.agencyId ? active : undefined) ?? resolvePrimaryRole(userRoles);
+    const primary = primaryRow?.role;
+    const role = primary?.key ?? null;
+    const activeScope = active?.agencyId ? { agencyId: active.agencyId, clientId: active.clientId ?? null, storeId: active.storeId ?? null } : primaryRow ? { agencyId: primaryRow.agencyId, clientId: primaryRow.clientId, storeId: primaryRow.storeId } : null;
+    const permissions = activeScope ? await permsFor(activeScope) : [];
 
     return {
       user: {
         ...user,
         role,
-        isPlatformAdmin: isPlatformAdmin({ email: user.email, role }),
+        isPlatformAdmin: isPlatformAdmin({ email: user.email, role, roleIsSystem: primary?.isSystem ?? false }),
+        permissions,
       },
       accessibleTenants,
     };

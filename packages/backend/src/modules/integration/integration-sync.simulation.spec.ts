@@ -32,12 +32,15 @@ describe('IntegrationSyncWorker — simulation isolation', () => {
   let settings: Record<string, unknown>;
 
   const runJob = (eventType: string, payload: any = {}) =>
-    (worker as any).processJob({
-      queueRecordId: 'queue-1',
-      integrationId: INTEGRATION.id,
-      eventType,
-      payload,
-    });
+    (worker as any).processJob(
+      {
+        queueRecordId: 'queue-1',
+        integrationId: INTEGRATION.id,
+        eventType,
+        payload,
+      },
+      INTEGRATION.agencyId,
+    );
 
   beforeEach(() => {
     settings = {};

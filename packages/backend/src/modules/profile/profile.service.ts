@@ -4,12 +4,16 @@ import { AuditLogService } from '@modules/audit/audit.service';
 import { encrypt } from '@common/utils/encryption.util';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
+import { SessionService } from '../auth/session.service';
+import { RbacService } from '../rbac/rbac.service';
 
 @Injectable()
 export class ProfileService {
   constructor(
     private prisma: PrismaService,
     private auditLogService: AuditLogService,
+    private sessions: SessionService,
+    private rbac: RbacService,
   ) {}
 
   async getProfile(userId: string) {
@@ -203,6 +207,10 @@ export class ProfileService {
       userAgent,
     });
 
+    // P11: sifre degisti -> tum oturumlar kapanir (bu istegin erisim token'i 15 dk icinde
+    // doger; refresh artik calismaz, kullanici yeni sifreyle girer).
+    await this.sessions.revokeAllForUser(userId, 'profile.password_changed', { tenantId: agencyId });
+
     return { success: true };
   }
 
@@ -362,31 +370,14 @@ export class ProfileService {
       throw new BadRequestException('User not found');
     }
 
-    // Check if user is the sole owner of the agency
-    const isOwner = user.userRoles.some((ur) => ur.role?.name?.toLowerCase() === 'owner');
-    if (isOwner) {
-      // Count other owners in this agency
-      const ownerCount = await this.prisma.userRole.count({
-        where: {
-          agencyId,
-          role: {
-            name: {
-              equals: 'Owner',
-              mode: 'insensitive',
-            },
-          },
-          deletedAt: null,
-          user: {
-            deletedAt: null,
-          },
-        },
-      });
-
-      if (ownerCount <= 1) {
-        throw new ForbiddenException(
-          'Account deletion denied. You are the sole Owner of this tenant. Please transfer ownership or assign another Owner before deleting your account.'
-        );
-      }
+    // P13-4: "son sahip" kontrolü rol ADIYLA ('owner') yapılıyordu; Role.name unique değil
+    // ve ajanslar kendi rollerini yaratabiliyor (P7) — name='owner' bir tenant rolü kontrolü
+    // geçerdi. Tek kaynak: RbacService.isLastAgencyOwner (key='agency_owner' + isSystem,
+    // ajans geneli kapsam), rbac.revoke / users.removeFromTenant ile aynı.
+    if (await this.rbac.isLastAgencyOwner(userId, agencyId)) {
+      throw new ForbiddenException(
+        'Account deletion denied. You are the sole Owner of this tenant. Please transfer ownership or assign another Owner before deleting your account.',
+      );
     }
 
     // Soft delete the user

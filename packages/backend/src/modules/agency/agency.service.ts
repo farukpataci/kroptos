@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { runAsSystem } from '@common/prisma/tenant-context';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateAgencyDto, UpdateAgencyDto } from './dto/agency.dto';
 import { Prisma } from '@prisma/client';
@@ -43,7 +44,12 @@ export class AgencyService {
     }
   }
 
-  async list(userId: string, isSuperAdmin: boolean) {
+  /** RLS (P12): üyelik listesi kiracılar arası (UserRole) → açık sistem bağlamı; where'deki userId filtresi kalır. */
+  list(userId: string, isSuperAdmin: boolean) {
+    return runAsSystem('agency:list membership', () => this.listUnscoped(userId, isSuperAdmin));
+  }
+
+  private async listUnscoped(userId: string, isSuperAdmin: boolean) {
     if (isSuperAdmin) {
       return this.prisma.agency.findMany({
         where: { deletedAt: null },
@@ -66,7 +72,15 @@ export class AgencyService {
     });
   }
 
-  async get(id: string, userId: string, isSuperAdmin: boolean) {
+  /** RLS (P12): /api/tenants/:publicId tenant ÇÖZÜMÜDÜR — aktif bağlam henüz o ajans değil → açık sistem bağlamı; üyelik where'de. */
+  get(id: string, userId: string, isSuperAdmin: boolean) {
+    return runAsSystem('agency:get membership', () => this.getUnscoped(id, userId, isSuperAdmin));
+  }
+
+  private async getUnscoped(id: string, userId: string, isSuperAdmin: boolean) {
+    // Bulgu 7: uyelik where'de (kullanicinin rolu olan ajanslar); uye olmadigi ajans/magaza 404,
+    // 403 degil -> id/publicId'nin varligi sizmaz. Bu uc tenant cozumu icin cok-ajansli kalir.
+    const membership = isSuperAdmin ? {} : { users: { some: { userId, deletedAt: null } } };
     let agency = await this.prisma.agency.findFirst({
       where: {
         OR: [
@@ -74,6 +88,7 @@ export class AgencyService {
           { publicId: id },
         ],
         deletedAt: null,
+        ...membership,
       },
     });
 
@@ -85,6 +100,7 @@ export class AgencyService {
             { publicId: id },
           ],
           deletedAt: null,
+          agency: { deletedAt: null, ...membership },
         },
         include: { agency: true },
       });
@@ -95,21 +111,6 @@ export class AgencyService {
 
     if (!agency) {
       throw new NotFoundException(`Agency context '${id}' not found or soft-deleted`);
-    }
-
-    // Verify access
-    if (!isSuperAdmin) {
-      const userRole = await this.prisma.userRole.findFirst({
-        where: {
-          userId,
-          agencyId: agency.id,
-          deletedAt: null,
-        },
-      });
-
-      if (!userRole) {
-        throw new ForbiddenException('Access denied. You do not belong to this agency.');
-      }
     }
 
     return agency;
@@ -141,31 +142,12 @@ export class AgencyService {
         },
       });
 
-      // 2. Find or create the "Agency Owner" role
-      let ownerRole = await tx.role.findUnique({
-        where: { name: 'Agency Owner' },
-      });
-
+      // 2. Seed'deki agency_owner rolü. Eskiden burada 'Agency Owner' adında
+      // '*:*' izinli bir rol yaratılıyordu — register'daki super_admin açığının
+      // ikizi (PermissionGuard '*:*' görünce her şeye izin verir).
+      const ownerRole = await tx.role.findFirst({ where: { key: 'agency_owner', agencyId: null, deletedAt: null } });
       if (!ownerRole) {
-        ownerRole = await tx.role.create({
-          data: {
-            name: 'Agency Owner',
-            description: 'Owner role with administrative privileges for an agency',
-          },
-        });
-
-        // Add a default wildcard permission for the owner
-        await tx.permission.upsert({
-          where: { name: '*:*' },
-          update: {},
-          create: {
-            name: '*:*',
-            description: 'Wildcard access permission',
-            roles: {
-              connect: { id: ownerRole.id },
-            },
-          },
-        });
+        throw new Error("Role 'agency_owner' not found — run prisma/seed.ts before creating agencies");
       }
 
       // 3. Assign the creator as Agency Owner

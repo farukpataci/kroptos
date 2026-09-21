@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
 import { useToast } from '@/components/ui/Toast';
+import { usePermission } from '@/hooks/usePermission';
 import {
   CubeIcon,
   ChartBarIcon,
@@ -102,6 +103,7 @@ export default function InventoryPage() {
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
   const toast = useToast();
+  const { can } = usePermission();
   const { tenantContext } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'ledger' | 'map' | 'movements' | 'lowstock' | 'counting' | 'reservations'>('dashboard');
   
@@ -499,6 +501,7 @@ export default function InventoryPage() {
         
         {/* Action buttons matching the design system */}
         <div className="mt-4 sm:mt-0 flex flex-wrap gap-2">
+          {can('wms.stock.update') && (
           <button
             onClick={() => setIsInboundModalOpen(true)}
             className="flex items-center gap-2 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-4 py-2.5 text-xs font-semibold shadow-sm transition-all"
@@ -506,6 +509,7 @@ export default function InventoryPage() {
             <PlusIcon className="h-4 w-4" />
             {t('quickInbound')}
           </button>
+          )}
           <button
             onClick={() => {
               setProducts(prev => prev.map(p => p.sku === 'WMS-402-BLU' ? { ...p, available: 120, status: 'Healthy' } : p));

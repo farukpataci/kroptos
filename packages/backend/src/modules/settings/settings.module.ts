@@ -2,8 +2,7 @@ import { Module } from '@nestjs/common';
 import { SettingsController } from './settings.controller';
 import { SettingsService } from './settings.service';
 import { UsersController } from './controllers/users.controller';
-import { RolesController } from './controllers/roles.controller';
-import { RequirePermissionController } from './controllers/permissions.controller';
+import { RolesController, PermissionsController } from './controllers/roles.controller';
 import { TenantSettingsController } from './controllers/tenant-settings.controller';
 import { IntegrationSettingsController } from './controllers/integration-settings.controller';
 import { SecuritySettingsController } from './controllers/security-settings.controller';
@@ -12,7 +11,6 @@ import { ApiKeysController } from './controllers/api-keys.controller';
 
 import { UsersService } from './services/users.service';
 import { RolesService } from './services/roles.service';
-import { RequirePermissionService } from './services/permissions.service';
 import { TenantSettingsService } from './services/tenant-settings.service';
 import { IntegrationSettingsService } from './services/integration-settings.service';
 import { SecuritySettingsService } from './services/security-settings.service';
@@ -20,14 +18,16 @@ import { NotificationSettingsService } from './services/notification-settings.se
 import { ApiKeysService } from './services/api-keys.service';
 import { AuditModule } from '../audit/audit.module';
 import { PrismaModule } from '@common/prisma/prisma.module';
+import { RbacModule } from '../rbac/rbac.module';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [PrismaModule, AuditModule],
+  imports: [PrismaModule, AuditModule, RbacModule, AuthModule],
   controllers: [
     SettingsController,
     UsersController,
     RolesController,
-    RequirePermissionController,
+    PermissionsController,
     TenantSettingsController,
     IntegrationSettingsController,
     SecuritySettingsController,
@@ -38,7 +38,6 @@ import { PrismaModule } from '@common/prisma/prisma.module';
     SettingsService,
     UsersService,
     RolesService,
-    RequirePermissionService,
     TenantSettingsService,
     IntegrationSettingsService,
     SecuritySettingsService,
@@ -49,7 +48,6 @@ import { PrismaModule } from '@common/prisma/prisma.module';
     SettingsService,
     UsersService,
     RolesService,
-    RequirePermissionService,
     TenantSettingsService,
     IntegrationSettingsService,
     SecuritySettingsService,

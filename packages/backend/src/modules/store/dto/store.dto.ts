@@ -2,15 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateStoreDto {
-  @ApiProperty({ example: 'cuid-agency-id', description: 'Agency ID the store belongs to' })
-  @IsString()
-  agencyId: string;
-
-  @ApiPropertyOptional({ example: 'cuid-client-id', description: 'Optional Client ID the store belongs to' })
-  @IsString()
-  @IsOptional()
-  clientId?: string;
-
+  // P12b: agencyId/clientId gövdeden alınmaz; kapsam yalnızca doğrulanmış aktif bağlamdan gelir.
   @ApiProperty({ example: 'My Retail Store', description: 'Name of the store' })
   @IsString()
   name: string;

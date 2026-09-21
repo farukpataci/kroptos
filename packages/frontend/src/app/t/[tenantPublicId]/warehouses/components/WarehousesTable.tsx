@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/Toast';
 import { useAuth } from '@/lib/auth-context';
 import { apiFetch } from '@/lib/api';
+import { usePermission } from '@/hooks/usePermission';
 
 interface Warehouse {
   id: string;
@@ -78,6 +79,7 @@ const WAREHOUSE_TYPES = ['Ana Depo', 'İade Deposu', 'Transit Depo', 'Bölge Dep
 export function WarehousesTable() {
   const t = useTranslations('warehouses.table');
   const tc = useTranslations('common');
+  const { can } = usePermission();
   const toast = useToast();
   const { tenantContext } = useAuth();
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -286,6 +288,7 @@ export function WarehousesTable() {
           <h3 className="text-sm font-bold text-kp-text-primary uppercase tracking-wider">{t('title')}</h3>
           <p className="text-[0.6875rem] text-kp-text-tertiary">{t('subtitle')}</p>
         </div>
+        {can('warehouse.settings.manage') && (
         <button
           onClick={handleOpenAddModal}
           className="flex items-center gap-1.5 rounded-kp-md bg-kp-accent hover:bg-kp-accent-hover text-white px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors"
@@ -293,6 +296,7 @@ export function WarehousesTable() {
           <PlusIcon className="h-4 w-4" />
           {t('addWarehouse')}
         </button>
+        )}
       </div>
 
       {/* Filters bar */}
@@ -422,6 +426,7 @@ export function WarehousesTable() {
                     </td>
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {can('warehouse.settings.manage') && (<>
                         <button
                           onClick={() => handleOpenEditModal(wh)}
                           className="p-1 text-kp-text-tertiary hover:text-kp-accent rounded-kp-md hover:bg-kp-bg-hover transition-colors"
@@ -436,6 +441,7 @@ export function WarehousesTable() {
                         >
                           <TrashIcon className="h-4 w-4" />
                         </button>
+                        </>)}
                       </div>
                     </td>
                   </tr>
