@@ -308,10 +308,9 @@
   },
   "orderStatuses": {
     "title": "Order Statuses",
-    "subtitle": "The statuses the system writes, and how many orders sit in each.",
+    "subtitle": "Statuses the system writes, custom statuses the agency defined, and the number of orders in each.",
     "loadFailed": "Status counts could not be loaded.",
     "create": "Add Status",
-    "createDisabled": "No endpoint stores a custom status yet; coming soon.",
     "unknownNote": "{count} statuses are not on the system list. Marketplace mappers write status as free text.",
     "columns": {
       "name": "Status",
@@ -321,8 +320,15 @@
     },
     "kind": {
       "system": "System",
-      "unknown": "Undeclared"
-    }
+      "unknown": "Undeclared",
+      "custom": "Custom"
+    },
+    "keyHint": "Generated from the name if left empty; lowercase letters, digits and underscores only.",
+    "keyTaken": "The key '{key}' is already in use.",
+    "color": "Color",
+    "created": "Status added.",
+    "removed": "Status removed.",
+    "removeBlocked": "Orders are in this status; move them first."
   },
   "productStock": {
     "title": "Stock Control",

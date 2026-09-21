@@ -4125,10 +4125,9 @@
   },
   "orderStatuses": {
     "title": "Sipariş Durumları",
-    "subtitle": "Sistemin yazdığı durumlar ve her birinde bekleyen sipariş sayısı.",
+    "subtitle": "Sistemin yazdığı durumlar, ajansın tanımladığı özel durumlar ve her birinde bekleyen sipariş sayısı.",
     "loadFailed": "Durum sayıları yüklenemedi.",
     "create": "Durum Ekle",
-    "createDisabled": "Özel durum için bir servis ucu yok; yakında.",
     "unknownNote": "{count} durum sistemin listesinde yok. Pazaryeri eşleştiricileri durumu serbest metin olarak yazıyor.",
     "columns": {
       "name": "Durum",
@@ -4138,8 +4137,15 @@
     },
     "kind": {
       "system": "Sistem",
-      "unknown": "Tanımsız"
-    }
+      "unknown": "Tanımsız",
+      "custom": "Özel"
+    },
+    "keyHint": "Boş bırakılırsa addan üretilir; yalnız küçük harf, rakam ve alt çizgi.",
+    "keyTaken": "'{key}' anahtarı zaten kullanılıyor.",
+    "color": "Renk",
+    "created": "Durum eklendi.",
+    "removed": "Durum silindi.",
+    "removeBlocked": "Bu durumda sipariş var; önce siparişleri taşıyın."
   },
   "productStock": {
     "title": "Stok Kontrolü",
