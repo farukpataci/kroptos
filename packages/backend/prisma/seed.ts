@@ -10,7 +10,7 @@ async function main() {
   console.log('Starting seed...');
 
   // 1. Seed Permissions — katalog tek kaynak: packages/shared/src/permissions.ts
-  const permissionsList = PERMISSIONS.map((p) => ({ name: p.key, description: p.description, category: p.category }));
+  const permissionsList = PERMISSIONS.map((p: any) => ({ name: p.key, description: p.description, category: p.category }));
 
   console.log('Seeding permissions...');
   const permissionsMap: Record<string, any> = {};
@@ -24,11 +24,11 @@ async function main() {
   }
 
   // 2. Seed Roles and map permissions — DEFAULT_ROLES (shared)
-  const rolesList = DEFAULT_ROLES.map((r) => ({ name: r.key, description: r.description, permissions: r.permissions as string[] }));
+  const rolesList = DEFAULT_ROLES.map((r: any) => ({ name: r.key, description: r.description, permissions: r.permissions as string[] }));
 
   console.log('Seeding roles...');
   for (const roleDef of rolesList) {
-    const permConnects = roleDef.permissions.map((pName) => ({ id: permissionsMap[pName].id }));
+    const permConnects = roleDef.permissions.map((pName: string) => ({ id: permissionsMap[pName].id }));
 
     // Sistem rolu: agencyId NULL, key = name. Role.name artik unique degil (P3), o yuzden
     // upsert yerine key ile findFirst; benzersizligi role_system_key_uq partial index tutar.

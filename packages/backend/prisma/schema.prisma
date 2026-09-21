@@ -433,7 +433,6 @@ model Order {
   shippingCity        String?
   shippingPostalCode  String?
   shippingCountryCode String?
-<<<<<<< HEAD
   status            String    @default("pending") // pending, processing, shipped, delivered, cancelled
   paymentStatus     String    @default("pending") // pending, paid, partially_refunded, refunded, failed
   fulfillmentStatus String    @default("unfulfilled") // unfulfilled, partially_fulfilled, fulfilled, returned
@@ -453,23 +452,6 @@ model Order {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
-=======
-  status              String    @default("pending") // pending, processing, shipped, delivered, cancelled
-  paymentStatus       String    @default("pending") // pending, paid, partially_refunded, refunded, failed
-  fulfillmentStatus   String    @default("unfulfilled") // unfulfilled, partially_fulfilled, fulfilled, returned
-  source              String    @default("manual") // manual, shopify, trendyol, etc.
-  isPoolOrder         Boolean   @default(false)
-  logoSyncStatus      String    @default("PENDING") // PENDING, SYNCED, BYPASSED_POOL, FAILED
-  totalAmount         Decimal   @db.Decimal(12, 2)
-  currency            String    @default("USD")
-  idempotencyKey      String?
-  notes               String?
-  createdBy           String
-  publicId            String?   @unique
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
-  deletedAt           DateTime?
->>>>>>> feature/notification-templates
 
   items             OrderItem[]
   timeline          OrderTimeline[]
