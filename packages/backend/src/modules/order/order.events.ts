@@ -17,6 +17,8 @@ export interface OrderStatusChangedEvent {
   kind: 'created' | 'status' | 'payment' | 'cancelled';
   oldValue?: string | null;
   newValue: string;
+  source?: string;
+  suppress?: string[];
 }
 
 export const orderEvents = new EventEmitter();

@@ -54,6 +54,9 @@ export class NotificationDispatcher implements OnModuleInit, OnModuleDestroy {
   }
 
   async handle(e: OrderStatusChangedEvent) {
+    if (e.suppress?.includes('notifications') || e.suppress?.includes('*')) {
+      return;
+    }
     const mapped = NotificationDispatcher.eventFor(e);
     if (!mapped) return;
     await runWithTenant(e.agencyId, async () => {
