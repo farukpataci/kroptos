@@ -822,7 +822,8 @@
       "logDate": "Tarih",
       "logProvider": "Sağlayıcı",
       "logOperation": "İşlem",
-      "logStatus": "Durum"
+      "logStatus": "Durum",
+      "tabNotifications": "Bildirimler"
     }
   },
   "warehouses": {
@@ -4069,7 +4070,7 @@
     },
     "templates": {
       "title": "E-posta / SMS Şablonları",
-      "subtitle": "Sipariş olaylarında müşteriye giden mesajların metinleri."
+      "subtitle": "Sipariş olaylarına bağlı e-posta ve SMS şablonları, gönderim günlüğü ve sağlayıcı ayarları."
     },
     "automation": {
       "title": "Otomasyon",
@@ -4566,6 +4567,150 @@
       "lastUsed": "Son kullanım",
       "unknownDevice": "Bilinmeyen cihaz",
       "empty": "Aktif oturum yok"
+    }
+  },
+  "notificationTemplates": {
+    "noContext": "Şablonları görmek için üst bardan bir dağıtıcı firma seçin.",
+    "editingLevel": "Düzenlenen seviye:",
+    "scopeHint": "Gönderimde en özel şablon kazanır: Mağaza → Marka → Firma → Sistem. Üst bardan marka/mağaza seçerek o seviyeyi düzenlersiniz; \"Tüm Markalar\" firma seviyesidir.",
+    "tabs": {
+      "templates": "Şablonlar",
+      "logs": "Gönderim Günlüğü",
+      "providers": "Sağlayıcı Ayarları"
+    },
+    "channel": {
+      "EMAIL": "E-posta",
+      "SMS": "SMS"
+    },
+    "level": {
+      "SYSTEM": "Sistem",
+      "AGENCY": "Firma",
+      "CLIENT": "Marka",
+      "STORE": "Mağaza"
+    },
+    "locales": {
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "status": {
+      "QUEUED": "Kuyrukta",
+      "SENT": "Gönderildi",
+      "DELIVERED": "İletildi",
+      "FAILED": "Başarısız",
+      "SKIPPED": "Atlandı"
+    },
+    "filters": {
+      "allChannels": "Tüm kanallar",
+      "allStatuses": "Tüm durumlar",
+      "allEvents": "Tüm olaylar",
+      "search": "Şablon adı veya konu ara…",
+      "orderId": "Sipariş kimliği"
+    },
+    "events": {
+      "ORDER_CREATED": "Sipariş alındı",
+      "ORDER_CONFIRMED": "Sipariş onaylandı",
+      "ORDER_SHIPPED": "Kargoya verildi",
+      "ORDER_OUT_FOR_DELIVERY": "Dağıtımda",
+      "ORDER_DELIVERED": "Teslim edildi",
+      "ORDER_CANCELLED": "Sipariş iptal",
+      "PAYMENT_RECEIVED": "Ödeme alındı",
+      "PAYMENT_FAILED": "Ödeme başarısız",
+      "COD_REMINDER": "Kapıda ödeme hatırlatma",
+      "RETURN_REQUESTED": "İade talebi",
+      "RETURN_APPROVED": "İade onaylandı",
+      "RETURN_RECEIVED": "İade teslim alındı",
+      "REFUND_COMPLETED": "İade ödemesi",
+      "INVOICE_CREATED": "Fatura oluşturuldu",
+      "ORDER_STATUS_CHANGED": "Sipariş durumu değişti"
+    },
+    "table": {
+      "event": "Olay",
+      "updated": "Güncelleme",
+      "never": "—",
+      "delay": "{minutes} dk gecikme",
+      "edit": "Düzenle",
+      "customize": "Özelleştir",
+      "activate": "Aktifleştir",
+      "deactivate": "Pasifleştir",
+      "toggleHint": "Üst seviyeden geliyor; değiştirmek için özelleştirin.",
+      "activated": "Şablon aktifleştirildi.",
+      "deactivated": "Şablon pasifleştirildi.",
+      "empty": "Şablon bulunamadı."
+    },
+    "editor": {
+      "transactionalNote": "İşlemsel bildirim: kampanya/indirim içeriği eklemeyin (ticari ileti İYS kapsamındadır, ayrı modül).",
+      "name": "Şablon adı",
+      "subject": "Konu",
+      "senderName": "Gönderen adı",
+      "replyTo": "Yanıt adresi",
+      "bodyHtml": "HTML gövde",
+      "bodyText": "SMS gövdesi",
+      "bodyTextAlt": "Düz metin alternatifi",
+      "bodyTextAltHint": "Boş bırakılırsa HTML'den üretilir.",
+      "smsSenderId": "SMS başlığı",
+      "delay": "Gönderim gecikmesi (dakika)",
+      "smsCount": "{chars} karakter · {segments} segment",
+      "turkishWarning": "Türkçe karakter (ç, ğ, ı, ş, İ) segment sınırını 70/67'ye düşürür.",
+      "variables": "Değişkenler",
+      "variablesHint": "Bir alana tıklayıp değişkeni seçin; imleç konumuna eklenir.",
+      "helpersHint": "Yardımcılar: {{formatCurrency order.total order.currency}} · {{formatDate order.date}} · {{upper store.name}} · {{#each order.items}}…{{/each}} · {{#if shipment.trackingNumber}}…{{/if}}",
+      "focusFirst": "Önce bir metin alanına tıklayın.",
+      "preview": "Önizleme",
+      "sampleData": "Örnek veri",
+      "sampleNote": "Örnek veriyle gösteriliyor; gerçek sipariş seçerek doğrulayın.",
+      "fixIssues": "{count} doğrulama hatası var; önizleme için düzeltin.",
+      "line": "Satır {line}",
+      "versions": "Versiyon geçmişi",
+      "noVersions": "Henüz versiyon yok; ilk kaydetmede oluşur.",
+      "restore": "Geri yükle",
+      "current": "Şimdiki",
+      "sameAsCurrent": "Şimdiki içerikle aynı.",
+      "testSend": "Test gönder",
+      "testHint": "Kaydedilmemiş içerikle gönderilir; günlüğe test olarak düşer.",
+      "send": "Gönder",
+      "testQueued": "Test gönderimi kuyruğa alındı; günlükte görebilirsiniz.",
+      "saved": "Şablon kaydedildi.",
+      "customized": "Şablon bu seviyeye kopyalandı; artık düzenleyebilirsiniz.",
+      "restored": "Versiyon geri yüklendi.",
+      "readOnlyRole": "Bu şablonu görüntüleyebilirsiniz; düzenleme yetkiniz yok.",
+      "inheritedFrom": "Bu şablon {level} seviyesinden geliyor. Bu seviyede değiştirmek için özelleştirin.",
+      "unsaved": "Kaydedilmemiş değişiklikler var.",
+      "discardConfirm": "Değişiklikler kaybolacak, kapatılsın mı?",
+      "discard": "Kapat"
+    },
+    "logs": {
+      "date": "Tarih",
+      "channel": "Kanal",
+      "event": "Olay",
+      "order": "Sipariş",
+      "recipient": "Alıcı",
+      "status": "Durum",
+      "provider": "Sağlayıcı",
+      "attempts": "Deneme",
+      "retry": "Tekrar dene",
+      "retried": "Yeniden kuyruğa alındı.",
+      "empty": "Kayıt yok.",
+      "total": "{count} kayıt",
+      "template": "Şablon",
+      "messageId": "Sağlayıcı mesaj no",
+      "sentAt": "Gönderim",
+      "error": "Hata"
+    },
+    "providers": {
+      "provider": "Sağlayıcı",
+      "active": "Aktif",
+      "configured": "Ayarlı: {provider}",
+      "notConfigured": "Sağlayıcı ayarlı değil; gönderimler \"Atlandı\" olarak günlüğe düşer.",
+      "names": {
+        "smtp": "SMTP",
+        "netgsm": "Netgsm",
+        "console": "Konsol (geliştirme)"
+      },
+      "consoleNote": "Konsol sağlayıcısı gerçek gönderim yapmaz; mesajı sunucu loguna yazar.",
+      "secretKept": "Kayıtlı; boş bırakırsanız değişmez.",
+      "test": "Bağlantıyı test et",
+      "testOk": "Bağlantı başarılı ({provider}).",
+      "saved": "Sağlayıcı ayarı kaydedildi."
     }
   }
 }

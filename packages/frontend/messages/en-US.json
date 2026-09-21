@@ -252,7 +252,7 @@
     },
     "templates": {
       "title": "Email / SMS Templates",
-      "subtitle": "The messages sent to buyers on order events."
+      "subtitle": "E-mail and SMS templates tied to order events, delivery log and provider settings."
     },
     "automation": {
       "title": "Automation",
@@ -839,6 +839,150 @@
       "lastUsed": "Last used",
       "unknownDevice": "Unknown device",
       "empty": "No active sessions"
+    }
+  },
+  "notificationTemplates": {
+    "noContext": "Select an agency in the top bar to see templates.",
+    "editingLevel": "Editing level:",
+    "scopeHint": "The most specific template wins: Store → Brand → Agency → System. Pick a brand/store in the top bar to edit that level; \"All brands\" is the agency level.",
+    "tabs": {
+      "templates": "Templates",
+      "logs": "Delivery log",
+      "providers": "Provider settings"
+    },
+    "channel": {
+      "EMAIL": "E-mail",
+      "SMS": "SMS"
+    },
+    "level": {
+      "SYSTEM": "System",
+      "AGENCY": "Agency",
+      "CLIENT": "Brand",
+      "STORE": "Store"
+    },
+    "locales": {
+      "tr": "Türkçe",
+      "en": "English"
+    },
+    "status": {
+      "QUEUED": "Queued",
+      "SENT": "Sent",
+      "DELIVERED": "Delivered",
+      "FAILED": "Failed",
+      "SKIPPED": "Skipped"
+    },
+    "filters": {
+      "allChannels": "All channels",
+      "allStatuses": "All statuses",
+      "allEvents": "All events",
+      "search": "Search template name or subject…",
+      "orderId": "Order id"
+    },
+    "events": {
+      "ORDER_CREATED": "Order received",
+      "ORDER_CONFIRMED": "Order confirmed",
+      "ORDER_SHIPPED": "Order shipped",
+      "ORDER_OUT_FOR_DELIVERY": "Out for delivery",
+      "ORDER_DELIVERED": "Delivered",
+      "ORDER_CANCELLED": "Order cancelled",
+      "PAYMENT_RECEIVED": "Payment received",
+      "PAYMENT_FAILED": "Payment failed",
+      "COD_REMINDER": "Cash on delivery reminder",
+      "RETURN_REQUESTED": "Return requested",
+      "RETURN_APPROVED": "Return approved",
+      "RETURN_RECEIVED": "Return received",
+      "REFUND_COMPLETED": "Refund completed",
+      "INVOICE_CREATED": "Invoice created",
+      "ORDER_STATUS_CHANGED": "Order status changed"
+    },
+    "table": {
+      "event": "Event",
+      "updated": "Updated",
+      "never": "—",
+      "delay": "{minutes} min delay",
+      "edit": "Edit",
+      "customize": "Customize",
+      "activate": "Activate",
+      "deactivate": "Deactivate",
+      "toggleHint": "Inherited from a higher level; customize it to change.",
+      "activated": "Template activated.",
+      "deactivated": "Template deactivated.",
+      "empty": "No templates found."
+    },
+    "editor": {
+      "transactionalNote": "Transactional notification: do not add campaign/discount content (commercial messages are a separate, consent-based module).",
+      "name": "Template name",
+      "subject": "Subject",
+      "senderName": "Sender name",
+      "replyTo": "Reply-to",
+      "bodyHtml": "HTML body",
+      "bodyText": "SMS body",
+      "bodyTextAlt": "Plain-text alternative",
+      "bodyTextAltHint": "Generated from the HTML if left empty.",
+      "smsSenderId": "SMS sender id",
+      "delay": "Send delay (minutes)",
+      "smsCount": "{chars} characters · {segments} segments",
+      "turkishWarning": "Turkish characters (ç, ğ, ı, ş, İ) lower the segment limit to 70/67.",
+      "variables": "Variables",
+      "variablesHint": "Click a field, then a variable; it is inserted at the cursor.",
+      "helpersHint": "Helpers: {{formatCurrency order.total order.currency}} · {{formatDate order.date}} · {{upper store.name}} · {{#each order.items}}…{{/each}} · {{#if shipment.trackingNumber}}…{{/if}}",
+      "focusFirst": "Click a text field first.",
+      "preview": "Preview",
+      "sampleData": "Sample data",
+      "sampleNote": "Shown with sample data; pick a real order to verify.",
+      "fixIssues": "{count} validation issue(s); fix them to preview.",
+      "line": "Line {line}",
+      "versions": "Version history",
+      "noVersions": "No versions yet; the first save creates one.",
+      "restore": "Restore",
+      "current": "Current",
+      "sameAsCurrent": "Same as current content.",
+      "testSend": "Send test",
+      "testHint": "Sends the unsaved content; logged as a test.",
+      "send": "Send",
+      "testQueued": "Test queued; see the delivery log.",
+      "saved": "Template saved.",
+      "customized": "Template copied to this level; you can edit it now.",
+      "restored": "Version restored.",
+      "readOnlyRole": "You can view this template; you do not have edit permission.",
+      "inheritedFrom": "This template comes from the {level} level. Customize it to change it here.",
+      "unsaved": "Unsaved changes.",
+      "discardConfirm": "Changes will be lost — close anyway?",
+      "discard": "Close"
+    },
+    "logs": {
+      "date": "Date",
+      "channel": "Channel",
+      "event": "Event",
+      "order": "Order",
+      "recipient": "Recipient",
+      "status": "Status",
+      "provider": "Provider",
+      "attempts": "Attempts",
+      "retry": "Retry",
+      "retried": "Re-queued.",
+      "empty": "No records.",
+      "total": "{count} records",
+      "template": "Template",
+      "messageId": "Provider message id",
+      "sentAt": "Sent at",
+      "error": "Error"
+    },
+    "providers": {
+      "provider": "Provider",
+      "active": "Active",
+      "configured": "Configured: {provider}",
+      "notConfigured": "No provider configured; sends are logged as \"Skipped\".",
+      "names": {
+        "smtp": "SMTP",
+        "netgsm": "Netgsm",
+        "console": "Console (development)"
+      },
+      "consoleNote": "The console provider does not send; it writes the message to the server log.",
+      "secretKept": "Stored; leave empty to keep.",
+      "test": "Test connection",
+      "testOk": "Connection OK ({provider}).",
+      "saved": "Provider settings saved."
     }
   }
 }

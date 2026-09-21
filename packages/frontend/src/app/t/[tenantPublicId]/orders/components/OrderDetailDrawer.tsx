@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import {
   XMarkIcon,
+  BellIcon,
   ArrowPathIcon,
   TruckIcon,
   ReceiptRefundIcon,
@@ -16,6 +17,7 @@ import { useTranslations } from 'next-intl';
 import { Order } from '../hooks/useOrders';
 import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge } from './OrderStatusBadge';
 import OrderTimeline from './OrderTimeline';
+import OrderNotifications from './OrderNotifications';
 import CargoSimulationModal from './CargoSimulationModal';
 import { usePermission } from '@/hooks/usePermission';
 
@@ -30,12 +32,13 @@ interface OrderDetailDrawerProps {
   getIntegrationLogs: (orderId: string) => Promise<any[]>;
 }
 
-type DrawerTab = 'overview' | 'timeline' | 'integrations';
+type DrawerTab = 'overview' | 'timeline' | 'integrations' | 'notifications';
 
 const TABS: { value: DrawerTab; labelKey: string; Icon: React.ComponentType<any> }[] = [
   { value: 'overview', labelKey: 'tabOverview', Icon: ListBulletIcon },
   { value: 'timeline', labelKey: 'tabTimeline', Icon: ClockIcon },
   { value: 'integrations', labelKey: 'tabIntegrations', Icon: LinkIcon },
+  { value: 'notifications', labelKey: 'tabNotifications', Icon: BellIcon },
 ];
 
 export default function OrderDetailDrawer({
@@ -388,6 +391,9 @@ export default function OrderDetailDrawer({
                 {activeTab === 'timeline' && (
                   <OrderTimeline timeline={order.timeline || []} />
                 )}
+
+                {/* ── NOTIFICATIONS TAB ── */}
+                {activeTab === 'notifications' && <OrderNotifications orderId={order.id} />}
 
                 {/* ── INTEGRATIONS TAB ── */}
                 {activeTab === 'integrations' && (

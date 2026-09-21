@@ -8,6 +8,7 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   '/stores': 'stores.read',
   '/agencies': 'agencies.read',
   '/orders': 'orders.read',
+  '/orders/templates': 'notification_template.read',
   '/shipping': 'shipments.read',
   '/products': 'products.read',
   '/inventory': 'wms.stock.view',
