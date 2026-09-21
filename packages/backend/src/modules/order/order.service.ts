@@ -4,10 +4,14 @@ import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { Prisma } from '@prisma/client';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { emitOrderChanged } from './order.events';
+import { OrderSettingsService } from '../order-settings/order-settings.service';
 
 @Injectable()
 export class OrderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private orderSettingsService?: OrderSettingsService,
+  ) {}
 
   private async writeAuditLog(
     tx: Prisma.TransactionClient,
@@ -221,10 +225,51 @@ export class OrderService {
       throw new BadRequestException('An order must contain at least one product item');
     }
 
+    // Fetch store order settings
+    let settings: any = null;
+    try {
+      if (this.orderSettingsService) {
+        settings = await this.orderSettingsService.get(storeId);
+      }
+    } catch {
+      // Ignored: fallback to defaults
+    }
+
+    if (settings) {
+      // Validate minOrderAmount
+      if (settings.general?.minOrderAmount > 0 && calculatedTotal.lt(settings.general.minOrderAmount)) {
+        throw new BadRequestException(
+          `Minimum sipariş tutarı ${settings.general.minOrderAmount} ${settings.general.currency} olmalıdır.`,
+        );
+      }
+
+      // Validate maxItemsPerOrder
+      const totalItemCount = dto.items.reduce((acc, curr) => acc + curr.quantity, 0);
+      if (settings.general?.maxItemsPerOrder > 0 && totalItemCount > settings.general.maxItemsPerOrder) {
+        throw new BadRequestException(
+          `Bir siparişte en fazla ${settings.general.maxItemsPerOrder} adet ürün bulunabilir.`,
+        );
+      }
+    }
+
+    // Generate atomic sequence-based order number
+    let orderNumber: string;
+    try {
+      if (this.orderSettingsService) {
+        orderNumber = await this.orderSettingsService.generateNextOrderNumber(
+          storeId,
+          agencyId,
+          dto.source === 'marketplace',
+        );
+      } else {
+        orderNumber = this.generateOrderNumber();
+      }
+    } catch {
+      orderNumber = this.generateOrderNumber();
+    }
+
     // 3. Database transaction
     return this.prisma.$transaction(async (tx) => {
-      const orderNumber = this.generateOrderNumber();
-
       const targetStore = await tx.store.findUnique({
         where: { id: storeId },
         select: { orderProcessingMode: true },
@@ -232,6 +277,21 @@ export class OrderService {
       const processingMode = targetStore?.orderProcessingMode || 'LOGO_SYNC';
       const isPool = processingMode === 'POOL_ONLY' || processingMode === 'MANUAL_APPROVAL';
       const initialLogoSyncStatus = processingMode === 'POOL_ONLY' ? 'BYPASSED_POOL' : 'PENDING';
+
+      const initialStatus = settings?.flow?.initialStatusId || 'pending';
+      const initialCurrency = dto.currency || settings?.general?.currency || 'USD';
+
+      const settingsSnapshot = settings
+        ? {
+            returnsWindowDays: settings.returns?.windowDays ?? 14,
+            returnsWindowStartsFrom: settings.returns?.windowStartsFrom ?? 'DELIVERED',
+            pricesIncludeTax: settings.general?.pricesIncludeTax ?? true,
+            codFee: settings.cod?.fee ?? 35.0,
+            codFeeType: settings.cod?.feeType ?? 'FIXED',
+            currency: settings.general?.currency ?? initialCurrency,
+            timezone: settings.general?.timezone ?? 'Europe/Istanbul',
+          }
+        : null;
 
       const order = await tx.order.create({
         data: {
@@ -245,18 +305,19 @@ export class OrderService {
           customerEmail: dto.customerEmail || null,
           customerPhone: dto.customerPhone || null,
           shippingAddress: dto.shippingAddress || null,
-          status: 'pending',
+          status: initialStatus,
           paymentStatus: 'pending',
           fulfillmentStatus: 'unfulfilled',
           source: dto.source || 'manual',
           isPoolOrder: isPool,
           logoSyncStatus: initialLogoSyncStatus,
           totalAmount: calculatedTotal,
-          currency: dto.currency || 'USD',
+          currency: initialCurrency,
           idempotencyKey: idempotencyKey || null,
           notes: dto.notes || null,
           createdBy: userId,
           publicId: generatePublicId('ord', 12),
+          settingsSnapshot: (settingsSnapshot as any) ?? undefined,
           items: {
             create: orderItemsToCreate.map((item) => ({
               productId: item.productId,

@@ -449,6 +449,7 @@ model Order {
   priority          String?   @default("normal")
   createdBy         String
   publicId          String?   @unique
+  settingsSnapshot  Json?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
   deletedAt         DateTime?
@@ -458,6 +459,8 @@ model Order {
   auditLogs         AuditLog[]
   wmsPackagingTasks WmsPackagingTask[]
   automationRuns    AutomationRun[]
+  importJobId       String?
+  importJob         OrderImportJob?   @relation(fields: [importJobId], references: [id], onDelete: SetNull)
 
   @@unique([storeId, idempotencyKey])
   @@unique([storeId, orderNumber])
@@ -465,6 +468,7 @@ model Order {
   @@index([storeId])
   @@index([status])
   @@index([deletedAt])
+  @@index([importJobId])
   /// Scoped to the store: the panel groups a split order's packages, and a
   /// seller searching the buyer's order number has to find all of them.
   @@index([storeId, marketplaceOrderNumber])
@@ -2192,3 +2196,157 @@ model OrderExportSchedule {
   @@index([storeId])
   @@index([isActive, nextRunAt])
 }
+
+// ==================== ORDER IMPORT ====================
+
+model OrderImportMapping {
+  id          String    @id @default(cuid())
+  agencyId    String
+  clientId    String?
+  storeId     String
+  name        String
+  isShared    Boolean   @default(true)
+  createdById String?
+  mode        String    @default("UPSERT") // CREATE_ONLY | UPDATE_ONLY | UPSERT
+  matchKey    String    @default("orderNumber") // orderNumber | marketplaceOrderNumber | publicId
+  columnMap   Json      @default("{}")
+  valueMaps   Json      @default("{}")
+  defaults    Json      @default("{}")
+  fileHints   Json      @default("{}")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  jobs        OrderImportJob[]
+
+  @@unique([storeId, name])
+  @@index([agencyId])
+  @@index([storeId])
+}
+
+model OrderImportJob {
+  id               String                 @id @default(cuid())
+  agencyId         String
+  clientId         String?
+  storeId          String
+  mappingId        String?
+  mapping          OrderImportMapping?    @relation(fields: [mappingId], references: [id], onDelete: SetNull)
+  requestedById    String?
+  fileKey          String
+  fileName         String
+  fileHash         String
+  fileSize         Int
+  format           String                 @default("XLSX") // CSV | XLSX
+  mode             String                 @default("UPSERT")
+  matchKey         String                 @default("orderNumber")
+  columnMap        Json                   @default("{}")
+  valueMaps        Json                   @default("{}")
+  options          Json                   @default("{}")
+  status           String                 @default("UPLOADED")
+  totalRows        Int                    @default(0)
+  totalOrders      Int                    @default(0)
+  validOrders      Int                    @default(0)
+  invalidOrders    Int                    @default(0)
+  createdCount     Int                    @default(0)
+  updatedCount     Int                    @default(0)
+  skippedCount     Int                    @default(0)
+  failedCount      Int                    @default(0)
+  progress         Int                    @default(0)
+  errorReportKey   String?
+  startedAt        DateTime?
+  completedAt      DateTime?
+  rollbackDeadline DateTime?
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  deletedAt        DateTime?
+
+  rowResults       OrderImportRowResult[]
+  orders           Order[]
+
+  @@index([storeId, createdAt])
+  @@index([storeId, fileHash])
+  @@index([agencyId])
+}
+
+model OrderImportRowResult {
+  id             String         @id @default(cuid())
+  agencyId       String
+  jobId          String
+  job            OrderImportJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  groupKey       String
+  rowNumbers     Int[]
+  action         String         @default("CREATE") // CREATE | UPDATE | SKIP
+  status         String         @default("VALID") // VALID | INVALID | SUCCESS | FAILED | SKIPPED | ROLLED_BACK
+  errors         Json           @default("[]")
+  warnings       Json           @default("[]")
+  orderId        String?
+  beforeSnapshot Json?
+  createdAt      DateTime       @default(now())
+
+  @@index([jobId, status])
+  @@index([agencyId])
+}
+
+// ==================== Order Settings & Numbering ====================
+
+model SettingValue {
+  id          String    @id @default(cuid())
+  namespace   String    @default("order")
+  key         String
+  scopeLevel  String    @default("STORE") // AGENCY | CLIENT | STORE
+  scopeKey    String    // ${agencyId}:${clientId || '*'}:${storeId || '*'}:${namespace}:${key}
+  agencyId    String
+  clientId    String?
+  storeId     String?
+  value       Json
+  locked      Boolean   @default(false)
+  updatedById String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  changeLogs  SettingChangeLog[]
+
+  @@unique([agencyId, scopeKey])
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([namespace, key])
+}
+
+model SettingChangeLog {
+  id             String        @id @default(cuid())
+  settingValueId String?
+  settingValue   SettingValue? @relation(fields: [settingValueId], references: [id], onDelete: SetNull)
+  namespace      String        @default("order")
+  key            String
+  scopeLevel     String        @default("STORE")
+  agencyId       String
+  clientId       String?
+  storeId        String?
+  oldValue       Json?
+  newValue       Json?
+  changedById    String?
+  reason         String?
+  changeSetId    String
+  createdAt      DateTime      @default(now())
+
+  @@index([agencyId])
+  @@index([storeId])
+  @@index([namespace, key])
+  @@index([changeSetId])
+}
+
+model OrderNumberSequence {
+  id        String   @id @default(cuid())
+  agencyId  String
+  storeId   String
+  series    String   @default("DEFAULT")
+  period    String   @default("GLOBAL") // e.g. 2026-09, 2026, GLOBAL
+  current   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([storeId, series, period])
+  @@index([agencyId])
+  @@index([storeId])
+}
+

@@ -21,6 +21,9 @@ import { PrismaModule } from '@common/prisma/prisma.module';
 import { RbacModule } from '../rbac/rbac.module';
 import { AuthModule } from '../auth/auth.module';
 
+import { SettingsCacheService } from './services/settings-cache.service';
+import { SettingsResolverService } from './services/settings-resolver.service';
+
 @Module({
   imports: [PrismaModule, AuditModule, RbacModule, AuthModule],
   controllers: [
@@ -36,6 +39,8 @@ import { AuthModule } from '../auth/auth.module';
   ],
   providers: [
     SettingsService,
+    SettingsCacheService,
+    SettingsResolverService,
     UsersService,
     RolesService,
     TenantSettingsService,
@@ -46,6 +51,8 @@ import { AuthModule } from '../auth/auth.module';
   ],
   exports: [
     SettingsService,
+    SettingsCacheService,
+    SettingsResolverService,
     UsersService,
     RolesService,
     TenantSettingsService,
