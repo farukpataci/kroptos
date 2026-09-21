@@ -64,7 +64,7 @@ function MultiSelect({
               className={`rounded-kp-sm border px-2.5 py-1 text-[0.6875rem] font-semibold transition-colors ${
                 isOn
                   ? 'border-kp-accent bg-kp-accent/10 text-kp-accent'
-                  : 'border-kp-border text-kp-text-secondary hover:bg-kp-bg-hover'
+                  : 'border-kp-border text-kp-text-secondary hover:bg-slate-100 dark:bg-slate-800-hover'
               }`}
             >
               {optionLabel(option)}
@@ -180,10 +180,10 @@ export default function RuleModal({ meta, rule, onClose, onSubmit }: RuleModalPr
   };
 
   const inputClass =
-    'w-full rounded-kp-md border border-kp-border bg-kp-bg-primary px-3 py-2 text-xs text-kp-text-primary transition-colors placeholder:text-kp-text-tertiary focus:border-kp-accent focus:outline-none';
+    'w-full rounded-kp-md border border-kp-border bg-slate-100 dark:bg-slate-800-primary px-3 py-2 text-xs text-kp-text-primary transition-colors placeholder:text-kp-text-tertiary focus:border-kp-accent focus:outline-none';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-kp-bg-secondary/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-100 dark:bg-slate-800-secondary/80 backdrop-blur-sm p-4">
       <div className="card max-h-[90vh] w-full max-w-2xl overflow-y-auto p-0 animate-fade-in">
         <div className="flex items-center justify-between border-b border-kp-border px-5 py-4">
           <div>
@@ -195,7 +195,7 @@ export default function RuleModal({ meta, rule, onClose, onSubmit }: RuleModalPr
           <button
             type="button"
             onClick={onClose}
-            className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary"
+            className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover hover:text-kp-text-primary"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -452,7 +452,7 @@ export default function RuleModal({ meta, rule, onClose, onSubmit }: RuleModalPr
             <button
               type="button"
               onClick={onClose}
-              className="rounded-kp-md border border-kp-border px-3 py-2 text-xs font-semibold text-kp-text-secondary transition-colors hover:bg-kp-bg-hover"
+              className="rounded-kp-md border border-kp-border px-3 py-2 text-xs font-semibold text-kp-text-secondary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover"
             >
               {tc('actions.cancel')}
             </button>

@@ -64,7 +64,7 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
       case 'SKIPPED':
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-kp-xs bg-kp-bg px-2 py-0.5 text-xs font-semibold text-kp-text-tertiary">
+          <span className="inline-flex items-center gap-1 rounded-kp-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-kp-text-tertiary">
             <MinusCircleIcon className="h-3.5 w-3.5" />
             Atlandı
           </span>
@@ -74,7 +74,7 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-kp-xl border border-kp-border bg-kp-surface shadow-2xl">
+      <div className="flex max-h-[90vh] w-full max-w-3xl flex-col rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 shadow-2xl">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-kp-border px-6 py-4">
           <div>
@@ -91,7 +91,7 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
           <button
             type="button"
             onClick={onClose}
-            className="rounded-kp-md p-1 text-kp-text-tertiary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+            className="rounded-kp-md p-1 text-kp-text-tertiary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -112,25 +112,25 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
 
           {/* Quick Info Cards */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <div className="rounded-kp-md border border-kp-border bg-kp-bg/40 p-3">
+            <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-3">
               <div className="text-[11px] text-kp-text-tertiary">Kural</div>
               <div className="mt-1 text-xs font-semibold text-kp-text-primary truncate">
                 {run.rule?.name || run.ruleId}
               </div>
             </div>
-            <div className="rounded-kp-md border border-kp-border bg-kp-bg/40 p-3">
+            <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-3">
               <div className="text-[11px] text-kp-text-tertiary">Sipariş No</div>
               <div className="mt-1 text-xs font-semibold text-kp-accent truncate">
                 {run.order?.orderNumber || run.orderId}
               </div>
             </div>
-            <div className="rounded-kp-md border border-kp-border bg-kp-bg/40 p-3">
+            <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-3">
               <div className="text-[11px] text-kp-text-tertiary">Tetikleyici Olay</div>
               <div className="mt-1 text-xs font-semibold text-kp-text-primary truncate">
                 {run.triggerEvent}
               </div>
             </div>
-            <div className="rounded-kp-md border border-kp-border bg-kp-bg/40 p-3">
+            <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-3">
               <div className="text-[11px] text-kp-text-tertiary">Sipariş Tutarı</div>
               <div className="mt-1 text-xs font-semibold text-kp-text-primary truncate">
                 {run.order ? `${run.order.totalAmount} ${run.order.currency}` : '—'}
@@ -152,7 +152,7 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
               Koşul Değerlendirme İzi (Condition Trace)
             </h3>
             {run.conditionTrace ? (
-              <div className="rounded-kp-md border border-kp-border bg-kp-bg/30 p-4 space-y-2 font-mono text-xs">
+              <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-4 space-y-2 font-mono text-xs">
                 <div className="flex items-center gap-2 font-semibold">
                   <span>KÖK ({run.conditionTrace.operator.toUpperCase()}):</span>
                   {run.conditionTrace.matched ? (
@@ -199,7 +199,7 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
                 </div>
               </div>
             ) : (
-              <div className="rounded-kp-md bg-kp-bg p-4 text-xs text-kp-text-tertiary italic">
+              <div className="rounded-kp-md bg-slate-100 dark:bg-slate-800 p-4 text-xs text-kp-text-tertiary italic">
                 Bu çalışma için koşul izi kaydı bulunmuyor.
               </div>
             )}
@@ -215,11 +215,11 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
                 {run.actionRuns.map((act) => (
                   <div
                     key={act.id}
-                    className="rounded-kp-md border border-kp-border bg-kp-surface p-3 space-y-2"
+                    className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 p-3 space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-kp-bg text-[10px] font-bold text-kp-text-secondary">
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-kp-text-secondary">
                           {act.stepIndex + 1}
                         </span>
                         <span className="text-xs font-bold text-kp-text-primary">
@@ -257,13 +257,13 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
                     {(act.inputPayload || act.outputPayload) && (
                       <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
                         {act.inputPayload && (
-                          <div className="rounded-kp-xs bg-kp-bg/50 p-2 overflow-x-auto">
+                          <div className="rounded-kp-xs bg-slate-50 dark:bg-slate-800/60 p-2 overflow-x-auto">
                             <div className="text-kp-text-tertiary font-sans font-medium mb-1">Girdi:</div>
                             <pre className="text-kp-text-secondary">{JSON.stringify(act.inputPayload, null, 2)}</pre>
                           </div>
                         )}
                         {act.outputPayload && (
-                          <div className="rounded-kp-xs bg-kp-bg/50 p-2 overflow-x-auto">
+                          <div className="rounded-kp-xs bg-slate-50 dark:bg-slate-800/60 p-2 overflow-x-auto">
                             <div className="text-kp-text-tertiary font-sans font-medium mb-1">Çıktı:</div>
                             <pre className="text-kp-text-secondary">{JSON.stringify(act.outputPayload, null, 2)}</pre>
                           </div>
@@ -274,7 +274,7 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
                 ))}
               </div>
             ) : (
-              <div className="rounded-kp-md bg-kp-bg p-4 text-xs text-kp-text-tertiary italic">
+              <div className="rounded-kp-md bg-slate-100 dark:bg-slate-800 p-4 text-xs text-kp-text-tertiary italic">
                 Aksiyon çalıştırılmadı.
               </div>
             )}
@@ -282,11 +282,11 @@ export default function RunDetailModal({ run, onClose, onRetry }: RunDetailModal
         </div>
 
         {/* Modal Footer */}
-        <div className="flex items-center justify-between border-t border-kp-border px-6 py-3 bg-kp-bg/30">
+        <div className="flex items-center justify-between border-t border-kp-border px-6 py-3 bg-slate-50 dark:bg-slate-800/60">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-kp-md border border-kp-border bg-kp-surface px-4 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+            className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-4 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
           >
             Kapat
           </button>

@@ -82,7 +82,7 @@ export default function RuleTable({
     <div className="card overflow-hidden p-0">
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-kp-border bg-kp-bg-primary/40 text-[0.6875rem] font-bold uppercase tracking-wider text-kp-text-tertiary">
+          <thead className="border-b border-kp-border bg-slate-100 dark:bg-slate-800-primary/40 text-[0.6875rem] font-bold uppercase tracking-wider text-kp-text-tertiary">
             <tr>
               <th className="px-4 py-3">{t('columns.priority')}</th>
               <th className="px-4 py-3">{t('columns.name')}</th>
@@ -127,7 +127,7 @@ export default function RuleTable({
               rules.map((rule) => {
                 const isBusy = busyRuleId === rule.id;
                 return (
-                  <tr key={rule.id} className="transition-colors hover:bg-kp-bg-hover/30">
+                  <tr key={rule.id} className="transition-colors hover:bg-slate-100 dark:bg-slate-800-hover/30">
                     <td className="px-4 py-3.5 font-mono text-kp-text-tertiary">{rule.priority}</td>
                     <td className="px-4 py-3.5">
                       <p className="font-semibold text-kp-text-primary">{rule.name}</p>
@@ -165,7 +165,7 @@ export default function RuleTable({
                           onClick={() => onPreview(rule)}
                           disabled={isBusy}
                           title={t('actions.preview')}
-                          className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary disabled:opacity-40"
+                          className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover hover:text-kp-text-primary disabled:opacity-40"
                         >
                           <EyeIcon className="h-4 w-4" />
                         </button>
@@ -178,7 +178,7 @@ export default function RuleTable({
                               title={
                                 rule.isActive ? t('actions.runNow') : t('actions.runNeedsActive')
                               }
-                              className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-success disabled:opacity-40"
+                              className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover hover:text-kp-success disabled:opacity-40"
                             >
                               <PlayIcon className="h-4 w-4" />
                             </button>
@@ -187,7 +187,7 @@ export default function RuleTable({
                               onClick={() => onEdit(rule)}
                               disabled={isBusy}
                               title={tc('actions.edit')}
-                              className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary disabled:opacity-40"
+                              className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover hover:text-kp-text-primary disabled:opacity-40"
                             >
                               <PencilSquareIcon className="h-4 w-4" />
                             </button>
@@ -195,7 +195,7 @@ export default function RuleTable({
                               type="button"
                               onClick={() => onToggle(rule)}
                               disabled={isBusy}
-                              className="rounded-kp-sm px-2 py-1 text-[0.6875rem] font-semibold text-kp-text-secondary transition-colors hover:bg-kp-bg-hover disabled:opacity-40"
+                              className="rounded-kp-sm px-2 py-1 text-[0.6875rem] font-semibold text-kp-text-secondary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover disabled:opacity-40"
                             >
                               {rule.isActive ? t('actions.pause') : t('actions.activate')}
                             </button>

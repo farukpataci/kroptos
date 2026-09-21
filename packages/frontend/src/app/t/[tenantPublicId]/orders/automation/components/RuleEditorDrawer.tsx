@@ -340,14 +340,14 @@ export default function RuleEditorDrawer({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs transition-opacity"
+      className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm transition-opacity"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex h-full w-full max-w-4xl flex-col bg-kp-surface shadow-2xl border-l border-kp-border">
+      <div className="relative flex h-full w-full max-w-4xl flex-col bg-white dark:bg-slate-900 shadow-2xl border-l border-kp-border">
         {/* Drawer Header */}
-        <div className="flex items-center justify-between border-b border-kp-border px-6 py-4 bg-kp-surface">
+        <div className="flex items-center justify-between border-b border-kp-border px-6 py-4 bg-white dark:bg-slate-900 sticky top-0 z-20">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-kp-lg bg-kp-accent/10 text-kp-accent">
               <BoltIcon className="h-5 w-5" />
@@ -369,13 +369,13 @@ export default function RuleEditorDrawer({
 
           <div className="flex items-center gap-3">
             {/* Tab Switches */}
-            <div className="flex items-center rounded-kp-md border border-kp-border bg-kp-bg/60 p-1 text-xs">
+            <div className="flex items-center rounded-kp-md border border-kp-border bg-slate-100 dark:bg-slate-800 p-1 text-xs">
               <button
                 type="button"
                 onClick={() => setActiveTab('editor')}
                 className={`rounded-kp-sm px-3 py-1 font-medium transition-all ${
                   activeTab === 'editor'
-                    ? 'bg-kp-surface text-kp-accent font-semibold shadow-xs'
+                    ? 'bg-white dark:bg-slate-700 text-kp-accent font-semibold shadow-xs'
                     : 'text-kp-text-secondary hover:text-kp-text-primary'
                 }`}
               >
@@ -386,7 +386,7 @@ export default function RuleEditorDrawer({
                 onClick={() => setActiveTab('test')}
                 className={`flex items-center gap-1 rounded-kp-sm px-3 py-1 font-medium transition-all ${
                   activeTab === 'test'
-                    ? 'bg-kp-surface text-kp-accent font-semibold shadow-xs'
+                    ? 'bg-white dark:bg-slate-700 text-kp-accent font-semibold shadow-xs'
                     : 'text-kp-text-secondary hover:text-kp-text-primary'
                 }`}
               >
@@ -399,7 +399,7 @@ export default function RuleEditorDrawer({
                   onClick={() => setActiveTab('versions')}
                   className={`flex items-center gap-1 rounded-kp-sm px-3 py-1 font-medium transition-all ${
                     activeTab === 'versions'
-                      ? 'bg-kp-surface text-kp-accent font-semibold shadow-xs'
+                      ? 'bg-white dark:bg-slate-700 text-kp-accent font-semibold shadow-xs'
                       : 'text-kp-text-secondary hover:text-kp-text-primary'
                   }`}
                 >
@@ -412,7 +412,7 @@ export default function RuleEditorDrawer({
             <button
               type="button"
               onClick={onClose}
-              className="rounded-kp-md p-1.5 text-kp-text-tertiary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+              className="rounded-kp-md p-1.5 text-kp-text-tertiary hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
               title="Kapat"
             >
               <XMarkIcon className="h-5 w-5" />
@@ -421,7 +421,7 @@ export default function RuleEditorDrawer({
         </div>
 
         {/* Live Natural Language Summary Banner */}
-        <div className="border-b border-kp-border bg-gradient-to-r from-kp-accent/5 via-kp-surface to-kp-accent/5 px-6 py-3.5">
+        <div className="border-b border-kp-border bg-slate-50 dark:bg-slate-800/80 px-6 py-3.5">
           <div className="flex items-start gap-2.5 text-xs">
             <div className="rounded-full bg-kp-accent/15 p-1 text-kp-accent shrink-0 mt-0.5">
               <SparklesIcon className="h-4 w-4" />
@@ -438,7 +438,7 @@ export default function RuleEditorDrawer({
         </div>
 
         {/* Drawer Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-kp-bg/20">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-100/70 dark:bg-slate-950">
           {error && (
             <div className="rounded-kp-md border border-kp-danger/40 bg-kp-danger-muted p-3.5 text-xs text-kp-danger flex items-center gap-2">
               <XCircleIcon className="h-4 w-4 shrink-0" />
@@ -449,7 +449,7 @@ export default function RuleEditorDrawer({
           {activeTab === 'editor' && (
             <div className="space-y-6">
               {/* SECTION 1: Ne Zaman? (Tetikleyici) */}
-              <div className="rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-xs space-y-4">
+              <div className="rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-kp-border/60 pb-3">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-xs font-bold text-white shadow-xs">
@@ -471,7 +471,7 @@ export default function RuleEditorDrawer({
                   <select
                     value={triggerType}
                     onChange={(e) => setTriggerType(e.target.value as TriggerType)}
-                    className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-2.5 text-xs font-medium text-kp-text-primary focus:border-kp-accent focus:outline-none shadow-xs"
+                    className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-2.5 text-xs font-medium text-kp-text-primary focus:border-kp-accent focus:outline-none shadow-xs"
                   >
                     {Object.values(TRIGGER_METADATA).map((trig) => (
                       <option key={trig.key} value={trig.key}>
@@ -489,7 +489,7 @@ export default function RuleEditorDrawer({
 
                   {/* Trigger Specific Configs */}
                   {triggerType === 'ORDER_STATUS_CHANGED' && (
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-kp-md border border-kp-border bg-kp-bg/30 p-3">
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-3">
                       <div>
                         <label className="block text-[11px] font-semibold text-kp-text-tertiary mb-1">
                           Eski Durum (İsteğe Bağlı)
@@ -497,7 +497,7 @@ export default function RuleEditorDrawer({
                         <select
                           value={triggerConfig.fromStatus || ''}
                           onChange={(e) => setTriggerConfig((p) => ({ ...p, fromStatus: e.target.value }))}
-                          className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                          className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                         >
                           <option value="">Fark etmez (Herhangi biri)</option>
                           <option value="pending">Beklemede (pending)</option>
@@ -512,7 +512,7 @@ export default function RuleEditorDrawer({
                         <select
                           value={triggerConfig.toStatus || ''}
                           onChange={(e) => setTriggerConfig((p) => ({ ...p, toStatus: e.target.value }))}
-                          className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs font-semibold text-kp-text-primary"
+                          className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-kp-text-primary"
                         >
                           <option value="">Hedef durum seçin...</option>
                           <option value="processing">İşleniyor / Onaylandı (processing)</option>
@@ -525,7 +525,7 @@ export default function RuleEditorDrawer({
                   )}
 
                   {triggerType === 'ORDER_IDLE' && (
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-kp-md border border-kp-border bg-kp-bg/30 p-3">
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-3">
                       <div>
                         <label className="block text-[11px] font-semibold text-kp-text-tertiary mb-1">
                           Hareketsiz Kalan Durum
@@ -533,7 +533,7 @@ export default function RuleEditorDrawer({
                         <select
                           value={triggerConfig.idleStatus || 'pending'}
                           onChange={(e) => setTriggerConfig((p) => ({ ...p, idleStatus: e.target.value }))}
-                          className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                          className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                         >
                           <option value="pending">Beklemede (pending)</option>
                           <option value="processing">Hazırlanıyor (processing)</option>
@@ -550,7 +550,7 @@ export default function RuleEditorDrawer({
                           value={triggerConfig.idleHours ?? 24}
                           onChange={(e) => setTriggerConfig((p) => ({ ...p, idleHours: Number(e.target.value) }))}
                           placeholder="24"
-                          className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                          className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                         />
                       </div>
                     </div>
@@ -559,7 +559,7 @@ export default function RuleEditorDrawer({
               </div>
 
               {/* SECTION 2: Eğer... (Filtre Koşulları) */}
-              <div className="rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-xs space-y-4">
+              <div className="rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-kp-border/60 pb-3">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-xs font-bold text-white shadow-xs">
@@ -572,7 +572,7 @@ export default function RuleEditorDrawer({
 
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-kp-text-tertiary">Bağlaç:</span>
-                    <div className="flex rounded-kp-md border border-kp-border bg-kp-bg/50 p-0.5 text-xs font-bold">
+                    <div className="flex rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-0.5 text-xs font-bold">
                       <button
                         type="button"
                         onClick={() => setConditionOperator('and')}
@@ -600,7 +600,7 @@ export default function RuleEditorDrawer({
                 </div>
 
                 {conditions.length === 0 ? (
-                  <div className="rounded-kp-lg border-2 border-dashed border-kp-border/70 p-6 text-center bg-kp-bg/10">
+                  <div className="rounded-kp-lg border-2 border-dashed border-kp-border/70 p-6 text-center bg-slate-50 dark:bg-slate-800/40">
                     <AdjustmentsHorizontalIcon className="h-8 w-8 text-kp-text-tertiary mx-auto mb-2 opacity-60" />
                     <p className="text-xs font-semibold text-kp-text-secondary">
                       Özel bir filtre koşulu eklenmedi
@@ -611,7 +611,7 @@ export default function RuleEditorDrawer({
                     <button
                       type="button"
                       onClick={addCondition}
-                      className="mt-3 inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-surface px-3.5 py-1.5 text-xs font-semibold text-kp-accent shadow-xs hover:bg-kp-surface-hover"
+                      className="mt-3 inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3.5 py-1.5 text-xs font-semibold text-kp-accent shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
                       <PlusIcon className="h-3.5 w-3.5" />
                       Filtre Koşulu Ekle
@@ -629,7 +629,7 @@ export default function RuleEditorDrawer({
                       return (
                         <div
                           key={idx}
-                          className="flex flex-wrap items-center gap-2 rounded-kp-lg border border-kp-border bg-kp-surface p-3 shadow-xs"
+                          className="flex flex-wrap items-center gap-2 rounded-kp-lg border border-kp-border bg-white dark:bg-slate-900 p-3 shadow-xs"
                         >
                           {/* Field Selector */}
                           <div className="w-56">
@@ -645,7 +645,7 @@ export default function RuleEditorDrawer({
                                   value: '',
                                 });
                               }}
-                              className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs font-medium text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                              className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-medium text-kp-text-primary focus:border-kp-accent focus:outline-none"
                             >
                               {Object.values(FIELD_METADATA).map((f) => (
                                 <option key={f.key} value={f.key}>
@@ -662,7 +662,7 @@ export default function RuleEditorDrawer({
                               onChange={(e) =>
                                 updateCondition(idx, { operator: e.target.value as ConditionOperator })
                               }
-                              className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs font-semibold text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                              className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs font-semibold text-kp-text-primary focus:border-kp-accent focus:outline-none"
                             >
                               {Object.values(OPERATOR_METADATA).map((op) => (
                                 <option key={op.key} value={op.key}>
@@ -675,14 +675,14 @@ export default function RuleEditorDrawer({
                           {/* Value Input (Smart Input based on Field & Operator) */}
                           <div className="flex-1 min-w-[180px]">
                             {cond.operator === 'is_empty' || cond.operator === 'is_not_empty' ? (
-                              <div className="rounded-kp-md bg-kp-bg px-3 py-1.5 text-xs text-kp-text-tertiary italic">
+                              <div className="rounded-kp-md bg-slate-100 dark:bg-slate-800 px-3 py-1.5 text-xs text-kp-text-tertiary italic">
                                 Değer gerekmez (Otomatik kontrol)
                               </div>
                             ) : fMeta.options ? (
                               <select
                                 value={cond.value || ''}
                                 onChange={(e) => updateCondition(idx, { value: e.target.value })}
-                                className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                                className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
                               >
                                 <option value="">Seçiniz...</option>
                                 {fMeta.options.map((opt) => (
@@ -695,7 +695,7 @@ export default function RuleEditorDrawer({
                               <select
                                 value={String(cond.value)}
                                 onChange={(e) => updateCondition(idx, { value: e.target.value === 'true' })}
-                                className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                                className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
                               >
                                 <option value="true">Evet (Doğru)</option>
                                 <option value="false">Hayır (Yanlış)</option>
@@ -724,7 +724,7 @@ export default function RuleEditorDrawer({
                                       ? 'Virgülle ayırarak yazın (Örn: İstanbul, Ankara)'
                                       : fMeta.placeholder || 'Değer girin...'
                                   }
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
                                 />
                                 {fMeta.unit && (
                                   <span className="absolute right-2.5 top-1.5 text-[11px] font-bold text-kp-text-tertiary">
@@ -751,7 +751,7 @@ export default function RuleEditorDrawer({
                     <button
                       type="button"
                       onClick={addCondition}
-                      className="inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-semibold text-kp-accent shadow-xs hover:bg-kp-surface-hover"
+                      className="inline-flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-kp-accent shadow-xs hover:bg-slate-50 dark:hover:bg-slate-800"
                     >
                       <PlusIcon className="h-3.5 w-3.5" />
                       + Başka Bir Koşul Ekle
@@ -761,7 +761,7 @@ export default function RuleEditorDrawer({
               </div>
 
               {/* SECTION 3: O Zaman... (Sıralı Aksiyonlar) */}
-              <div className="rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-xs space-y-4">
+              <div className="rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex items-center justify-between border-b border-kp-border/60 pb-3">
                   <div className="flex items-center gap-2.5">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-xs font-bold text-white shadow-xs">
@@ -794,11 +794,11 @@ export default function RuleEditorDrawer({
                     return (
                       <div
                         key={idx}
-                        className="rounded-kp-lg border border-kp-border bg-kp-surface p-4 shadow-xs space-y-3 transition-all"
+                        className="rounded-kp-lg border border-kp-border bg-white dark:bg-slate-900 p-4 shadow-xs space-y-3 transition-all"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-bg text-xs font-bold text-kp-text-secondary border border-kp-border">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 text-xs font-bold text-kp-text-secondary border border-kp-border">
                               #{idx + 1}
                             </span>
                             <select
@@ -806,7 +806,7 @@ export default function RuleEditorDrawer({
                               onChange={(e) =>
                                 updateAction(idx, { type: e.target.value as ActionType, config: {} })
                               }
-                              className="rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-bold text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                              className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-bold text-kp-text-primary focus:border-kp-accent focus:outline-none"
                             >
                               {Object.values(ACTION_METADATA).map((a) => (
                                 <option key={a.key} value={a.key}>
@@ -824,7 +824,7 @@ export default function RuleEditorDrawer({
                               type="button"
                               onClick={() => moveAction(idx, 'up')}
                               disabled={idx === 0}
-                              className="rounded-kp-sm p-1 text-kp-text-tertiary hover:bg-kp-surface-hover disabled:opacity-30"
+                              className="rounded-kp-sm p-1 text-kp-text-tertiary hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30"
                               title="Yukarı Taşı"
                             >
                               <ChevronUpIcon className="h-4 w-4" />
@@ -833,7 +833,7 @@ export default function RuleEditorDrawer({
                               type="button"
                               onClick={() => moveAction(idx, 'down')}
                               disabled={idx === actions.length - 1}
-                              className="rounded-kp-sm p-1 text-kp-text-tertiary hover:bg-kp-surface-hover disabled:opacity-30"
+                              className="rounded-kp-sm p-1 text-kp-text-tertiary hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30"
                               title="Aşağı Taşı"
                             >
                               <ChevronDownIcon className="h-4 w-4" />
@@ -869,7 +869,7 @@ export default function RuleEditorDrawer({
                                   updateAction(idx, { config: { ...action.config, tag: e.target.value } })
                                 }
                                 placeholder="Örn: teyit-gerekli, buyuk-paket, vip"
-                                className="w-full max-w-md rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs text-kp-text-primary"
+                                className="w-full max-w-md rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-kp-text-primary"
                               />
                             </div>
                           )}
@@ -886,7 +886,7 @@ export default function RuleEditorDrawer({
                                   updateAction(idx, { config: { ...action.config, tag: e.target.value } })
                                 }
                                 placeholder="Örn: teyit-gerekli"
-                                className="w-full max-w-md rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs text-kp-text-primary"
+                                className="w-full max-w-md rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-kp-text-primary"
                               />
                             </div>
                           )}
@@ -903,7 +903,7 @@ export default function RuleEditorDrawer({
                                   updateAction(idx, { config: { ...action.config, reason: e.target.value } })
                                 }
                                 placeholder="Örn: Yüksek tutarlı sipariş - telefon onayı bekleniyor"
-                                className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs text-kp-text-primary"
+                                className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-kp-text-primary"
                               />
                             </div>
                           )}
@@ -919,7 +919,7 @@ export default function RuleEditorDrawer({
                                   onChange={(e) =>
                                     updateAction(idx, { config: { ...action.config, status: e.target.value } })
                                   }
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                                 >
                                   <option value="">Değiştirme</option>
                                   <option value="pending">Beklemede</option>
@@ -938,7 +938,7 @@ export default function RuleEditorDrawer({
                                   onChange={(e) =>
                                     updateAction(idx, { config: { ...action.config, paymentStatus: e.target.value } })
                                   }
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                                 >
                                   <option value="">Değiştirme</option>
                                   <option value="paid">Ödendi</option>
@@ -955,7 +955,7 @@ export default function RuleEditorDrawer({
                                   onChange={(e) =>
                                     updateAction(idx, { config: { ...action.config, fulfillmentStatus: e.target.value } })
                                   }
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                                 >
                                   <option value="">Değiştirme</option>
                                   <option value="fulfilled">Hazırlandı</option>
@@ -975,7 +975,7 @@ export default function RuleEditorDrawer({
                                 onChange={(e) =>
                                   updateAction(idx, { config: { ...action.config, priority: e.target.value } })
                                 }
-                                className="w-full max-w-xs rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-semibold text-kp-text-primary"
+                                className="w-full max-w-xs rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-kp-text-primary"
                               >
                                 <option value="low">Düşük Öncelik</option>
                                 <option value="normal">Normal</option>
@@ -995,7 +995,7 @@ export default function RuleEditorDrawer({
                                 onChange={(e) =>
                                   updateAction(idx, { config: { ...action.config, carrierName: e.target.value } })
                                 }
-                                className="w-full max-w-xs rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-semibold text-kp-text-primary"
+                                className="w-full max-w-xs rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-kp-text-primary"
                               >
                                 <option value="">Kargo firması seçin...</option>
                                 <option value="Aras Kargo">Aras Kargo</option>
@@ -1021,7 +1021,7 @@ export default function RuleEditorDrawer({
                                   updateAction(idx, { config: { ...action.config, warehouseName: e.target.value } })
                                 }
                                 placeholder="Örn: Ana Depo, İstanbul E-Ticaret Deposu"
-                                className="w-full max-w-md rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs text-kp-text-primary"
+                                className="w-full max-w-md rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-kp-text-primary"
                               />
                             </div>
                           )}
@@ -1037,7 +1037,7 @@ export default function RuleEditorDrawer({
                                   onChange={(e) =>
                                     updateAction(idx, { config: { ...action.config, channel: e.target.value } })
                                   }
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                                 >
                                   <option value="sms">SMS Bildirimi</option>
                                   <option value="email">E-posta</option>
@@ -1055,7 +1055,7 @@ export default function RuleEditorDrawer({
                                     updateAction(idx, { config: { ...action.config, template: e.target.value } })
                                   }
                                   placeholder="Örn: siparis_gecikme_bildirimi"
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary"
                                 />
                               </div>
                             </div>
@@ -1073,7 +1073,7 @@ export default function RuleEditorDrawer({
                                   updateAction(idx, { config: { ...action.config, note: e.target.value } })
                                 }
                                 placeholder="Siparişe eklenecek otomatik açıklama notu..."
-                                className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs text-kp-text-primary"
+                                className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-kp-text-primary"
                               />
                             </div>
                           )}
@@ -1091,7 +1091,7 @@ export default function RuleEditorDrawer({
                                     updateAction(idx, { config: { ...action.config, url: e.target.value } })
                                   }
                                   placeholder="https://n8n.sirketiniz.com/webhook/siparis"
-                                  className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-mono text-kp-text-primary"
+                                  className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-mono text-kp-text-primary"
                                 />
                               </div>
                             </div>
@@ -1109,7 +1109,7 @@ export default function RuleEditorDrawer({
                                 onChange={(e) =>
                                   updateAction(idx, { config: { ...action.config, minutes: Number(e.target.value) } })
                                 }
-                                className="w-full max-w-xs rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs text-kp-text-primary"
+                                className="w-full max-w-xs rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-kp-text-primary"
                               />
                             </div>
                           )}
@@ -1121,7 +1121,7 @@ export default function RuleEditorDrawer({
               </div>
 
               {/* SECTION 4: Ayarlar (Genel Yapılandırma) */}
-              <div className="rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-xs space-y-4">
+              <div className="rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex items-center gap-2.5 border-b border-kp-border/60 pb-3">
                   <span className="flex h-6 w-6 items-center justify-center rounded-full bg-kp-accent text-xs font-bold text-white shadow-xs">
                     4
@@ -1141,7 +1141,7 @@ export default function RuleEditorDrawer({
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       placeholder="Örn: 1500 TL Üzeri Siparişleri Beklemeye Al"
-                      className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-2 text-xs font-medium text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                      className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-2 text-xs font-medium text-kp-text-primary focus:border-kp-accent focus:outline-none"
                     />
                   </div>
 
@@ -1154,7 +1154,7 @@ export default function RuleEditorDrawer({
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       placeholder="Bu kuralın amacı ve ne zaman devreye girdiği..."
-                      className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-2 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                      className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-2 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
                     />
                   </div>
 
@@ -1166,7 +1166,7 @@ export default function RuleEditorDrawer({
                       type="number"
                       value={priority}
                       onChange={(e) => setPriority(Number(e.target.value))}
-                      className="w-full rounded-kp-md border border-kp-border bg-kp-surface px-3 py-2 text-xs text-kp-text-primary"
+                      className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-2 text-xs text-kp-text-primary"
                     />
                     <p className="mt-1 text-[11px] text-kp-text-tertiary">
                       Düşük sayılar (ör. 10) yüksek sayılardan (ör. 100) önce çalıştırılır.
@@ -1212,7 +1212,7 @@ export default function RuleEditorDrawer({
           {activeTab === 'test' && (
             <div className="space-y-6">
               {/* Dry-Run Panel */}
-              <div className="rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-xs space-y-4">
+              <div className="rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                 <div className="flex items-center gap-2">
                   <BeakerIcon className="h-5 w-5 text-kp-accent" />
                   <h3 className="text-sm font-bold text-kp-text-primary">
@@ -1229,7 +1229,7 @@ export default function RuleEditorDrawer({
                     value={testOrderId}
                     onChange={(e) => setTestOrderId(e.target.value)}
                     placeholder="Sipariş ID veya Sipariş Numarası girin..."
-                    className="flex-1 rounded-kp-md border border-kp-border bg-kp-surface px-3 py-2 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
+                    className="flex-1 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-2 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
                   />
                   <button
                     type="button"
@@ -1249,7 +1249,7 @@ export default function RuleEditorDrawer({
                 )}
 
                 {testResult && (
-                  <div className="rounded-kp-md border border-kp-border bg-kp-bg/40 p-4 space-y-3 font-mono text-xs">
+                  <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3 font-mono text-xs">
                     <div className="flex items-center gap-2 font-bold font-sans text-sm">
                       <span>Simülasyon Sonucu:</span>
                       {testResult.matched ? (
@@ -1296,7 +1296,7 @@ export default function RuleEditorDrawer({
                       {testResult.plannedActions?.map((act, i) => (
                         <div
                           key={i}
-                          className="rounded-kp-xs border border-kp-border bg-kp-surface p-2 text-xs flex items-center justify-between font-sans"
+                          className="rounded-kp-xs border border-kp-border bg-white dark:bg-slate-900 p-2 text-xs flex items-center justify-between font-sans"
                         >
                           <div className="font-bold text-kp-text-primary">
                             #{act.index + 1} {act.actionType}
@@ -1311,7 +1311,7 @@ export default function RuleEditorDrawer({
 
               {/* Backtest Panel */}
               {rule?.id && (
-                <div className="rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-xs space-y-4">
+                <div className="rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-xs space-y-4">
                   <div className="flex items-center gap-2">
                     <ClockIcon className="h-5 w-5 text-kp-accent" />
                     <h3 className="text-sm font-bold text-kp-text-primary">
@@ -1326,7 +1326,7 @@ export default function RuleEditorDrawer({
                     <select
                       value={backtestDays}
                       onChange={(e) => setBacktestDays(Number(e.target.value))}
-                      className="rounded-kp-md border border-kp-border bg-kp-surface px-3 py-2 text-xs text-kp-text-primary"
+                      className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-2 text-xs text-kp-text-primary"
                     >
                       <option value={7}>Son 7 Gün</option>
                       <option value={15}>Son 15 Gün</option>
@@ -1338,7 +1338,7 @@ export default function RuleEditorDrawer({
                       type="button"
                       onClick={handleRunBacktest}
                       disabled={backtestLoading}
-                      className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-surface px-4 py-2 text-xs font-semibold text-kp-text-primary hover:bg-kp-surface-hover transition-colors disabled:opacity-50"
+                      className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-4 py-2 text-xs font-semibold text-kp-text-primary hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors disabled:opacity-50"
                     >
                       <ArrowPathIcon className={`h-4 w-4 ${backtestLoading ? 'animate-spin' : ''}`} />
                       <span>{backtestLoading ? 'Taranıyor...' : 'Geriye Dönük Tara'}</span>
@@ -1352,7 +1352,7 @@ export default function RuleEditorDrawer({
                   )}
 
                   {backtestResult && (
-                    <div className="rounded-kp-md border border-kp-border bg-kp-bg/40 p-4 space-y-3">
+                    <div className="rounded-kp-md border border-kp-border bg-slate-50 dark:bg-slate-800/60 p-4 space-y-3">
                       <div className="text-xs font-semibold text-kp-text-primary">
                         Son {backtestDays} günde taranan {backtestResult.totalScanned} siparişten{' '}
                         <span className="text-kp-accent font-bold">{backtestResult.matchedCount}</span> tanesinde eşleşirdi ({backtestResult.matchRatioPercentage}%).
@@ -1392,7 +1392,7 @@ export default function RuleEditorDrawer({
                 {rule.versions.map((ver) => (
                   <div
                     key={ver.id}
-                    className="flex items-center justify-between rounded-kp-lg border border-kp-border bg-kp-surface p-4 shadow-xs"
+                    className="flex items-center justify-between rounded-kp-lg border border-kp-border bg-white dark:bg-slate-900 p-4 shadow-xs"
                   >
                     <div>
                       <div className="flex items-center gap-2">
@@ -1419,7 +1419,7 @@ export default function RuleEditorDrawer({
                             onClose();
                           }
                         }}
-                        className="flex items-center gap-1 rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+                        className="flex items-center gap-1 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
                       >
                         <ArrowUturnLeftIcon className="h-3.5 w-3.5" />
                         <span>Geri Yükle</span>
@@ -1433,11 +1433,11 @@ export default function RuleEditorDrawer({
         </div>
 
         {/* Drawer Footer */}
-        <div className="flex items-center justify-between border-t border-kp-border px-6 py-4 bg-kp-surface shadow-xs">
+        <div className="flex items-center justify-between border-t border-kp-border px-6 py-4 bg-white dark:bg-slate-900 shadow-xs">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-kp-md border border-kp-border bg-kp-surface px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+            className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-4 py-2 text-xs font-semibold text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
           >
             İptal
           </button>

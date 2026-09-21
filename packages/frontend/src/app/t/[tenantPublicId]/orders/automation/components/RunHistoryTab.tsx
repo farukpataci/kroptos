@@ -65,7 +65,7 @@ export default function RunHistoryTab() {
       case 'SKIPPED':
       default:
         return (
-          <span className="inline-flex items-center gap-1 rounded-kp-xs bg-kp-bg px-2 py-0.5 text-xs font-semibold text-kp-text-tertiary">
+          <span className="inline-flex items-center gap-1 rounded-kp-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-xs font-semibold text-kp-text-tertiary">
             <MinusCircleIcon className="h-3.5 w-3.5" />
             Atlandı
           </span>
@@ -76,7 +76,7 @@ export default function RunHistoryTab() {
   return (
     <div className="space-y-4">
       {/* Filter and Control Bar */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-kp-lg border border-kp-border bg-kp-surface p-3.5 shadow-sm">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-kp-lg border border-kp-border bg-white dark:bg-slate-900 p-3.5 shadow-sm">
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <FunnelIcon className="h-4 w-4 text-kp-text-tertiary" />
@@ -88,7 +88,7 @@ export default function RunHistoryTab() {
                   status: e.target.value === 'ALL' ? undefined : e.target.value,
                 }))
               }
-              className="rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
+              className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1.5 text-xs text-kp-text-primary focus:border-kp-accent focus:outline-none"
             >
               <option value="ALL">Tüm Sonuçlar</option>
               <option value="SUCCESS">Yalnız Başarılılar</option>
@@ -115,7 +115,7 @@ export default function RunHistoryTab() {
           type="button"
           onClick={() => reload()}
           disabled={isLoading}
-          className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors disabled:opacity-50"
         >
           <ArrowPathIcon className={`h-3.5 w-3.5 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Yenile</span>
@@ -129,10 +129,10 @@ export default function RunHistoryTab() {
       )}
 
       {/* Runs Table */}
-      <div className="overflow-hidden rounded-kp-xl border border-kp-border bg-kp-surface shadow-sm">
+      <div className="overflow-hidden rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-kp-border bg-kp-bg/50 text-[11px] uppercase tracking-wider text-kp-text-tertiary">
+            <thead className="border-b border-kp-border bg-slate-50 dark:bg-slate-800/60 text-[11px] uppercase tracking-wider text-kp-text-tertiary">
               <tr>
                 <th className="px-4 py-3">Zaman</th>
                 <th className="px-4 py-3">Kural</th>
@@ -166,7 +166,7 @@ export default function RunHistoryTab() {
                 </tr>
               ) : (
                 runs.map((run) => (
-                  <tr key={run.id} className="transition-colors hover:bg-kp-surface-hover">
+                  <tr key={run.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
                     <td className="whitespace-nowrap px-4 py-3 text-kp-text-secondary">
                       {new Date(run.createdAt).toLocaleString('tr-TR', {
                         day: '2-digit',
@@ -195,7 +195,7 @@ export default function RunHistoryTab() {
                       )}
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-kp-text-secondary">
-                      <span className="rounded-kp-xs bg-kp-bg px-2 py-0.5 font-mono text-[11px]">
+                      <span className="rounded-kp-xs bg-slate-100 dark:bg-slate-800 px-2 py-0.5 font-mono text-[11px]">
                         {run.triggerEvent}
                       </span>
                     </td>
@@ -209,7 +209,7 @@ export default function RunHistoryTab() {
                       <button
                         type="button"
                         onClick={() => setSelectedRun(run)}
-                        className="inline-flex items-center gap-1 rounded-kp-md border border-kp-border bg-kp-surface px-2.5 py-1 text-xs font-semibold text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+                        className="inline-flex items-center gap-1 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-semibold text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
                       >
                         <EyeIcon className="h-3.5 w-3.5" />
                         <span>Detay</span>
@@ -224,7 +224,7 @@ export default function RunHistoryTab() {
 
         {/* Pagination Bar */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between border-t border-kp-border px-4 py-3 text-xs text-kp-text-secondary bg-kp-bg/20">
+          <div className="flex items-center justify-between border-t border-kp-border px-4 py-3 text-xs text-kp-text-secondary bg-slate-100/70 dark:bg-slate-950">
             <div>
               Toplam <span className="font-semibold text-kp-text-primary">{total}</span> çalışmadan{' '}
               <span className="font-semibold text-kp-text-primary">{(page - 1) * limit + 1}</span> -{' '}
@@ -238,7 +238,7 @@ export default function RunHistoryTab() {
                 type="button"
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page <= 1}
-                className="rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1 text-xs font-medium text-kp-text-secondary hover:bg-kp-surface-hover disabled:opacity-40"
+                className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40"
               >
                 Önceki
               </button>
@@ -249,7 +249,7 @@ export default function RunHistoryTab() {
                 type="button"
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page >= totalPages}
-                className="rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1 text-xs font-medium text-kp-text-secondary hover:bg-kp-surface-hover disabled:opacity-40"
+                className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1 text-xs font-medium text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40"
               >
                 Sonraki
               </button>

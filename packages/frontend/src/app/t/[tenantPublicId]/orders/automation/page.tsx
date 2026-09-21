@@ -255,7 +255,7 @@ export default function OrderAutomationPage() {
                     className={`ml-1 rounded-full px-2 py-0.2 text-[10px] font-bold ${
                       isCurrent
                         ? 'bg-kp-accent text-white'
-                        : 'bg-kp-bg text-kp-text-secondary'
+                        : 'bg-slate-100 dark:bg-slate-800 text-kp-text-secondary'
                     }`}
                   >
                     {tab.badge}

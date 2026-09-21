@@ -29,7 +29,7 @@ export default function PreviewModal({
   const tc = useTranslations('common');
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-kp-bg-secondary/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-100 dark:bg-slate-800-secondary/80 backdrop-blur-sm p-4">
       <div className="card max-h-[80vh] w-full max-w-2xl overflow-y-auto p-0 animate-fade-in">
         <div className="flex items-center justify-between border-b border-kp-border px-5 py-4">
           <div className="min-w-0">
@@ -41,7 +41,7 @@ export default function PreviewModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-kp-bg-hover hover:text-kp-text-primary"
+            className="rounded-kp-sm p-1.5 text-kp-text-tertiary transition-colors hover:bg-slate-100 dark:bg-slate-800-hover hover:text-kp-text-primary"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
@@ -84,7 +84,7 @@ export default function PreviewModal({
                   </p>
                   <div className="overflow-x-auto rounded-kp-md border border-kp-border">
                     <table className="w-full text-left text-xs">
-                      <thead className="border-b border-kp-border bg-kp-bg-primary/40 text-[0.6875rem] font-bold uppercase tracking-wider text-kp-text-tertiary">
+                      <thead className="border-b border-kp-border bg-slate-100 dark:bg-slate-800-primary/40 text-[0.6875rem] font-bold uppercase tracking-wider text-kp-text-tertiary">
                         <tr>
                           <th className="px-3 py-2">{t('preview.orderNumber')}</th>
                           <th className="px-3 py-2">{t('preview.customer')}</th>

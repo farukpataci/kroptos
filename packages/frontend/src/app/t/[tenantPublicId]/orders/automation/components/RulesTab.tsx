@@ -93,10 +93,10 @@ export default function RulesTab({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-kp-xl border border-kp-border bg-kp-surface shadow-xs">
+      <div className="overflow-hidden rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="border-b border-kp-border bg-kp-bg/50 text-[11px] uppercase tracking-wider text-kp-text-tertiary">
+            <thead className="border-b border-kp-border bg-slate-50 dark:bg-slate-800/60 text-[11px] uppercase tracking-wider text-kp-text-tertiary">
               <tr>
                 <th className="px-4 py-3 w-12 text-center">Sıra</th>
                 <th className="px-4 py-3">Kural</th>
@@ -140,7 +140,7 @@ export default function RulesTab({
                 </tr>
               ) : (
                 rules.map((rule, idx) => (
-                  <tr key={rule.id} className="transition-colors hover:bg-kp-surface-hover">
+                  <tr key={rule.id} className="transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
                     {/* Priority & Reorder Controls */}
                     <td className="px-4 py-3 text-center whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
@@ -186,7 +186,7 @@ export default function RulesTab({
                           </span>
                         )}
                         {rule.runOncePerOrder && (
-                          <span className="rounded-kp-xs bg-kp-bg px-1 text-kp-text-secondary">
+                          <span className="rounded-kp-xs bg-slate-100 dark:bg-slate-800 px-1 text-kp-text-secondary">
                             1x Sipariş
                           </span>
                         )}
@@ -200,7 +200,7 @@ export default function RulesTab({
                         return (
                           <span
                             className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold ${
-                              tm?.badgeColor || 'bg-kp-bg text-kp-text-secondary border-kp-border'
+                              tm?.badgeColor || 'bg-slate-100 dark:bg-slate-800 text-kp-text-secondary border-kp-border'
                             }`}
                           >
                             {tm?.badge || rule.triggerType}
@@ -212,7 +212,7 @@ export default function RulesTab({
                     {/* Conditions and Actions chips */}
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap items-center gap-1 text-[11px]">
-                        <span className="rounded-kp-xs bg-kp-bg px-1.5 py-0.5 font-medium text-kp-text-secondary border border-kp-border">
+                        <span className="rounded-kp-xs bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 font-medium text-kp-text-secondary border border-kp-border">
                           {rule.conditions?.conditions?.length || 0} Koşul ({rule.conditions?.operator?.toUpperCase() || 'AND'})
                         </span>
                         <span className="text-kp-text-tertiary">→</span>
@@ -272,7 +272,7 @@ export default function RulesTab({
                           <button
                             type="button"
                             onClick={() => onEdit(rule)}
-                            className="rounded-kp-md p-1 text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+                            className="rounded-kp-md p-1 text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
                             title="Düzenle"
                           >
                             <PencilSquareIcon className="h-4 w-4" />
@@ -281,7 +281,7 @@ export default function RulesTab({
                           <button
                             type="button"
                             onClick={() => onTest(rule)}
-                            className="rounded-kp-md p-1 text-kp-accent hover:bg-kp-surface-hover transition-colors"
+                            className="rounded-kp-md p-1 text-kp-accent hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                             title="Test Et (Simülasyon)"
                           >
                             <BeakerIcon className="h-4 w-4" />
@@ -292,7 +292,7 @@ export default function RulesTab({
                               type="button"
                               onClick={() => handleManualRun(rule.id)}
                               disabled={runningRuleId === rule.id || !rule.isActive}
-                              className="rounded-kp-md p-1 text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors disabled:opacity-30"
+                              className="rounded-kp-md p-1 text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors disabled:opacity-30"
                               title={rule.isActive ? 'Mevcut siparişlerde elle çalıştır' : 'Önce kuralı aktifleştirin'}
                             >
                               <PlayIcon className={`h-4 w-4 ${runningRuleId === rule.id ? 'animate-spin' : ''}`} />
@@ -302,7 +302,7 @@ export default function RulesTab({
                           <button
                             type="button"
                             onClick={() => setActiveMenuId(activeMenuId === rule.id ? null : rule.id)}
-                            className="rounded-kp-md p-1 text-kp-text-tertiary hover:bg-kp-surface-hover hover:text-kp-text-primary transition-colors"
+                            className="rounded-kp-md p-1 text-kp-text-tertiary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary transition-colors"
                           >
                             <EllipsisVerticalIcon className="h-4 w-4" />
                           </button>
@@ -310,14 +310,14 @@ export default function RulesTab({
 
                         {/* Dropdown Menu */}
                         {activeMenuId === rule.id && (
-                          <div className="absolute right-0 z-20 mt-1 w-44 rounded-kp-md border border-kp-border bg-kp-surface p-1 shadow-lg">
+                          <div className="absolute right-0 z-20 mt-1 w-44 rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 p-1 shadow-lg">
                             <button
                               type="button"
                               onClick={() => {
                                 onDuplicate(rule.id);
                                 setActiveMenuId(null);
                               }}
-                              className="flex w-full items-center gap-2 rounded-kp-xs px-2.5 py-1.5 text-xs text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary"
+                              className="flex w-full items-center gap-2 rounded-kp-xs px-2.5 py-1.5 text-xs text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary"
                             >
                               <DocumentDuplicateIcon className="h-3.5 w-3.5" />
                               <span>Kopyala</span>
@@ -329,7 +329,7 @@ export default function RulesTab({
                                 onVersions(rule);
                                 setActiveMenuId(null);
                               }}
-                              className="flex w-full items-center gap-2 rounded-kp-xs px-2.5 py-1.5 text-xs text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary"
+                              className="flex w-full items-center gap-2 rounded-kp-xs px-2.5 py-1.5 text-xs text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary"
                             >
                               <ClockIcon className="h-3.5 w-3.5" />
                               <span>Versiyon Geçmişi</span>
@@ -365,7 +365,7 @@ export default function RulesTab({
       {/* Activation Confirmation Modal */}
       {activatingRule && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-kp-xl border border-kp-border bg-kp-surface p-6 shadow-2xl space-y-4">
+          <div className="w-full max-w-md rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-6 shadow-2xl space-y-4">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-kp-success-muted text-kp-success">
                 <CheckCircleIcon className="h-6 w-6" />
@@ -380,7 +380,7 @@ export default function RulesTab({
               </div>
             </div>
 
-            <div className="rounded-kp-md bg-kp-bg p-3.5 text-xs text-kp-text-secondary leading-relaxed">
+            <div className="rounded-kp-md bg-slate-100 dark:bg-slate-800 p-3.5 text-xs text-kp-text-secondary leading-relaxed">
               Bu kural <strong>bundan sonra oluşan veya tetiklenen yeni siparişlere</strong> otomatik olarak uygulanacaktır. Geçmiş siparişlerinizi güncellemek için kural satırındaki <strong>"Elle Çalıştır"</strong> seçeneğini kullanabilirsiniz.
             </div>
 
@@ -388,7 +388,7 @@ export default function RulesTab({
               <button
                 type="button"
                 onClick={() => setActivatingRule(null)}
-                className="rounded-kp-md border border-kp-border bg-kp-surface px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-kp-surface-hover"
+                className="rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 px-3 py-1.5 text-xs font-semibold text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 Vazgeç
               </button>

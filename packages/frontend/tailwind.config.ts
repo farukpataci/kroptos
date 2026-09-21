@@ -10,7 +10,10 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Background
+        // Background & Surfaces
+        'kp-surface': 'var(--bg-secondary)',
+        'kp-surface-hover': 'var(--bg-tertiary)',
+        'kp-bg': 'var(--bg-primary)',
         'kp-bg-primary': 'var(--bg-primary)',
         'kp-bg-secondary': 'var(--bg-secondary)',
         'kp-bg-tertiary': 'var(--bg-tertiary)',

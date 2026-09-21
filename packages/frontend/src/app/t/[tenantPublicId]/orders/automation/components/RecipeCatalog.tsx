@@ -230,7 +230,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
               className={`flex items-center gap-1.5 rounded-kp-md px-3 py-1.5 text-xs font-medium transition-all ${
                 selectedCategory === cat.id
                   ? 'bg-kp-accent text-white shadow-sm'
-                  : 'border border-kp-border bg-kp-surface text-kp-text-secondary hover:bg-kp-surface-hover hover:text-kp-text-primary'
+                  : 'border border-kp-border bg-white dark:bg-slate-900 text-kp-text-secondary hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-kp-text-primary'
               }`}
             >
               {cat.icon && <cat.icon className="h-3.5 w-3.5" />}
@@ -246,7 +246,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tariflerde ara..."
-            className="w-full rounded-kp-md border border-kp-border bg-kp-surface py-1.5 pl-9 pr-3 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:border-kp-accent focus:outline-none focus:ring-1 focus:ring-kp-accent"
+            className="w-full rounded-kp-md border border-kp-border bg-white dark:bg-slate-900 py-1.5 pl-9 pr-3 text-xs text-kp-text-primary placeholder:text-kp-text-tertiary focus:border-kp-accent focus:outline-none focus:ring-1 focus:ring-kp-accent"
           />
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
         {filtered.map((recipe) => (
           <div
             key={recipe.id}
-            className="group flex flex-col justify-between rounded-kp-xl border border-kp-border bg-kp-surface p-5 shadow-sm transition-all hover:border-kp-accent/40 hover:shadow-md"
+            className="group flex flex-col justify-between rounded-kp-xl border border-kp-border bg-white dark:bg-slate-900 p-5 shadow-sm transition-all hover:border-kp-accent/40 hover:shadow-md"
           >
             <div className="space-y-3">
               {/* Header: Trigger Badge + Name */}
@@ -265,7 +265,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
                   <div className="flex h-8 w-8 items-center justify-center rounded-kp-md bg-kp-accent/10 text-kp-accent">
                     <SparklesIcon className="h-4 w-4" />
                   </div>
-                  <span className="inline-flex items-center rounded-kp-sm bg-kp-bg px-2 py-0.5 text-[11px] font-medium text-kp-text-secondary">
+                  <span className="inline-flex items-center rounded-kp-sm bg-slate-100 dark:bg-slate-800 px-2 py-0.5 text-[11px] font-medium text-kp-text-secondary">
                     {recipe.triggerType}
                   </span>
                 </div>
@@ -284,7 +284,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
               </div>
 
               {/* Conditions Summary */}
-              <div className="rounded-kp-md bg-kp-bg/50 p-2.5 text-[11px] space-y-1.5">
+              <div className="rounded-kp-md bg-slate-50 dark:bg-slate-800/60 p-2.5 text-[11px] space-y-1.5">
                 <div className="font-medium text-kp-text-secondary">Eğer (Koşullar):</div>
                 <div className="flex flex-wrap gap-1">
                   {recipe.conditions.conditions.length === 0 ? (
@@ -293,7 +293,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
                     recipe.conditions.conditions.map((cond: any, idx: number) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center rounded-kp-xs bg-kp-surface px-1.5 py-0.5 border border-kp-border text-kp-text-secondary font-mono text-[10px]"
+                        className="inline-flex items-center rounded-kp-xs bg-white dark:bg-slate-900 px-1.5 py-0.5 border border-kp-border text-kp-text-secondary font-mono text-[10px]"
                       >
                         {cond.field} {cond.operator} {JSON.stringify(cond.value)}
                       </span>
@@ -303,7 +303,7 @@ export default function RecipeCatalog({ onSelectRecipe, canManage }: RecipeCatal
               </div>
 
               {/* Actions Summary */}
-              <div className="rounded-kp-md bg-kp-bg/50 p-2.5 text-[11px] space-y-1.5">
+              <div className="rounded-kp-md bg-slate-50 dark:bg-slate-800/60 p-2.5 text-[11px] space-y-1.5">
                 <div className="font-medium text-kp-text-secondary">O Zaman (Aksiyonlar):</div>
                 <div className="flex flex-wrap gap-1">
                   {recipe.actions.map((act, idx) => (

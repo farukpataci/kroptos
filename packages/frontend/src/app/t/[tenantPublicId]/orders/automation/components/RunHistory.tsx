@@ -45,7 +45,7 @@ export default function RunHistory({ runs, rules, isLoading }: RunHistoryProps) 
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-xs">
-          <thead className="border-b border-kp-border bg-kp-bg-primary/40 text-[0.6875rem] font-bold uppercase tracking-wider text-kp-text-tertiary">
+          <thead className="border-b border-kp-border bg-slate-100 dark:bg-slate-800-primary/40 text-[0.6875rem] font-bold uppercase tracking-wider text-kp-text-tertiary">
             <tr>
               <th className="px-4 py-3">{t('history.when')}</th>
               <th className="px-4 py-3">{t('history.rule')}</th>
@@ -69,7 +69,7 @@ export default function RunHistory({ runs, rules, isLoading }: RunHistoryProps) 
               </tr>
             ) : (
               runs.map((run) => (
-                <tr key={run.id} className="transition-colors hover:bg-kp-bg-hover/30">
+                <tr key={run.id} className="transition-colors hover:bg-slate-100 dark:bg-slate-800-hover/30">
                   <td className="px-4 py-3 text-kp-text-tertiary">
                     {new Date(run.createdAt).toLocaleString()}
                   </td>
