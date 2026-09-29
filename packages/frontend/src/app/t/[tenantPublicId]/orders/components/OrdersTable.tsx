@@ -18,10 +18,19 @@ import {
   CheckIcon
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
+import useSWR from 'swr';
+import { api } from '@/lib/api';
 import { Order, OrderFilters } from '../hooks/useOrders';
 import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge, OrderModeBadge } from './OrderStatusBadge';
 import { pageWindow } from '@/lib/pagination';
 import { usePermission } from '@/hooks/usePermission';
+
+interface CarrierConnectionItem {
+  id: string;
+  provider: string;
+  displayName?: string;
+  isActive: boolean;
+}
 
 interface OrdersTableProps {
   orders: Order[];
@@ -59,6 +68,15 @@ export default function OrdersTable({
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Fetch active connected carriers
+  const { data: carriers = [] } = useSWR<CarrierConnectionItem[]>(
+    '/api/carriers',
+    (url: string) => api.get<CarrierConnectionItem[]>(url).catch(() => []),
+    { revalidateOnFocus: false, shouldRetryOnError: false }
+  );
+
+  const activeCarriers = carriers.filter((c) => c.isActive);
 
   const toggleSelectAll = () => {
     if (selectedOrderIds.length === orders.length) {
@@ -338,30 +356,22 @@ export default function OrdersTable({
             {activeDropdown === 'truck' && (
               <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
                 <button
-                  onClick={() => handleAction('DPD Romania')}
+                  onClick={() => handleAction('Default Kargo')}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center justify-between"
                 >
-                  <span>DPD Romania</span>
+                  <span>Default Kargo</span>
                   <span className="text-[0.5625rem] bg-kp-accent/20 text-kp-accent rounded px-1.5 font-bold">{t('toolbar.defaultCarrier')}</span>
                 </button>
-                <button
-                  onClick={() => handleAction('Yurtiçi Kargo')}
-                  className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
-                >
-                  Yurtiçi Kargo
-                </button>
-                <button
-                  onClick={() => handleAction('MNG Kargo')}
-                  className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
-                >
-                  MNG Kargo
-                </button>
-                <button
-                  onClick={() => handleAction('Aras Kargo')}
-                  className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
-                >
-                  Aras Kargo
-                </button>
+                {activeCarriers.length > 0 && <hr className="border-kp-border my-1" />}
+                {activeCarriers.map((carrier) => (
+                  <button
+                    key={carrier.id}
+                    onClick={() => handleAction(carrier.displayName || carrier.provider)}
+                    className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary flex items-center justify-between"
+                  >
+                    <span>{carrier.displayName || carrier.provider}</span>
+                  </button>
+                ))}
               </div>
             )}
           </div>
