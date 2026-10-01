@@ -78,6 +78,14 @@ export interface OrderFilters {
   search: string;
   status: string;
   dateRange: string;
+  startDate?: string;
+  endDate?: string;
+  sources?: string[];
+  paymentStatuses?: string[];
+  fulfillmentStatuses?: string[];
+  carrier?: string;
+  minAmount?: number | string;
+  maxAmount?: number | string;
 }
 
 export function useOrders() {
@@ -92,6 +100,14 @@ export function useOrders() {
     search: '',
     status: 'all',
     dateRange: 'all',
+    startDate: undefined,
+    endDate: undefined,
+    sources: [],
+    paymentStatuses: [],
+    fulfillmentStatuses: [],
+    carrier: '',
+    minAmount: '',
+    maxAmount: '',
   });
 
   // Pagination
@@ -142,16 +158,50 @@ export function useOrders() {
       const matchesNumber = order.orderNumber?.toLowerCase().includes(q);
       const matchesEmail = order.customerEmail?.toLowerCase().includes(q);
       const matchesPublicId = order.publicId?.toLowerCase().includes(q);
-      if (!matchesName && !matchesNumber && !matchesEmail && !matchesPublicId) return false;
+      const matchesPhone = order.customerPhone?.toLowerCase().includes(q);
+      if (!matchesName && !matchesNumber && !matchesEmail && !matchesPublicId && !matchesPhone) return false;
     }
 
     // Status filter
-    if (filters.status !== 'all' && order.status !== filters.status) {
+    if (filters.status && filters.status !== 'all' && order.status !== filters.status) {
+      return false;
+    }
+
+    // Sources filter
+    if (filters.sources && filters.sources.length > 0) {
+      const orderSrc = (order.source || 'web').toLowerCase();
+      if (!filters.sources.includes(orderSrc)) return false;
+    }
+
+    // Payment Statuses filter
+    if (filters.paymentStatuses && filters.paymentStatuses.length > 0) {
+      if (!filters.paymentStatuses.includes(order.paymentStatus)) return false;
+    }
+
+    // Fulfillment Statuses filter
+    if (filters.fulfillmentStatuses && filters.fulfillmentStatuses.length > 0) {
+      if (!filters.fulfillmentStatuses.includes(order.fulfillmentStatus)) return false;
+    }
+
+    // Amount range
+    const amount = Number(order.totalAmount || 0);
+    if (filters.minAmount !== undefined && filters.minAmount !== '' && amount < Number(filters.minAmount)) {
+      return false;
+    }
+    if (filters.maxAmount !== undefined && filters.maxAmount !== '' && amount > Number(filters.maxAmount)) {
       return false;
     }
 
     // Date range filter
-    if (filters.dateRange !== 'all') {
+    if (filters.dateRange === 'custom') {
+      const orderDate = new Date(order.createdAt).getTime();
+      if (filters.startDate && orderDate < new Date(filters.startDate).getTime()) return false;
+      if (filters.endDate) {
+        const end = new Date(filters.endDate);
+        end.setHours(23, 59, 59, 999);
+        if (orderDate > end.getTime()) return false;
+      }
+    } else if (filters.dateRange && filters.dateRange !== 'all') {
       const days = parseInt(filters.dateRange, 10);
       const cutoff = new Date();
       cutoff.setDate(cutoff.getDate() - days);
