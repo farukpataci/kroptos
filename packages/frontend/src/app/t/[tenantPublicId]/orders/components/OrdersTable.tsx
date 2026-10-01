@@ -15,11 +15,13 @@ import {
   TruckIcon,
   Bars3Icon,
   ArrowsUpDownIcon,
-  CheckIcon
+  CheckIcon,
+  TagIcon
 } from '@heroicons/react/24/outline';
 import { useTranslations } from 'next-intl';
 import useSWR from 'swr';
 import { api } from '@/lib/api';
+import OrderLabelModal from './OrderLabelModal';
 import { Order, OrderFilters } from '../hooks/useOrders';
 import { OrderStatusBadge, PaymentStatusBadge, FulfillmentStatusBadge, SourceBadge, OrderModeBadge } from './OrderStatusBadge';
 import { pageWindow } from '@/lib/pagination';
@@ -68,6 +70,8 @@ export default function OrdersTable({
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isLabelModalOpen, setIsLabelModalOpen] = useState(false);
+  const [labelOrders, setLabelOrders] = useState<Order[]>([]);
 
   // Fetch active connected carriers
   const { data: carriers = [] } = useSWR<CarrierConnectionItem[]>(
@@ -77,6 +81,19 @@ export default function OrdersTable({
   );
 
   const activeCarriers = carriers.filter((c) => c.isActive);
+
+  const handleOpenLabelModal = () => {
+    const selected = orders.filter((o) => selectedOrderIds.includes(o.id));
+    if (selected.length > 0) {
+      setLabelOrders(selected);
+      setIsLabelModalOpen(true);
+    } else if (orders.length > 0) {
+      setLabelOrders([orders[0]]);
+      setIsLabelModalOpen(true);
+    } else {
+      showToast(t('toolbar.selectFirst'));
+    }
+  };
 
   const toggleSelectAll = () => {
     if (selectedOrderIds.length === orders.length) {
@@ -309,7 +326,18 @@ export default function OrdersTable({
               <ChevronDownIcon className="h-3 w-3" />
             </button>
             {activeDropdown === 'printer' && (
-              <div className="absolute left-0 mt-1 w-48 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
+              <div className="absolute left-0 mt-1 w-52 rounded border border-kp-border bg-kp-bg-primary shadow-lg z-50 py-1 text-[0.6875rem]">
+                <button
+                  onClick={() => {
+                    handleOpenLabelModal();
+                    setActiveDropdown(null);
+                  }}
+                  className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-indigo-600 dark:text-indigo-400 font-semibold flex items-center justify-between"
+                >
+                  <span>Sipariş Etiketini Görüntüle</span>
+                  <TagIcon className="h-3 w-3" />
+                </button>
+                <hr className="border-kp-border my-1" />
                 <button
                   onClick={() => handleAction(t('toolbar.printInvoices'))}
                   className="w-full text-left px-3 py-1.5 hover:bg-kp-bg-hover text-kp-text-secondary hover:text-kp-text-primary"
@@ -341,6 +369,16 @@ export default function OrdersTable({
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
+          </button>
+
+          {/* Order Shipping Label View Button */}
+          <button
+            onClick={handleOpenLabelModal}
+            className="flex items-center gap-1.5 h-[28px] px-2.5 rounded border border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/70 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 transition-all text-xs font-semibold shadow-sm"
+            title="Sipariş Etiketini Görüntüle ve Yazdır"
+          >
+            <TagIcon className="h-3.5 w-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>Etiketi Görüntüle</span>
           </button>
 
           {/* Carrier/Truck */}
@@ -680,6 +718,13 @@ export default function OrdersTable({
           <span className="text-xs font-semibold text-kp-text-primary">{toastMessage}</span>
         </div>
       )}
+
+      {/* Order Shipping Label View / Print Modal */}
+      <OrderLabelModal
+        isOpen={isLabelModalOpen}
+        onClose={() => setIsLabelModalOpen(false)}
+        orders={labelOrders}
+      />
     </div>
   );
 }
