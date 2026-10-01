@@ -53,7 +53,6 @@ export default function OrderStatusesPage() {
   const toast = useToast();
 
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [tenantSettings, setTenantSettings] = useState<any>(null);
   const [custom, setCustom] = useState<CustomStatus[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [form, setForm] = useState<CustomStatus>({ key: '', name: '', color: COLORS[0] });
@@ -68,12 +67,6 @@ export default function OrderStatusesPage() {
   const latestRequest = useRef(0);
 
   const load = useCallback(async () => {
-    if (!tenantContext.storeId) {
-      setIsLoading(false);
-      setCounts({});
-      return;
-    }
-
     // Same guard as the other two Orders pages — see customers/page.tsx.
     inFlight.current?.abort();
     const controller = new AbortController();
@@ -83,12 +76,15 @@ export default function OrderStatusesPage() {
     setIsLoading(true);
     setError(null);
     try {
+      // Statuses are agency-wide and must load even without a store selected;
+      // only the per-status counts need a store.
       const [orders, settings] = await Promise.all([
-        api.get<{ status: string }[]>('/api/orders', { signal: controller.signal }),
+        tenantContext.storeId
+          ? api.get<{ status: string }[]>('/api/orders', { signal: controller.signal })
+          : Promise.resolve([]),
         api.get<any>('/api/system/tenant-settings', { signal: controller.signal }),
       ]);
       if (ticket !== latestRequest.current) return;
-      setTenantSettings(settings);
       setCustom(Array.isArray(settings?.settings?.orderStatuses) ? settings.settings.orderStatuses : []);
       const tally: Record<string, number> = {};
       for (const order of orders || []) {
@@ -130,11 +126,13 @@ export default function OrderStatusesPage() {
     })),
   ];
 
-  // Whole-list PUT, same shape OrderSettingsForm uses: other keys of `settings` are kept.
-  const saveCustom = async (next: CustomStatus[]) => {
-    const payload = { settings: { ...(tenantSettings?.settings || {}), orderStatuses: next } };
-    const saved = await api.put('/api/system/tenant-settings', payload);
-    setTenantSettings(saved);
+  // Whole-list PUT, so the list is re-read right before writing: building it
+  // from page state let a stale/empty view overwrite statuses saved elsewhere.
+  const saveCustom = async (change: (current: CustomStatus[]) => CustomStatus[]) => {
+    const fresh = await api.get<any>('/api/system/tenant-settings');
+    const current: CustomStatus[] = Array.isArray(fresh?.settings?.orderStatuses) ? fresh.settings.orderStatuses : [];
+    const next = change(current);
+    await api.put('/api/system/tenant-settings', { settings: { ...(fresh?.settings || {}), orderStatuses: next } });
     setCustom(next);
   };
 
@@ -157,7 +155,7 @@ export default function OrderStatusesPage() {
     setBusy(true);
     setModalError(null);
     try {
-      await saveCustom([...custom, { key, name, color: form.color }]);
+      await saveCustom((list) => [...list.filter((c) => c.key !== key), { key, name, color: form.color }]);
       toast.success(t('created'));
       setCreateOpen(false);
     } catch (err: any) {
@@ -170,7 +168,7 @@ export default function OrderStatusesPage() {
   const remove = async (key: string) => {
     setBusy(true);
     try {
-      await saveCustom(custom.filter((c) => c.key !== key));
+      await saveCustom((list) => list.filter((c) => c.key !== key));
       toast.success(t('removed'));
     } catch (err: any) {
       toast.error(err?.message || tc('unknownError'));
