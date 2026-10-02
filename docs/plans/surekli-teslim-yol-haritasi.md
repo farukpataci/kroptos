@@ -41,7 +41,7 @@
 |---|---|---|
 | 4 | Eski "`db push` kullan, migration YASAK" notlarını migration kuralıyla değiştir (package.json, README, SECURITY_CHECKLIST, deploy.bat) | ✅ 2026-10-02 |
 | 5 | RLS'i migration'ın parçası yap: yetişme migration'ı (`20261002000000_manual_scripts_catchup`) + `pnpm db:check-rls` | ✅ lokal 2026-10-02 · canlıda işaretleme bekliyor (Faz 0) |
-| 6 | Ortam anahtarları: `APP_ENV`, worker / pazaryeri senkronu / e-posta-SMS kapatma. Staging'de varsayılan **kapalı** | |
+| 6 | Ortam anahtarları: `APP_ENV`, `OUTBOUND_HTTP` + `OUTBOUND_ALLOWLIST` (global fetch kapısı), `NOTIFICATIONS_DELIVERY` (SMTP/Netgsm → console). Staging'de varsayılan **kapalı** | ✅ 2026-10-02 · uygulama içinden uçtan uca engelleme staging kurulumunda (Faz 2) ölçülecek |
 | 7 | Staging veri temizleme betiği: entegrasyon kimlik bilgileri silinir, müşteri e-posta/telefon maskelenir | |
 | 8 | CI workflow: install, `prisma generate`, build, test; `main`/`staging` dal koruması | |
 | 9 | `deploy.ps1`: ortam parametreli; ayrı klasörde build → DB yedeği → `migrate deploy` → `pm2 reload` → `/api/health` `sha` kontrolü → başarısızsa önceki sürüme dönüş | |

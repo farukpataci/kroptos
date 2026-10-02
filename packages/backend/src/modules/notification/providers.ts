@@ -1,5 +1,6 @@
 import { Logger } from '@nestjs/common';
 import nodemailer, { Transporter } from 'nodemailer';
+import { notificationsDeliver } from '../../common/utils/outbound-guard';
 
 /**
  * Sağlayıcı adaptörleri. Arayüz başka sağlayıcıya açık (SES, İleti Merkezi…):
@@ -124,7 +125,20 @@ export class NetgsmSmsProvider implements SmsProvider {
 export const EMAIL_PROVIDERS = ['smtp', 'console'] as const;
 export const SMS_PROVIDERS = ['netgsm', 'console'] as const;
 
+/**
+ * NOTIFICATIONS_DELIVERY=console (staging'de varsayılan) iken gerçek sağlayıcı yerine console
+ * döner: canlı kopyasındaki müşteri adreslerine e-posta/SMS gitmez. SMTP global fetch kapısından
+ * geçmediği için (nodemailer doğrudan soket açar) bu kesim burada yapılır.
+ */
+function deliveryOff(provider: string, known: readonly string[]): boolean {
+  if (!known.includes(provider)) return false; // bilinmeyen ad yine hata versin
+  if (provider === 'console' || notificationsDeliver()) return false;
+  log.warn(`NOTIFICATIONS_DELIVERY=console: '${provider}' yerine console sağlayıcısı kullanılıyor`);
+  return true;
+}
+
 export function buildEmailProvider(provider: string, config: ProviderConfig, secrets: ProviderConfig): EmailProvider {
+  if (deliveryOff(provider, EMAIL_PROVIDERS)) return new ConsoleEmailProvider();
   switch (provider) {
     case 'smtp':
       return new SmtpEmailProvider(config, secrets);
@@ -136,6 +150,7 @@ export function buildEmailProvider(provider: string, config: ProviderConfig, sec
 }
 
 export function buildSmsProvider(provider: string, config: ProviderConfig, secrets: ProviderConfig): SmsProvider {
+  if (deliveryOff(provider, SMS_PROVIDERS)) return new ConsoleSmsProvider();
   switch (provider) {
     case 'netgsm':
       return new NetgsmSmsProvider(config, secrets);

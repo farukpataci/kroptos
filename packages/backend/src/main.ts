@@ -1,11 +1,29 @@
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe, Logger } from '@nestjs/common';
+import * as dotenv from 'dotenv';
 import { AppModule } from './app.module';
+import {
+  installOutboundGuard,
+  notificationsDeliver,
+  outboundPolicy,
+} from './common/utils/outbound-guard';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
   const logger = new Logger('Bootstrap');
+
+  // Dış dünyaya çıkış kapısı: her modülden ÖNCE kurulur (staging'de varsayılan kapalı).
+  // APP_ENV .env'den gelir; ConfigModule'ün yüklemesini beklemeden burada okunur
+  // (dotenv var olan değişkeni ezmez, ConfigModule ile aynı dosya ve aynı kural).
+  dotenv.config({ path: '.env' });
+  const outbound = outboundPolicy();
+  installOutboundGuard(outbound);
+  logger.log(
+    `APP_ENV=${outbound.env} · dış HTTP: ${outbound.blocked ? `KAPALI (izinli: ${outbound.allowlist.join(', ') || 'yok'})` : 'açık'}` +
+      ` · bildirim: ${notificationsDeliver() ? 'gerçek gönderim' : 'console'}`,
+  );
+
+  const app = await NestFactory.create(AppModule);
 
   const express = require('express');
   app.use(
