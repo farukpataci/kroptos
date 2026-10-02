@@ -1,5 +1,6 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { OrderExportProcessor } from './order-export.processor';
 
 export function computeRelativeDateRange(range: string): { startDate: string; endDate: string } {
@@ -104,7 +105,8 @@ export class OrderExportScheduler implements OnModuleInit, OnModuleDestroy {
 
   private async checkDueSchedules() {
     const now = new Date();
-    const dueSchedules = await this.prisma.orderExportSchedule.findMany({
+    // RLS (P12): tarama kiracılar arasıdır → açık sistem bağlamı; her zamanlama kendi ajansında koşar.
+    const dueSchedules = await runAsSystem('order-export:due-scan', () => this.prisma.orderExportSchedule.findMany({
       where: {
         isActive: true,
         deletedAt: null,
@@ -114,20 +116,22 @@ export class OrderExportScheduler implements OnModuleInit, OnModuleDestroy {
         ],
       },
       include: { preset: true },
-    });
+    }));
 
     for (const schedule of dueSchedules) {
-      try {
-        await this.triggerSchedule(schedule);
-      } catch (err: any) {
-        this.logger.error(`Zamanlama tetikleme hatası (${schedule.id}): ${err.message}`);
-        await this.prisma.orderExportSchedule.update({
-          where: { id: schedule.id },
-          data: {
-            consecutiveFailures: { increment: 1 },
-          },
-        }).catch(() => undefined);
-      }
+      await runWithTenant(schedule.agencyId, async () => {
+        try {
+          await this.triggerSchedule(schedule);
+        } catch (err: any) {
+          this.logger.error(`Zamanlama tetikleme hatası (${schedule.id}): ${err.message}`);
+          await this.prisma.orderExportSchedule.update({
+            where: { id: schedule.id },
+            data: {
+              consecutiveFailures: { increment: 1 },
+            },
+          }).catch(() => undefined);
+        }
+      });
     }
   }
 

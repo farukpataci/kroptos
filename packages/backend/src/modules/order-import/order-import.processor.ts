@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import { Queue, Worker, Job } from 'bullmq';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runWithTenant } from '@common/prisma/tenant-context';
 import { generatePublicId } from '../../common/utils/id-generator';
 import { emitOrderChanged } from '../order/order.events';
 import * as path from 'path';
@@ -42,12 +43,15 @@ export class OrderImportProcessor implements OnModuleInit, OnModuleDestroy {
     this.queue = new Queue(ORDER_IMPORT_QUEUE, { connection });
     this.worker = new Worker(
       ORDER_IMPORT_QUEUE,
+      // RLS (P12): worker istek dışında koşar; iş, payload'daki ajansın bağlamında işlenir.
       async (job: Job<ImportJobPayload>) => {
-        if (job.data.action === 'ROLLBACK') {
-          await this.processRollback(job.data);
-        } else {
-          await this.processImport(job.data);
-        }
+        await runWithTenant(job.data.agencyId, async () => {
+          if (job.data.action === 'ROLLBACK') {
+            await this.processRollback(job.data);
+          } else {
+            await this.processImport(job.data);
+          }
+        });
       },
       {
         connection,

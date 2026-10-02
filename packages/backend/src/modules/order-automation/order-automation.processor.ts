@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { Queue, Worker, Job } from 'bullmq';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runWithTenant } from '@common/prisma/tenant-context';
 import { OrderAutomationService } from './order-automation.service';
 
 export const ORDER_AUTOMATION_QUEUE = 'order-automation';
@@ -43,8 +44,9 @@ export class OrderAutomationProcessor implements OnModuleInit, OnModuleDestroy {
     this.queue = new Queue(ORDER_AUTOMATION_QUEUE, { connection });
     this.worker = new Worker(
       ORDER_AUTOMATION_QUEUE,
+      // RLS (P12): worker istek dışında koşar; iş, payload'daki ajansın bağlamında işlenir.
       async (job: Job<AutomationJobPayload>) => {
-        await this.processJob(job.data);
+        await runWithTenant(job.data.agencyId, () => this.processJob(job.data));
       },
       {
         connection,

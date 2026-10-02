@@ -1,6 +1,7 @@
 import { Injectable, OnModuleDestroy, OnModuleInit, Logger } from '@nestjs/common';
 import { Queue, Worker, Job } from 'bullmq';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runWithTenant } from '@common/prisma/tenant-context';
 import { COLUMNS_MAP } from './columns/column-registry';
 import { CsvExportWriter } from './writers/csv.writer';
 import { XlsxExportWriter } from './writers/xlsx.writer';
@@ -41,8 +42,9 @@ export class OrderExportProcessor implements OnModuleInit, OnModuleDestroy {
     this.queue = new Queue(ORDER_EXPORT_QUEUE, { connection });
     this.worker = new Worker(
       ORDER_EXPORT_QUEUE,
+      // RLS (P12): worker istek dışında koşar; iş, payload'daki ajansın bağlamında işlenir.
       async (job: Job<ExportJobPayload>) => {
-        await this.processJob(job.data);
+        await runWithTenant(job.data.agencyId, () => this.processJob(job.data));
       },
       {
         connection,

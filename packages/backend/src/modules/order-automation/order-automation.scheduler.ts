@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
+import { runAsSystem, runWithTenant } from '@common/prisma/tenant-context';
 import { OrderAutomationService } from './order-automation.service';
 
 const SCHEDULER_INTERVAL_MS = 15 * 60 * 1000; // 15 minutes as per docs/otomation.md
@@ -34,15 +35,16 @@ export class OrderAutomationScheduler implements OnModuleInit, OnModuleDestroy {
 
     try {
       // 1. Fetch active ORDER_IDLE rules
-      const idleRules = await this.prisma.automationRule.findMany({
+      // RLS (P12): tarama kiracılar arasıdır → açık sistem bağlamı; her kural kendi ajansında koşar.
+      const idleRules = await runAsSystem('order-automation:idle-sweep', () => this.prisma.automationRule.findMany({
         where: {
           triggerType: 'ORDER_IDLE',
           isActive: true,
           deletedAt: null,
         },
-      });
+      }));
 
-      for (const rule of idleRules) {
+      for (const rule of idleRules) await runWithTenant(rule.agencyId, async () => {
         const config = (rule.triggerConfig as any) || {};
         const idleHours = Number(config.idleHours || config.hours || 24);
         const targetStatus = config.status || config.fromStatus;
@@ -88,7 +90,7 @@ export class OrderAutomationScheduler implements OnModuleInit, OnModuleDestroy {
             );
           }
         }
-      }
+      });
     } finally {
       this.isRunning = false;
     }
