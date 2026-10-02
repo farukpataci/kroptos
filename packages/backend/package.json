@@ -16,7 +16,10 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write src",
     "postbuild": "node scripts/write-build-info.js",
-    "db:push": "node prisma/scripts/with-migration-url.js npx prisma db push --skip-generate",
+    "db:migrate:status": "node prisma/scripts/with-migration-url.js npx prisma migrate status",
+    "db:migrate:deploy": "node prisma/scripts/with-migration-url.js npx prisma migrate deploy",
+    "db:migrate:new": "node prisma/scripts/with-migration-url.js npx prisma migrate dev --create-only",
+    "db:check-rls": "node prisma/scripts/with-migration-url.js node prisma/scripts/check-rls.js",
     "db:seed": "node prisma/scripts/with-migration-url.js npx prisma db seed"
   },
   "dependencies": {

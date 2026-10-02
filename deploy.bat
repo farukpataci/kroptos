@@ -20,7 +20,8 @@ if %errorlevel% neq 0 (
 )
 
 echo [3/5] Veritabani migration uygulaniyor...
-call pnpm --filter @kroptos/backend exec prisma migrate deploy
+rem Migration superuser (DATABASE_MIGRATION_URL) ile calisir; uygulama rolu kroptos_app DDL yapamaz.
+call pnpm --filter @kroptos/backend db:migrate:deploy
 if %errorlevel% neq 0 (
     echo [HATA] Migration basarisiz! Deploy iptal.
     goto :error

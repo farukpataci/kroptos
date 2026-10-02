@@ -39,7 +39,8 @@ Hiyerarşi **ajans → client → mağaza**. Üstteki rol alttaki her şeyi kaps
 - [x] Gövdede `agencyId=B` ile POST /clients, /stores, /categories, /integrations → 400; B'de satır yok
 
 ### 1.2 Row-Level Security (UYGULANDI — P12 Adım 2, aşamalı)
-**DB tarafı** (`prisma/scripts/`, psql ile uygulanır; migrations dizini YOK, `pnpm db:push` "already in sync" verir):
+**DB tarafı** (`prisma/scripts/`, psql ile uygulandı. 2026-10-02'den itibaren yeni tabloların RLS'i
+kendi migration dosyasında gider — `docs/plans/surekli-teslim-yol-haritasi.md`):
 - `p12-rls-00-role.sql`: uygulama rolü **`kroptos_app` LOGIN NOSUPERUSER NOBYPASSRLS**,
   tabloların sahibi değil (sahip = postgres). Yardımcı fonksiyon:
   ```sql
@@ -57,7 +58,7 @@ Hiyerarşi **ajans → client → mağaza**. Üstteki rol alttaki her şeyi kaps
     AccountingSyncCursor.
   - Geri alma: `ALTER TABLE "T" DISABLE ROW LEVEL SECURITY` (politika kalabilir).
 - Bağlantılar: `DATABASE_URL` = `kroptos_app` (uygulama); `DATABASE_MIGRATION_URL` = superuser
-  (şema `pnpm db:push`, seed `pnpm db:seed`, `prisma/scripts/*.ts`, psql). Superuser ve tablo
+  (şema `pnpm db:migrate:deploy`, seed `pnpm db:seed`, `prisma/scripts/*.ts`, psql). Superuser ve tablo
   sahibi RLS'i **her zaman** atlar; uygulama asla bu bağlantıyla çalışmaz.
 
 **Uygulama tarafı** (`common/prisma/`):
@@ -627,7 +628,7 @@ pnpm test                                   # birim (mock'lu; kanıt değil, reg
 pnpm test:integration                       # canlı Postgres: guard zinciri, order/shipment kapsamı
 API_PORT=3101 CORS_ORIGINS=http://localhost:3100 node dist/main.js &
 pnpm test:e2e                               # gerçek HTTP + RLS: test/tenant-isolation.e2e-spec.ts
-pnpm db:push                                # superuser (DATABASE_MIGRATION_URL); "already in sync" beklenir
+pnpm db:migrate:status                      # superuser (DATABASE_MIGRATION_URL); "Database schema is up to date" beklenir
 psql "$DATABASE_MIGRATION_URL" -c "select rolname, rolsuper, rolbypassrls from pg_roles where rolname='kroptos_app'"   # f / f
 ```
 Her kanıt: satır sayısı al → fixture → gerçek çağrı → `finally` sil → sayı başa döndü (CLAUDE.md Kural 7).

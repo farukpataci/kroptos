@@ -30,10 +30,9 @@ krattos/
 # Install dependencies across all workspaces
 pnpm install
 
-# Setup database
-cd packages/backend
-npx prisma migrate dev --name init
-npx prisma db seed
+# Setup database (packages/backend/.env: DATABASE_URL + DATABASE_MIGRATION_URL)
+pnpm db:migrate:deploy
+pnpm --filter @kroptos/backend db:seed
 
 # Start development servers
 cd ../..
@@ -50,20 +49,27 @@ pnpm dev
 
 ### Schema changes
 
-This repo keeps **no migration history**; the schema is deployed with `db push`.
-`prisma migrate dev` would produce a single "init" migration that collides with
-the deployed schema, so the script that used to run it is disabled on purpose
-(`db:migrate:YASAK-bkz-kargo-spec`).
+Schema changes ship as **Prisma migrations** (`packages/backend/prisma/migrations/`,
+baseline `0_init` since 2026-09-15). Production runs `prisma migrate deploy` only;
+`db push` is not used against any shared database. Plan: `docs/plans/surekli-teslim-yol-haritasi.md`.
+
+All schema commands run as the superuser (`DATABASE_MIGRATION_URL`) through
+`prisma/scripts/with-migration-url.js`; the app role `kroptos_app` cannot run DDL.
 
 ```bash
-# 1. Review the change as SQL, without touching the database
-cd packages/backend
-npx prisma migrate diff   --from-schema-datasource prisma/schema.prisma   --to-schema-datamodel  prisma/schema.prisma   --script > ../../docs/plans/<change>.sql
+# 1. Edit prisma/schema.prisma, then generate the SQL without applying it
+pnpm db:migrate:new -- --name <change>
+#    If Prisma offers to reset the local database, refuse and investigate the drift.
 
-# 2. Apply it
-pnpm db:push
+# 2. Read the generated prisma/migrations/<timestamp>_<change>/migration.sql.
+#    A new table that has an agencyId column gets its RLS policy in the SAME file
+#    (ENABLE ROW LEVEL SECURITY + tenant_isolation policy, see prisma/scripts/p12-rls-*).
 
-# 3. On Windows a running backend locks the Prisma engine and `generate` fails
+# 3. Apply locally and check
+pnpm db:migrate:deploy
+pnpm db:migrate:status
+
+# 4. On Windows a running backend locks the Prisma engine and `generate` fails
 #    with EPERM. Stop it first:
 #    pm2 stop kroptos-backend && npx prisma generate && pm2 start kroptos-backend
 
