@@ -20,6 +20,7 @@
     "db:migrate:deploy": "node prisma/scripts/with-migration-url.js npx prisma migrate deploy",
     "db:migrate:new": "node prisma/scripts/with-migration-url.js npx prisma migrate dev --create-only",
     "db:check-rls": "node prisma/scripts/with-migration-url.js node prisma/scripts/check-rls.js",
+    "db:sanitize-staging": "node prisma/scripts/with-migration-url.js node prisma/scripts/sanitize-staging.js",
     "db:seed": "node prisma/scripts/with-migration-url.js npx prisma db seed"
   },
   "dependencies": {

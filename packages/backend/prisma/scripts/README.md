@@ -23,4 +23,5 @@ ALTER ROLE kroptos_app PASSWORD '<gizli>';
 |---|---|
 | `with-migration-url.js` | Alt komutu `DATABASE_MIGRATION_URL` (superuser) ile çalıştırır |
 | `check-rls.js` | `agencyId`/`tenantId` taşıyan her tabloda RLS + politika var mı (`pnpm db:check-rls`) |
+| `sanitize-staging.js` | Canlı yedeğinden yüklenen staging DB'sinde kimlik bilgilerini siler, müşteri kişisel verisini maskeler (`pnpm db:sanitize-staging --confirm <db>`). Yalnız `APP_ENV=staging`, eşleşen `--confirm`, korunmayan DB adı ve RLS'i atlayan bağlantıyla çalışır; tek transaction |
 | `*.ts` | Tek seferlik backfill/bakım betikleri |
