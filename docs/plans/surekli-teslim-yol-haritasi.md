@@ -23,12 +23,12 @@
 
 ## Faz 0 — Güvence (sunucuda, kullanıcı)
 
-- [ ] `packages/backend/.env` ve `ENCRYPTION_KEY` parola yöneticisinde (2026-08-08'de kaybolmuştu)
-- [ ] Canlı DB `pg_dump` yedeği **ve** boş bir DB'ye geri yükleme denemesi
-- [ ] Canlıda çalışan commit: `git log -1` veya `https://api.alqora.app/api/health` → `sha`
+- [ ] `packages/backend/.env` ve `ENCRYPTION_KEY` parola yöneticisinde (2026-08-08'de kaybolmuştu) · 2026-10-05: `.env` dosyaları `Desktop\kroptos-backup\faz0-2026-10-05\` altına kopyalandı; parola yöneticisi kullanıcıda, DOĞRULANAMADI
+- [ ] Canlı DB `pg_dump` yedeği **ve** boş bir DB'ye geri yükleme denemesi · 2026-10-05: yedek alındı (`eticaret.dump`, 483689 bayt, pg_dump 18.4); geri yükleme denemesi bekliyor
+- [x] Canlıda çalışan commit: 2026-10-05 öncesi 84c6809 (`Desktop\kroptos`); devirden sonra `/api/health` → `sha: b9434b5`
 - [x] Canlıda migration durumu (2026-10-02, DB `eticaret`): 3 migration uygulanmış,
       "Database schema is up to date"; şema sunucudaki `schema.prisma` ile fark yok
-- [ ] **Yetişme migration'ını canlıda işaretle** (çalıştırmadan) — 5. adım. Yeni kod sunucuya
+- [x] **Yetişme migration'ını canlıda işaretle** (2026-10-05: check-rls 2 eksik → `automation-rls.sql` uygulandı → RLS eksik: 0 → `resolve --applied` → "up to date") (çalıştırmadan) — 5. adım. Yeni kod sunucuya
       çekildikten sonra, **herhangi bir deploy'dan önce**:
       `node prisma/scripts/with-migration-url.js npx prisma migrate resolve --applied 20261002000000_manual_scripts_catchup`
       Önce canlıda nesnelerin var olduğu doğrulanır: `pnpm db:check-rls` (RLS eksik: 0) ve 14 tablonun varlığı.
@@ -40,11 +40,11 @@
 | # | İş | Durum |
 |---|---|---|
 | 4 | Eski "`db push` kullan, migration YASAK" notlarını migration kuralıyla değiştir (package.json, README, SECURITY_CHECKLIST, deploy.bat) | ✅ 2026-10-02 |
-| 5 | RLS'i migration'ın parçası yap: yetişme migration'ı (`20261002000000_manual_scripts_catchup`) + `pnpm db:check-rls` | ✅ lokal 2026-10-02 · canlıda işaretleme bekliyor (Faz 0) |
+| 5 | RLS'i migration'ın parçası yap: yetişme migration'ı (`20261002000000_manual_scripts_catchup`) + `pnpm db:check-rls` | ✅ lokal 2026-10-02 · canlıda işaretlendi 2026-10-05 |
 | 6 | Ortam anahtarları: `APP_ENV`, `OUTBOUND_HTTP` + `OUTBOUND_ALLOWLIST` (global fetch kapısı), `NOTIFICATIONS_DELIVERY` (SMTP/Netgsm → console). Staging'de varsayılan **kapalı** | ✅ 2026-10-02 · uygulama içinden uçtan uca engelleme staging kurulumunda (Faz 2) ölçülecek |
 | 7 | Staging veri temizleme betiği: entegrasyon kimlik bilgileri silinir, müşteri e-posta/telefon maskelenir (`pnpm db:sanitize-staging --confirm kroptos_stg`) | ✅ 2026-10-02 |
 | 8 | CI workflow (`.github/workflows/ci.yml`): install, `prisma generate`, build, test; boş Postgres'te migration + şema farkı + RLS + rol kontrolü; `main`/`staging` dal koruması | ✅ workflow 2026-10-05 (Linux/Docker provasında yeşil) · dal koruması GitHub ayarlarında bekliyor · geçici: `manifest.i18n` hariç, 1 katalog testi askıda |
-| 9 | `deploy.ps1`: ortam parametreli; ayrı klasörde build → DB yedeği → `migrate deploy` → `pm2 reload` → `/api/health` `sha` kontrolü → başarısızsa önceki sürüme dönüş | ✅ 2026-10-05 (`deploy/`; lokal provada 5 senaryo: ilk deploy, migration + yedek, bozuk sürümde geri dönüş, aynı sürüm, eski sürüm temizliği) · sunucuda ilk kurulum bekliyor |
+| 9 | `deploy.ps1`: ortam parametreli; ayrı klasörde build → DB yedeği → `migrate deploy` → `pm2 reload` → `/api/health` `sha` kontrolü → başarısızsa önceki sürüme dönüş | ✅ 2026-10-05 (`deploy/`; lokal provada 5 senaryo: ilk deploy, migration + yedek, bozuk sürümde geri dönüş, aynı sürüm, eski sürüm temizliği) · canlıda ilk kurulum ve devir 2026-10-05: `C:\kroptos\production`, `b9434b5`, exit 0; `Desktop\kroptos` geri dönüş yolu olarak duruyor. Aynı gün düzeltildi: frontend `NEXT_PUBLIC_API_URL` `localhost:3001` → `https://api.alqora.app/api`, backend `CORS_ORIGINS`'e `https://alqora.app` (önceden dışarıdan API çağrıları başarısızdı) |
 
 ## Faz 2 — Staging kurulumu
 
