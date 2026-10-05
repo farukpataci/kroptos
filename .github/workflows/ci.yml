@@ -37,6 +37,17 @@ jobs:
       - name: Bağımlılıklar
         run: pnpm install --frozen-lockfile
 
+      # Sunucudaki Windows PowerShell 5.1, BOM'suz UTF-8'i ANSI (cp1254) okur; Türkçe karakter
+      # bozulur ve betik ayrıştırılamaz (2026-10-05 provasında yaşandı). PowerShell 7 bunu
+      # yakalamaz, bu yüzden BOM'un kendisi kontrol edilir.
+      - name: deploy/*.ps1 ve *.psd1 UTF-8 BOM'lu
+        run: |
+          bad=0
+          for f in $(git ls-files 'deploy/*.ps1' 'deploy/*.psd1' 'deploy/**/*.psd1'); do
+            if [ "$(head -c3 "$f" | od -An -tx1 | tr -d ' ')" != "efbbbf" ]; then echo "BOM yok: $f"; bad=1; fi
+          done
+          exit $bad
+
       - name: Prisma client
         working-directory: packages/backend
         run: npx prisma generate
