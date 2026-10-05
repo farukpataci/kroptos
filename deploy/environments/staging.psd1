@@ -9,6 +9,6 @@
     FrontendPort     = 3100
     KeepReleases     = 3
     HealthTimeoutSec = 120
-    PgDump           = 'C:\Program Files\PostgreSQL\16\bin\pg_dump.exe'
+    PgDump           = 'C:\Program Files\PostgreSQL\18\bin\pg_dump.exe'
     ExpectedAppEnv   = 'staging'
 }
