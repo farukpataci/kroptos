@@ -67,9 +67,11 @@ Set-Content "$Root\shared\frontend.env" 'NEXT_PUBLIC_API_URL=https://api.alqora.
 `shared\backend.env`'in bir kopyası (özellikle `ENCRYPTION_KEY`) parola yöneticisinde olmalı.
 
 Mevcut kurulumdan (`Desktop\kroptos`, kök `ecosystem.config.js`) bu düzene geçiş, eski
-`kroptos-backend` / `kroptos-frontend` süreçlerinin aynı adla yeni yerden başlatılmasıdır;
-`deploy.ps1` ilk çalıştırmada `pm2 startOrReload` ile bunu yapar. Redis ve Caddy süreçleri
-değişmez. Bu geçiş yol haritası Faz 3'te birlikte yapılır.
+`kroptos-backend` / `kroptos-frontend` süreçlerinin aynı adla yeni yerden başlatılmasıdır.
+`pm2 reload` var olan sürecin klasörünü değiştirmediği için `deploy.ps1`, `current` dışından
+çalışan aynı adlı süreci önce siler (`pm2-foreign.js`), sonra yeni yerden başlatır. Bu yalnız
+ilk devirde olur; provada kesinti ~16 sn sürdü. Redis ve Caddy süreçleri değişmez.
+Eski klasör (`Desktop\kroptos`) devirden sonra silinmez: geri dönüş yolu olarak kalır.
 
 ## Elle çalıştırma
 

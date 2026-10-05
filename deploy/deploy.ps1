@@ -152,6 +152,15 @@ function Invoke-Pm2Reload {
     $env:KROPTOS_APP_PREFIX = $Cfg.AppPrefix
     $env:KROPTOS_BACKEND_PORT = [string]$Cfg.BackendPort
     $env:KROPTOS_FRONTEND_PORT = [string]$Cfg.FrontendPort
+    # Aynı adla başka klasörden çalışan süreç (eski kurulum) reload ile taşınmaz; önce silinir.
+    # Yalnız ilk devirde olur ve birkaç saniyelik kesinti demektir.
+    $names = "$($Cfg.AppPrefix)-backend $($Cfg.AppPrefix)-frontend"
+    $foreign = Get-CmdOutput "pm2 jlist | node `"$(Join-Path $PSScriptRoot 'pm2-foreign.js')`" `"$Current`" $names"
+    if ($foreign.Code -ne 0) { throw "pm2 süreç listesi okunamadı; ayrıntı: $Log" }
+    foreach ($name in ($foreign.Output -split "`r?`n" | Where-Object { $_ -cmatch '^[A-Za-z0-9._-]+$' })) {
+        Write-Step "pm2: $name başka klasörden çalışıyor, yeni yerden başlatmak için siliniyor"
+        Invoke-Cmd "pm2 delete $name" -Label "pm2 delete $name"
+    }
     Invoke-Cmd "pm2 startOrReload `"$Ecosystem`" --update-env" -Label 'pm2 startOrReload'
     Invoke-Cmd 'pm2 save' -Label 'pm2 save'
 }
