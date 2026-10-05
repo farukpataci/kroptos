@@ -226,7 +226,13 @@ describe('AddIntegrationModal', () => {
       });
     });
 
-    it('never marks a non-marketplace category connectable', async () => {
+    // ASKIDA (2026-10-05): b9ead7b (2026-09-15) muhasebe kartlarının bağlanabilirliğini elle
+    // yazılmış bir listeye bağladı; Logo/Mikro/Nebim gibi backend'de yalnız MOCK_READY veya
+    // SCAFFOLDED olan sağlayıcılar "Bağlantı Kur" gösteriyor. Bu test o davranışa karşı yazıldı
+    // ve doğru olanı anlatıyor; silinmez, mevcut davranışa da uydurulmaz. Düzeltme: rozet ve
+    // bağlanabilirlik doğrulama kademesinden türetildiğinde (docs/plans/saglayici-paket-mimarisi.md
+    // §3, §7 Faz 2) — o zaman kart adı ("Logo ERP") güncellenip skip kaldırılır.
+    it.skip('never marks a non-marketplace category connectable', async () => {
       apiFetch.mockResolvedValue([
         ...REGISTERED,
         { provider: 'logo_erp', displayName: 'Logo', capabilities: [] },

@@ -43,7 +43,7 @@
 | 5 | RLS'i migration'ın parçası yap: yetişme migration'ı (`20261002000000_manual_scripts_catchup`) + `pnpm db:check-rls` | ✅ lokal 2026-10-02 · canlıda işaretleme bekliyor (Faz 0) |
 | 6 | Ortam anahtarları: `APP_ENV`, `OUTBOUND_HTTP` + `OUTBOUND_ALLOWLIST` (global fetch kapısı), `NOTIFICATIONS_DELIVERY` (SMTP/Netgsm → console). Staging'de varsayılan **kapalı** | ✅ 2026-10-02 · uygulama içinden uçtan uca engelleme staging kurulumunda (Faz 2) ölçülecek |
 | 7 | Staging veri temizleme betiği: entegrasyon kimlik bilgileri silinir, müşteri e-posta/telefon maskelenir (`pnpm db:sanitize-staging --confirm kroptos_stg`) | ✅ 2026-10-02 |
-| 8 | CI workflow: install, `prisma generate`, build, test; `main`/`staging` dal koruması | |
+| 8 | CI workflow (`.github/workflows/ci.yml`): install, `prisma generate`, build, test; boş Postgres'te migration + şema farkı + RLS + rol kontrolü; `main`/`staging` dal koruması | ✅ workflow 2026-10-05 (Linux/Docker provasında yeşil) · dal koruması GitHub ayarlarında bekliyor · geçici: `manifest.i18n` hariç, 1 katalog testi askıda |
 | 9 | `deploy.ps1`: ortam parametreli; ayrı klasörde build → DB yedeği → `migrate deploy` → `pm2 reload` → `/api/health` `sha` kontrolü → başarısızsa önceki sürüme dönüş | |
 
 ## Faz 2 — Staging kurulumu

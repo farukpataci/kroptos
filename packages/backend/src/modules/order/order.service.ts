@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Optional } from '@nestjs/common';
 import { PrismaService } from '@common/prisma/prisma.service';
 import { CreateOrderDto, UpdateOrderStatusDto } from './dto/order.dto';
 import { Prisma } from '@prisma/client';
@@ -10,7 +10,9 @@ import { OrderSettingsService } from '../order-settings/order-settings.service';
 export class OrderService {
   constructor(
     private prisma: PrismaService,
-    private orderSettingsService?: OrderSettingsService,
+    // İsteğe bağlı: yoksa varsayılan ayarlar ve numara üretimi kullanılır (aşağıdaki if'ler).
+    // `?` tek başına Nest DI'a bunu söylemez; @Optional() olmadan sağlayıcı zorunlu sayılır.
+    @Optional() private orderSettingsService?: OrderSettingsService,
   ) {}
 
   private async writeAuditLog(
